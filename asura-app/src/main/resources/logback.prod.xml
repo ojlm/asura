@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>[%-5level][%date][%thread]--%msg--[%M][%F{16},%L]%n</pattern>
+      <charset>UTF-8</charset>
+    </encoder>
+  </appender>
+  <appender name="info" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>/home/asura/logs/app.log</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>/home/asura/logs/app.%d{yyyy-MM-dd}.log</fileNamePattern>
+      <MaxHistory>15</MaxHistory>
+    </rollingPolicy>
+    <encoder>
+      <pattern>[%-5level][%date][%thread]--%msg--[%M][%F{16},%L]%n</pattern>
+      <charset>UTF-8</charset>
+    </encoder>
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+      <level>DEBUG</level>
+      <OnMatch>ACCEPT</OnMatch>
+    </filter>
+  </appender>
+  <appender name="warn" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>/home/asura/logs/app.log</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>/home/asura/logs/app.warn.%d{yyyy-MM-dd}.log</fileNamePattern>
+      <MaxHistory>15</MaxHistory>
+    </rollingPolicy>
+    <encoder>
+      <pattern>[%-5level][%date][%thread]--%msg--[%M][%F{16},%L]%n</pattern>
+      <charset>UTF-8</charset>
+    </encoder>
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+      <level>WARN</level>
+      <OnMatch>ACCEPT</OnMatch>
+    </filter>
+  </appender>
+  <root level="INFO">
+    <appender-ref ref="console"/>
+    <appender-ref ref="info"/>
+    <appender-ref ref="warn"/>
+  </root>
+</configuration>

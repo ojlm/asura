@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>[%-5level][%date][%thread]--%msg--[%M][%F{16},%L]%n</pattern>
+      <charset>UTF-8</charset>
+    </encoder>
+  </appender>
+  <root level="INFO">
+    <appender-ref ref="console"/>
+  </root>
+  <logger name="asura" level="DEBUG"/>
+  <logger name="asura.web" level="INFO"/>
+</configuration>
