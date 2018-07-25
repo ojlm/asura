@@ -1,5 +1,11 @@
 .DS_Store
 .idea/
+logs/
+/.idea_modules
+/.classpath
+/.project
+/.settings
+/RUNNING_PID
 node_modules/
 dist/
 npm-debug.log*
