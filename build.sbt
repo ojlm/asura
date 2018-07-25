@@ -12,7 +12,7 @@ version in Docker := "0.0.0"
 // Root
 lazy val root = Project("asura", file("."))
   .enablePlugins(PlayScala)
-  // .aggregate(app, pcap, web, core, namerd)
+  .aggregate(app, pcap, web, core, namerd)
   .settings(commonSettings: _*)
   .settings(publishArtifact in Compile := true)
 
