@@ -2,8 +2,8 @@ import sbt._
 
 object Dependencies {
 
-  val akkaVersion = "2.5.8"
-  val akkaHttpVersion = "10.0.11"
+  val akkaVersion = "2.5.11"
+  val akkaHttpVersion = "10.0.13"
   val elastic4sVersion = "6.1.1"
 
   private val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
