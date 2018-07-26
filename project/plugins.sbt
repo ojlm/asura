@@ -9,3 +9,6 @@ addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.0.0")
 addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.6.16")
 addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "1.0.0")
 addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.1")
+
+// swagger
+addSbtPlugin("com.iheart" %% "sbt-play-swagger" % "0.7.4")
