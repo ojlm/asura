@@ -1,5 +1,20 @@
-# Home page
-GET        /                    controllers.Assets.at(path="/public", file="index.html")
+# https://swagger.io/docs/specification/about/
+# https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md
+# http://localhost:9000/docs/swagger-ui/index.html?url=/assets/swagger.json#/routes/message
+### NoDocs ###
+GET        /                             controllers.Assets.at(path="/public", file="index.html")
+### NoDocs ###
+GET        /docs/swagger-ui/*file        controllers.Assets.at(path:String="/public/lib/swagger-ui", file:String)
+### NoDocs ###
+GET        /assets/*file                 controllers.Assets.versioned(path="/public", file: Asset)
 
-# Map static resources from the /public folder to the /assets URL path
-GET        /assets/*file        controllers.Assets.versioned(path="/public", file: Asset)
+###
+#  summary: get a hello message
+#  responses:
+#    '200':
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/asura.app.api.model.Message'
+###
+GET        /api/hello                    asura.app.api.HelloController.hello
