@@ -20,9 +20,14 @@ lazy val root = Project("asura", file("."))
   .settings(commonSettings: _*)
   .settings(publishArtifact in Compile := true)
 
-libraryDependencies += guice
-libraryDependencies += "org.webjars" % "swagger-ui" % "3.17.4"
-libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test
+libraryDependencies ++= Seq(
+  guice,
+  ehcache,
+  ws,
+  filters,
+  "org.webjars" % "swagger-ui" % "3.17.4",
+  "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test,
+)
 
 // Adds additional packages into Twirl
 //TwirlKeys.templateImports += "com.example.controllers._"
