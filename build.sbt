@@ -9,14 +9,19 @@ scalacOptions in ThisBuild ++= Seq("-feature", "-deprecation", "-language:postfi
 packageName in Docker := "asura"
 version in Docker := "0.0.0"
 
+// swagger
+swaggerDomainNameSpaces := Seq("asura.app.api.model")
+swaggerV3 := true
+
 // Root
 lazy val root = Project("asura", file("."))
-  .enablePlugins(PlayScala)
-  .dependsOn(app, common, web, core, namerd)
+  .enablePlugins(PlayScala, SwaggerPlugin)
+  .dependsOn(common, web, core, namerd)
   .settings(commonSettings: _*)
   .settings(publishArtifact in Compile := true)
 
 libraryDependencies += guice
+libraryDependencies += "org.webjars" % "swagger-ui" % "3.17.4"
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test
 
 // Adds additional packages into Twirl
