@@ -5,6 +5,8 @@ object Dependencies {
   val akkaVersion = "2.5.11"
   val akkaHttpVersion = "10.0.13"
   val elastic4sVersion = "6.1.1"
+  val playPac4jVersion = "6.0.0"
+  val pac4jVersion = "3.0.1"
 
   private val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
   private val akkaStream = "com.typesafe.akka" %% "akka-stream" % akkaVersion
@@ -49,6 +51,11 @@ object Dependencies {
   private val httpDeps = Seq(akkaStream, akkaHttp, akkaHttpXml, jackson)
   private val databaseDeps = Seq(mysqlConnector)
   private val testDeps = Seq(scalaTest, akkaTestKit, akkaHttpTestkit)
+
+  val pac4jDeps = Seq(
+    "org.pac4j" %% "play-pac4j" % playPac4jVersion,
+    "org.pac4j" % "pac4j-ldap" % pac4jVersion
+  )
 
   val commonDependencies = Seq(scalaTest, akkaTestKit, config, akkaActor, jackson) ++ loggingDeps
   val coreDependencies = Seq(commonsLang3, jackson, faststring, elastic4sCore, elastic4sHttp, joddCore, jsonPath, swaggerParser, quartz, redisson) ++ commonDependencies ++ httpDeps
