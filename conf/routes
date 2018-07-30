@@ -1,6 +1,6 @@
 # https://swagger.io/docs/specification/about/
 # https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md
-# http://localhost:9000/docs/swagger-ui/index.html?url=/assets/swagger.json#/routes/message
+# http://localhost:9000/docs/swagger-ui/index.html?url=/assets/swagger.json
 ### NoDocs ###
 GET        /                             controllers.Assets.at(path="/public", file="index.html")
 ### NoDocs ###
