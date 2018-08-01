@@ -27,6 +27,7 @@ libraryDependencies ++= Seq(
   filters,
   "org.webjars" % "swagger-ui" % "3.17.4",
   "org.pac4j" %% "play-pac4j" % "6.0.0",
+  "org.pac4j" % "pac4j-http" % "3.0.1",
   "org.pac4j" % "pac4j-ldap" % "3.0.1",
   "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test,
 )
