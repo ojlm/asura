@@ -16,7 +16,7 @@ swaggerV3 := true
 // Root
 lazy val root = Project("asura", file("."))
   .enablePlugins(PlayScala, SwaggerPlugin)
-  .dependsOn(common, web, core, namerd)
+  .dependsOn(core, web, namerd)
   .settings(commonSettings: _*)
   .settings(publishArtifact in Compile := true)
 
@@ -41,12 +41,6 @@ libraryDependencies ++= Seq(
 // Sub Projects
 def asuraProjects(id: String) = Project(id, file(id))
   .settings(commonSettings: _*)
-
-lazy val app = asuraProjects("asura-app")
-  .settings(libraryDependencies ++= appDependencies)
-  .dependsOn(common, web, core, namerd)
-  .settings(mainClass in Compile := Some("asura.app.Asura"))
-  .enablePlugins(JavaAppPackaging, JavaServerAppPackaging, DockerPlugin)
 
 lazy val common = asuraProjects("asura-common")
   .settings(libraryDependencies ++= commonDependencies)
