@@ -24,6 +24,7 @@ object Dependencies {
   private val faststring = "com.dongxiguo" %% "fastring" % "0.3.1"
   private val elastic4sCore = "com.sksamuel.elastic4s" %% "elastic4s-core" % elastic4sVersion
   private val elastic4sHttp = "com.sksamuel.elastic4s" %% "elastic4s-http" % elastic4sVersion
+  private val elastic4sEmbedded = "com.sksamuel.elastic4s" %% "elastic4s-embedded" % elastic4sVersion excludeAll (ExclusionRule(organization = "org.apache.logging.log4j", name = "log4j-slf4j-impl"))
   private val joddCore = "org.jodd" % "jodd-core" % "3.9.1"
   private val jsonPath = "com.jayway.jsonpath" % "json-path" % "2.4.0"
 
@@ -58,7 +59,7 @@ object Dependencies {
   )
 
   val commonDependencies = Seq(scalaTest, akkaTestKit, config, akkaActor, jackson) ++ loggingDeps
-  val coreDependencies = Seq(commonsLang3, jackson, faststring, elastic4sCore, elastic4sHttp, joddCore, jsonPath, swaggerParser, quartz, redisson) ++ commonDependencies ++ httpDeps
+  val coreDependencies = Seq(commonsLang3, jackson, faststring, elastic4sCore, elastic4sHttp, elastic4sEmbedded, joddCore, jsonPath, swaggerParser, quartz, redisson) ++ commonDependencies ++ httpDeps
   val pcapDependencies = Seq(scalaTest, pcap4jCore, pcap4jPacketFactoryStatic) ++ loggingDeps
   val appDependencies = Seq(config, guava, commonsCodec) ++ loggingDeps ++ httpDeps ++ databaseDeps ++ testDeps ++ pcapDependencies
   val webDependencies = Seq(seleniumJava, jBrowserDriver, htmlunitDriver) ++ loggingDeps ++ httpDeps ++ testDeps
