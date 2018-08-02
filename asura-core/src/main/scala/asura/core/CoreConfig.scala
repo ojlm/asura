@@ -15,6 +15,9 @@ case class CoreConfig(
                        val redisServers: Seq[String],
                        val esUrl: String,
                        val proxyIdentifier: String,
+                       val useLocalEsNode: Boolean = true,
+                       val localEsDataDir: String = StringUtils.EMPTY,
+                       val enableLinkerd: Boolean = false,
                        val proxyHost: String = StringUtils.EMPTY, /* for https transparent proxy */
                        val httpProxyPort: Int = 0,
                        val httpsProxyPort: Int = 0,
@@ -23,21 +26,21 @@ case class CoreConfig(
 
 object CoreConfig {
 
-  implicit var system: ActorSystem = null
-  implicit var dispatcher: ExecutionContext = null
-  implicit var materializer: ActorMaterializer = null
-  var proxyHost: String = null
+  implicit var system: ActorSystem = _
+  implicit var dispatcher: ExecutionContext = _
+  implicit var materializer: ActorMaterializer = _
+  var proxyHost: String = _
   var httpProxyPort: Int = 0
   var httpsProxyPort: Int = 0
-  var proxyIdentifier: String = null
+  var proxyIdentifier: String = _
   var reportBaseUrl: String = StringUtils.EMPTY
 
   def init(config: CoreConfig): Unit = {
     system = config.system
     dispatcher = config.dispatcher
     materializer = config.materializer
-    RedisClient.init(config.redisServers)
-    EsClient.init(config.esUrl)
+    // RedisClient.init(config.redisServers)
+    EsClient.init(config.useLocalEsNode, config.esUrl, config.localEsDataDir)
     CoreConfig.proxyHost = config.proxyHost
     CoreConfig.httpProxyPort = config.httpProxyPort
     CoreConfig.httpsProxyPort = config.httpsProxyPort
