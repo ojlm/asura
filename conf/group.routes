@@ -1,0 +1,2 @@
+GET        /:id        asura.app.api.GroupApi.getById(id: String)
+PUT        /           asura.app.api.GroupApi.put()

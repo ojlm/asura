@@ -3,6 +3,7 @@ package asura.app.hook
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import asura.core.CoreConfig
+import asura.core.es.EsClient
 import asura.core.job.JobCenter
 import asura.core.job.actor.SchedulerActor
 import asura.namerd.NamerdConfig
@@ -55,6 +56,8 @@ class ApplicationStart @Inject()(
 
   // add stop hook
   lifecycle.addStopHook { () =>
-    Future.successful(())
+    Future {
+      if (null != EsClient.httpClient) EsClient.httpClient.close()
+    }(system.dispatcher)
   }
 }
