@@ -18,3 +18,5 @@ GET        /assets/*file                 controllers.Assets.versioned(path="/pub
 #            $ref: '#/components/schemas/asura.app.api.model.Message'
 ###
 GET        /api/hello                    asura.app.api.HelloController.hello
+
+->         /api/group                    group.Routes
