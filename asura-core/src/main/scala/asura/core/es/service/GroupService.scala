@@ -3,18 +3,21 @@ package asura.core.es.service
 import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.es.model.{FieldKeys, Group}
+import asura.core.es.model.{FieldKeys, Group, UpdateDocResponse}
 import asura.core.es.{EsClient, EsConfig}
+import asura.core.exceptions.IndexDocFailException
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
 import com.typesafe.scalalogging.Logger
 
+import scala.concurrent.Future
+
 object GroupService {
 
   val logger = Logger("GroupService")
 
-  def index(group: Group) = {
+  def index(group: Group): Future[UpdateDocResponse] = {
     if (StringUtils.isEmpty(group.id)) {
       FutureUtils.illegalArgs("Empty group id")
     } else {
@@ -23,7 +26,14 @@ object GroupService {
           case Right(_) =>
             EsClient.httpClient.execute {
               indexInto(Group.Index / EsConfig.DefaultType).doc(group).id(group.id).refresh(RefreshPolicy.WAIT_UNTIL)
-            }
+            }.map(indexRes => {
+              indexRes match {
+                case Right(success) =>
+                  UpdateDocResponse(success.result.id)
+                case Left(failure) =>
+                  throw new IndexDocFailException(failure.error.reason)
+              }
+            })
           case Left(_) =>
             FutureUtils.illegalArgs("Group already exists")
         }
