@@ -10,7 +10,7 @@ packageName in Docker := "asura"
 version in Docker := "0.0.0"
 
 // swagger
-swaggerDomainNameSpaces := Seq("asura.app.api.model")
+swaggerDomainNameSpaces := Seq("asura.app.api.model", "asura.core.es.model")
 swaggerV3 := true
 
 // Root

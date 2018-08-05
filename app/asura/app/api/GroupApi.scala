@@ -1,21 +1,30 @@
 package asura.app.api
 
-import asura.app.api.model.Message
+import asura.common.model.{ApiRes, ApiResError}
+import asura.core.es.EsResponse
 import asura.core.es.model.Group
+import asura.core.es.service.GroupService
 import javax.inject.{Inject, Singleton}
-import play.api.libs.json.Json
+
+import scala.concurrent.ExecutionContext
 
 @Singleton
-class GroupApi @Inject()()
+class GroupApi @Inject()(implicit exec: ExecutionContext)
   extends BaseApi {
 
-  def getById(id: String) = Action {
-    Ok(id)
+  def getById(id: String) = Action.async {
+    GroupService.getById(id).map { res =>
+      res match {
+        case Left(value) => OkApiRes(ApiResError(value.error.reason))
+        case Right(value) => OkApiRes(ApiRes(data = EsResponse.toSingleApiData(value.result)))
+      }
+    }
   }
 
-  def put() = Action(parse.tolerantText) { req =>
-    implicit val value = Json.format[Group]
-    val body = req.body
-    Ok(body)
+  def put() = Action(parse.tolerantText).async { req =>
+    val group = req.bodyAs(classOf[Group])
+    GroupService.index(group).map { res =>
+      OkApiRes(ApiRes(data = res))
+    }
   }
 }

@@ -1,2 +1,27 @@
+###
+#  summary: Get a group by id
+#  responses:
+#    '200':
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/asura.core.es.model.Group'
+###
 GET        /:id        asura.app.api.GroupApi.getById(id: String)
+
+###
+#  summary: Creates a group.
+#  requestBody:
+#   required: true
+#   content:
+#     application/json:
+#       schema:
+#         $ref: '#/components/schemas/asura.core.es.model.Group'
+#  responses:
+#   '200':
+#     content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/asura.core.es.model.UpdateDocResponse'
+###
 PUT        /           asura.app.api.GroupApi.put()

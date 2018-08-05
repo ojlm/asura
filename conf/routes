@@ -10,15 +10,4 @@ GET        /assets/*file                 controllers.Assets.versioned(path="/pub
 ### NoDocs ###
 GET        /api                          asura.app.api.SwaggerApi.home
 
-###
-#  summary: get a hello message
-#  responses:
-#    '200':
-#      content:
-#        application/json:
-#          schema:
-#            $ref: '#/components/schemas/asura.app.api.model.Message'
-###
-GET        /api/hello                    asura.app.api.HelloController.hello
-
 ->         /api/group                    group.Routes
