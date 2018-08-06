@@ -13,6 +13,10 @@ trait BaseApi extends InjectedController {
     def bodyAs[T <: AnyRef](c: Class[T]): T = JsonUtils.parse[T](req.body, c)
   }
 
+}
+
+object BaseApi {
+
   object OkApiRes {
     def apply(apiRes: ApiRes): Result = {
       Result(
