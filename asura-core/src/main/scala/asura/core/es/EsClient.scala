@@ -1,5 +1,6 @@
 package asura.core.es
 
+import asura.common.util.StringUtils
 import asura.core.es.model._
 import asura.core.es.service.IndexService
 import com.sksamuel.elastic4s.ElasticsearchClientUri
@@ -21,9 +22,13 @@ object EsClient {
   def init(useLocalNode: Boolean, url: String, dataDir: String): Boolean = {
     if (useLocalNode) {
       EsConfig.IK_ANALYZER = Analysis()
-      val localNode = LocalNode("asura", dataDir)
-      logger.info(s"start local es node: ${localNode.ipAndPort}")
-      client = localNode.http(true)
+      if (StringUtils.isNotEmpty(url)) {
+        client = HttpClient(ElasticsearchClientUri(url))
+      } else {
+        val localNode = LocalNode("asura", dataDir)
+        logger.info(s"start local es node: ${localNode.ipAndPort}")
+        client = localNode.http(true)
+      }
     } else {
       client = HttpClient(ElasticsearchClientUri(url))
     }

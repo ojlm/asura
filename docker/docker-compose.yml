@@ -1,0 +1,18 @@
+version: "3"
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.2.2
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      discovery.type: "single-node"
+  mysql:
+    image: mysql:5.7.18
+    ports:
+      - "3306:3306"
+    volumes:
+      - ../docs/sql/quartz-2.3.4.sql:/docker-entrypoint-initdb.d/quartz-2.3.4.sql
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456"
