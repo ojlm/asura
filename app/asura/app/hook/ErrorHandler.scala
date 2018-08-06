@@ -23,6 +23,6 @@ class ErrorHandler extends HttpErrorHandler {
   override def onServerError(request: RequestHeader, exception: Throwable): Future[Result] = {
     val logStack = LogUtils.stackTraceToString(exception)
     logger.warn(logStack)
-    Future.successful(OkApiRes(ApiResError(logStack)))
+    Future.successful(OkApiRes(ApiResError(exception.getMessage)))
   }
 }
