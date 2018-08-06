@@ -1,5 +1,6 @@
 package asura.app.api
 
+import asura.app.api.BaseApi.OkApiRes
 import asura.common.model.{ApiRes, ApiResError}
 import asura.core.es.EsResponse
 import asura.core.es.model.Group
