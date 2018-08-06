@@ -1,3 +1,5 @@
+CREATE DATABASE asura;
+USE asura;
 #
 # In your Quartz properties file, you'll need to set
 # org.quartz.jobStore.driverDelegateClass = org.quartz.impl.jdbcjobstore.StdJDBCDelegate
