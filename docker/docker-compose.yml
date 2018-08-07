@@ -16,3 +16,17 @@ services:
       - ../docs/sql/quartz-2.3.4.sql:/docker-entrypoint-initdb.d/quartz-2.3.4.sql
     environment:
       MYSQL_ROOT_PASSWORD: "123456"
+  ldap-service:
+    image: osixia/openldap:1.2.1
+    ports:
+      - "389:389"
+      - "636:636"
+  ldap-admin:
+    image: osixia/phpldapadmin:0.7.1
+    ports:
+      - "1080:80"
+    links:
+      - ldap-service
+    environment:
+      PHPLDAPADMIN_HTTPS: "false"
+      PHPLDAPADMIN_LDAP_HOSTS: "ldap-service"
