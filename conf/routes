@@ -10,4 +10,5 @@ GET        /assets/*file                 controllers.Assets.versioned(path="/pub
 ### NoDocs ###
 GET        /api                          asura.app.api.SwaggerApi.home
 
+->         /api/user                     user.Routes
 ->         /api/group                    group.Routes
