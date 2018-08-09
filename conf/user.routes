@@ -1,0 +1,2 @@
+GET        /login         asura.app.api.UserApi.login()
+GET        /logout        @org.pac4j.play.LogoutController.logout()
