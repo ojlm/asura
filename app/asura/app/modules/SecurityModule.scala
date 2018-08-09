@@ -1,7 +1,7 @@
 package asura.app.modules
 
 import asura.app.api.actions.SecurityHttpActionAdapter
-import asura.app.api.auth.SimpleTestUsernamePasswordAuthenticator
+import asura.app.api.auth.{LdapAuthenticator, SimpleTestUsernamePasswordAuthenticator}
 import com.google.inject.{AbstractModule, Provides}
 import org.pac4j.core.client.Clients
 import org.pac4j.core.config.Config
@@ -26,7 +26,13 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
   }
 
   @Provides
-  def provideDirectFormClient: DirectFormClient = new DirectFormClient(new SimpleTestUsernamePasswordAuthenticator(configuration))
+  def provideDirectFormClient: DirectFormClient = {
+    if (configuration.getOptional[Boolean]("asura.ldap.enabled").getOrElse(false)) {
+      new DirectFormClient(LdapAuthenticator(configuration))
+    } else {
+      new DirectFormClient(new SimpleTestUsernamePasswordAuthenticator(configuration))
+    }
+  }
 
   @Provides
   def provideParameterClient: ParameterClient = {
