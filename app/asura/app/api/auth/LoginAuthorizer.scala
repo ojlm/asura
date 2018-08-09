@@ -1,4 +1,4 @@
-package asura.app.api.authorizers
+package asura.app.api.auth
 
 import java.util
 
