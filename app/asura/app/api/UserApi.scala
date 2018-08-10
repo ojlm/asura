@@ -16,4 +16,11 @@ class UserApi @Inject()(sessionStore: PlaySessionStore, val controllerComponents
     val profile = profileManager.get(true)
     Ok(JsonUtils.stringify(if (profile.isPresent) profile.get() else profile))
   }
+
+  def whoami() = Action { request =>
+    val webContext = new PlayWebContext(request, sessionStore)
+    val profileManager = new ProfileManager[CommonProfile](webContext)
+    val profile = profileManager.get(true)
+    Ok(JsonUtils.stringify(if (profile.isPresent) profile.get() else profile))
+  }
 }
