@@ -19,6 +19,8 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
     bind(classOf[PlaySessionStore]).to(classOf[PlayCacheSessionStore])
     // logout
     val logoutController = new LogoutController()
+    logoutController.setDestroySession(true)
+    logoutController.setLocalLogout(true)
     logoutController.setDefaultUrl("/")
     bind(classOf[LogoutController]).toInstance(logoutController)
     // security components used in controllers
