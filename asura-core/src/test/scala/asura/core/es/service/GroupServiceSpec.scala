@@ -28,10 +28,7 @@ class GroupServiceSpec extends ScalaTestBaseSpec with EsClientConfig {
       summary = "",
       description = ""
     )
-    GroupService.index(g).await match {
-      case Right(success) =>
-        println(success.result)
-      case Left(_) =>
-    }
+    val res = GroupService.index(g).await
+    assert(res.id.nonEmpty)
   }
 }
