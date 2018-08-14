@@ -11,6 +11,7 @@ case class Project(
                     val summary: String,
                     val description: String,
                     val group: String,
+                    val avatar: String = null,
                     var creator: String = null,
                     var createdAt: String = null,
                   ) extends BaseIndex {
@@ -32,6 +33,7 @@ object Project extends IndexSetting {
     fields = BaseIndex.fieldDefinitions ++ Seq(
       KeywordFieldDefinition(name = FieldKeys.FIELD_ID),
       KeywordFieldDefinition(name = FieldKeys.FIELD_GROUP),
+      KeywordFieldDefinition(name = FieldKeys.FIELD_AVATAR, index = Option("false")),
     )
   )
 }

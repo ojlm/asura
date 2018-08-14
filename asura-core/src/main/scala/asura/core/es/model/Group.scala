@@ -9,6 +9,7 @@ case class Group(
                   val id: String,
                   val summary: String,
                   val description: String,
+                  val avatar: String = null,
                   var creator: String = null,
                   var createdAt: String = null,
                 ) extends BaseIndex {
@@ -29,6 +30,7 @@ object Group extends IndexSetting {
     `type` = EsConfig.DefaultType,
     fields = BaseIndex.fieldDefinitions ++ Seq(
       KeywordFieldDefinition(name = FieldKeys.FIELD_ID),
+      KeywordFieldDefinition(name = FieldKeys.FIELD_AVATAR, index = Option("false"))
     )
   )
 }
