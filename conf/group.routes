@@ -7,7 +7,7 @@
 #          schema:
 #            $ref: '#/components/schemas/asura.core.es.model.Group'
 ###
-GET        /:id        asura.app.api.GroupApi.getById(id: String)
+GET         /:id          asura.app.api.GroupApi.getById(id: String)
 
 ###
 #  summary: Creates a group.
@@ -24,4 +24,6 @@ GET        /:id        asura.app.api.GroupApi.getById(id: String)
 #          schema:
 #            $ref: '#/components/schemas/asura.core.es.model.UpdateDocResponse'
 ###
-PUT        /           asura.app.api.GroupApi.put()
+PUT         /             asura.app.api.GroupApi.put()
+
+POST        /query        asura.app.api.GroupApi.query()

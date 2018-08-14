@@ -3,17 +3,20 @@ package asura.core.es.service
 import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
+import asura.core.cs.model.QueryGroup
 import asura.core.es.model.{FieldKeys, Group, UpdateDocResponse}
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.exceptions.IndexDocFailException
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
+import com.sksamuel.elastic4s.searches.queries.QueryDefinition
 import com.typesafe.scalalogging.Logger
 
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
-object GroupService {
+object GroupService extends CommonService {
 
   val logger = Logger("GroupService")
 
@@ -83,6 +86,18 @@ object GroupService {
   def docExists(id: String) = {
     EsClient.httpClient.execute {
       exists(id, Group.Index, EsConfig.DefaultType)
+    }
+  }
+
+  def queryGroup(query: QueryGroup) = {
+    val queryDefinitions = ArrayBuffer[QueryDefinition]()
+    if (StringUtils.isNotEmpty(query.text)) queryDefinitions += matchQuery(FieldKeys.FIELD__TEXT, query.text)
+    EsClient.httpClient.execute {
+      search(Group.Index).query(boolQuery().must(queryDefinitions))
+        .from(query.pageFrom)
+        .size(query.pageSize)
+        .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
+        .sourceInclude(defaultIncludeFields)
     }
   }
 }
