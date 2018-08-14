@@ -2,6 +2,7 @@ package asura.app.api
 
 import asura.app.api.BaseApi.OkApiRes
 import asura.common.model.{ApiRes, ApiResError}
+import asura.core.cs.model.QueryGroup
 import asura.core.es.EsResponse
 import asura.core.es.model.Group
 import asura.core.es.service.GroupService
@@ -28,5 +29,10 @@ class GroupApi @Inject()(implicit exec: ExecutionContext, val controllerComponen
     GroupService.index(group).map { res =>
       OkApiRes(ApiRes(data = res))
     }
+  }
+
+  def query() = Action(parse.tolerantText).async { implicit req =>
+    val queryGroup = req.bodyAs(classOf[QueryGroup])
+    GroupService.queryGroup(queryGroup).map(toActionResult(_))
   }
 }
