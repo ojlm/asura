@@ -28,7 +28,7 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
   }
 
   @Provides
-  def provideDirectFormClient: DirectFormClient = {
+  def directFormClient: DirectFormClient = {
     if (configuration.getOptional[Boolean]("asura.ldap.enabled").getOrElse(false)) {
       new DirectFormClient(LdapAuthenticator(configuration))
     } else {
@@ -44,8 +44,8 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
   }
 
   @Provides
-  def provideConfig(headerClient: HeaderClient): Config = {
-    val clients = new Clients(headerClient)
+  def provideConfig(directFormClient: DirectFormClient, headerClient: HeaderClient): Config = {
+    val clients = new Clients(directFormClient, headerClient)
     val config = new Config(clients)
     config.setHttpActionAdapter(new SecurityHttpActionAdapter())
     // config.addAuthorizer("login", new LoginAuthorizer())
