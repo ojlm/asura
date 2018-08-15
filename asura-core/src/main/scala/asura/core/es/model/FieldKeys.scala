@@ -69,6 +69,7 @@ object FieldKeys {
   val FIELD_AVATAR = "avatar"
   val FIELD_EMAIL = "email"
   val FIELD_USERNAME = "username"
+  val FIELD_NICKNAME = "nickname"
 
   /** copied from [[FIELD_SUMMARY]] and [[FIELD_DESCRIPTION]] */
   val FIELD__TEXT = "_text"

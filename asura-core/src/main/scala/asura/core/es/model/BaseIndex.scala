@@ -49,6 +49,10 @@ object BaseIndex {
     BasicFieldDefinition(name = FieldKeys.FIELD_CREATED_AT, `type` = "date", format = Some(EsConfig.DateFormat))
   )
 
+  /** user login by ldap */
+  val CREATOR_LDAP = "ldap"
+  /** user login not by ldap */
+  val CREATOR_STANDARD = "standard"
   /** used for quartz job */
   val CREATOR_QUARTZ = "quartz"
   /** used for ci call */

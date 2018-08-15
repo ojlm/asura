@@ -7,10 +7,11 @@ import scala.collection.mutable
 
 case class UserProfile(
                         val username: String,
-                        val email: String,
+                        val nickname: String = null,
+                        val email: String = null,
                         val avatar: String = null,
-                        val summary: String,
-                        val description: String,
+                        val summary: String = null,
+                        val description: String = null,
                         var creator: String = null,
                         var createdAt: String = null,
                       ) extends BaseIndex {
@@ -37,6 +38,7 @@ object UserProfile extends IndexSetting {
     `type` = EsConfig.DefaultType,
     fields = BaseIndex.fieldDefinitions ++ Seq(
       KeywordFieldDefinition(name = FieldKeys.FIELD_USERNAME),
+      KeywordFieldDefinition(name = FieldKeys.FIELD_NICKNAME),
       KeywordFieldDefinition(name = FieldKeys.FIELD_EMAIL, index = Option("false")),
       KeywordFieldDefinition(name = FieldKeys.FIELD_AVATAR, index = Option("false"))
     )

@@ -22,7 +22,7 @@ GET         /:id          asura.app.api.GroupApi.getById(id: String)
 #     content:
 #        application/json:
 #          schema:
-#            $ref: '#/components/schemas/asura.core.es.model.UpdateDocResponse'
+#            $ref: '#/components/schemas/asura.core.es.model.IndexDocResponse'
 ###
 PUT         /             asura.app.api.GroupApi.put()
 
