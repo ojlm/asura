@@ -1,3 +1,3 @@
 package asura.core.es.model
 
-case class UpdateDocResponse(id: String)
+case class IndexDocResponse(id: String)

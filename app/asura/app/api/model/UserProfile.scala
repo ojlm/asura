@@ -1,9 +1,13 @@
 package asura.app.api.model
 
 case class UserProfile(
-                        val token: String,
-                        val username: String,
-                        val email: String,
+                        var token: String,
+                        var username: String,
+                        var nickname: String = null,
+                        var email: String = null,
+                        var summary: String = null,
+                        var description: String = null,
+                        var avatar: String = null,
                       ) {
 
 }

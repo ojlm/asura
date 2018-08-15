@@ -4,7 +4,7 @@ import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.model.QueryGroup
-import asura.core.es.model.{FieldKeys, Group, UpdateDocResponse}
+import asura.core.es.model.{FieldKeys, Group, IndexDocResponse}
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.exceptions.IndexDocFailException
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
@@ -20,7 +20,7 @@ object GroupService extends CommonService {
 
   val logger = Logger("GroupService")
 
-  def index(group: Group): Future[UpdateDocResponse] = {
+  def index(group: Group): Future[IndexDocResponse] = {
     if (StringUtils.isEmpty(group.id)) {
       FutureUtils.illegalArgs("Empty group id")
     } else {
@@ -29,14 +29,7 @@ object GroupService extends CommonService {
           case Right(_) =>
             EsClient.httpClient.execute {
               indexInto(Group.Index / EsConfig.DefaultType).doc(group).id(group.id).refresh(RefreshPolicy.WAIT_UNTIL)
-            }.map(indexRes => {
-              indexRes match {
-                case Right(success) =>
-                  UpdateDocResponse(success.result.id)
-                case Left(failure) =>
-                  throw new IndexDocFailException(failure.error.reason)
-              }
-            })
+            }.map(toIndexDocResponse(_))
           case Left(_) =>
             FutureUtils.illegalArgs("Group already exists")
         }
