@@ -67,6 +67,8 @@ object FieldKeys {
   val FIELD_USE_PROXY = "useProxy"
   val FIELD_CASES = "cases"
   val FIELD_AVATAR = "avatar"
+  val FIELD_EMAIL = "email"
+  val FIELD_USERNAME = "username"
 
   /** copied from [[FIELD_SUMMARY]] and [[FIELD_DESCRIPTION]] */
   val FIELD__TEXT = "_text"
