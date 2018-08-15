@@ -34,7 +34,7 @@ object EsClient {
     }
     var isAllOk = true
     val indices: Seq[IndexSetting] = Seq(
-      Case, RestApi, Job, Project, Environment, Group, JobReport, Scenario
+      Case, RestApi, Job, Project, Environment, Group, JobReport, Scenario, UserProfile
     )
     for (index <- indices if isAllOk) {
       logger.info(s"check es index ${index.Index}")
