@@ -21,7 +21,7 @@ object GroupService extends CommonService {
   val logger = Logger("GroupService")
 
   def index(group: Group): Future[IndexDocResponse] = {
-    if (CommonValidator.isIdLegal(group.id)) {
+    if (!CommonValidator.isIdLegal(group.id)) {
       FutureUtils.illegalArgs("Illegal group id")
     } else {
       docExists(group.id).flatMap(isExist => {
