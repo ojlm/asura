@@ -3,10 +3,10 @@ package asura.core.es.service
 import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
+import asura.core.cs.CommonValidator
 import asura.core.cs.model.QueryGroup
 import asura.core.es.model.{FieldKeys, Group, IndexDocResponse}
 import asura.core.es.{EsClient, EsConfig}
-import asura.core.exceptions.IndexDocFailException
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
@@ -21,8 +21,8 @@ object GroupService extends CommonService {
   val logger = Logger("GroupService")
 
   def index(group: Group): Future[IndexDocResponse] = {
-    if (StringUtils.isEmpty(group.id)) {
-      FutureUtils.illegalArgs("Empty group id")
+    if (CommonValidator.isIdLegal(group.id)) {
+      FutureUtils.illegalArgs("Illegal group id")
     } else {
       docExists(group.id).flatMap(isExist => {
         isExist match {
