@@ -46,7 +46,7 @@ object LdapAuthenticator {
     override def validate(credentials: UsernamePasswordCredentials, context: WebContext): Unit = {
       super.validate(credentials, context)
       val jwtGenerator = new JwtGenerator[CommonProfile](new SecretSignatureConfiguration(configuration.get[String]("asura.jwt.secret")))
-      val tomorrow = LocalDate.now().plusDays(1).atStartOfDay()
+      val tomorrow = LocalDate.now().plusDays(1).atStartOfDay().plusHours(3)
       jwtGenerator.setExpirationTime(Date.from(tomorrow.atZone(ZoneId.systemDefault()).toInstant()))
       val profile = credentials.getUserProfile
       val token = jwtGenerator.generate(profile)
