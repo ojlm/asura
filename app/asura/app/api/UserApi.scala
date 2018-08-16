@@ -53,23 +53,24 @@ class UserApi @Inject()(
               apiUserProfile.email = profile.email
               Future.successful(OkApiRes(ApiRes(data = apiUserProfile)))
             } else {
-              // first time login
-              val esUserProfile = EsUserProfile(
-                username = username,
-                email = emailStr
-              )
               if (commonProfile.isInstanceOf[LdapProfile]) {
+                // first time login by ldap
+                val esUserProfile = EsUserProfile(
+                  username = username,
+                  email = emailStr
+                )
                 esUserProfile.fillCommonFields(BaseIndex.CREATOR_LDAP)
+                UserProfileService.index(esUserProfile).map(indexResponse => {
+                  if (StringUtils.isNotEmpty(indexResponse.id)) {
+                    OkApiRes(ApiRes(data = apiUserProfile))
+                  } else {
+                    OkApiRes(ApiResError("fail to create user profile"))
+                  }
+                })
               } else {
-                esUserProfile.fillCommonFields(BaseIndex.CREATOR_STANDARD)
+                // code should not run here
+                Future.successful(OkApiRes(ApiResError("illegal login")))
               }
-              UserProfileService.index(esUserProfile).map(indexResponse => {
-                if (StringUtils.isNotEmpty(indexResponse.id)) {
-                  OkApiRes(ApiRes(data = apiUserProfile))
-                } else {
-                  OkApiRes(ApiResError("fail to create user profile"))
-                }
-              })
             }
           })
       }
