@@ -2,6 +2,7 @@ package asura.core.es.service
 
 import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
+import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.CommonValidator
 import asura.core.cs.model.QueryGroup
@@ -22,20 +23,20 @@ object GroupService extends CommonService {
 
   def index(group: Group): Future[IndexDocResponse] = {
     if (!CommonValidator.isIdLegal(group.id)) {
-      FutureUtils.illegalArgs("Illegal group id")
+      ErrorMessages.error_IllegalGroupId.toFutureFail
     } else {
       docExists(group.id).flatMap(isExist => {
         isExist match {
           case Right(result) =>
             if (result.result) {
-              FutureUtils.illegalArgs("Group already exists")
+              ErrorMessages.error_GroupExists.toFutureFail
             } else {
               EsClient.httpClient.execute {
                 indexInto(Group.Index / EsConfig.DefaultType).doc(group).id(group.id).refresh(RefreshPolicy.WAIT_UNTIL)
               }.map(toIndexDocResponse(_))
             }
           case Left(err) =>
-            FutureUtils.illegalArgs(err.error.reason)
+            ErrorMessages.error_EsRequestFail(err).toFutureFail
         }
       })
     }

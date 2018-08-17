@@ -1,0 +1,5 @@
+# https://www.playframework.com/documentation/latest/ScalaI18N
+# error message from service
+error_IllegalGroupId=illegal group id
+error_GroupExists=group already exists
+error_EsRequestFail=database request failure: {0}
