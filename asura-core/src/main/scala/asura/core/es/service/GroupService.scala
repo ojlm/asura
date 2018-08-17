@@ -26,12 +26,16 @@ object GroupService extends CommonService {
     } else {
       docExists(group.id).flatMap(isExist => {
         isExist match {
-          case Right(_) =>
-            EsClient.httpClient.execute {
-              indexInto(Group.Index / EsConfig.DefaultType).doc(group).id(group.id).refresh(RefreshPolicy.WAIT_UNTIL)
-            }.map(toIndexDocResponse(_))
-          case Left(_) =>
-            FutureUtils.illegalArgs("Group already exists")
+          case Right(result) =>
+            if (result.result) {
+              FutureUtils.illegalArgs("Group already exists")
+            } else {
+              EsClient.httpClient.execute {
+                indexInto(Group.Index / EsConfig.DefaultType).doc(group).id(group.id).refresh(RefreshPolicy.WAIT_UNTIL)
+              }.map(toIndexDocResponse(_))
+            }
+          case Left(err) =>
+            FutureUtils.illegalArgs(err.error.reason)
         }
       })
     }
