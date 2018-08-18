@@ -95,7 +95,7 @@ object GroupService extends CommonService {
         .from(query.pageFrom)
         .size(query.pageSize)
         .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
-        .sourceInclude(defaultIncludeFields)
+        .sourceInclude(defaultIncludeFields :+ FieldKeys.FIELD_ID :+ FieldKeys.FIELD_AVATAR)
     }
   }
 }

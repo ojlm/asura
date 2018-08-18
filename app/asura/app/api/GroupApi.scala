@@ -33,6 +33,6 @@ class GroupApi @Inject()(implicit exec: ExecutionContext, val controllerComponen
 
   def query() = Action(parse.tolerantText).async { implicit req =>
     val queryGroup = req.bodyAs(classOf[QueryGroup])
-    GroupService.queryGroup(queryGroup).map(toActionResult(_))
+    GroupService.queryGroup(queryGroup).map(toActionResult(_, false))
   }
 }

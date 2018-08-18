@@ -29,9 +29,9 @@ trait BaseApi extends Security[CommonProfile] {
     def bodyAs[T <: AnyRef](c: Class[T]): T = JsonUtils.parse[T](req.body, c)
   }
 
-  def toActionResult(either: Either[RequestFailure, RequestSuccess[SearchResponse]]): Result = {
+  def toActionResult(either: Either[RequestFailure, RequestSuccess[SearchResponse]], hasId: Boolean = true): Result = {
     either match {
-      case Right(success) => OkApiRes(ApiRes(data = EsResponse.toApiData(success.result)))
+      case Right(success) => OkApiRes(ApiRes(data = EsResponse.toApiData(success.result, hasId)))
       case Left(failure) => OkApiRes(ApiResError(msg = failure.error.reason))
     }
   }
