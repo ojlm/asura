@@ -13,6 +13,7 @@ import com.sksamuel.elastic4s.http.{RequestFailure, RequestSuccess}
 trait CommonService {
 
   val defaultIncludeFields = Seq(FieldKeys.FIELD_SUMMARY, FieldKeys.FIELD_DESCRIPTION)
+  val defaultExcludeFields = Seq(FieldKeys.FIELD_CREATOR, FieldKeys.FIELD_CREATED_AT)
 
   def toIndexDocResponse(either: Either[RequestFailure, RequestSuccess[IndexResponse]]): IndexDocResponse = {
     either match {
