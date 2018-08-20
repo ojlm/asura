@@ -3,3 +3,4 @@
 error_IllegalGroupId=illegal group id
 error_GroupExists=group already exists
 error_EsRequestFail=database request failure: {0}
+error_IdNonExists=ID({0}) is not exists

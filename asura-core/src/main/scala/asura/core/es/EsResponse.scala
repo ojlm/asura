@@ -16,11 +16,15 @@ object EsResponse {
     }))
   }
 
-  def toSingleApiData(res: SearchResponse): Map[String, Any] = {
+  def toSingleApiData(res: SearchResponse, hasId: Boolean = true): Map[String, Any] = {
     val hits = res.hits
     if (hits.nonEmpty) {
       val hit = hits.hits(0)
-      hit.sourceAsMap + (FieldKeys.FIELD__ID -> hit.id)
+      if (hasId) {
+        hit.sourceAsMap + (FieldKeys.FIELD__ID -> hit.id)
+      } else {
+        hit.sourceAsMap
+      }
     } else {
       Map.empty
     }

@@ -25,6 +25,11 @@ trait BaseApi extends Security[CommonProfile] {
     asScalaBuffer(profiles).toList
   }
 
+  def getProfileId()(implicit request: RequestHeader): String = {
+    getProfiles().head.getId
+  }
+
+
   implicit class JsonToClass(req: Request[String]) {
     def bodyAs[T <: AnyRef](c: Class[T]): T = JsonUtils.parse[T](req.body, c)
   }
@@ -34,6 +39,17 @@ trait BaseApi extends Security[CommonProfile] {
       case Right(success) => OkApiRes(ApiRes(data = EsResponse.toApiData(success.result, hasId)))
       case Left(failure) => OkApiRes(ApiResError(msg = failure.error.reason))
     }
+  }
+
+  def getI18nMessage(key: String, args: Any*)(implicit request: RequestHeader): String = {
+    val requestLocal = request.headers.get("Local")
+    val langs = controllerComponents.langs
+    implicit val lang = if (requestLocal.nonEmpty) {
+      langs.availables.find(_.code == requestLocal.get).getOrElse(langs.availables.head)
+    } else {
+      langs.availables.head
+    }
+    messagesApi(key, args: _*)
   }
 }
 
