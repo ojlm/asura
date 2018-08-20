@@ -8,7 +8,7 @@ object CommonValidator {
     if (StringUtils.isEmpty(id)) {
       false
     } else {
-      id.forall(c => (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c.equals('_') || c.equals('-') || c.equals('.'))
+      id.forall(c => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c.equals('_') || c.equals('-') || c.equals('.'))
     }
   }
 }
