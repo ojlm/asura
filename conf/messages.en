@@ -4,3 +4,6 @@ error_IllegalGroupId=illegal group id
 error_GroupExists=group already exists
 error_EsRequestFail=database request failure: {0}
 error_IdNonExists=ID({0}) is not exists
+error_GroupIdEmpty=group id can not be empty
+error_IllegalProjectId=illegal project id
+error_ProjectExists=project already exists

@@ -2,33 +2,39 @@ package asura.core.es.service
 
 import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
+import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.CommonValidator
-import asura.core.es.model.{FieldKeys, Project}
+import asura.core.cs.model.QueryProject
+import asura.core.es.model.{FieldKeys, IndexDocResponse, Project}
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
+import com.sksamuel.elastic4s.searches.queries.QueryDefinition
 
-object ProjectService {
+import scala.collection.mutable.ArrayBuffer
+import scala.concurrent.Future
 
-  def index(project: Project) = {
+object ProjectService extends CommonService {
+
+  def index(project: Project): Future[IndexDocResponse] = {
     if (null == project || StringUtils.isEmpty(project.group)) {
-      FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
+      ErrorMessages.error_IllegalGroupId.toFutureFail
     } else if (!CommonValidator.isIdLegal(project.id)) {
-      FutureUtils.illegalArgs(ApiMsg.ILLEGAL_CHARACTER)
+      ErrorMessages.error_IllegalProjectId.toFutureFail
     } else {
       docCount(project.group, project.id).flatMap {
         case Right(countRes) =>
           if (countRes.result.count > 0) {
-            FutureUtils.illegalArgs("Project already exists")
+            ErrorMessages.error_ProjectExists.toFutureFail
           } else {
             EsClient.httpClient.execute {
               indexInto(Project.Index / EsConfig.DefaultType).doc(project).id(project.id).refresh(RefreshPolicy.WAIT_UNTIL)
-            }
+            }.map(toIndexDocResponse(_))
           }
-        case Left(error) =>
-          FutureUtils.requestFail(error.error.reason)
+        case Left(failure) =>
+          ErrorMessages.error_EsRequestFail(failure).toFutureFail
       }
     }
   }
@@ -43,19 +49,9 @@ object ProjectService {
     }
   }
 
-  def deleteDoc(ids: Seq[String]) = {
-    if (null == ids || ids.isEmpty) {
-      FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
-    } else {
-      EsClient.httpClient.execute {
-        bulk(ids.map(id => delete(id).from(Project.Index)))
-      }
-    }
-  }
-
   def getById(id: String) = {
     if (StringUtils.isEmpty(id)) {
-      FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
+      ErrorMessages.error_IdNonExists.toFutureFail
     } else {
       EsClient.httpClient.execute {
         search(Project.Index).query(idsQuery(id))
@@ -63,22 +59,9 @@ object ProjectService {
     }
   }
 
-  def getAll(group: String) = {
-    if (StringUtils.isEmpty(group)) {
-      FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
-    } else {
-      EsClient.httpClient.execute {
-        search(Project.Index)
-          .query(termQuery(FieldKeys.FIELD_GROUP, group))
-          .limit(EsConfig.MaxCount)
-          .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
-      }
-    }
-  }
-
   def updateProject(project: Project) = {
     if (null == project || StringUtils.isEmpty(project.id)) {
-      FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
+      ErrorMessages.error_IdNonExists.toFutureFail
     } else {
       EsClient.httpClient.execute {
         update(project.id).in(Project.Index / EsConfig.DefaultType).doc(project.toUpdateMap)
@@ -94,6 +77,18 @@ object ProjectService {
           termQuery(FieldKeys.FIELD_ID, id)
         )
       }
+    }
+  }
+
+  def queryProject(query: QueryProject) = {
+    val queryDefinitions = ArrayBuffer[QueryDefinition]()
+    if (StringUtils.isNotEmpty(query.text)) queryDefinitions += matchQuery(FieldKeys.FIELD__TEXT, query.text)
+    EsClient.httpClient.execute {
+      search(Project.Index).query(boolQuery().must(queryDefinitions))
+        .from(query.pageFrom)
+        .size(query.pageSize)
+        .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
+        .sourceInclude(defaultIncludeFields :+ FieldKeys.FIELD_ID :+ FieldKeys.FIELD_AVATAR)
     }
   }
 }
