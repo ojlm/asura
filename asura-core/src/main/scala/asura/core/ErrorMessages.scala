@@ -12,6 +12,9 @@ object ErrorMessages extends Enumeration {
   val error_IllegalGroupId = Val("Illegal group id")
   val error_GroupExists = Val("Group already exists")
   val error_IdNonExists = Val("Id non exists")
+  val error_GroupIdEmpty = Val("Group id must not be empty")
+  val error_IllegalProjectId = Val("Illegal project id")
+  val error_ProjectExists = Val("Project already exists")
 
   protected case class Val(val errMsg: String) extends super.Val {
     def toException: ErrorMessageException = {
