@@ -30,7 +30,10 @@ object ProjectService extends CommonService {
             ErrorMessages.error_ProjectExists.toFutureFail
           } else {
             EsClient.httpClient.execute {
-              indexInto(Project.Index / EsConfig.DefaultType).doc(project).id(project.id).refresh(RefreshPolicy.WAIT_UNTIL)
+              indexInto(Project.Index / EsConfig.DefaultType)
+                .doc(project)
+                .id(s"${project.group}_${project.id}")
+                .refresh(RefreshPolicy.WAIT_UNTIL)
             }.map(toIndexDocResponse(_))
           }
         case Left(failure) =>
@@ -49,12 +52,18 @@ object ProjectService extends CommonService {
     }
   }
 
-  def getById(id: String) = {
-    if (StringUtils.isEmpty(id)) {
+  def getById(group: String, id: String) = {
+    if (StringUtils.isEmpty(group)) {
+      ErrorMessages.error_GroupIdEmpty.toFutureFail
+    } else if (StringUtils.isEmpty(id)) {
       ErrorMessages.error_IdNonExists.toFutureFail
     } else {
+      // not use groupID_projectId for old version back compatible
+      val queryDefinitions = ArrayBuffer[QueryDefinition]()
+      queryDefinitions += matchQuery(FieldKeys.FIELD_ID, id)
+      queryDefinitions += matchQuery(FieldKeys.FIELD_GROUP, group)
       EsClient.httpClient.execute {
-        search(Project.Index).query(idsQuery(id))
+        search(Project.Index).query(boolQuery().must(queryDefinitions)).size(1)
       }
     }
   }
@@ -84,6 +93,7 @@ object ProjectService extends CommonService {
     val queryDefinitions = ArrayBuffer[QueryDefinition]()
     if (StringUtils.isNotEmpty(query.id)) queryDefinitions += wildcardQuery(FieldKeys.FIELD_ID, query.id + "*")
     if (StringUtils.isNotEmpty(query.text)) queryDefinitions += matchQuery(FieldKeys.FIELD__TEXT, query.text)
+    if (StringUtils.isNotEmpty(query.group)) queryDefinitions += matchQuery(FieldKeys.FIELD_GROUP, query.group)
     EsClient.httpClient.execute {
       search(Project.Index).query(boolQuery().must(queryDefinitions))
         .from(query.pageFrom)
