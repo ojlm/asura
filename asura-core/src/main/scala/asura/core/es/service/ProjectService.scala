@@ -82,6 +82,7 @@ object ProjectService extends CommonService {
 
   def queryProject(query: QueryProject) = {
     val queryDefinitions = ArrayBuffer[QueryDefinition]()
+    if (StringUtils.isNotEmpty(query.id)) queryDefinitions += wildcardQuery(FieldKeys.FIELD_ID, query.id + "*")
     if (StringUtils.isNotEmpty(query.text)) queryDefinitions += matchQuery(FieldKeys.FIELD__TEXT, query.text)
     EsClient.httpClient.execute {
       search(Project.Index).query(boolQuery().must(queryDefinitions))
