@@ -31,7 +31,7 @@ object Project extends IndexSetting {
   val mappings: MappingDefinition = MappingDefinition(
     `type` = EsConfig.DefaultType,
     fields = BaseIndex.fieldDefinitions ++ Seq(
-      KeywordFieldDefinition(name = FieldKeys.FIELD_ID),
+      KeywordFieldDefinition(name = FieldKeys.FIELD_ID, copyTo = Seq(FieldKeys.FIELD__TEXT)),
       KeywordFieldDefinition(name = FieldKeys.FIELD_GROUP),
       KeywordFieldDefinition(name = FieldKeys.FIELD_AVATAR, index = Option("false")),
     )
