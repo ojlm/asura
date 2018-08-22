@@ -1,5 +1,5 @@
 package asura.core.cs.model
 
-case class QueryProject(id: String, text: String) extends QueryPage {
+case class QueryProject(group: String, id: String, text: String) extends QueryPage {
 
 }

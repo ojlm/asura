@@ -16,8 +16,8 @@ import scala.concurrent.ExecutionContext
 class ProjectApi @Inject()(implicit exec: ExecutionContext, val controllerComponents: SecurityComponents)
   extends BaseApi {
 
-  def getById(id: String) = Action.async { implicit req =>
-    ProjectService.getById(id).map { res =>
+  def getById(group: String, id: String) = Action.async { implicit req =>
+    ProjectService.getById(group, id).map { res =>
       res match {
         case Left(failure) => {
           OkApiRes(ApiResError(getI18nMessage(ErrorMessages.error_EsRequestFail(failure).name)))
