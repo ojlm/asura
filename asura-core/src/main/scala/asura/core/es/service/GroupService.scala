@@ -89,6 +89,7 @@ object GroupService extends CommonService {
 
   def queryGroup(query: QueryGroup) = {
     val queryDefinitions = ArrayBuffer[QueryDefinition]()
+    if (StringUtils.isNotEmpty(query.id)) queryDefinitions += wildcardQuery(FieldKeys.FIELD_ID, query.id + "*")
     if (StringUtils.isNotEmpty(query.text)) queryDefinitions += matchQuery(FieldKeys.FIELD__TEXT, query.text)
     EsClient.httpClient.execute {
       search(Group.Index).query(boolQuery().must(queryDefinitions))
