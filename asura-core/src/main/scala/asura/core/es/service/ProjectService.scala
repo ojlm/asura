@@ -93,7 +93,7 @@ object ProjectService extends CommonService {
     val queryDefinitions = ArrayBuffer[QueryDefinition]()
     if (StringUtils.isNotEmpty(query.id)) queryDefinitions += wildcardQuery(FieldKeys.FIELD_ID, query.id + "*")
     if (StringUtils.isNotEmpty(query.text)) queryDefinitions += matchQuery(FieldKeys.FIELD__TEXT, query.text)
-    if (StringUtils.isNotEmpty(query.group)) queryDefinitions += matchQuery(FieldKeys.FIELD_GROUP, query.group)
+    if (StringUtils.isNotEmpty(query.group)) queryDefinitions += termQuery(FieldKeys.FIELD_GROUP, query.group)
     EsClient.httpClient.execute {
       search(Project.Index).query(boolQuery().must(queryDefinitions))
         .from(query.pageFrom)

@@ -7,6 +7,7 @@ import com.sksamuel.elastic4s.mappings._
 
 import scala.collection.mutable
 
+/** id:group_project_method_path not _id */
 case class RestApi(
                     val summary: String = StringUtils.EMPTY,
                     val description: String = StringUtils.EMPTY,
@@ -15,6 +16,7 @@ case class RestApi(
                     val group: String,
                     val project: String,
                     val service: String = null,
+                    var id: String = null,
                     var deprecated: Boolean = false,
                     var version: String = StringUtils.EMPTY,
                     var `type`: String = ApiType.REST,
@@ -63,6 +65,12 @@ case class RestApi(
       false
     }
   }
+
+  /** id for check if the api exists,
+    * not use _id because the if _id can be used in url and path has ambiguity character
+    */
+  def generateId(): String = s"${group}_${project}_${method}_${path}"
+
 }
 
 object RestApi extends IndexSetting {
@@ -71,7 +79,8 @@ object RestApi extends IndexSetting {
   val mappings: MappingDefinition = MappingDefinition(
     `type` = EsConfig.DefaultType,
     fields = BaseIndex.fieldDefinitions ++ Seq(
-      KeywordFieldDefinition(name = FieldKeys.FIELD_PATH),
+      KeywordFieldDefinition(name = FieldKeys.FIELD_ID),
+      KeywordFieldDefinition(name = FieldKeys.FIELD_PATH, copyTo = Seq(FieldKeys.FIELD__TEXT)),
       KeywordFieldDefinition(name = FieldKeys.FIELD_METHOD),
       KeywordFieldDefinition(name = FieldKeys.FIELD_GROUP),
       KeywordFieldDefinition(name = FieldKeys.FIELD_PROJECT),

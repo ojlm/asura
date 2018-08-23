@@ -1,0 +1,3 @@
+POST        /getOne        asura.app.api.RestApiApi.getOne()
+PUT         /              asura.app.api.RestApiApi.put()
+POST        /query         asura.app.api.RestApiApi.query()
