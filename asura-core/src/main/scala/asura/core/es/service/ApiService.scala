@@ -1,50 +1,74 @@
 package asura.core.es.service
 
-import asura.common.exceptions.{IllegalRequestException, RequestFailException}
-import asura.common.model.{ApiMsg, BoolErrorRes}
+import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
+import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.es.model.{FieldKeys, RestApi}
+import asura.core.cs.model.QueryApi
+import asura.core.es.model.{BulkIndexDocResponse, FieldKeys, IndexDocResponse, RestApi}
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
+import com.sksamuel.elastic4s.searches.queries.QueryDefinition
 
 import scala.collection.mutable
-import scala.concurrent.{ExecutionContext, Future}
+import scala.collection.mutable.ArrayBuffer
+import scala.concurrent.Future
 
-object ApiService {
+object ApiService extends CommonService {
 
-  def index(api: RestApi) = {
+  def index(api: RestApi): Future[IndexDocResponse] = {
     if (null == api) {
-      FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
+      ErrorMessages.error_EmptyRequestBody.toFutureFail
     } else {
-      val (isOK, errMsg) = validate(api)
-      if (!isOK) {
-        FutureUtils.illegalArgs(errMsg)
+      val error = validate(api)
+      if (null != error) {
+        error.toFutureFail
       } else {
+        api.id = api.generateId()
         EsClient.httpClient.execute {
-          indexInto(RestApi.Index / EsConfig.DefaultType).doc(api).refresh(RefreshPolicy.WAIT_UNTIL)
-        }
+          indexInto(RestApi.Index / EsConfig.DefaultType)
+            .doc(api)
+            .refresh(RefreshPolicy.WAIT_UNTIL)
+        }.map(toIndexDocResponse(_))
       }
     }
   }
 
-  def index(apis: Seq[RestApi]) = {
+  def index(apis: Seq[RestApi]): Future[BulkIndexDocResponse] = {
     if (null == apis || apis.isEmpty) {
-      FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
+      ErrorMessages.error_EmptyRequestBody.toFutureFail
     } else {
-      val (isOk, errMsg) = validate(apis)
-      if (!isOk) {
-        FutureUtils.illegalArgs(errMsg)
+      val error = validate(apis)
+      if (null != error) {
+        error.toFutureFail
       } else {
         EsClient.httpClient.execute {
           bulk {
-            apis.map(api => indexInto(RestApi.Index / EsConfig.DefaultType).doc(api))
+            apis.map(api => {
+              api.id = api.generateId()
+              indexInto(RestApi.Index / EsConfig.DefaultType).doc(api)
+            })
           }.refresh(RefreshPolicy.WAIT_UNTIL)
-        }
+        }.map(toBulkIndexDocResponse(_))
       }
+    }
+  }
+
+  def queryApi(query: QueryApi) = {
+    val queryDefinitions = ArrayBuffer[QueryDefinition]()
+    if (StringUtils.isNotEmpty(query.path)) queryDefinitions += wildcardQuery(FieldKeys.FIELD_PATH, query.path + "*")
+    if (StringUtils.isNotEmpty(query.text)) queryDefinitions += matchQuery(FieldKeys.FIELD__TEXT, query.text)
+    if (StringUtils.isNotEmpty(query.group)) queryDefinitions += termQuery(FieldKeys.FIELD_GROUP, query.group)
+    if (StringUtils.isNotEmpty(query.project)) queryDefinitions += termQuery(FieldKeys.FIELD_PROJECT, query.project)
+    EsClient.httpClient.execute {
+      search(RestApi.Index).query(boolQuery().must(queryDefinitions))
+        .from(query.pageFrom)
+        .size(query.pageSize)
+        .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
+        .sourceInclude(defaultIncludeFields :+ FieldKeys.FIELD_PATH :+ FieldKeys.FIELD_METHOD)
     }
   }
 
@@ -52,9 +76,9 @@ object ApiService {
     if (null == apis || apis.isEmpty) {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
-      val (isOk, errMsg) = validate(apis)
-      if (!isOk) {
-        FutureUtils.illegalArgs(errMsg)
+      val error = validate(apis)
+      if (null != error) {
+        error.toFutureFail
       } else {
         EsClient.httpClient.execute {
           search(RestApi.Index).bool(should(
@@ -90,9 +114,20 @@ object ApiService {
     }
   }
 
+  def getOne(api: RestApi) = {
+    val error = validate(api)
+    if (null != error) {
+      error.toFutureFail
+    } else {
+      EsClient.httpClient.execute {
+        search(RestApi.Index).query(idsQuery(api.generateId()))
+      }
+    }
+  }
+
   def getById(id: String) = {
     if (StringUtils.isEmpty(id)) {
-      FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
+      ErrorMessages.error_IdNonExists.toFutureFail
     } else {
       EsClient.httpClient.execute {
         search(RestApi.Index).query(idsQuery(id))
@@ -124,13 +159,13 @@ object ApiService {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
       val api = apiUpdate.api
-      val (isOk, errMsg) = validate(api)
-      if (!isOk) {
-        FutureUtils.illegalArgs(errMsg)
-      } else {
+      val error = validate(api)
+      if (null == error) {
         EsClient.httpClient.execute {
           update(apiUpdate.id).in(RestApi.Index / EsConfig.DefaultType).doc(api.toUpdateMap)
         }
+      } else {
+        error.toFutureFail
       }
     }
   }
@@ -159,46 +194,43 @@ object ApiService {
     }
   }
 
-  def validate(api: RestApi): BoolErrorRes = {
+  def validate(api: RestApi): ErrorMessages.Val = {
     if (StringUtils.isEmpty(api.path)) {
-      (false, "Empty path")
+      ErrorMessages.error_EmptyPath
     } else if (StringUtils.isEmpty(api.method)) {
-      (false, "Empty method")
+      ErrorMessages.error_EmptyMethod
     } else if (StringUtils.isEmpty(api.project)) {
-      (false, "Empty project")
+      ErrorMessages.error_EmptyProject
     } else if (StringUtils.isEmpty(api.group)) {
-      (false, "Empty group")
+      ErrorMessages.error_EmptyGroup
     } else {
-      if (null == api.version) {
-        api.version = StringUtils.EMPTY
-      }
-      (true, null)
+      null
     }
   }
 
-  def validate(apis: Seq[RestApi]): BoolErrorRes = {
+  def validate(apis: Seq[RestApi]): ErrorMessages.Val = {
     var isOk = true
     val apiSet = mutable.Set[RestApi]()
-    var errMsg: String = null
+    var errMsg: ErrorMessages.Val = null
     for (i <- 0 until apis.length if isOk) {
       val api = apis(i)
       if (apiSet.contains(api)) {
         isOk = false
-        errMsg = s"duplicate api: ${api.path}:${api.method}:${api.version}"
+        errMsg = ErrorMessages.error_DuplicateApi(s"duplicate api: ${api.path}:${api.method}")
       } else {
-        val (b, m) = validate(api)
-        if (b) {
+        val error = validate(api)
+        if (null == error) {
           apiSet += api
         } else {
           isOk = false
-          errMsg = m
+          errMsg = error
         }
       }
     }
-    (isOk, errMsg)
+    errMsg
   }
 
-  def getApiById(id: String)(implicit executor: ExecutionContext): Future[RestApi] = {
+  def getApiById(id: String): Future[RestApi] = {
     if (StringUtils.isEmpty(id)) {
       Future.successful(null)
     } else {
@@ -206,13 +238,13 @@ object ApiService {
         res match {
           case Right(success) =>
             if (success.result.isEmpty) {
-              throw IllegalRequestException(s"Api: ${id} not found.")
+              throw ErrorMessages.error_IdNonExists.toException
             } else {
               val hit = success.result.hits.hits(0)
               JacksonSupport.parse(hit.sourceAsString, classOf[RestApi])
             }
           case Left(failure) =>
-            throw RequestFailException(failure.error.reason)
+            throw ErrorMessages.error_EsRequestFail(failure).toException
         }
       })
     }

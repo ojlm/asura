@@ -2,8 +2,9 @@ package asura.core.es.service
 
 import asura.common.exceptions.RequestFailException
 import asura.common.model.BoolErrorRes
-import asura.core.es.model.{FieldKeys, IndexDocResponse}
+import asura.core.es.model.{BulkIndexDocResponse, FieldKeys, IndexDocResponse}
 import asura.core.exceptions.IndexDocFailException
+import com.sksamuel.elastic4s.http.bulk.BulkResponse
 import com.sksamuel.elastic4s.http.delete.DeleteResponse
 import com.sksamuel.elastic4s.http.index.IndexResponse
 import com.sksamuel.elastic4s.http.search.SearchResponse
@@ -19,6 +20,15 @@ trait CommonService {
     either match {
       case Right(success) =>
         IndexDocResponse(success.result.id)
+      case Left(failure) =>
+        throw new IndexDocFailException(failure.error.reason)
+    }
+  }
+
+  def toBulkIndexDocResponse(either: Either[RequestFailure, RequestSuccess[BulkResponse]]): BulkIndexDocResponse = {
+    either match {
+      case Right(_) =>
+        BulkIndexDocResponse()
       case Left(failure) =>
         throw new IndexDocFailException(failure.error.reason)
     }

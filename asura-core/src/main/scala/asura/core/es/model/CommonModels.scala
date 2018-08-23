@@ -1,3 +1,5 @@
 package asura.core.es.model
 
 case class IndexDocResponse(id: String)
+
+case class BulkIndexDocResponse()
