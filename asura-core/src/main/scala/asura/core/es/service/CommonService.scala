@@ -2,8 +2,8 @@ package asura.core.es.service
 
 import asura.common.exceptions.RequestFailException
 import asura.common.model.BoolErrorRes
-import asura.core.es.model.{BulkIndexDocResponse, FieldKeys, IndexDocResponse}
-import asura.core.exceptions.IndexDocFailException
+import asura.core.es.model.{BulkIndexDocResponse, DeleteDocResponse, FieldKeys, IndexDocResponse}
+import asura.core.exceptions.OperateDocFailException
 import com.sksamuel.elastic4s.http.bulk.BulkResponse
 import com.sksamuel.elastic4s.http.delete.DeleteResponse
 import com.sksamuel.elastic4s.http.index.IndexResponse
@@ -21,7 +21,7 @@ trait CommonService {
       case Right(success) =>
         IndexDocResponse(success.result.id)
       case Left(failure) =>
-        throw new IndexDocFailException(failure.error.reason)
+        throw new OperateDocFailException(failure.error.reason)
     }
   }
 
@@ -30,7 +30,7 @@ trait CommonService {
       case Right(_) =>
         BulkIndexDocResponse()
       case Left(failure) =>
-        throw new IndexDocFailException(failure.error.reason)
+        throw new OperateDocFailException(failure.error.reason)
     }
   }
 
@@ -39,7 +39,7 @@ trait CommonService {
       case Right(_) =>
         (true, null)
       case Left(failure) =>
-        throw new IndexDocFailException(failure.error.reason)
+        throw new OperateDocFailException(failure.error.reason)
     }
   }
 
@@ -48,7 +48,25 @@ trait CommonService {
       case Right(_) =>
         (true, null)
       case Left(failure) =>
-        throw new IndexDocFailException(failure.error.reason)
+        throw new OperateDocFailException(failure.error.reason)
+    }
+  }
+
+  def toDeleteDocResponse(either: Either[RequestFailure, RequestSuccess[DeleteResponse]]): DeleteDocResponse = {
+    either match {
+      case Right(_) =>
+        DeleteDocResponse()
+      case Left(failure) =>
+        throw new OperateDocFailException(failure.error.reason)
+    }
+  }
+
+  def toDeleteDocResponseFromBulk(either: Either[RequestFailure, RequestSuccess[BulkResponse]]): DeleteDocResponse = {
+    either match {
+      case Right(_) =>
+        DeleteDocResponse()
+      case Left(failure) =>
+        throw new OperateDocFailException(failure.error.reason)
     }
   }
 

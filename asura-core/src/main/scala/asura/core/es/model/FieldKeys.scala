@@ -72,6 +72,8 @@ object FieldKeys {
   val FIELD_USERNAME = "username"
   val FIELD_NICKNAME = "nickname"
 
+  val FIELD_NESTED_REQUEST_URLPATH = "request.urlPath"
+
   /** copied from [[FIELD_SUMMARY]] and [[FIELD_DESCRIPTION]] */
   val FIELD__TEXT = "_text"
   val FIELD__ID = "_id"

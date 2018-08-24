@@ -1,37 +1,30 @@
 package asura.core.cs
 
-import asura.common.model.BoolErrorRes
 import asura.common.util.StringUtils
+import asura.core.ErrorMessages
 import asura.core.es.model.Case
 
 object CaseValidator {
 
-  def check(c: Case, ns: String): BoolErrorRes = {
+  def check(c: Case, ns: String): ErrorMessages.Val = {
     if (!StringUtils.isEmpty(ns)) {
-      (false, "empty namespace")
+      ErrorMessages.error_EmptyNamespace
     } else {
-      val (isOk, errMsg) = check(c)
-      if (!isOk) {
-        (false, errMsg)
-      } else {
-        (true, null)
-      }
+      check(c)
     }
   }
 
-  def check(c: Case): BoolErrorRes = {
+  def check(c: Case): ErrorMessages.Val = {
     if (null == c) {
-      (false, "empty case")
+      ErrorMessages.error_EmptyCase
     } else if (StringUtils.isEmpty(c.summary)) {
-      (false, "empty summary")
+      ErrorMessages.error_EmptySummary
     } else if (null == c.request) {
-      (false, "empty request")
-    } else if (StringUtils.isEmpty(c.api)) {
-      (false, "empty api")
+      ErrorMessages.error_EmptyRequest
     } else if (StringUtils.isEmpty(c.project)) {
-      (false, "empty project")
+      ErrorMessages.error_EmptyProject
     } else if (StringUtils.isEmpty(c.group)) {
-      (false, "empty group")
+      ErrorMessages.error_EmptyGroup
     } else {
       val req = c.request
       if (StringUtils.isEmpty(req.contentType)) {
@@ -46,7 +39,17 @@ object CaseValidator {
       if (null == req.header) {
         req.header = Nil
       }
-      (true, null)
+      null
     }
+  }
+
+  def check(cs: Seq[Case]): ErrorMessages.Val = {
+    var error: ErrorMessages.Val = null
+    var hasError = false
+    for (c <- cs if !hasError) {
+      error = check(c)
+      if (null != error) hasError = true
+    }
+    error
   }
 }

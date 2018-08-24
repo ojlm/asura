@@ -2,9 +2,10 @@ package asura.core.es.service
 
 import asura.common.exceptions.{IllegalRequestException, RequestFailException}
 import asura.common.util.StringUtils
+import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.CaseValidator
 import asura.core.cs.model.QueryCase
-import asura.core.es.model.{Case, FieldKeys}
+import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
@@ -16,37 +17,42 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
 
-object CaseService {
+object CaseService extends CommonService {
 
-  def index(cs: Case) = {
-    val (isOk, errMsg) = CaseValidator.check(cs)
-    if (isOk) {
+  def index(cs: Case): Future[IndexDocResponse] = {
+    val error = CaseValidator.check(cs)
+    if (null == error) {
       EsClient.httpClient.execute {
         indexInto(Case.Index / EsConfig.DefaultType).doc(cs).refresh(RefreshPolicy.WAIT_UNTIL)
-      }
+      }.map(toIndexDocResponse(_))
     } else {
-      Future.failed(new IllegalArgumentException(errMsg))
+      error.toFutureFail
     }
   }
 
-  def index(css: Seq[Case]) = {
-    EsClient.httpClient.execute {
-      bulk(
-        css.map(cs => indexInto(Case.Index / EsConfig.DefaultType).doc(cs))
-      )
+  def index(css: Seq[Case]): Future[BulkIndexDocResponse] = {
+    val error = CaseValidator.check(css)
+    if (null != error) {
+      error.toFutureFail
+    } else {
+      EsClient.httpClient.execute {
+        bulk(
+          css.map(cs => indexInto(Case.Index / EsConfig.DefaultType).doc(cs))
+        )
+      }.map(toBulkIndexDocResponse(_))
     }
   }
 
-  def deleteDoc(id: String) = {
+  def deleteDoc(id: String): Future[DeleteDocResponse] = {
     EsClient.httpClient.execute {
       delete(id).from(Case.Index / EsConfig.DefaultType).refresh(RefreshPolicy.WAIT_UNTIL)
-    }
+    }.map(toDeleteDocResponse(_))
   }
 
-  def deleteDoc(ids: Seq[String]) = {
+  def deleteDoc(ids: Seq[String]): Future[DeleteDocResponse] = {
     EsClient.httpClient.execute {
       bulk(ids.map(id => delete(id).from(Case.Index / EsConfig.DefaultType)))
-    }
+    }.map(toDeleteDocResponseFromBulk(_))
   }
 
   def getById(id: String) = {
@@ -76,8 +82,8 @@ object CaseService {
     if (StringUtils.isEmpty(id)) {
       Future.failed(new IllegalArgumentException("empty id"))
     } else {
-      val (isOk, errMsg) = CaseValidator.check(cs)
-      if (isOk) {
+      val error = CaseValidator.check(cs)
+      if (null == error) {
         EsClient.httpClient.execute {
           val (src, params) = cs.toUpdateScriptParams
           update(id).in(Case.Index / EsConfig.DefaultType).script {
@@ -85,7 +91,7 @@ object CaseService {
           }
         }
       } else {
-        Future.failed(new IllegalArgumentException(errMsg))
+        error.toFutureFail
       }
     }
   }
@@ -139,6 +145,7 @@ object CaseService {
     if (StringUtils.isNotEmpty(query.project)) queryDefinitions += termQuery(FieldKeys.FIELD_PROJECT, query.project)
     if (StringUtils.isNotEmpty(query.api)) queryDefinitions += termQuery(FieldKeys.FIELD_API, query.api)
     if (StringUtils.isNotEmpty(query.text)) queryDefinitions += matchQuery(FieldKeys.FIELD__TEXT, query.text)
+    if (StringUtils.isNotEmpty(query.path)) queryDefinitions += wildcardQuery(FieldKeys.FIELD_NESTED_REQUEST_URLPATH, s"${query.path}*")
     EsClient.httpClient.execute {
       search(Case.Index).query(boolQuery().must(queryDefinitions))
         .from(query.pageFrom)

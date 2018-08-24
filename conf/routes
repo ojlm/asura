@@ -14,3 +14,4 @@ GET        /api                          asura.app.api.SwaggerApi.home
 ->         /api/group                    group.Routes
 ->         /api/project                  project.Routes
 ->         /api/api                      api.Routes
+->         /api/cs                       cs.Routes
