@@ -6,6 +6,7 @@ package asura.core.es.model
 case class Request(
                     val protocol: String,
                     val host: String,
+                    val urlPath: String, // same with the path from api
                     val port: Int,
                     val auth: Authorization,
                     var method: String,

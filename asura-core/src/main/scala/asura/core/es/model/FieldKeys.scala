@@ -36,6 +36,7 @@ object FieldKeys {
   val FIELD_DEFAULT = "default"
   val FIELD_PROTOCOL = "protocol"
   val FIELD_HOST = "host"
+  val FIELD_URL_PATH = "urlPath"
   val FIELD_PORT = "port"
   val FIELD_AUTH = "auth"
   val FIELD_DATA = "data"
