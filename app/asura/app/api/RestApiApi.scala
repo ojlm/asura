@@ -16,6 +16,23 @@ import scala.concurrent.ExecutionContext
 class RestApiApi @Inject()(implicit exec: ExecutionContext, val controllerComponents: SecurityComponents)
   extends BaseApi {
 
+  def getById(id: String) = Action.async { implicit req =>
+    ApiService.getById(id).map { res =>
+      res match {
+        case Left(failure) => {
+          OkApiRes(ApiResError(getI18nMessage(ErrorMessages.error_EsRequestFail(failure).name)))
+        }
+        case Right(value) => {
+          if (value.result.nonEmpty) {
+            OkApiRes(ApiRes(data = EsResponse.toSingleApiData(value.result, false)))
+          } else {
+            OkApiRes(ApiResError(getI18nMessage(ErrorMessages.error_IdNonExists.name, id)))
+          }
+        }
+      }
+    }
+  }
+
   def getOne() = Action(parse.tolerantText).async { implicit req =>
     val api = req.bodyAs(classOf[RestApi])
     ApiService.getOne(api).map { res =>
