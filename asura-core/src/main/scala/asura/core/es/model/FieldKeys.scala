@@ -71,6 +71,7 @@ object FieldKeys {
   val FIELD_EMAIL = "email"
   val FIELD_USERNAME = "username"
   val FIELD_NICKNAME = "nickname"
+  val FIELD_CUSTOM = "custom"
 
   val FIELD_NESTED_REQUEST_URLPATH = "request.urlPath"
 
