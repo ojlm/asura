@@ -15,6 +15,7 @@ case class RestApi(
                     val method: String,
                     val group: String,
                     val project: String,
+                    @deprecated("moved to environment")
                     val service: String = null,
                     var id: String = null,
                     var deprecated: Boolean = false,

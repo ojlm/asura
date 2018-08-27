@@ -2,7 +2,7 @@ package asura.core.es.model
 
 import asura.common.util.StringUtils
 import asura.core.es.EsConfig
-import com.sksamuel.elastic4s.mappings.{BasicFieldDefinition, KeywordFieldDefinition, MappingDefinition, ObjectFieldDefinition}
+import com.sksamuel.elastic4s.mappings._
 
 import scala.collection.mutable
 
@@ -11,10 +11,16 @@ case class Environment(
                         val description: String,
                         val group: String,
                         val project: String,
+                        @deprecated
                         val protocol: String,
+                        @deprecated
                         val host: String,
+                        @deprecated
                         val port: Int,
                         val auth: Authorization,
+                        val namespace: String = null,
+                        val service: String = null,
+                        val custom: Seq[KeyValueObject] = Nil,
                         var creator: String = null,
                         var createdAt: String = null,
                       ) extends BaseIndex {
@@ -51,10 +57,17 @@ object Environment extends IndexSetting {
       KeywordFieldDefinition(name = FieldKeys.FIELD_PROTOCOL),
       KeywordFieldDefinition(name = FieldKeys.FIELD_HOST),
       BasicFieldDefinition(name = FieldKeys.FIELD_PORT, `type` = "integer"),
+      KeywordFieldDefinition(name = FieldKeys.FIELD_NAMESPACE),
+      KeywordFieldDefinition(name = FieldKeys.FIELD_SERVICE),
       ObjectFieldDefinition(name = FieldKeys.FIELD_AUTH, fields = Seq(
         KeywordFieldDefinition(name = FieldKeys.FIELD_TYPE),
         ObjectFieldDefinition(name = FieldKeys.FIELD_DATA, dynamic = Some("false")),
-      ))
+      )),
+      NestedFieldDefinition(name = FieldKeys.FIELD_CUSTOM, fields = Seq(
+        KeywordFieldDefinition(name = FieldKeys.FIELD_KEY),
+        KeywordFieldDefinition(name = FieldKeys.FIELD_VALUE),
+        BasicFieldDefinition(name = FieldKeys.FIELD_ENABLED, `type` = "boolean"),
+      )),
     )
   )
 }
