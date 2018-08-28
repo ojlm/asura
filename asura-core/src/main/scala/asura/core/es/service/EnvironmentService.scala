@@ -1,40 +1,45 @@
 package asura.core.es.service
 
 import asura.common.exceptions.{IllegalRequestException, RequestFailException}
-import asura.common.model.{ApiMsg, BoolErrorRes}
+import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
-import asura.core.es.model.{Environment, FieldKeys}
+import asura.core.ErrorMessages
+import asura.core.concurrent.ExecutionContextManager.sysGlobal
+import asura.core.cs.model.QueryEnv
+import asura.core.es.model.{DeleteDocResponse, Environment, FieldKeys, IndexDocResponse}
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
+import com.sksamuel.elastic4s.searches.queries.QueryDefinition
 import com.typesafe.scalalogging.Logger
 
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
 
-object EnvironmentService {
+object EnvironmentService extends CommonService {
 
   val logger = Logger("EnvironmentService")
 
-  def index(env: Environment) = {
-    val (isOk, errMsg) = validate(env)
-    if (!isOk) {
-      FutureUtils.illegalArgs(errMsg)
+  def index(env: Environment): Future[IndexDocResponse] = {
+    val error = validate(env)
+    if (null != error) {
+      error.toFutureFail
     } else {
       EsClient.httpClient.execute {
         indexInto(Environment.Index / EsConfig.DefaultType).doc(env).refresh(RefreshPolicy.WAIT_UNTIL)
-      }
+      }.map(toIndexDocResponse(_))
     }
   }
 
-  def deleteDoc(id: String) = {
+  def deleteDoc(id: String): Future[DeleteDocResponse] = {
     if (StringUtils.isEmpty(id)) {
-      FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
+      ErrorMessages.error_EmptyId.toFutureFail
     } else {
       EsClient.httpClient.execute {
         delete(id).from(Environment.Index / EsConfig.DefaultType).refresh(RefreshPolicy.WAIT_UNTIL)
-      }
+      }.map(toDeleteDocResponse(_))
     }
   }
 
@@ -59,11 +64,11 @@ object EnvironmentService {
 
   def updateEnv(id: String, env: Environment) = {
     if (StringUtils.isEmpty(id)) {
-      FutureUtils.illegalArgs("Empty id")
+      ErrorMessages.error_EmptyId.toFutureFail
     } else {
-      val (isOk, errMsg) = validate(env)
-      if (!isOk) {
-        FutureUtils.illegalArgs(errMsg)
+      val error = validate(env)
+      if (null != error) {
+        error.toFutureFail
       } else {
         EsClient.httpClient.execute {
           update(id).in(Environment.Index / EsConfig.DefaultType)
@@ -74,17 +79,15 @@ object EnvironmentService {
     }
   }
 
-  def validate(env: Environment): BoolErrorRes = {
+  def validate(env: Environment): ErrorMessages.Val = {
     if (StringUtils.isEmpty(env.summary)) {
-      (false, "Empty summary")
+      ErrorMessages.error_EmptySummary
     } else if (StringUtils.isEmpty(env.group)) {
-      (false, "Empty group")
+      ErrorMessages.error_EmptyGroup
     } else if (StringUtils.isEmpty(env.project)) {
-      (false, "Empty project")
-    } else if (Option(env.port).isDefined && (env.port < 0 || env.port > 65535)) {
-      (false, "Illegal port")
+      ErrorMessages.error_EmptyProject
     } else {
-      (true, null)
+      null
     }
   }
 
@@ -105,6 +108,20 @@ object EnvironmentService {
             throw RequestFailException(failure.error.reason)
         }
       })
+    }
+  }
+
+  def queryEnv(query: QueryEnv) = {
+    val queryDefinitions = ArrayBuffer[QueryDefinition]()
+    if (StringUtils.isNotEmpty(query.text)) queryDefinitions += matchQuery(FieldKeys.FIELD__TEXT, query.text)
+    if (StringUtils.isNotEmpty(query.group)) queryDefinitions += termQuery(FieldKeys.FIELD_GROUP, query.group)
+    if (StringUtils.isNotEmpty(query.project)) queryDefinitions += termQuery(FieldKeys.FIELD_PROJECT, query.project)
+    EsClient.httpClient.execute {
+      search(Environment.Index).query(boolQuery().must(queryDefinitions))
+        .from(query.pageFrom)
+        .size(query.pageSize)
+        .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
+        .sourceInclude(defaultIncludeFields :+ FieldKeys.FIELD_PATH :+ FieldKeys.FIELD_METHOD)
     }
   }
 }
