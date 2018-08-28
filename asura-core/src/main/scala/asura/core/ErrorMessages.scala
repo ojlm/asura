@@ -24,6 +24,7 @@ object ErrorMessages extends Enumeration {
   val error_EmptySummary = Val("Empty summary")
   val error_EmptyRequest = Val("Empty request body")
   val error_EmptyNamespace = Val("Empty namespace")
+  val error_EmptyId = Val("Empty id")
 
   def error_DuplicateApi(msg: String) = Val(s"Duplicate api: $msg")
 
