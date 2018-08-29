@@ -19,7 +19,6 @@ case class Environment(
                         val port: Int,
                         val auth: Authorization,
                         val namespace: String = null,
-                        val service: String = null,
                         val custom: Seq[KeyValueObject] = Nil,
                         var creator: String = null,
                         var createdAt: String = null,
@@ -58,7 +57,6 @@ object Environment extends IndexSetting {
       KeywordFieldDefinition(name = FieldKeys.FIELD_HOST),
       BasicFieldDefinition(name = FieldKeys.FIELD_PORT, `type` = "integer"),
       KeywordFieldDefinition(name = FieldKeys.FIELD_NAMESPACE),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_SERVICE),
       ObjectFieldDefinition(name = FieldKeys.FIELD_AUTH, fields = Seq(
         KeywordFieldDefinition(name = FieldKeys.FIELD_TYPE),
         ObjectFieldDefinition(name = FieldKeys.FIELD_DATA, dynamic = Some("false")),
