@@ -25,5 +25,5 @@ GET         /:id          asura.app.api.GroupApi.getById(id: String)
 #            $ref: '#/components/schemas/asura.core.es.model.IndexDocResponse'
 ###
 PUT         /             asura.app.api.GroupApi.put()
-
+POST        /             asura.app.api.GroupApi.update()
 POST        /query        asura.app.api.GroupApi.query()

@@ -2,7 +2,7 @@ package asura.core.es.service
 
 import asura.common.exceptions.RequestFailException
 import asura.common.model.BoolErrorRes
-import asura.core.es.model.{BulkIndexDocResponse, DeleteDocResponse, FieldKeys, IndexDocResponse}
+import asura.core.es.model._
 import asura.core.exceptions.OperateDocFailException
 import com.sksamuel.elastic4s.http.bulk.BulkResponse
 import com.sksamuel.elastic4s.http.delete.DeleteResponse
@@ -81,6 +81,15 @@ trait CommonService {
         }
       case Left(failure) =>
         throw RequestFailException(failure.error.reason)
+    }
+  }
+
+  def toUpdateDocResponse(either: Either[RequestFailure, RequestSuccess[UpdateResponse]]): UpdateDocResponse = {
+    either match {
+      case Right(success) =>
+        UpdateDocResponse(id = success.result.id, result = success.result.result)
+      case Left(failure) =>
+        throw new OperateDocFailException(failure.error.reason)
     }
   }
 }
