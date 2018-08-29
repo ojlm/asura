@@ -6,7 +6,7 @@ import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.CommonValidator
 import asura.core.cs.model.QueryGroup
-import asura.core.es.model.{FieldKeys, Group, IndexDocResponse}
+import asura.core.es.model.{FieldKeys, Group, IndexDocResponse, UpdateDocResponse}
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
@@ -71,14 +71,14 @@ object GroupService extends CommonService {
     }
   }
 
-  def updateGroup(group: Group) = {
+  def updateGroup(group: Group): Future[UpdateDocResponse] = {
     if (null == group || null == group.id) {
-      FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
+      ErrorMessages.error_EmptyId.toFutureFail
     } else {
       EsClient.httpClient.execute {
         update(group.id).in(Group.Index / EsConfig.DefaultType).doc(group.toUpdateMap)
       }
-    }
+    }.map(toUpdateDocResponse(_))
   }
 
   def docExists(id: String) = {

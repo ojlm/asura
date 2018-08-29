@@ -7,3 +7,5 @@ error_IdNonExists=该ID({0})不存在
 error_GroupIdEmpty=分组ID不能为空
 error_IllegalProjectId=项目ID不符合规范
 error_ProjectExists=项目已经存在
+error_IndexSuccess=创建成功
+error_UpdateSuccess=更新成功
