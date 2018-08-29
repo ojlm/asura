@@ -41,6 +41,13 @@ class ProjectApi @Inject()(implicit exec: ExecutionContext, val controllerCompon
     }
   }
 
+  def update() = Action(parse.tolerantText).async { implicit req =>
+    val project = req.bodyAs(classOf[Project])
+    ProjectService.updateProject(project).map { res =>
+      OkApiRes(ApiRes(data = res, msg = getI18nMessage(ErrorMessages.error_UpdateSuccess.name)))
+    }
+  }
+
   def query() = Action(parse.tolerantText).async { implicit req =>
     val queryProject = req.bodyAs(classOf[QueryProject])
     ProjectService.queryProject(queryProject).map(toActionResult(_, false))

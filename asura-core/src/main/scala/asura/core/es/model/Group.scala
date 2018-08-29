@@ -1,5 +1,6 @@
 package asura.core.es.model
 
+import asura.common.util.StringUtils
 import asura.core.es.EsConfig
 import com.sksamuel.elastic4s.mappings.{KeywordFieldDefinition, MappingDefinition}
 
@@ -17,6 +18,9 @@ case class Group(
   override def toUpdateMap: Map[String, Any] = {
     val m = mutable.Map[String, Any]()
     checkCommFieldsToUpdate(m)
+    if (StringUtils.isNotEmpty(avatar)) {
+      m += (FieldKeys.FIELD_AVATAR -> avatar)
+    }
     m.toMap
   }
 }

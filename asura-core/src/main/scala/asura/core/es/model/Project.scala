@@ -1,5 +1,6 @@
 package asura.core.es.model
 
+import asura.common.util.StringUtils
 import asura.core.es.EsConfig
 import com.sksamuel.elastic4s.mappings.{KeywordFieldDefinition, MappingDefinition}
 
@@ -19,8 +20,13 @@ case class Project(
   override def toUpdateMap: Map[String, Any] = {
     val m = mutable.Map[String, Any]()
     checkCommFieldsToUpdate(m)
+    if (StringUtils.isNotEmpty(avatar)) {
+      m += (FieldKeys.FIELD_AVATAR -> avatar)
+    }
     m.toMap
   }
+
+  def generateDocId() = s"${group}_${id}"
 }
 
 object Project extends IndexSetting {
