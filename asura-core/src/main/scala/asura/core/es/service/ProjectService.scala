@@ -6,7 +6,7 @@ import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.CommonValidator
 import asura.core.cs.model.QueryProject
-import asura.core.es.model.{FieldKeys, IndexDocResponse, Project}
+import asura.core.es.model.{FieldKeys, IndexDocResponse, Project, UpdateDocResponse}
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
@@ -32,7 +32,7 @@ object ProjectService extends CommonService {
             EsClient.httpClient.execute {
               indexInto(Project.Index / EsConfig.DefaultType)
                 .doc(project)
-                .id(s"${project.group}_${project.id}")
+                .id(project.generateDocId())
                 .refresh(RefreshPolicy.WAIT_UNTIL)
             }.map(toIndexDocResponse(_))
           }
@@ -68,13 +68,13 @@ object ProjectService extends CommonService {
     }
   }
 
-  def updateProject(project: Project) = {
-    if (null == project || StringUtils.isEmpty(project.id)) {
+  def updateProject(project: Project): Future[UpdateDocResponse] = {
+    if (null == project || StringUtils.isEmpty(project.group) || StringUtils.isEmpty(project.id)) {
       ErrorMessages.error_IdNonExists.toFutureFail
     } else {
       EsClient.httpClient.execute {
-        update(project.id).in(Project.Index / EsConfig.DefaultType).doc(project.toUpdateMap)
-      }
+        update(project.generateDocId()).in(Project.Index / EsConfig.DefaultType).doc(project.toUpdateMap)
+      }.map(toUpdateDocResponse(_))
     }
   }
 
