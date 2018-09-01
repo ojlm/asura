@@ -33,7 +33,7 @@ class EnvApi @Inject()(implicit exec: ExecutionContext, val controllerComponents
     }
   }
 
-  def put() = Action(parse.tolerantText).async { implicit req =>
+  def put() = Action(parse.byteString).async { implicit req =>
     val env = req.bodyAs(classOf[Environment])
     env.fillCommonFields(getProfileId())
     EnvironmentService.index(env).map { res =>
@@ -41,7 +41,7 @@ class EnvApi @Inject()(implicit exec: ExecutionContext, val controllerComponents
     }
   }
 
-  def query() = Action(parse.tolerantText).async { implicit req =>
+  def query() = Action(parse.byteString).async { implicit req =>
     val queryEnv = req.bodyAs(classOf[QueryEnv])
     EnvironmentService.queryEnv(queryEnv).map(toActionResult(_, false))
   }
