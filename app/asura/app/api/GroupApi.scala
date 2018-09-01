@@ -33,7 +33,7 @@ class GroupApi @Inject()(implicit exec: ExecutionContext, val controllerComponen
     }
   }
 
-  def put() = Action(parse.tolerantText).async { implicit req =>
+  def put() = Action(parse.byteString).async { implicit req =>
     val group = req.bodyAs(classOf[Group])
     group.fillCommonFields(getProfileId())
     GroupService.index(group).map { res =>
@@ -41,12 +41,12 @@ class GroupApi @Inject()(implicit exec: ExecutionContext, val controllerComponen
     }
   }
 
-  def query() = Action(parse.tolerantText).async { implicit req =>
+  def query() = Action(parse.byteString).async { implicit req =>
     val queryGroup = req.bodyAs(classOf[QueryGroup])
     GroupService.queryGroup(queryGroup).map(toActionResult(_, false))
   }
 
-  def update() = Action(parse.tolerantText).async { implicit req =>
+  def update() = Action(parse.byteString).async { implicit req =>
     val group = req.bodyAs(classOf[Group])
     GroupService.updateGroup(group).map { res =>
       OkApiRes(ApiRes(data = res, msg = getI18nMessage(ErrorMessages.error_UpdateSuccess.name)))

@@ -39,7 +39,7 @@ class CaseApi @Inject()(implicit exec: ExecutionContext, val controllerComponent
     }
   }
 
-  def put() = Action(parse.tolerantText).async { implicit req =>
+  def put() = Action(parse.byteString).async { implicit req =>
     val cs = req.bodyAs(classOf[Case])
     cs.fillCommonFields(getProfileId())
     CaseService.index(cs).map { res =>
@@ -47,7 +47,7 @@ class CaseApi @Inject()(implicit exec: ExecutionContext, val controllerComponent
     }
   }
 
-  def query() = Action(parse.tolerantText).async { implicit req =>
+  def query() = Action(parse.byteString).async { implicit req =>
     val queryCase = req.bodyAs(classOf[QueryCase])
     CaseService.queryCase(queryCase).map(toActionResult(_, true))
   }

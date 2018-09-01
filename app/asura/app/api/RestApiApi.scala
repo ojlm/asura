@@ -33,7 +33,7 @@ class RestApiApi @Inject()(implicit exec: ExecutionContext, val controllerCompon
     }
   }
 
-  def getOne() = Action(parse.tolerantText).async { implicit req =>
+  def getOne() = Action(parse.byteString).async { implicit req =>
     val api = req.bodyAs(classOf[RestApi])
     ApiService.getOne(api).map { res =>
       res match {
@@ -51,7 +51,7 @@ class RestApiApi @Inject()(implicit exec: ExecutionContext, val controllerCompon
     }
   }
 
-  def put() = Action(parse.tolerantText).async { implicit req =>
+  def put() = Action(parse.byteString).async { implicit req =>
     val api = req.bodyAs(classOf[RestApi])
     api.fillCommonFields(getProfileId())
     ApiService.index(api).map { res =>
@@ -59,7 +59,7 @@ class RestApiApi @Inject()(implicit exec: ExecutionContext, val controllerCompon
     }
   }
 
-  def query() = Action(parse.tolerantText).async { implicit req =>
+  def query() = Action(parse.byteString).async { implicit req =>
     val query = req.bodyAs(classOf[QueryApi])
     ApiService.queryApi(query).map(toActionResult(_, true))
   }

@@ -30,8 +30,8 @@ trait BaseApi extends Security[CommonProfile] {
   }
 
 
-  implicit class JsonToClass(req: Request[String]) {
-    def bodyAs[T <: AnyRef](c: Class[T]): T = JsonUtils.parse[T](req.body, c)
+  implicit class JsonToClass(req: Request[ByteString]) {
+    def bodyAs[T <: AnyRef](c: Class[T]): T = JsonUtils.parse[T](req.body.decodeString("UTF-8"), c)
   }
 
   def toActionResult(either: Either[RequestFailure, RequestSuccess[SearchResponse]], hasId: Boolean = true): Result = {
