@@ -26,6 +26,7 @@ libraryDependencies ++= Seq(
   ws,
   filters,
   "org.webjars" % "swagger-ui" % "3.17.4",
+  "org.webjars.npm" % "swagger-editor-dist" % "3.1.16",
   "org.pac4j" %% "play-pac4j" % "6.0.0",
   "org.pac4j" % "pac4j-http" % "3.0.1",
   "org.pac4j" % "pac4j-ldap" % "3.0.1",

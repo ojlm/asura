@@ -2,17 +2,25 @@
 # https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md
 # http://localhost:9000/docs/swagger-ui/index.html?url=/assets/swagger.json
 ### NoDocs ###
-GET        /                             controllers.Assets.at(path="/public", file="index.html")
+GET        /                                    controllers.Assets.at(path="/public", file="index.html")
 ### NoDocs ###
-GET        /docs/swagger-ui/*file        controllers.Assets.at(path:String="/public/lib/swagger-ui", file:String)
+GET        /openapi/swagger-ui/*file            controllers.Assets.at(path:String="/public/lib/swagger-ui", file:String)
 ### NoDocs ###
-GET        /assets/*file                 controllers.Assets.versioned(path="/public", file: Asset)
+GET        /openapi/swagger-editor/*file        controllers.Assets.at(path:String="/public/lib/swagger-editor-dist", file:String)
 ### NoDocs ###
-GET        /api                          asura.app.api.SwaggerApi.home
+GET        /assets/*file                        controllers.Assets.versioned(path="/public", file: Asset)
+### NoDocs ###
+GET        /openapi                             asura.app.api.SwaggerApi.home
+### NoDocs ###
+GET        /openapi/                            asura.app.api.SwaggerApi.home
+### NoDocs ###
+GET        /openapi/editor                      asura.app.api.SwaggerApi.editor
+### NoDocs ###
+GET        /openapi/editor/                     asura.app.api.SwaggerApi.editor
 
-->         /api/user                     user.Routes
-->         /api/group                    group.Routes
-->         /api/project                  project.Routes
-->         /api/api                      api.Routes
-->         /api/cs                       cs.Routes
-->         /api/env                      env.Routes
+->         /api/user                            user.Routes
+->         /api/group                           group.Routes
+->         /api/project                         project.Routes
+->         /api/api                             api.Routes
+->         /api/cs                              cs.Routes
+->         /api/env                             env.Routes
