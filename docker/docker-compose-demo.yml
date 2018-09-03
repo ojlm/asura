@@ -8,6 +8,11 @@ services:
       - "9300:9300"
     environment:
       discovery.type: "single-node"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
   mysql:
     image: mysql:5.7.18
     ports:
@@ -38,5 +43,10 @@ services:
       - elasticsearch
       - mysql
       - ldap-service
+    depends_on:
+      - elasticsearch
+      - mysql
+      - ldap-service
+    restart: on-failure
     environment:
       APPLICATION_SECRET: "0><>0zv0oG>JH6>YHq4Hs=5x;ht8VB>x`_lOWo<cb309F3n`k;gy1j;i[cd;zE>u"
