@@ -1,6 +1,7 @@
 FROM openjdk:8
-ADD ./target/universal/stage /opt/asura
+COPY ./target/universal/stage /opt/asura
 EXPOSE 9000
-ENTRYPOINT /opt/asura/bin/asura \
+CMD /opt/asura/bin/asura \
   -J-Xms128M -J-Xmx1048m \
-  -Dconfig.resource=docker.conf
+  -Dconfig.resource=docker.conf \
+  -Dpidfile.path=/dev/null
