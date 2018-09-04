@@ -170,11 +170,11 @@ object JobService {
       queryDefinitions += matchQuery(FieldKeys.FIELD__TEXT, query.text)
     }
     EsClient.httpClient.execute {
+      if (Option(query.from).isEmpty || query.from < 0) query.from = 0
+      if (Option(query.size).isEmpty || query.size < 0) query.size = 0
       val clause = search(Job.Index).query {
         boolQuery().must(queryDefinitions)
-      }
-      if (Option(query.from).isDefined && query.from >= 0) clause.from(query.from)
-      if (Option(query.size).isDefined && query.size >= 0) clause.size(query.size)
+      }.from(query.from).size(query.size)
       clause
     }
   }
