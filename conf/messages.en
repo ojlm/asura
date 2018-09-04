@@ -9,3 +9,4 @@ error_IllegalProjectId=illegal project id
 error_ProjectExists=project already exists
 error_IndexSuccess=Create success
 error_UpdateSuccess=Update success
+error_ServerError=Sever internal error
