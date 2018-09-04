@@ -3,6 +3,7 @@ package asura.app.api
 import asura.app.api.BaseApi.OkApiRes
 import asura.common.model.{ApiRes, ApiResError}
 import asura.core.ErrorMessages
+import asura.core.cs.CaseRunner
 import asura.core.cs.model.QueryCase
 import asura.core.es.EsResponse
 import asura.core.es.model.Case
@@ -50,5 +51,12 @@ class CaseApi @Inject()(implicit exec: ExecutionContext, val controllerComponent
   def query() = Action(parse.byteString).async { implicit req =>
     val queryCase = req.bodyAs(classOf[QueryCase])
     CaseService.queryCase(queryCase).map(toActionResult(_, true))
+  }
+
+  def test() = Action(parse.byteString).async { implicit req =>
+    val cs = req.bodyAs(classOf[Case])
+    CaseRunner.test("test", cs).map { res =>
+      OkApiRes(ApiRes(data = res))
+    }
   }
 }
