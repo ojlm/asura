@@ -9,3 +9,4 @@ error_IllegalProjectId=项目ID不符合规范
 error_ProjectExists=项目已经存在
 error_IndexSuccess=创建成功
 error_UpdateSuccess=更新成功
+error_ServerError=服务器内部错误
