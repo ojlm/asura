@@ -7,17 +7,20 @@ import com.sksamuel.elastic4s.mappings.{BasicFieldDefinition, _}
 
 import scala.collection.mutable
 
+/**
+  * is useProxy is `true`, then use `namespace` in env first then can fall back to `namespace`
+  */
 case class Case(
                  val summary: String,
                  val description: String,
                  val group: String,
                  val project: String,
-                 val api: String,
                  val request: Request,
                  val assert: Map[String, Any],
                  val namespace: String = null,
                  val useProxy: Boolean = false,
                  val env: String = StringUtils.EMPTY,
+                 @deprecated("如果 env 不是自认为使用env")
                  val useEnv: Boolean = false,
                  val labels: Seq[LabelRef] = Nil,
                  var creator: String = null,
@@ -28,17 +31,9 @@ case class Case(
     val sb = StringBuilder.newBuilder
     val m = mutable.Map[String, Any]()
     checkCommFieldsToUpdate(m, sb)
-    if (StringUtils.isNotEmpty(api)) {
-      m += (FieldKeys.FIELD_API -> api)
-      addScriptUpdateItem(sb, FieldKeys.FIELD_API)
-    }
     if (StringUtils.isNotEmpty(env)) {
       m += (FieldKeys.FIELD_ENV -> env)
       addScriptUpdateItem(sb, FieldKeys.FIELD_ENV)
-    }
-    if (Option(useEnv).isDefined) {
-      m += (FieldKeys.FIELD_USE_ENV -> useEnv)
-      addScriptUpdateItem(sb, FieldKeys.FIELD_USE_ENV)
     }
     if (null != request) {
       m += (FieldKeys.FIELD_REQUEST -> JacksonSupport.mapper.convertValue(request, classOf[java.util.Map[String, Any]]))
@@ -72,11 +67,9 @@ object Case extends IndexSetting {
     fields = BaseIndex.fieldDefinitions ++ Seq(
       KeywordFieldDefinition(name = FieldKeys.FIELD_GROUP),
       KeywordFieldDefinition(name = FieldKeys.FIELD_PROJECT),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_API),
       KeywordFieldDefinition(name = FieldKeys.FIELD_ENV),
       KeywordFieldDefinition(name = FieldKeys.FIELD_NAMESPACE),
       BasicFieldDefinition(name = FieldKeys.FIELD_USE_PROXY, `type` = "boolean"),
-      BasicFieldDefinition(name = FieldKeys.FIELD_USE_ENV, `type` = "boolean"),
       NestedFieldDefinition(name = FieldKeys.FIELD_LABELS, fields = Seq(
         KeywordFieldDefinition(name = FieldKeys.FIELD_NAME),
       )),

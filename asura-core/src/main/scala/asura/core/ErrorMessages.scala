@@ -28,6 +28,9 @@ object ErrorMessages extends Enumeration {
   val error_IndexSuccess = Val("Create success")
   val error_UpdateSuccess = Val("Update success")
   val error_ServerError = Val("Server Error")
+  val error_EmptyEnv = Val("Empty env")
+
+  def error_NotRegisteredAuth(authType: String) = Val(authType)
 
   def error_DuplicateApi(msg: String) = Val(s"Duplicate api: $msg")
 

@@ -3,11 +3,10 @@ package asura.core.http
 import akka.http.scaladsl.model.HttpHeader.ParsingResult.{Error, Ok}
 import akka.http.scaladsl.model.headers.{Cookie, RawHeader}
 import akka.http.scaladsl.model.{ErrorInfo, HttpHeader}
-import asura.common.exceptions.InvalidStatusException
 import asura.common.util.StringUtils
-import asura.core.CoreConfig
 import asura.core.cs.CaseContext
-import asura.core.es.model.{Case, Environment, RestApi}
+import asura.core.es.model.{Case, Environment}
+import asura.core.{CoreConfig, ErrorMessages}
 import com.typesafe.scalalogging.Logger
 
 import scala.collection.immutable
@@ -17,7 +16,7 @@ object HeaderUtils {
 
   val logger = Logger("HeaderUtils")
 
-  def toHeaders(cs: Case, context: CaseContext, api: RestApi, env: Environment = null): immutable.Seq[HttpHeader] = {
+  def toHeaders(cs: Case, context: CaseContext, env: Environment = null): immutable.Seq[HttpHeader] = {
     val headers = ArrayBuffer[HttpHeader]()
     val request = cs.request
     if (null != request) {
@@ -41,13 +40,17 @@ object HeaderUtils {
       }
     }
     if (Option(cs.useProxy).isDefined && cs.useProxy) {
-      if (null == api || StringUtils.isEmpty(api.service) || StringUtils.isEmpty(cs.namespace)) {
-        throw InvalidStatusException(
-          s"invalid data when use proxy, ns: ${cs.namespace}, service: ${if (null == api) "null" else api.service}")
+      val ns = if (null != env) {
+        env.namespace
       } else {
+        cs.namespace
+      }
+      if (StringUtils.isNotEmpty(ns)) {
         val dst = StringBuilder.newBuilder
-        dst.append("/").append(cs.namespace).append("/").append(api.service)
+        dst.append("/").append(cs.namespace).append("/").append(cs.group).append("/").append(cs.project)
         headers += RawHeader(CoreConfig.proxyIdentifier, dst.toString)
+      } else {
+        ErrorMessages.error_EmptyNamespace.toFutureFail
       }
     }
     headers.toList

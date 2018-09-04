@@ -6,31 +6,21 @@ import java.nio.charset.StandardCharsets
 import akka.http.scaladsl.model.Uri
 import asura.common.exceptions.InvalidStatusException
 import asura.core.cs.CaseContext
-import asura.core.es.model.{Case, Environment, RestApi}
+import asura.core.es.model.{Case, Environment}
 import asura.core.util.StringTemplate
 
 object UriUtils {
 
   val UTF8 = StandardCharsets.UTF_8.name()
 
-  def toUri(cs: Case, context: CaseContext, api: RestApi, env: Environment = null): Uri = {
-    if (cs.useEnv) {
-      Uri.from(
-        scheme = env.protocol,
-        host = env.host,
-        port = env.port,
-        path = renderPath(api.path, cs, context),
-        queryString = buildQueryString(cs, context)
-      )
-    } else {
-      Uri.from(
-        scheme = cs.request.protocol,
-        host = cs.request.host,
-        port = cs.request.port,
-        path = renderPath(api.path, cs, context),
-        queryString = buildQueryString(cs, context)
-      )
-    }
+  def toUri(cs: Case, context: CaseContext, env: Environment = null): Uri = {
+    Uri.from(
+      scheme = cs.request.protocol,
+      host = cs.request.host,
+      port = cs.request.port,
+      path = renderPath(cs.request.urlPath, cs, context),
+      queryString = buildQueryString(cs, context)
+    )
   }
 
   def mapToQueryString(map: Map[String, Any], context: CaseContext = null): String = {

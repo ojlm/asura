@@ -6,7 +6,7 @@ import asura.common.util.StringUtils
 import asura.core.CoreConfig._
 import asura.core.cs.asserts.HttpResponseAssert
 import asura.core.es.model.{Case, KeyValueObject}
-import asura.core.es.service.{ApiService, EnvironmentService}
+import asura.core.es.service.EnvironmentService
 import asura.core.http.{HttpContentTypes, HttpEngine}
 import com.typesafe.scalalogging.Logger
 
@@ -18,13 +18,9 @@ object CaseRunner {
 
   def test(id: String, cs: Case, context: CaseContext = CaseContext()): Future[CaseResult] = {
     context.eraseCurrentData()
-    if ((cs.useEnv && StringUtils.isNotEmpty(cs.env)) || (Option(cs.useProxy).isDefined && cs.useProxy)) {
-      val apiEnv = for {
-        api <- ApiService.getApiById(cs.api)
-        env <- EnvironmentService.getEnvById(cs.env)
-      } yield (api, env)
-      apiEnv
-        .flatMap(apiEnv => CaseParser.toHttpRequest(cs, context, apiEnv._1, apiEnv._2))
+    if (StringUtils.isNotEmpty(cs.env)) {
+      EnvironmentService.getEnvById(cs.env)
+        .flatMap(env => CaseParser.toHttpRequest(cs, context, env))
         .flatMap(toCaseRequestTuple)
         .flatMap(tuple => {
           if (Option(cs.useProxy).isDefined && cs.useProxy) {
@@ -42,17 +38,15 @@ object CaseRunner {
           }
         })
     } else {
-      ApiService.getApiById(cs.api).flatMap(api => {
-        CaseParser.toHttpRequest(cs, context, api)
-          .flatMap(toCaseRequestTuple)
-          .flatMap(tuple => {
-            HttpEngine.singleRequest(tuple._1).flatMap(res => {
-              Unmarshal(res.entity).to[String].map(resBody => {
-                HttpResponseAssert.generateCaseReport(id, cs.assert, res, resBody, tuple._2, context)
-              })
+      CaseParser.toHttpRequest(cs, context)
+        .flatMap(toCaseRequestTuple)
+        .flatMap(tuple => {
+          HttpEngine.singleRequest(tuple._1).flatMap(res => {
+            Unmarshal(res.entity).to[String].map(resBody => {
+              HttpResponseAssert.generateCaseReport(id, cs.assert, res, resBody, tuple._2, context)
             })
           })
-      })
+        })
     }
   }
 
