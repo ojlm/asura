@@ -19,7 +19,8 @@ class ErrorHandler @Inject()(messagesApi: MessagesApi, langs: Langs) extends Htt
   lazy val logger = LoggerFactory.getLogger(classOf[ErrorHandler])
 
   override def onClientError(request: RequestHeader, statusCode: Int, message: String): Future[Result] = {
-    Future.successful(OkApiRes(ApiResError(s"${statusCode}${if (StringUtils.isNotEmpty(message)) ": " + message else ""}")))
+    val msg = s""""${request.method} ${request.uri}" ${statusCode} ${if (StringUtils.isNotEmpty(message)) message else ""}"""
+    Future.successful(OkApiRes(ApiResError(msg)))
   }
 
   override def onServerError(request: RequestHeader, exception: Throwable): Future[Result] = {
