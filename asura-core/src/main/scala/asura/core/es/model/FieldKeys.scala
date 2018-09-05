@@ -73,6 +73,7 @@ object FieldKeys {
   val FIELD_NICKNAME = "nickname"
   val FIELD_CUSTOM = "custom"
   val FIELD_RAW_URL = "rawUrl"
+  val FIELD_OPENAPI = "openapi"
 
   val FIELD_NESTED_REQUEST_URLPATH = "request.urlPath"
 

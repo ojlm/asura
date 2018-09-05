@@ -10,7 +10,8 @@ class SwaggerApi @Inject()(val controllerComponents: SecurityComponents) extends
     Redirect("/openapi/swagger-ui/index.html?url=/assets/swagger.json", MOVED_PERMANENTLY)
   }
 
-  def editor() = Action {
-    Redirect("/openapi/swagger-editor/index.html", MOVED_PERMANENTLY)
+  def editor(url: Option[String]) = Action {
+    val param = if (url.nonEmpty) s"?url=${url.get}" else ""
+    Redirect(s"/openapi/swagger-editor/index.html${param}", MOVED_PERMANENTLY)
   }
 }

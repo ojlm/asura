@@ -1,0 +1,2 @@
+GET         /:group/:id        asura.app.api.ProjectApi.getOpenApi(group: String, id: String)
+POST        /:group/:id        asura.app.api.ProjectApi.updateOpenApi(group: String, id: String)

@@ -1,10 +1,9 @@
 package asura.app.api
 
 import asura.app.api.BaseApi.OkApiRes
-import asura.common.model.{ApiRes, ApiResError}
+import asura.common.model.ApiRes
 import asura.core.ErrorMessages
 import asura.core.cs.model.QueryProject
-import asura.core.es.EsResponse
 import asura.core.es.model.Project
 import asura.core.es.service.ProjectService
 import javax.inject.{Inject, Singleton}
@@ -17,20 +16,7 @@ class ProjectApi @Inject()(implicit exec: ExecutionContext, val controllerCompon
   extends BaseApi {
 
   def getById(group: String, id: String) = Action.async { implicit req =>
-    ProjectService.getById(group, id).map { res =>
-      res match {
-        case Left(failure) => {
-          OkApiRes(ApiResError(getI18nMessage(ErrorMessages.error_EsRequestFail(failure).name)))
-        }
-        case Right(value) => {
-          if (value.result.nonEmpty) {
-            OkApiRes(ApiRes(data = EsResponse.toSingleApiData(value.result, false)))
-          } else {
-            OkApiRes(ApiResError(getI18nMessage(ErrorMessages.error_IdNonExists.name, id)))
-          }
-        }
-      }
-    }
+    ProjectService.getById(group, id).map(res => toActionResultWithSingleData(res, Project.generateDocId(group, id), false))
   }
 
   def put() = Action(parse.byteString).async { implicit req =>
@@ -51,5 +37,16 @@ class ProjectApi @Inject()(implicit exec: ExecutionContext, val controllerCompon
   def query() = Action(parse.byteString).async { implicit req =>
     val queryProject = req.bodyAs(classOf[QueryProject])
     ProjectService.queryProject(queryProject).map(toActionResult(_, false))
+  }
+
+  def getOpenApi(group: String, id: String) = Action.async { implicit req =>
+    ProjectService.getOpenApi(group, id).map(res => toActionResultWithSingleData(res, Project.generateDocId(group, id), false))
+  }
+
+  def updateOpenApi(group: String, id: String) = Action(parse.byteString).async { implicit req =>
+    val openapi = req.body.decodeString("UTF-8")
+    ProjectService.updateOpenApi(group, id, openapi).map { res =>
+      OkApiRes(ApiRes(data = res, msg = getI18nMessage(ErrorMessages.error_UpdateSuccess.name)))
+    }
   }
 }

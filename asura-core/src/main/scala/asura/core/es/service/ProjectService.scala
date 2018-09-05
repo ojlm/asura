@@ -52,19 +52,49 @@ object ProjectService extends CommonService {
     }
   }
 
-  def getById(group: String, id: String) = {
+  def getById(group: String, id: String, includeOpenapi: Boolean = false) = {
     if (StringUtils.isEmpty(group)) {
       ErrorMessages.error_GroupIdEmpty.toFutureFail
     } else if (StringUtils.isEmpty(id)) {
       ErrorMessages.error_IdNonExists.toFutureFail
     } else {
-      // not use groupID_projectId for old version back compatible
       val queryDefinitions = ArrayBuffer[QueryDefinition]()
       queryDefinitions += matchQuery(FieldKeys.FIELD_ID, id)
       queryDefinitions += matchQuery(FieldKeys.FIELD_GROUP, group)
       EsClient.httpClient.execute {
-        search(Project.Index).query(boolQuery().must(queryDefinitions)).size(1)
+        if (includeOpenapi) {
+          search(Project.Index).query(boolQuery().must(queryDefinitions)).size(1)
+        } else {
+          search(Project.Index).query(boolQuery().must(queryDefinitions)).size(1).sourceExclude(FieldKeys.FIELD_OPENAPI)
+        }
       }
+    }
+  }
+
+  def getOpenApi(group: String, projectId: String) = {
+    if (StringUtils.isEmpty(group)) {
+      ErrorMessages.error_GroupIdEmpty.toFutureFail
+    } else if (StringUtils.isEmpty(projectId)) {
+      ErrorMessages.error_IdNonExists.toFutureFail
+    } else {
+      val queryDefinitions = ArrayBuffer[QueryDefinition]()
+      queryDefinitions += matchQuery(FieldKeys.FIELD_ID, projectId)
+      queryDefinitions += matchQuery(FieldKeys.FIELD_GROUP, group)
+      EsClient.httpClient.execute {
+        search(Project.Index).query(boolQuery().must(queryDefinitions)).size(1).sourceInclude(FieldKeys.FIELD_OPENAPI)
+      }
+    }
+  }
+
+  def updateOpenApi(group: String, projectId: String, openapi: String) = {
+    if (StringUtils.isEmpty(group)) {
+      ErrorMessages.error_GroupIdEmpty.toFutureFail
+    } else if (StringUtils.isEmpty(projectId)) {
+      ErrorMessages.error_IdNonExists.toFutureFail
+    } else {
+      EsClient.httpClient.execute {
+        update(Project.generateDocId(group, projectId)).in(Project.Index / EsConfig.DefaultType).doc(Map(FieldKeys.FIELD_OPENAPI -> openapi))
+      }.map(toUpdateDocResponse(_))
     }
   }
 

@@ -14,13 +14,14 @@ GET        /openapi                             asura.app.api.SwaggerApi.home
 ### NoDocs ###
 GET        /openapi/                            asura.app.api.SwaggerApi.home
 ### NoDocs ###
-GET        /openapi/editor                      asura.app.api.SwaggerApi.editor
+GET        /openapi/editor                      asura.app.api.SwaggerApi.editor(url: Option[String])
 ### NoDocs ###
-GET        /openapi/editor/                     asura.app.api.SwaggerApi.editor
+GET        /openapi/editor/                     asura.app.api.SwaggerApi.editor(url: Option[String])
 
 ->         /api/user                            user.Routes
 ->         /api/group                           group.Routes
 ->         /api/project                         project.Routes
+->         /api/openapi                         openapi.Routes
 ->         /api/api                             api.Routes
 ->         /api/cs                              cs.Routes
 ->         /api/env                             env.Routes

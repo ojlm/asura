@@ -12,6 +12,7 @@ case class Project(
                     val summary: String,
                     val description: String,
                     val group: String,
+                    val openapi: String = null,
                     val avatar: String = null,
                     var creator: String = null,
                     var createdAt: String = null,
@@ -23,10 +24,13 @@ case class Project(
     if (StringUtils.isNotEmpty(avatar)) {
       m += (FieldKeys.FIELD_AVATAR -> avatar)
     }
+    if (null != openapi) {
+      m += (FieldKeys.FIELD_OPENAPI -> openapi)
+    }
     m.toMap
   }
 
-  def generateDocId() = s"${group}_${id}"
+  def generateDocId() = Project.generateDocId(group, id)
 }
 
 object Project extends IndexSetting {
@@ -39,7 +43,10 @@ object Project extends IndexSetting {
     fields = BaseIndex.fieldDefinitions ++ Seq(
       KeywordFieldDefinition(name = FieldKeys.FIELD_ID, copyTo = Seq(FieldKeys.FIELD__TEXT)),
       KeywordFieldDefinition(name = FieldKeys.FIELD_GROUP),
+      KeywordFieldDefinition(name = FieldKeys.FIELD_OPENAPI, index = Option("false")),
       KeywordFieldDefinition(name = FieldKeys.FIELD_AVATAR, index = Option("false")),
     )
   )
+
+  def generateDocId(group: String, projectId: String) = s"${group}_${projectId}"
 }
