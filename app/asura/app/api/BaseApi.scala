@@ -3,6 +3,7 @@ package asura.app.api
 import akka.util.ByteString
 import asura.common.model.{ApiRes, ApiResError}
 import asura.common.util.JsonUtils
+import asura.core.ErrorMessages
 import asura.core.es.EsResponse
 import com.sksamuel.elastic4s.http.search.SearchResponse
 import com.sksamuel.elastic4s.http.{RequestFailure, RequestSuccess}
@@ -29,7 +30,6 @@ trait BaseApi extends Security[CommonProfile] {
     getProfiles().head.getId
   }
 
-
   implicit class JsonToClass(req: Request[ByteString]) {
     def bodyAs[T <: AnyRef](c: Class[T]): T = JsonUtils.parse[T](req.body.decodeString("UTF-8"), c)
   }
@@ -38,6 +38,24 @@ trait BaseApi extends Security[CommonProfile] {
     either match {
       case Right(success) => OkApiRes(ApiRes(data = EsResponse.toApiData(success.result, hasId)))
       case Left(failure) => OkApiRes(ApiResError(msg = failure.error.reason))
+    }
+  }
+
+  def toActionResultWithSingleData(
+                                    either: Either[RequestFailure, RequestSuccess[SearchResponse]],
+                                    id: String, hasId: Boolean = true
+                                  )(implicit request: RequestHeader): Result = {
+    either match {
+      case Left(failure) => {
+        OkApiRes(ApiResError(getI18nMessage(ErrorMessages.error_EsRequestFail(failure).name)))
+      }
+      case Right(value) => {
+        if (value.result.nonEmpty) {
+          OkApiRes(ApiRes(data = EsResponse.toSingleApiData(value.result, hasId)))
+        } else {
+          OkApiRes(ApiResError(getI18nMessage(ErrorMessages.error_IdNonExists.name, id)))
+        }
+      }
     }
   }
 
