@@ -18,6 +18,8 @@ GET        /openapi/editor                      asura.app.api.SwaggerApi.editor(
 ### NoDocs ###
 GET        /openapi/editor/                     asura.app.api.SwaggerApi.editor(url: Option[String])
 
+->         /api/v1                              v1.Routes
+->         /api/v2                              v2.Routes
 ->         /api/user                            user.Routes
 ->         /api/group                           group.Routes
 ->         /api/project                         project.Routes

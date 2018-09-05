@@ -1,0 +1,1 @@
+GET        /ci        asura.app.api.CiApi.v1(id: String)

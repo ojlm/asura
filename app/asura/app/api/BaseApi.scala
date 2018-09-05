@@ -82,4 +82,9 @@ object BaseApi {
     }
   }
 
+  /** disable nginx cache for Server Send Event */
+  val responseNoCacheHeaders = Seq(
+    ("Cache-Control", "no-cache"), ("X-Accel-Buffering", "no")
+  )
+  val DEFAULT_SOURCE_BUFFER_SIZE = 100
 }
