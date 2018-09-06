@@ -1,6 +1,6 @@
 # Asura
 
-> ⛩ `( ⊙ o ⊙ )`
+> ⛩`( ⊙ o ⊙ )`
 
 ## Features(WIP)
 > 
