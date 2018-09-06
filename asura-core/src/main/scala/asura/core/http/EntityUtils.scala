@@ -4,12 +4,12 @@ import java.net.URLEncoder
 
 import akka.http.scaladsl.model.{ContentType, ContentTypes, HttpEntity, RequestEntity}
 import akka.util.ByteString
-import com.fasterxml.jackson.core.`type`.TypeReference
 import asura.common.util.{LogUtils, StringUtils}
 import asura.core.cs.CaseContext
 import asura.core.es.model.{Case, KeyValueObject}
 import asura.core.http.UriUtils.UTF8
 import asura.core.util.JacksonSupport
+import com.fasterxml.jackson.core.`type`.TypeReference
 import com.typesafe.scalalogging.Logger
 
 object EntityUtils {
@@ -18,7 +18,7 @@ object EntityUtils {
 
   def toEntity(cs: Case, context: CaseContext): RequestEntity = {
     val request = cs.request
-    var contentType: ContentType = ContentTypes.NoContentType
+    var contentType: ContentType = ContentTypes.`text/plain(UTF-8)`
     var byteString: ByteString = ByteString.empty
     if (StringUtils.isNotEmpty(request.contentType) && null != request.body && request.body.nonEmpty) {
       request.contentType match {
