@@ -39,6 +39,7 @@ class ApplicationStart @Inject()(
     redisServers = Nil,
     useLocalEsNode = configuration.getOptional[Boolean]("asura.es.useLocalNode").getOrElse(false),
     localEsDataDir = configuration.getOptional[String]("asura.es.localEsDataDir").getOrElse("./data"),
+    esIndexPrefix = configuration.getOptional[String]("asura.es.indexPrefix"),
     esUrl = configuration.get[String]("asura.es.url"),
     enableLinkerd = configuration.getOptional[Boolean]("asura.linkerd.enableLinkerd").getOrElse(false),
     proxyHost = configuration.getOptional[String]("asura.linkerd.proxyHost").getOrElse(""),
