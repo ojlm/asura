@@ -10,9 +10,10 @@ import asura.core.es.model.{Job, JobReport}
 import asura.core.es.service.{JobReportService, JobService}
 import asura.core.job.{JobCenter, JobExecDesc}
 
-class JobManualActor(jobId: String, user: String) extends BaseActor {
+class JobManualActor(jobId: String, user: String, out: ActorRef) extends BaseActor {
 
   implicit val executionContext = context.dispatcher
+  if (null != out) self ! SenderMessage(out)
 
   override def receive: Receive = {
     case SenderMessage(sender) =>
@@ -76,5 +77,5 @@ class JobManualActor(jobId: String, user: String) extends BaseActor {
 }
 
 object JobManualActor {
-  def props(jobId: String, user: String) = Props(new JobManualActor(jobId, user))
+  def props(jobId: String, user: String, out: ActorRef = null) = Props(new JobManualActor(jobId, user, out))
 }
