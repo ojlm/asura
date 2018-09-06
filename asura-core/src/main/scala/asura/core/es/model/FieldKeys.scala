@@ -74,6 +74,9 @@ object FieldKeys {
   val FIELD_CUSTOM = "custom"
   val FIELD_RAW_URL = "rawUrl"
   val FIELD_OPENAPI = "openapi"
+  val FIELD_JOB_ID = "jobId"
+  val FIELD_SUBSCRIBER = "subscriber"
+
 
   val FIELD_NESTED_REQUEST_URLPATH = "request.urlPath"
 

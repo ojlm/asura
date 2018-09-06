@@ -17,7 +17,7 @@ object FutureUtils {
   def requestFail(msg: String) = Future.failed(RequestFailException(msg))
 
   implicit class RichFuture[T](future: Future[T]) {
-    def await(implicit duration: Duration = 60 seconds): T = Await.result(future, duration)
+    def await(implicit duration: Duration = 600 seconds): T = Await.result(future, duration)
   }
 
 }

@@ -1,8 +1,9 @@
 package asura.core.job
 
 import asura.common.util.FutureUtils.RichFuture
+import asura.common.util.LogUtils
 import asura.core.es.model.{BaseIndex, JobReport, Job => AsuraJob}
-import asura.core.es.service.{JobReportService, JobService}
+import asura.core.es.service.{JobReportService, JobService, ReportNotifyService}
 import asura.core.job.actor.{JobFinished, JobRunning, SchedulerActor}
 import com.typesafe.scalalogging.Logger
 import org.quartz.{Job, JobExecutionContext}
@@ -51,6 +52,12 @@ abstract class AbstractJob extends Job {
         logger.error(s"save job report fail: ${failure.error.reason}")
       case Right(success) =>
         logger.debug(s"job(${AsuraJob.buildJobKey(execDesc.job)}) report(${success.result.id}) is saved.")
+    }
+    try {
+      ReportNotifyService.notifySubscribers(execDesc).await
+    } catch {
+      case t: Throwable =>
+        logger.warn(LogUtils.stackTraceToString(t))
     }
   }
 
