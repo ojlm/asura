@@ -5,6 +5,7 @@ import com.sksamuel.elastic4s.mappings.Analysis
 
 object EsConfig {
 
+  /** this can be override by configuration file */
   var IndexPrefix = "asura-"
   /** no use, type was deprecated since 6.0.0. */
   val DefaultType = "default"

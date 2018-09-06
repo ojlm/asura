@@ -30,11 +30,22 @@ object ErrorMessages extends Enumeration {
   val error_ServerError = Val("Server Error")
   val error_EmptyEnv = Val("Empty env")
 
+  def error_NoNotifyImplementation(`type`: String) = Val(`type`)
+
+  def error_ReportNotifyError(msg: String) = Val(msg)
+
   def error_NotRegisteredAuth(authType: String) = Val(authType)
 
   def error_DuplicateApi(msg: String) = Val(s"Duplicate api: $msg")
 
-  case class Val(val errMsg: String) extends super.Val {
+  def error_Throwable(t: Throwable) = new Val(t)
+
+  case class Val(val errMsg: String, val t: Throwable = null) extends super.Val {
+
+    def this(t: Throwable) {
+      this(t.getMessage, t)
+    }
+
     def toException: ErrorMessageException = {
       ErrorMessageException(this)
     }
