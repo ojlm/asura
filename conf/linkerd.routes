@@ -1,0 +1,2 @@
+GET        /dtabs/http        asura.app.api.LinkerdApi.getHttp()
+PUT        /dtabs/http        asura.app.api.LinkerdApi.putHttp()
