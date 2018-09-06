@@ -29,3 +29,4 @@ GET        /openapi/editor/                     asura.app.api.SwaggerApi.editor(
 ->         /api/env                             env.Routes
 ->         /api/job                             job.Routes
 ->         /api/linkerd                         linkerd.Routes
+->         /api/ws                              ws.Routes

@@ -11,11 +11,12 @@ import asura.core.job.actor.JobTestActor.JobTestMessage
 import asura.core.job.{JobCenter, JobExecDesc, JobMeta}
 import com.typesafe.scalalogging.Logger
 
-class JobTestActor(user: String) extends BaseActor {
+class JobTestActor(user: String, out: ActorRef) extends BaseActor {
 
   import JobTestActor.logger
 
   implicit val executionContext = context.dispatcher
+  if (null != out) self ! SenderMessage(out)
 
   override def receive: Receive = {
     case SenderMessage(sender) =>
@@ -72,7 +73,7 @@ class JobTestActor(user: String) extends BaseActor {
 
 object JobTestActor {
 
-  def props(user: String) = Props(new JobTestActor(user))
+  def props(user: String, out: ActorRef = null) = Props(new JobTestActor(user, out))
 
   val logger = Logger(classOf[JobStatusActor])
 
