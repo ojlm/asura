@@ -5,7 +5,7 @@ import com.sksamuel.elastic4s.mappings.Analysis
 
 object EsConfig {
 
-  val IndexPrefix = "asura-"
+  var IndexPrefix = "asura-"
   /** no use, type was deprecated since 6.0.0. */
   val DefaultType = "default"
   val MaxCount = 1000

@@ -3,8 +3,7 @@ package asura.core
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import asura.common.util.StringUtils
-import asura.core.es.EsClient
-import asura.core.redis.RedisClient
+import asura.core.es.{EsClient, EsConfig}
 
 import scala.concurrent.ExecutionContext
 
@@ -13,6 +12,7 @@ case class CoreConfig(
                        val dispatcher: ExecutionContext,
                        val materializer: ActorMaterializer,
                        val redisServers: Seq[String],
+                       val esIndexPrefix: Option[String] = None,
                        val esUrl: String,
                        val proxyIdentifier: String,
                        val useLocalEsNode: Boolean = true,
@@ -46,5 +46,8 @@ object CoreConfig {
     CoreConfig.httpsProxyPort = config.httpsProxyPort
     CoreConfig.proxyIdentifier = config.proxyIdentifier
     CoreConfig.reportBaseUrl = config.reportBaseUrl
+    if (config.esIndexPrefix.nonEmpty) {
+      EsConfig.IndexPrefix = config.esIndexPrefix.get
+    }
   }
 }
