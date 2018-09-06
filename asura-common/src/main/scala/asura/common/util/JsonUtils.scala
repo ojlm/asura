@@ -1,5 +1,6 @@
 package asura.common.util
 
+import java.io.InputStream
 import java.text.SimpleDateFormat
 
 import com.fasterxml.jackson.annotation.JsonInclude
@@ -33,6 +34,10 @@ trait JsonUtils {
 
   def parse[T <: AnyRef](content: String, c: Class[T]): T = {
     mapper.readValue(content, c)
+  }
+
+  def parse[T <: AnyRef](input: InputStream, c: Class[T]): T = {
+    mapper.readValue(input, c)
   }
 
   def parse[T <: AnyRef](content: String, typeReference: TypeReference[T]): T = {
