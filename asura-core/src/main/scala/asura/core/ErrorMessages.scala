@@ -41,6 +41,8 @@ object ErrorMessages extends Enumeration {
 
   def error_Throwable(t: Throwable) = new Val(t)
 
+  def error_IdsNotFound(ids: Seq[String]) = Val(ids.mkString(","))
+
   case class Val(val errMsg: String, val t: Throwable = null) extends super.Val {
 
     def this(t: Throwable) {
