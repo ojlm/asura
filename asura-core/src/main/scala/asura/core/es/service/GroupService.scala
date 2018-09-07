@@ -57,7 +57,7 @@ object GroupService extends CommonService {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
       EsClient.httpClient.execute {
-        search(Group.Index).query(idsQuery(id))
+        search(Group.Index).query(idsQuery(id)).size(1)
       }
     }
   }

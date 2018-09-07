@@ -73,7 +73,7 @@ object JobService {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
       EsClient.httpClient.execute {
-        search(Job.Index).query(idsQuery(id))
+        search(Job.Index).query(idsQuery(id)).size(1)
       }
     }
   }
@@ -83,7 +83,7 @@ object JobService {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
       EsClient.httpClient.execute {
-        search(Job.Index).query(idsQuery(ids))
+        search(Job.Index).query(idsQuery(ids)).from(0).size(ids.length)
       }
     }
   }

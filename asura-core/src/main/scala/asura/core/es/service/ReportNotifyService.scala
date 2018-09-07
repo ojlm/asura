@@ -37,6 +37,7 @@ object ReportNotifyService extends CommonService {
     }
   }
 
+  // TODO: pagination
   def getSubscribers(jobId: String, enabled: Boolean = true, trigger: String = null): Future[Seq[ReportNotify]] = {
     val queryDefinitions = ArrayBuffer[QueryDefinition]()
     if (StringUtils.isNotEmpty(jobId)) queryDefinitions += termQuery(FieldKeys.FIELD_JOB_ID, jobId)

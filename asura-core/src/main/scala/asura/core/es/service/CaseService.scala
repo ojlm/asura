@@ -57,13 +57,13 @@ object CaseService extends CommonService {
 
   def getById(id: String) = {
     EsClient.httpClient.execute {
-      search(Case.Index).query(idsQuery(id))
+      search(Case.Index).query(idsQuery(id)).size(1)
     }
   }
 
   def getByIds(ids: Seq[String]) = {
     EsClient.httpClient.execute {
-      search(Case.Index).query(idsQuery(ids)).sortByFieldDesc(FieldKeys.FIELD_CREATED_AT)
+      search(Case.Index).query(idsQuery(ids)).from(0).size(ids.length).sortByFieldDesc(FieldKeys.FIELD_CREATED_AT)
     }
   }
 

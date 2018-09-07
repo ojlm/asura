@@ -50,7 +50,7 @@ object JobReportService {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
       EsClient.httpClient.execute {
-        search(JobReport.Index).query(idsQuery(id))
+        search(JobReport.Index).query(idsQuery(id)).size(1)
       }
     }
   }
