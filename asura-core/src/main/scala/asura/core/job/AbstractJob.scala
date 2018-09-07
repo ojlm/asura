@@ -34,7 +34,7 @@ abstract class AbstractJob extends Job {
     val jobKey = context.getJobDetail.getKey
     val jobId = AsuraJob.buildJobKey(scheduler, jobKey.getGroup, jobKey.getName)
     val job = JobService.geJobById(jobId).await
-    JobExecDesc(job, JobReport.TYPE_QUARTZ)
+    JobExecDesc.from(job, JobReport.TYPE_QUARTZ, null)
   }
 
   private def afterRun(jobExecDesc: JobExecDesc): Unit = {

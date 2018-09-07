@@ -111,7 +111,10 @@ object CaseContext {
 /**
   * use java type system
   */
-case class CaseContext(private val ctx: util.Map[Any, Any] = new util.HashMap[Any, Any]()) {
+case class CaseContext(
+                        private val ctx: util.Map[Any, Any] = new util.HashMap[Any, Any](),
+                        val options: ContextOptions = null,
+                      ) {
 
   def rawContext = ctx
 

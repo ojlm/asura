@@ -2,8 +2,8 @@ package asura.core.job.impl
 
 import asura.common.model.{ApiMsg, BoolErrorRes}
 import asura.common.util.FutureUtils.RichFuture
-import asura.core.cs.CaseRunner
 import asura.core.cs.scenario.ScenarioRunner
+import asura.core.cs.{CaseContext, CaseRunner}
 import asura.core.es.model.JobData
 import asura.core.es.model.JobReportData.{CaseReportItem, ReportItemStatus}
 import asura.core.es.service.CaseService
@@ -78,7 +78,7 @@ object RunCaseJob extends JobBase {
           val reportItem = CaseReportItem(id = id, title = cs.summary)
           caseReportMap += (id -> reportItem)
           if (null != log) log(s"${reportItem.title} => test is starting...")
-          CaseRunner.test(id, cs).map(caseResult => {
+          CaseRunner.test(id, cs, CaseContext(options = execDesc.options)).map(caseResult => {
             val reportItem = caseReportMap(id)
             val statis = caseResult.statis
             if (null != log) log(s"${reportItem.title} => result:${statis.isSuccessful}")

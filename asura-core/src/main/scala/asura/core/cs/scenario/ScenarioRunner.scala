@@ -1,7 +1,7 @@
 package asura.core.cs.scenario
 
 import asura.common.util.LogUtils
-import asura.core.cs.{CaseContext, CaseResult, CaseRunner}
+import asura.core.cs.{CaseContext, CaseResult, CaseRunner, ContextOptions}
 import asura.core.es.model.JobReportData.{CaseReportItem, ScenarioReportItem}
 import asura.core.es.model.{Case, Scenario}
 import asura.core.es.service.{CaseService, ScenarioService}
@@ -15,7 +15,11 @@ object ScenarioRunner {
 
   val logger = Logger("ScenarioRunner")
 
-  def testScenarios(scenarioIds: Seq[String], log: String => Unit = null): Future[Seq[ScenarioReportItem]] = {
+  def testScenarios(
+                     scenarioIds: Seq[String],
+                     log: String => Unit = null,
+                     options: ContextOptions = null
+                   ): Future[Seq[ScenarioReportItem]] = {
     val scenarioIdMap = scala.collection.mutable.HashMap[String, Scenario]()
     val scenarioIdCaseIdMap = scala.collection.mutable.HashMap[String, Seq[String]]()
     if (null != scenarioIds && scenarioIds.nonEmpty) {
@@ -41,7 +45,7 @@ object ScenarioRunner {
         val jobReportItemsFutures = scenarioIdCaseMap.map(tuple => {
           val (scenarioId, cases) = tuple
           val scenario = scenarioIdMap(scenarioId)
-          test(scenarioId, scenario.summary, cases)
+          test(scenarioId, scenario.summary, cases, log, options)
         })
         Future.sequence(jobReportItemsFutures.toSeq)
       })
@@ -51,14 +55,19 @@ object ScenarioRunner {
   }
 
   // scenarioId, (caseId, case)
-  def test(scenarioId: String, summary: String, cases: Seq[(String, Case)], log: String => Unit = null)
-          (implicit executionContext: ExecutionContext): Future[ScenarioReportItem] = {
+  def test(
+            scenarioId: String,
+            summary: String,
+            cases: Seq[(String, Case)],
+            log: String => Unit = null,
+            options: ContextOptions = null,
+          )(implicit executionContext: ExecutionContext): Future[ScenarioReportItem] = {
     if (null != log) log(s"scenario(${summary}): fetch ${cases.length} cases.")
     val scenarioReportItem = ScenarioReportItem(scenarioId, summary)
     val caseReportItems = ArrayBuffer[CaseReportItem]()
     val initialCaseResult: CaseResult = CaseResult(null, null, null, null)
     var isScenarioFailed = false
-    val caseContext = CaseContext()
+    val caseContext = CaseContext(options = options)
     val caseIdMap = scala.collection.mutable.Map[String, Case]()
     cases.foldLeft(Future(initialCaseResult))((prevCaseResultFuture, tuple) => {
       val (id, cs) = tuple

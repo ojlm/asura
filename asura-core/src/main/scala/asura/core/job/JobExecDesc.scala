@@ -4,6 +4,7 @@ import java.io.{BufferedWriter, File, FileWriter, PrintWriter}
 import java.text.SimpleDateFormat
 
 import asura.common.util.DateUtils
+import asura.core.cs.ContextOptions
 import asura.core.es.model.{Job, JobData, JobReport}
 
 /** job meta data and status container during execution */
@@ -12,6 +13,7 @@ case class JobExecDesc(
                         val report: JobReport,
                         val startNano: Long,
                         val configWorkDir: String,
+                        val options: ContextOptions = null
                       ) {
 
   private var jobWorkDir: String = null
@@ -76,7 +78,7 @@ object JobExecDesc {
   val STATUS_WARN = "warn"
   val STATUS_ABORTED = "aborted"
 
-  def apply(job: Job, `type`: String): JobExecDesc = {
+  def from(job: Job, `type`: String, options: ContextOptions): JobExecDesc = {
     val report = JobReport(
       scheduler = job.scheduler,
       group = job.group,
@@ -89,11 +91,12 @@ object JobExecDesc {
       job = job,
       report = report,
       startNano = System.nanoTime(),
-      configWorkDir = JobCenter.jobWorkDir
+      configWorkDir = JobCenter.jobWorkDir,
+      options = options
     )
   }
 
-  def from(jobMeta: JobMeta, jobData: JobData, `type`: String): JobExecDesc = {
+  def from(jobMeta: JobMeta, jobData: JobData, `type`: String, options: ContextOptions): JobExecDesc = {
     val job = Job(
       summary = jobMeta.name,
       description = jobMeta.desc,
@@ -116,7 +119,8 @@ object JobExecDesc {
       job = job,
       report = report,
       startNano = System.nanoTime(),
-      configWorkDir = JobCenter.jobWorkDir
+      configWorkDir = JobCenter.jobWorkDir,
+      options = options
     )
   }
 }

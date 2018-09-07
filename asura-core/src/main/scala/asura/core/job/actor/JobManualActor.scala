@@ -32,7 +32,7 @@ class JobManualActor(jobId: String, user: String, out: ActorRef) extends BaseAct
         val jobImpl = jobImplOpt.get
         val (isOk, errMsg) = jobImpl.checkJobData(job.jobData)
         if (isOk) {
-          jobImpl.doTestAsync(JobExecDesc(job, JobReport.TYPE_MANUAL), logMsg => {
+          jobImpl.doTestAsync(JobExecDesc.from(job, JobReport.TYPE_MANUAL, null), logMsg => {
             webActor ! logMsg
           }).pipeTo(self)
         } else {

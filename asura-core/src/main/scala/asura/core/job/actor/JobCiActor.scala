@@ -6,11 +6,12 @@ import asura.common.actor.BaseActor
 import asura.common.util.{LogUtils, StringUtils}
 import asura.core.CoreConfig
 import asura.core.actor.messages.SenderMessage
+import asura.core.cs.ContextOptions
 import asura.core.es.model.{BaseIndex, Job, JobReport}
 import asura.core.es.service.{JobReportService, JobService}
 import asura.core.job.{JobCenter, JobExecDesc}
 
-class JobCiActor(id: String, out: ActorRef) extends BaseActor {
+class JobCiActor(id: String, out: ActorRef, options: ContextOptions) extends BaseActor {
 
   implicit val executionContext = context.dispatcher
   if (null != out) {
@@ -34,7 +35,7 @@ class JobCiActor(id: String, out: ActorRef) extends BaseActor {
         val jobImpl = jobImplOpt.get
         val (isOk, errMsg) = jobImpl.checkJobData(job.jobData)
         if (isOk) {
-          jobImpl.doTestAsync(JobExecDesc(job, JobReport.TYPE_CI), logMsg => {
+          jobImpl.doTestAsync(JobExecDesc.from(job, JobReport.TYPE_CI, options), logMsg => {
             webActor ! logMsg
           }).pipeTo(self)
         } else {
@@ -79,5 +80,5 @@ class JobCiActor(id: String, out: ActorRef) extends BaseActor {
 }
 
 object JobCiActor {
-  def props(id: String, out: ActorRef = null) = Props(new JobCiActor(id, out))
+  def props(id: String, out: ActorRef = null, options: ContextOptions = null) = Props(new JobCiActor(id, out, options))
 }
