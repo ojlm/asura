@@ -20,15 +20,11 @@ class LinkerdApi @Inject()(
   implicit val httpEngine = asura.core.http.HttpEngine.http
 
   def getHttp() = Action.async { implicit req =>
-    NamerdV1Api.getNamespaceDtabs(config.get[String]("asura.linkerd.httpNs")).map(data => {
-      OkApiRes(ApiRes(data = data))
-    })
+    NamerdV1Api.getNamespaceDtabs(config.get[String]("asura.linkerd.httpNs")).toOkResult
   }
 
   def putHttp() = Action(parse.byteString).async { implicit req =>
     val dtabs = req.bodyAs(classOf[Dtabs])
-    NamerdV1Api.updateNamespaceDtabs(config.get[String]("asura.linkerd.httpNs"), dtabs.dtabs).map(data => {
-      OkApiRes(ApiRes(data = data))
-    })
+    NamerdV1Api.updateNamespaceDtabs(config.get[String]("asura.linkerd.httpNs"), dtabs.dtabs).toOkResult
   }
 }

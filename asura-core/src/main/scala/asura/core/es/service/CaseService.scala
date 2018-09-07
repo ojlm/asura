@@ -133,6 +133,9 @@ object CaseService extends CommonService {
     }
   }
 
+  /**
+    * return Map("total" -> total , "list" -> list)
+    */
   def queryCase(query: QueryCase): Future[Map[String, Any]] = {
     if (null != query.ids && query.ids.nonEmpty) {
       getByIds(query.ids).map(res => {

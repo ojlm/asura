@@ -1,10 +1,6 @@
 package asura.app.api
 
-import asura.app.api.BaseApi.OkApiRes
-import asura.common.model.{ApiRes, ApiResError}
-import asura.core.ErrorMessages
 import asura.core.cs.model.QueryApi
-import asura.core.es.EsResponse
 import asura.core.es.model.RestApi
 import asura.core.es.service.ApiService
 import javax.inject.{Inject, Singleton}
@@ -17,50 +13,22 @@ class RestApiApi @Inject()(implicit exec: ExecutionContext, val controllerCompon
   extends BaseApi {
 
   def getById(id: String) = Action.async { implicit req =>
-    ApiService.getById(id).map { res =>
-      res match {
-        case Left(failure) => {
-          OkApiRes(ApiResError(getI18nMessage(ErrorMessages.error_EsRequestFail(failure).name)))
-        }
-        case Right(value) => {
-          if (value.result.nonEmpty) {
-            OkApiRes(ApiRes(data = EsResponse.toSingleApiData(value.result, false)))
-          } else {
-            OkApiRes(ApiResError(getI18nMessage(ErrorMessages.error_IdNonExists.name, id)))
-          }
-        }
-      }
-    }
+    ApiService.getById(id).toOkResultByEsOneDoc(id)
   }
 
   def getOne() = Action(parse.byteString).async { implicit req =>
     val api = req.bodyAs(classOf[RestApi])
-    ApiService.getOne(api).map { res =>
-      res match {
-        case Left(failure) => {
-          OkApiRes(ApiResError(getI18nMessage(ErrorMessages.error_EsRequestFail(failure).name)))
-        }
-        case Right(value) => {
-          if (value.result.nonEmpty) {
-            OkApiRes(ApiRes(data = EsResponse.toSingleApiData(value.result, false)))
-          } else {
-            OkApiRes(ApiResError(getI18nMessage(ErrorMessages.error_IdNonExists.name, api.generateId())))
-          }
-        }
-      }
-    }
+    ApiService.getOne(api).toOkResultByEsOneDoc(api.generateId())
   }
 
   def put() = Action(parse.byteString).async { implicit req =>
     val api = req.bodyAs(classOf[RestApi])
     api.fillCommonFields(getProfileId())
-    ApiService.index(api).map { res =>
-      OkApiRes(ApiRes(data = res))
-    }
+    ApiService.index(api).toOkResult
   }
 
   def query() = Action(parse.byteString).async { implicit req =>
     val query = req.bodyAs(classOf[QueryApi])
-    ApiService.queryApi(query).map(toActionResult(_, true))
+    ApiService.queryApi(query).toOkResultByEsList()
   }
 }

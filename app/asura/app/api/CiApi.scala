@@ -23,9 +23,7 @@ class CiApi @Inject()(
                      ) extends BaseApi {
 
   def v1(id: String) = WebSocket.accept[String, String] { implicit req =>
-    ActorFlow.actorRef { out =>
-      JobCiActor.props(id, out)
-    }
+    ActorFlow.actorRef(out => JobCiActor.props(id, out))
   }
 
   def v2(id: String) = Action {

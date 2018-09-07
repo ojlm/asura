@@ -1,7 +1,5 @@
 package asura.app.api
 
-import asura.app.api.BaseApi.OkApiRes
-import asura.common.model.ApiRes
 import asura.core.cs.model.QueryScenario
 import asura.core.es.model.Scenario
 import asura.core.es.service.ScenarioService
@@ -15,26 +13,26 @@ class ScenarioApi @Inject()(implicit exec: ExecutionContext, val controllerCompo
   extends BaseApi {
 
   def getById(id: String) = Action.async { implicit req =>
-    ScenarioService.getById(id).map(toActionResultWithSingleData(_, id))
+    ScenarioService.getById(id).toOkResultByEsOneDoc(id)
   }
 
   def delete(id: String) = Action.async { implicit req =>
-    ScenarioService.deleteDoc(id).map(res => OkApiRes(ApiRes(data = res)))
+    ScenarioService.deleteDoc(id).toOkResult
   }
 
   def put() = Action(parse.byteString).async { implicit req =>
     val scenario = req.bodyAs(classOf[Scenario])
     scenario.fillCommonFields(getProfileId())
-    ScenarioService.index(scenario).map(res => OkApiRes(ApiRes(data = res)))
+    ScenarioService.index(scenario).toOkResult
   }
 
   def query() = Action(parse.byteString).async { implicit req =>
     val queryScenario = req.bodyAs(classOf[QueryScenario])
-    ScenarioService.queryScenario(queryScenario).map(toActionResult(_, true))
+    ScenarioService.queryScenario(queryScenario).toOkResultByEsList()
   }
 
   def update(id: String) = Action(parse.byteString).async { implicit req =>
     val scenario = req.bodyAs(classOf[Scenario])
-    ScenarioService.updateScenario(id, scenario).map(res => OkApiRes(ApiRes(data = res)))
+    ScenarioService.updateScenario(id, scenario).toOkResult
   }
 }
