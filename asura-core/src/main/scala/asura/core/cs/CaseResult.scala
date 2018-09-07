@@ -4,13 +4,14 @@ import asura.core.cs.asserts.{Assert, Statistic}
 import asura.core.es.model.Case
 
 case class CaseResult(
-                       id: String,
-                       assert: Map[String, Any],
-                       context: java.util.Map[Any, Any],
-                       request: CaseRequest,
+                       var id: String,
+                       var assert: Map[String, Any],
+                       var context: java.util.Map[Any, Any],
+                       var request: CaseRequest,
                      ) {
+
   val statis = Statistic()
-  val result = Assert(assert, context, statis).result
+  var result = Assert(assert, context, statis).result
 }
 
 object CaseResult {
