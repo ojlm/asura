@@ -12,7 +12,7 @@ class ApiServiceSpec extends ScalaTestBaseSpec with EsClientConfig {
       deleteIndex(RestApi.Index)
     }.await match {
       case Right(res) =>
-        println(res)
+        assertResult(res.result.acknowledged)(true)
       case _ =>
     }
   }
@@ -27,11 +27,7 @@ class ApiServiceSpec extends ScalaTestBaseSpec with EsClientConfig {
       RestApi(group = "test", path = "/a", method = "a", project = "test"),
       RestApi(group = "test", path = "/b", method = "b", project = "test")
     )
-    ApiService.index(apis).await match {
-      case Right(res) =>
-        println(s"right: $res")
-      case Left(failure) =>
-        println(failure.error.reason)
-    }
+    val bulkResponse = ApiService.index(apis).await
+    assert(null != bulkResponse)
   }
 }
