@@ -30,7 +30,7 @@ object CaseService extends CommonService {
     }
   }
 
-  def index(css: Seq[Case]): Future[BulkIndexDocResponse] = {
+  def index(css: Seq[Case]): Future[BulkDocResponse] = {
     val error = CaseValidator.check(css)
     if (null != error) {
       error.toFutureFail
@@ -39,7 +39,7 @@ object CaseService extends CommonService {
         bulk(
           css.map(cs => indexInto(Case.Index / EsConfig.DefaultType).doc(cs))
         )
-      }.map(toBulkIndexDocResponse(_))
+      }.map(toBulkDocResponse(_))
     }
   }
 

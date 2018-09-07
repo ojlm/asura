@@ -5,7 +5,7 @@ import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.model.QueryApi
-import asura.core.es.model.{BulkIndexDocResponse, FieldKeys, IndexDocResponse, RestApi}
+import asura.core.es.model.{BulkDocResponse, FieldKeys, IndexDocResponse, RestApi}
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
@@ -37,7 +37,7 @@ object ApiService extends CommonService {
     }
   }
 
-  def index(apis: Seq[RestApi]): Future[BulkIndexDocResponse] = {
+  def index(apis: Seq[RestApi]): Future[BulkDocResponse] = {
     if (null == apis || apis.isEmpty) {
       ErrorMessages.error_EmptyRequestBody.toFutureFail
     } else {
@@ -52,7 +52,7 @@ object ApiService extends CommonService {
               indexInto(RestApi.Index / EsConfig.DefaultType).doc(api)
             })
           }.refresh(RefreshPolicy.WAIT_UNTIL)
-        }.map(toBulkIndexDocResponse(_))
+        }.map(toBulkDocResponse(_))
       }
     }
   }

@@ -25,10 +25,10 @@ trait CommonService {
     }
   }
 
-  def toBulkIndexDocResponse(either: Either[RequestFailure, RequestSuccess[BulkResponse]]): BulkIndexDocResponse = {
+  def toBulkDocResponse(either: Either[RequestFailure, RequestSuccess[BulkResponse]]): BulkDocResponse = {
     either match {
       case Right(_) =>
-        BulkIndexDocResponse()
+        BulkDocResponse()
       case Left(failure) =>
         throw new OperateDocFailException(failure.error.reason)
     }
