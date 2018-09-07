@@ -33,7 +33,7 @@ class JobTestActor(user: String, out: ActorRef) extends BaseActor {
         val job = jobOpt.get
         val (isOk, errMsg) = job.checkJobData(jobData)
         if (isOk) {
-          job.doTestAsync(JobExecDesc.from(jobMeta, jobData, JobReport.TYPE_TEST), logMsg => {
+          job.doTestAsync(JobExecDesc.from(jobMeta, jobData, JobReport.TYPE_TEST, null), logMsg => {
             webActor ! NotifyActorEvent(logMsg)
           }).pipeTo(self)
         } else {

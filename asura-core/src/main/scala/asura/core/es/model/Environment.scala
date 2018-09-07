@@ -6,6 +6,22 @@ import com.sksamuel.elastic4s.mappings._
 
 import scala.collection.mutable
 
+/**
+  * there should be only one `Environment` in a whole job/scenario/case runtime
+  *
+  * @param summary
+  * @param description
+  * @param group
+  * @param project
+  * @param protocol
+  * @param host
+  * @param port
+  * @param auth
+  * @param namespace for proxy usage
+  * @param custom
+  * @param creator
+  * @param createdAt
+  */
 case class Environment(
                         val summary: String,
                         val description: String,
