@@ -49,15 +49,15 @@ lazy val common = asuraProjects("asura-common")
 
 lazy val core = asuraProjects("asura-core")
   .settings(libraryDependencies ++= coreDependencies)
-  .dependsOn(common)
+  .dependsOn(common % "compile->compile;test->test")
 
 lazy val pcap = asuraProjects("asura-pcap")
   .settings(libraryDependencies ++= pcapDependencies)
 
 lazy val web = asuraProjects("asura-web")
   .settings(libraryDependencies ++= webDependencies)
-  .dependsOn(common)
+  .dependsOn(common % "compile->compile;test->test")
 
 lazy val namerd = asuraProjects("asura-namerd")
   .settings(libraryDependencies ++= namerdDependencies)
-  .dependsOn(common)
+  .dependsOn(common % "compile->compile;test->test")

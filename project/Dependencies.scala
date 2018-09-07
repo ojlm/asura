@@ -45,22 +45,25 @@ object Dependencies {
 
   // Test dependencies
   private val akkaTestKit = "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test
-  private val scalaTest = "org.scalatest" %% "scalatest" % "3.0.4" % Test
+  private val scalaTestDeps = Seq(
+    "org.scalactic" %% "scalactic" % "3.0.5",
+    "org.scalatest" %% "scalatest" % "3.0.5" % Test
+  )
   private val akkaHttpTestkit = "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test
 
   private val loggingDeps = Seq(slf4jApi, logback, scalaLogging)
   private val httpDeps = Seq(akkaStream, akkaHttp, akkaHttpXml, jackson)
   private val databaseDeps = Seq(mysqlConnector)
-  private val testDeps = Seq(scalaTest, akkaTestKit, akkaHttpTestkit)
+  private val testDeps = Seq(akkaTestKit, akkaHttpTestkit) ++ scalaTestDeps
 
   val pac4jDeps = Seq(
     "org.pac4j" %% "play-pac4j" % playPac4jVersion,
     "org.pac4j" % "pac4j-ldap" % pac4jVersion
   )
 
-  val commonDependencies = Seq(scalaTest, akkaTestKit, config, akkaActor, jackson) ++ loggingDeps
+  val commonDependencies = Seq(akkaTestKit, config, akkaActor, jackson) ++ scalaTestDeps ++ loggingDeps
   val coreDependencies = Seq(commonsLang3, jackson, faststring, elastic4sCore, elastic4sHttp, elastic4sEmbedded, joddCore, jsonPath, swaggerParser, quartz, redisson) ++ commonDependencies ++ httpDeps
-  val pcapDependencies = Seq(scalaTest, pcap4jCore, pcap4jPacketFactoryStatic) ++ loggingDeps
+  val pcapDependencies = Seq(pcap4jCore, pcap4jPacketFactoryStatic) ++ loggingDeps ++ scalaTestDeps
   val appDependencies = Seq(config, guava, commonsCodec) ++ loggingDeps ++ httpDeps ++ databaseDeps ++ testDeps ++ pcapDependencies
   val webDependencies = Seq(seleniumJava, jBrowserDriver, htmlunitDriver) ++ loggingDeps ++ httpDeps ++ testDeps
   val namerdDependencies = Seq(akkaStream, akkaHttp) ++ commonDependencies
