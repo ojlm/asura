@@ -29,6 +29,7 @@ object ErrorMessages extends Enumeration {
   val error_UpdateSuccess = Val("Update success")
   val error_ServerError = Val("Server Error")
   val error_EmptyEnv = Val("Empty env")
+  val error_EmptyScenario = Val("Empty scenario")
 
   def error_NoNotifyImplementation(`type`: String) = Val(`type`)
 

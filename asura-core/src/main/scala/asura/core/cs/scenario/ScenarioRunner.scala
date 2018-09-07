@@ -1,6 +1,6 @@
 package asura.core.cs.scenario
 
-import asura.common.util.LogUtils
+import asura.common.util.{LogUtils, XtermUtils}
 import asura.core.cs.{CaseContext, CaseResult, CaseRunner, ContextOptions}
 import asura.core.es.model.JobReportData.{CaseReportItem, ScenarioReportItem}
 import asura.core.es.model.{Case, Scenario}
@@ -39,7 +39,13 @@ object ScenarioRunner {
         scenarioIdCaseIdMap.foreach(tuple => {
           val (scenarioId, caseIds) = tuple
           // if case was deleted the scenario will ignore it
-          val cases = caseIds.filter(id => caseIdMap.contains(id)).map(id => (id, caseIdMap(id)))
+          val cases = ArrayBuffer[(String, Case)]()
+          caseIds.foreach(id => {
+            val value = caseIdMap.get(id)
+            if (value.nonEmpty) {
+              cases.append((id, value.get))
+            }
+          })
           scenarioIdCaseMap(scenarioId) = cases
         })
         val jobReportItemsFutures = scenarioIdCaseMap.map(tuple => {
@@ -119,6 +125,7 @@ object ScenarioRunner {
       if (null != lastCaseResult) {
         if (lastCaseResult.statis.isSuccessful) {
           if (null != lastCaseResult.id) {
+            if (null != log) log(s"scenario(${summary}): ${caseIdMap(lastCaseResult.id).summary} result is ok.")
             caseReportItems += CaseReportItem.parse(caseIdMap(lastCaseResult.id).summary, lastCaseResult)
           }
         } else {
@@ -127,7 +134,12 @@ object ScenarioRunner {
         }
       }
       scenarioReportItem.cases = caseReportItems
-      if (null != log) log(s"scenario(${summary}): ${scenarioReportItem.msg}")
+      if (null != log) log(s"scenario(${summary}): ${
+        if (scenarioReportItem.isSuccessful())
+          XtermUtils.greenWrap(scenarioReportItem.msg)
+        else
+          XtermUtils.redWrap(scenarioReportItem.msg)
+      }")
       scenarioReportItem
     })
   }

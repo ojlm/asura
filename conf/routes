@@ -30,3 +30,4 @@ GET        /openapi/editor/                     asura.app.api.SwaggerApi.editor(
 ->         /api/job                             job.Routes
 ->         /api/linkerd                         linkerd.Routes
 ->         /api/ws                              ws.Routes
+->         /api/scenario                        scenario.Routes
