@@ -1,9 +1,11 @@
 package asura.app.api
 
+import asura.app.AppErrorMessages
 import asura.app.api.BaseApi.OkApiRes
 import asura.app.api.model.UserProfile
 import asura.common.model.{ApiRes, ApiResError}
 import asura.common.util.StringUtils
+import asura.core.ErrorMessages
 import asura.core.es.model.{BaseIndex, UserProfile => EsUserProfile}
 import asura.core.es.service.UserProfileService
 import javax.inject.{Inject, Singleton}
@@ -22,18 +24,18 @@ class UserApi @Inject()(
                          val controllerComponents: SecurityComponents
                        ) extends BaseApi {
 
-  def login() = Action.async { request =>
+  def login() = Action.async { implicit request =>
     val webContext = new PlayWebContext(request, sessionStore)
     val profileManager = new ProfileManager[CommonProfile](webContext)
     val profile = profileManager.get(true)
     if (!profile.isPresent) {
-      Future.successful(OkApiRes(ApiResError("Profile is not present")))
+      Future.successful(OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_EmptyProfile.name))))
     } else {
       val commonProfile = profile.get()
       val token = commonProfile.getAttribute("token")
       val email = commonProfile.getAttribute("mail")
       if (null == token) {
-        Future.successful(OkApiRes(ApiResError("Token is not generated")))
+        Future.successful(OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_TokenGeneratedError.name))))
       } else {
         val username = commonProfile.getId
         val emailStr = if (null != email) email.toString else StringUtils.EMPTY
@@ -64,12 +66,12 @@ class UserApi @Inject()(
                   if (StringUtils.isNotEmpty(indexResponse.id)) {
                     OkApiRes(ApiRes(data = apiUserProfile))
                   } else {
-                    OkApiRes(ApiResError("fail to create user profile"))
+                    OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_FailToCreateUser.name)))
                   }
                 })
               } else {
                 // code should not run here
-                Future.successful(OkApiRes(ApiResError("illegal login")))
+                Future.successful(OkApiRes(ApiResError(ErrorMessages.error_ServerError.name)))
               }
             }
           })

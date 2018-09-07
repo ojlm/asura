@@ -32,10 +32,7 @@ class JobApi @Inject()(implicit exec: ExecutionContext, val controllerComponents
     val triggerMeta = job.triggerMeta
     val username = getProfileId()
     JobUtils.validateJobAndTrigger(jobMeta, triggerMeta, jobData) match {
-      case (true, _) =>
-        SchedulerManager.scheduleJob(jobMeta, triggerMeta, jobData, username).map(res => {
-          OkApiRes(ApiRes(msg = res))
-        })
+      case (true, _) => SchedulerManager.scheduleJob(jobMeta, triggerMeta, jobData, username).toOkResult
       case (false, errMsg) => Future.successful(OkApiRes(ApiResError(errMsg)))
     }
   }
@@ -72,15 +69,15 @@ class JobApi @Inject()(implicit exec: ExecutionContext, val controllerComponents
   }
 
   def detail(id: String) = Action(parse.byteString).async { implicit req =>
-    JobService.getById(id).map(toActionResultWithSingleData(_, id))
+    JobService.getById(id).toOkResultByEsOneDoc(id)
   }
 
   def reports() = Action(parse.byteString).async { implicit req =>
     val query = req.bodyAs(classOf[QueryJobReport])
-    JobReportService.query(query).map(toActionResult(_))
+    JobReportService.query(query).toOkResultByEsList()
   }
 
   def report(id: String) = Action(parse.byteString).async { implicit req =>
-    JobReportService.getById(id).map(toActionResultWithSingleData(_, id))
+    JobReportService.getById(id).toOkResultByEsOneDoc(id)
   }
 }

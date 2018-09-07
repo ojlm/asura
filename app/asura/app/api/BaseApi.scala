@@ -14,6 +14,7 @@ import play.api.http.{ContentTypes, HttpEntity}
 import play.api.mvc._
 
 import scala.collection.JavaConverters.asScalaBuffer
+import scala.concurrent.{ExecutionContext, Future}
 
 trait BaseApi extends Security[CommonProfile] {
 
@@ -34,17 +35,31 @@ trait BaseApi extends Security[CommonProfile] {
     def bodyAs[T <: AnyRef](c: Class[T]): T = JsonUtils.parse[T](req.body.decodeString("UTF-8"), c)
   }
 
-  def toActionResult(either: Either[RequestFailure, RequestSuccess[SearchResponse]], hasId: Boolean = true): Result = {
+  /** convert any success response from service to api Action */
+  def toActionResultFromAny(any: Any): Result = {
+    OkApiRes(ApiRes(data = any))
+  }
+
+  implicit class ServiceResponseToOkResult(f: Future[Any])(implicit ec: ExecutionContext) {
+    def toOkResult = f.map(toActionResultFromAny(_))
+  }
+
+  def toActionResultFromEs(either: Either[RequestFailure, RequestSuccess[SearchResponse]], hasId: Boolean = true): Result = {
     either match {
       case Right(success) => OkApiRes(ApiRes(data = EsResponse.toApiData(success.result, hasId)))
       case Left(failure) => OkApiRes(ApiResError(msg = failure.error.reason))
     }
   }
 
-  def toActionResultWithSingleData(
-                                    either: Either[RequestFailure, RequestSuccess[SearchResponse]],
-                                    id: String, hasId: Boolean = true
-                                  )(implicit request: RequestHeader): Result = {
+  implicit class EsListResponseToOkResult(f: Future[Either[RequestFailure, RequestSuccess[SearchResponse]]])
+                                         (implicit ec: ExecutionContext) {
+    def toOkResultByEsList(hasId: Boolean = true) = f.map(toActionResultFromEs(_, hasId))
+  }
+
+  def toActionResultWithSingleDataFromEs(
+                                          either: Either[RequestFailure, RequestSuccess[SearchResponse]],
+                                          id: String, hasId: Boolean = true
+                                        )(implicit request: RequestHeader): Result = {
     either match {
       case Left(failure) => {
         OkApiRes(ApiResError(getI18nMessage(ErrorMessages.error_EsRequestFail(failure).name)))
@@ -57,6 +72,11 @@ trait BaseApi extends Security[CommonProfile] {
         }
       }
     }
+  }
+
+  implicit class EsSingleResponseToOkResult(f: Future[Either[RequestFailure, RequestSuccess[SearchResponse]]])
+                                           (implicit ec: ExecutionContext, implicit val request: RequestHeader) {
+    def toOkResultByEsOneDoc(id: String) = f.map(toActionResultWithSingleDataFromEs(_, id))
   }
 
   def getI18nMessage(key: String, args: Any*)(implicit request: RequestHeader): String = {
