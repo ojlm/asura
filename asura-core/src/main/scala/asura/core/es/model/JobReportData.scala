@@ -34,7 +34,7 @@ object JobReportData {
       this
     }
 
-    def isSuccessful() = {
+    def isSuccessful(): Boolean = {
       status == ReportItemStatus.STATUS_SUCCESS
     }
   }

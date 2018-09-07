@@ -3,15 +3,11 @@ package asura.core.job.impl
 import asura.common.model.{ApiMsg, BoolErrorRes}
 import asura.common.util.FutureUtils.RichFuture
 import asura.core.cs.scenario.ScenarioRunner
-import asura.core.cs.{CaseContext, CaseRunner}
 import asura.core.es.model.JobData
-import asura.core.es.model.JobReportData.{CaseReportItem, ReportItemStatus}
 import asura.core.es.service.CaseService
 import asura.core.job._
 
-import scala.collection.mutable
 import scala.concurrent.Future
-import scala.util.control.NonFatal
 
 object RunCaseJob extends JobBase {
 
@@ -47,7 +43,6 @@ object RunCaseJob extends JobBase {
     val scenarios = execDesc.job.jobData.scenario
     if (null != scenarios && !scenarios.isEmpty) {
       val report = execDesc.report
-      import asura.core.concurrent.ExecutionContextManager.cachedExecutor
       ScenarioRunner.testScenarios(scenarios.map(_.id), log).map(reportItems => {
         report.data.scenarios = reportItems
         reportItems.foreach(item => {
@@ -64,42 +59,17 @@ object RunCaseJob extends JobBase {
 
   def doTestCase(execDesc: JobExecDesc, log: String => Unit): Future[JobExecDesc] = {
     val report = execDesc.report
-    val reportData = report.data
     val jobData = execDesc.job.jobData
     val cases = jobData.cs
     if (null != cases && !cases.isEmpty) {
-      val caseReportMap = mutable.Map[String, CaseReportItem]()
       if (null != log) log("start fetch cases...")
       import asura.core.concurrent.ExecutionContextManager.cachedExecutor
       CaseService.getCasesByIds(cases.map(_.id)).flatMap(cases => {
         if (null != log) log(s"fetch ${cases.length} cases.")
-        val futureSeq = cases.map(csWrap => {
-          val (id, cs) = (csWrap._1, csWrap._2)
-          val reportItem = CaseReportItem(id = id, title = cs.summary)
-          caseReportMap += (id -> reportItem)
-          if (null != log) log(s"${reportItem.title} => test is starting...")
-          CaseRunner.test(id, cs, CaseContext(options = execDesc.options)).map(caseResult => {
-            val reportItem = caseReportMap(id)
-            val statis = caseResult.statis
-            if (null != log) log(s"${reportItem.title} => result:${statis.isSuccessful}")
-            if (statis.isSuccessful) {
-              reportItem.status = ReportItemStatus.STATUS_SUCCESS
-            } else {
-              reportItem.status = ReportItemStatus.STATUS_FAIL
-            }
-            reportItem.result = caseResult
-            reportItem
-          }).recover {
-            case NonFatal(t) =>
-              reportItem.msg = t.getMessage
-              reportItem.status = ReportItemStatus.STATUS_FAIL
-              if (null != log) log(s"${reportItem.title} => ${reportItem.msg}")
-              reportItem
-          }
-        })
-        Future.sequence(futureSeq)
-      }).map(reportItems => {
-        reportData.cases = reportItems
+        ScenarioRunner.test(null, "job cases", cases, log, execDesc.options)
+      }).map(scenarioReport => {
+        val reportItems = scenarioReport.cases
+        report.data.cases = reportItems
         reportItems.foreach(reportItem => {
           val result = reportItem.result
           if (null != result) {
