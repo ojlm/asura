@@ -22,6 +22,11 @@ object StringTemplate {
     .setMacroEnd("}")
   val logger = Logger("StringTemplate")
 
+  val uriPathParser = StringTemplateParser.create()
+    .setMacroPrefix(null)
+    .setMacroStart("{")
+    .setMacroEnd("}")
+
   /** return macro if path not found */
   def parseStringWithJsonPath(tpl: String, json: String): String = {
     templateLiteralsParser.parse(tpl, macroName => {
@@ -73,7 +78,7 @@ object StringTemplate {
     * will throw `asura.common.exceptions.InvalidStatusException` if value not found
     */
   def uriPathParse(tpl: String, context: immutable.Map[String, String]): String = {
-    mustacheParser.parse(tpl, macroName => {
+    uriPathParser.parse(tpl, macroName => {
       context.get(macroName) match {
         case None => throw InvalidStatusException(s"${macroName}: path template variable not found")
         case Some(value) => value
