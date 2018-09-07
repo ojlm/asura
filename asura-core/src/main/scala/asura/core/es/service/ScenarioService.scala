@@ -1,10 +1,10 @@
 package asura.core.es.service
 
-import asura.common.exceptions.{IllegalRequestException, RequestFailException}
-import asura.common.model.BoolErrorRes
 import asura.common.util.{JsonUtils, StringUtils}
+import asura.core.ErrorMessages
+import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.model.QueryScenario
-import asura.core.es.model.{FieldKeys, Scenario}
+import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
@@ -13,31 +13,31 @@ import com.sksamuel.elastic4s.http.ElasticDsl.{bulk, delete, indexInto, _}
 import com.sksamuel.elastic4s.searches.queries.QueryDefinition
 
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
-object ScenarioService {
+object ScenarioService extends CommonService {
 
-  def index(s: Scenario) = {
-    val (isOk, errMsg) = check(s)
-    if (isOk) {
+  def index(s: Scenario): Future[IndexDocResponse] = {
+    val error = check(s)
+    if (null == error) {
       EsClient.httpClient.execute {
         indexInto(Scenario.Index / EsConfig.DefaultType).doc(s).refresh(RefreshPolicy.WAIT_UNTIL)
-      }
+      }.map(toIndexDocResponse(_))
     } else {
-      Future.failed(new IllegalArgumentException(errMsg))
+      error.toFutureFail
     }
   }
 
-  def deleteDoc(id: String) = {
+  def deleteDoc(id: String): Future[DeleteDocResponse] = {
     EsClient.httpClient.execute {
       delete(id).from(Scenario.Index / EsConfig.DefaultType).refresh(RefreshPolicy.WAIT_UNTIL)
-    }
+    }.map(toDeleteDocResponse(_))
   }
 
-  def deleteDoc(ids: Seq[String]) = {
+  def deleteDoc(ids: Seq[String]): Future[BulkDocResponse] = {
     EsClient.httpClient.execute {
       bulk(ids.map(id => delete(id).from(Scenario.Index / EsConfig.DefaultType)))
-    }
+    }.map(toBulkDocResponse(_))
   }
 
   def getById(id: String) = {
@@ -52,41 +52,32 @@ object ScenarioService {
     }
   }
 
-
-  def updateScenario(id: String, s: Scenario) = {
+  def updateScenario(id: String, s: Scenario): Future[UpdateDocResponse] = {
     if (StringUtils.isEmpty(id)) {
       Future.failed(new IllegalArgumentException("empty id"))
     } else {
       EsClient.httpClient.execute {
         update(id).in(Scenario.Index / EsConfig.DefaultType).doc(JsonUtils.stringify(s.toUpdateMap))
-      }
+      }.map(toUpdateDocResponse(_))
     }
   }
 
   /**
     * Seq({id->scenario})
     */
-  def getScenariosByIds(ids: Seq[String])(implicit executor: ExecutionContext): Future[Seq[(String, Scenario)]] = {
+  def getScenariosByIds(ids: Seq[String]): Future[Seq[(String, Scenario)]] = {
     getByIds(ids).map(res => {
       res match {
         case Right(success) =>
           if (success.result.isEmpty) {
-            throw IllegalRequestException(s"ids: ${ids.mkString(",")} not found.")
+            Nil
           } else {
             success.result.hits.hits.map(hit => (hit.id, JacksonSupport.parse(hit.sourceAsString, classOf[Scenario])))
           }
         case Left(failure) =>
-          throw RequestFailException(failure.error.reason)
+          throw ErrorMessages.error_EsRequestFail(failure).toException
       }
     })
-  }
-
-  def searchText(text: String) = {
-    EsClient.httpClient.execute {
-      search(Scenario.Index).query {
-        matchQuery(FieldKeys.FIELD__TEXT, text)
-      }.sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
-    }
   }
 
   def queryScenario(query: QueryScenario) = {
@@ -102,15 +93,17 @@ object ScenarioService {
     }
   }
 
-  def check(s: Scenario): BoolErrorRes = {
+  def check(s: Scenario): ErrorMessages.Val = {
     if (null == s) {
-      (false, "empty scenario")
+      ErrorMessages.error_EmptyScenario
+    } else if (StringUtils.isEmpty(s.summary)) {
+      ErrorMessages.error_EmptySummary
     } else if (StringUtils.isEmpty(s.project)) {
-      (false, "empty project")
+      ErrorMessages.error_EmptyProject
     } else if (StringUtils.isEmpty(s.group)) {
-      (false, "empty group")
+      ErrorMessages.error_EmptyGroup
     } else {
-      (true, null)
+      null
     }
   }
 }
