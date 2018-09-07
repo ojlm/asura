@@ -47,14 +47,9 @@ abstract class AbstractJob extends Job {
     val report = execDesc.report
     report.fillCommonFields(BaseIndex.CREATOR_QUARTZ)
     SchedulerActor.statusMonitor ! JobFinished(job.scheduler, job.group, job.name, execDesc.report)
-    JobReportService.index(report).await match {
-      case Left(failure) =>
-        logger.error(s"save job report fail: ${failure.error.reason}")
-      case Right(success) =>
-        logger.debug(s"job(${AsuraJob.buildJobKey(execDesc.job)}) report(${success.result.id}) is saved.")
-    }
     try {
-      ReportNotifyService.notifySubscribers(execDesc).await
+      val reportDoc = JobReportService.index(report).await
+      ReportNotifyService.notifySubscribers(execDesc, reportDoc.id).await
     } catch {
       case t: Throwable =>
         logger.warn(LogUtils.stackTraceToString(t))

@@ -46,16 +46,9 @@ class JobTestActor(user: String, out: ActorRef) extends BaseActor {
       val report = execDesc.report
       report.fillCommonFields(user)
       JobReportService.index(report).map { res =>
-        res match {
-          case Left(failure) =>
-            val errMsg = s"save job report fail: ${failure.error.reason}"
-            logger.error(errMsg)
-            webActor ! NotifyActorEvent(errMsg)
-          case Right(success) =>
-            logger.debug(s"job(${Job.buildJobKey(execDesc.job)}) report(${success.result.id}) is saved.")
-            val reportUrl = s"view report: ${CoreConfig.reportBaseUrl}/${success.result.id}"
-            webActor ! NotifyActorEvent(reportUrl)
-        }
+        logger.debug(s"job(${Job.buildJobKey(execDesc.job)}) report(${res.id}) is saved.")
+        val reportUrl = s"view report: ${CoreConfig.reportBaseUrl}/${res.id}"
+        webActor ! NotifyActorEvent(reportUrl)
         webActor ! ItemActorEvent(execDesc)
         webActor ! PoisonPill
       }

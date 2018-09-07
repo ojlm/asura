@@ -59,7 +59,7 @@ object ReportNotifyService extends CommonService {
     })
   }
 
-  def notifySubscribers(execDesc: JobExecDesc): Future[NotifyResponses] = {
+  def notifySubscribers(execDesc: JobExecDesc, reportId: String): Future[NotifyResponses] = {
     val job = execDesc.job
     val report = execDesc.report
     ReportNotifyService.getSubscribers(Job.buildJobKey(job)).flatMap(subscribers => {
@@ -69,7 +69,7 @@ object ReportNotifyService extends CommonService {
           report.result match {
             case JobExecDesc.STATUS_SUCCESS =>
               if (ReportNotify.TRIGGER_ALL.equals(subscriber.trigger) || ReportNotify.TRIGGER_SUCCESS.equals(subscriber.trigger)) {
-                func.get.notify(execDesc, subscriber).recover {
+                func.get.notify(execDesc, subscriber, reportId).recover {
                   case t: Throwable => NotifyResponse(false, subscriber.subscriber, ErrorMessages.error_Throwable(t))
                 }
               } else {
@@ -77,7 +77,7 @@ object ReportNotifyService extends CommonService {
               }
             case _ =>
               if (ReportNotify.TRIGGER_ALL.equals(subscriber.trigger) || ReportNotify.TRIGGER_FAIL.equals(subscriber.trigger)) {
-                func.get.notify(execDesc, subscriber).recover {
+                func.get.notify(execDesc, subscriber, reportId).recover {
                   case t: Throwable => NotifyResponse(false, subscriber.subscriber, ErrorMessages.error_Throwable(t))
                 }
               } else {

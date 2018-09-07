@@ -11,5 +11,5 @@ trait JobNotifyFunction {
   val `type`: String
   val description: String
 
-  def notify(execDesc: JobExecDesc, subscriber: ReportNotify): Future[NotifyResponse]
+  def notify(execDesc: JobExecDesc, subscriber: ReportNotify, reportId: String): Future[NotifyResponse]
 }

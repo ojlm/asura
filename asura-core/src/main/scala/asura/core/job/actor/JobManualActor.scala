@@ -52,14 +52,8 @@ class JobManualActor(jobId: String, user: String, out: ActorRef) extends BaseAct
       val report = execDesc.report
       report.fillCommonFields(user)
       JobReportService.index(report).map { res =>
-        res match {
-          case Left(failure) =>
-            val errMsg = s"save job report fail: ${failure.error.reason}"
-            webActor ! errMsg
-          case Right(success) =>
-            val reportUrl = s"view report: ${CoreConfig.reportBaseUrl}/${success.result.id}"
-            webActor ! reportUrl
-        }
+        val reportUrl = s"view report: ${CoreConfig.reportBaseUrl}/${res.id}"
+        webActor ! reportUrl
         webActor ! execDesc.report.result
         webActor ! PoisonPill
       }
