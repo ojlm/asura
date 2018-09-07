@@ -64,7 +64,7 @@ object UserProfileService extends CommonService {
         FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
       } else {
         EsClient.httpClient.execute {
-          search(UserProfile.Index).query(idsQuery(id))
+          search(UserProfile.Index).query(idsQuery(id)).size(1)
         }.map(either => toSingleClass(either, id)(str => {
           if (StringUtils.isNotEmpty(str)) {
             JsonUtils.parse(str, classOf[UserProfile])

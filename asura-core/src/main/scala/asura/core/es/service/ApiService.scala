@@ -130,7 +130,7 @@ object ApiService extends CommonService {
       ErrorMessages.error_IdNonExists.toFutureFail
     } else {
       EsClient.httpClient.execute {
-        search(RestApi.Index).query(idsQuery(id))
+        search(RestApi.Index).query(idsQuery(id)).size(1)
       }
     }
   }

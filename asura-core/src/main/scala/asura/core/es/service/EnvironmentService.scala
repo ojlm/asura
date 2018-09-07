@@ -48,7 +48,7 @@ object EnvironmentService extends CommonService {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
       EsClient.httpClient.execute {
-        search(Environment.Index).query(idsQuery(id))
+        search(Environment.Index).query(idsQuery(id)).size(1)
       }
     }
   }

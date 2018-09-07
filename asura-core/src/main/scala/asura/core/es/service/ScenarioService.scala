@@ -42,13 +42,13 @@ object ScenarioService {
 
   def getById(id: String) = {
     EsClient.httpClient.execute {
-      search(Scenario.Index).query(idsQuery(id))
+      search(Scenario.Index).query(idsQuery(id)).size(1)
     }
   }
 
   def getByIds(ids: Seq[String]) = {
     EsClient.httpClient.execute {
-      search(Scenario.Index).query(idsQuery(ids)).sortByFieldDesc(FieldKeys.FIELD_CREATED_AT)
+      search(Scenario.Index).query(idsQuery(ids)).size(ids.length).sortByFieldDesc(FieldKeys.FIELD_CREATED_AT)
     }
   }
 
