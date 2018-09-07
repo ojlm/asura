@@ -2,6 +2,7 @@ package asura.core.job.impl
 
 import asura.common.model.{ApiMsg, BoolErrorRes}
 import asura.common.util.FutureUtils.RichFuture
+import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.scenario.ScenarioRunner
 import asura.core.es.model.JobData
 import asura.core.es.service.CaseService
@@ -32,7 +33,6 @@ object RunCaseJob extends JobBase {
   }
 
   override def doTestAsync(execDesc: JobExecDesc, log: String => Unit): Future[JobExecDesc] = {
-    import asura.core.concurrent.ExecutionContextManager.cachedExecutor
     for {
       _ <- doTestCase(execDesc, log)
       _ <- doTestScenario(execDesc, log)
@@ -63,7 +63,6 @@ object RunCaseJob extends JobBase {
     val cases = jobData.cs
     if (null != cases && !cases.isEmpty) {
       if (null != log) log("start fetch cases...")
-      import asura.core.concurrent.ExecutionContextManager.cachedExecutor
       CaseService.getCasesByIds(cases.map(_.id)).flatMap(cases => {
         if (null != log) log(s"fetch ${cases.length} cases.")
         ScenarioRunner.test(null, "job cases", cases, log, execDesc.options)
