@@ -43,7 +43,19 @@ object JobReportData {
                              var id: String,
                              var title: String,
                              var result: CaseResult = null
-                           ) extends BasicReportItem
+                           ) extends BasicReportItem {
+
+    /** data need not to be stored in database */
+    def freeData(): Unit = {
+      if (null != result) {
+        result.id = null
+        result.assert = null
+        result.context = null
+        result.request = null
+        result.result = null
+      }
+    }
+  }
 
   object CaseReportItem {
     def parse(title: String, result: CaseResult, msg: String = null): CaseReportItem = {

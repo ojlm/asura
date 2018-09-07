@@ -20,6 +20,17 @@ object JobReportService extends CommonService {
     if (null == report) {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
+      if (null != report.data) {
+        val reportData = report.data
+        if (null != reportData.cases) {
+          reportData.cases.foreach(cs => cs.freeData())
+        }
+        if (null != reportData.scenarios) {
+          reportData.scenarios.foreach(s => {
+            if (null != s.cases) s.cases.foreach(cs => cs.freeData())
+          })
+        }
+      }
       EsClient.httpClient.execute {
         indexInto(JobReport.Index / EsConfig.DefaultType).doc(report).refresh(RefreshPolicy.WAIT_UNTIL)
       }.map(toIndexDocResponse(_))
