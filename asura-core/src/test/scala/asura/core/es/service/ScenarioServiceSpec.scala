@@ -7,8 +7,6 @@ import asura.core.es.model.{DocRef, Scenario}
 import asura.core.es.{EsClient, EsClientConfig}
 import com.sksamuel.elastic4s.http.ElasticDsl._
 
-import scala.concurrent.ExecutionContext
-
 class ScenarioServiceSpec extends ScalaTestBaseSpec with EsClientConfig {
 
   private val docRefs = Seq(DocRef("eztxpWMBW6aeaWsYaB8i"), DocRef("fDtxpWMBW6aeaWsYpR-s"), DocRef("fTtxpWMBW6aeaWsYvB9D"))
@@ -37,7 +35,7 @@ class ScenarioServiceSpec extends ScalaTestBaseSpec with EsClientConfig {
       cases = docRefs
     )
     val res = ScenarioService.index(scenario).await
-    println(res.right.get)
+    println(res)
   }
 
   test("update") {
@@ -58,7 +56,7 @@ class ScenarioServiceSpec extends ScalaTestBaseSpec with EsClientConfig {
         |}
       """.stripMargin
     val res = ScenarioService.updateScenario("fzvMpmMBW6aeaWsYGR-S", JsonUtils.parse(json, classOf[Scenario])).await
-    println(res.right.get)
+    println(res)
   }
 
   test("query text") {
@@ -68,7 +66,7 @@ class ScenarioServiceSpec extends ScalaTestBaseSpec with EsClientConfig {
 
   test("get by ids") {
     val res = ScenarioService
-      .getScenariosByIds(Seq("fjvapWMBW6aeaWsYNx_j", "fjvapWMBW6aeaWsYNx_j"))(ExecutionContext.global)
+      .getScenariosByIds(Seq("fjvapWMBW6aeaWsYNx_j", "fjvapWMBW6aeaWsYNx_j"))
       .await
     println(res)
   }
