@@ -1,7 +1,7 @@
 package asura.core.es.model
 
 import asura.core.es.EsConfig
-import com.sksamuel.elastic4s.mappings.{KeywordFieldDefinition, MappingDefinition}
+import com.sksamuel.elastic4s.mappings.{KeywordField, MappingDefinition}
 
 import scala.collection.mutable
 
@@ -37,10 +37,10 @@ object UserProfile extends IndexSetting {
   val mappings: MappingDefinition = MappingDefinition(
     `type` = EsConfig.DefaultType,
     fields = BaseIndex.fieldDefinitions ++ Seq(
-      KeywordFieldDefinition(name = FieldKeys.FIELD_USERNAME),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_NICKNAME),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_EMAIL, index = Option("false")),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_AVATAR, index = Option("false"))
+      KeywordField(name = FieldKeys.FIELD_USERNAME),
+      KeywordField(name = FieldKeys.FIELD_NICKNAME),
+      KeywordField(name = FieldKeys.FIELD_EMAIL, index = Option("false")),
+      KeywordField(name = FieldKeys.FIELD_AVATAR, index = Option("false"))
     )
   )
 }

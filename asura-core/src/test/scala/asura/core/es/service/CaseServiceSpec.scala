@@ -8,7 +8,7 @@ import com.sksamuel.elastic4s.http.ElasticDsl._
 class CaseServiceSpec extends ScalaTestBaseSpec with EsClientConfig {
 
   test("delete-index") {
-    EsClient.httpClient.execute {
+    EsClient.esClient.execute {
       deleteIndex(Case.Index)
     }.await match {
       case Right(res) =>
@@ -23,7 +23,7 @@ class CaseServiceSpec extends ScalaTestBaseSpec with EsClientConfig {
   }
 
   test("update-assert-by-script") {
-    EsClient.httpClient.execute {
+    EsClient.esClient.execute {
       update("yeXvo2IBW6aeaWsYP5dr").in(Case.Index / EsConfig.DefaultType).script {
         script("ctx._source.assert = params.assert").params(Map("assert" -> Map("aaa" -> "aaaa")))
       }

@@ -5,8 +5,8 @@ import asura.common.model.{ApiRes, ApiResError}
 import asura.common.util.JsonUtils
 import asura.core.ErrorMessages
 import asura.core.es.EsResponse
+import com.sksamuel.elastic4s.http.Response
 import com.sksamuel.elastic4s.http.search.SearchResponse
-import com.sksamuel.elastic4s.http.{RequestFailure, RequestSuccess}
 import org.pac4j.core.profile.{CommonProfile, ProfileManager}
 import org.pac4j.play.PlayWebContext
 import org.pac4j.play.scala.Security
@@ -44,37 +44,35 @@ trait BaseApi extends Security[CommonProfile] {
     def toOkResult = f.map(toActionResultFromAny(_))
   }
 
-  def toActionResultFromEs(either: Either[RequestFailure, RequestSuccess[SearchResponse]], hasId: Boolean = true): Result = {
-    either match {
-      case Right(success) => OkApiRes(ApiRes(data = EsResponse.toApiData(success.result, hasId)))
-      case Left(failure) => OkApiRes(ApiResError(msg = failure.error.reason))
+  def toActionResultFromEs(response: Response[SearchResponse], hasId: Boolean = true): Result = {
+    if (response.isSuccess) {
+      OkApiRes(ApiRes(data = EsResponse.toApiData(response.result, hasId)))
+    } else {
+      OkApiRes(ApiResError(msg = response.error.reason))
     }
   }
 
-  implicit class EsListResponseToOkResult(f: Future[Either[RequestFailure, RequestSuccess[SearchResponse]]])
+  implicit class EsListResponseToOkResult(f: Future[Response[SearchResponse]])
                                          (implicit ec: ExecutionContext) {
     def toOkResultByEsList(hasId: Boolean = true) = f.map(toActionResultFromEs(_, hasId))
   }
 
   def toActionResultWithSingleDataFromEs(
-                                          either: Either[RequestFailure, RequestSuccess[SearchResponse]],
+                                          response: Response[SearchResponse],
                                           id: String, hasId: Boolean = true
                                         )(implicit request: RequestHeader): Result = {
-    either match {
-      case Left(failure) => {
-        OkApiRes(ApiResError(getI18nMessage(ErrorMessages.error_EsRequestFail(failure).name)))
+    if (response.isSuccess) {
+      if (response.result.nonEmpty) {
+        OkApiRes(ApiRes(data = EsResponse.toSingleApiData(response.result, hasId)))
+      } else {
+        OkApiRes(ApiResError(getI18nMessage(ErrorMessages.error_IdNonExists.name, id)))
       }
-      case Right(value) => {
-        if (value.result.nonEmpty) {
-          OkApiRes(ApiRes(data = EsResponse.toSingleApiData(value.result, hasId)))
-        } else {
-          OkApiRes(ApiResError(getI18nMessage(ErrorMessages.error_IdNonExists.name, id)))
-        }
-      }
+    } else {
+      OkApiRes(ApiResError(getI18nMessage(ErrorMessages.error_EsRequestFail(response).name)))
     }
   }
 
-  implicit class EsSingleResponseToOkResult(f: Future[Either[RequestFailure, RequestSuccess[SearchResponse]]])
+  implicit class EsSingleResponseToOkResult(f: Future[Response[SearchResponse]])
                                            (implicit ec: ExecutionContext, implicit val request: RequestHeader) {
     def toOkResultByEsOneDoc(id: String) = f.map(toActionResultWithSingleDataFromEs(_, id))
   }

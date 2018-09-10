@@ -3,7 +3,7 @@ package asura.core.es.model
 import asura.common.util.StringUtils
 import asura.core.es.EsConfig
 import asura.core.util.JacksonSupport
-import com.sksamuel.elastic4s.mappings.{BasicFieldDefinition, _}
+import com.sksamuel.elastic4s.mappings.{BasicField, _}
 
 import scala.collection.mutable
 
@@ -65,54 +65,54 @@ object Case extends IndexSetting {
   val mappings: MappingDefinition = MappingDefinition(
     `type` = EsConfig.DefaultType,
     fields = BaseIndex.fieldDefinitions ++ Seq(
-      KeywordFieldDefinition(name = FieldKeys.FIELD_GROUP),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_PROJECT),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_ENV),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_NAMESPACE),
-      BasicFieldDefinition(name = FieldKeys.FIELD_USE_PROXY, `type` = "boolean"),
-      NestedFieldDefinition(name = FieldKeys.FIELD_LABELS, fields = Seq(
-        KeywordFieldDefinition(name = FieldKeys.FIELD_NAME),
+      KeywordField(name = FieldKeys.FIELD_GROUP),
+      KeywordField(name = FieldKeys.FIELD_PROJECT),
+      KeywordField(name = FieldKeys.FIELD_ENV),
+      KeywordField(name = FieldKeys.FIELD_NAMESPACE),
+      BasicField(name = FieldKeys.FIELD_USE_PROXY, `type` = "boolean"),
+      NestedField(name = FieldKeys.FIELD_LABELS, fields = Seq(
+        KeywordField(name = FieldKeys.FIELD_NAME),
       )),
-      ObjectFieldDefinition(
+      ObjectField(
         name = FieldKeys.FIELD_REQUEST,
         fields = Seq(
-          KeywordFieldDefinition(name = FieldKeys.FIELD_PROTOCOL),
-          KeywordFieldDefinition(name = FieldKeys.FIELD_HOST),
-          KeywordFieldDefinition(name = FieldKeys.FIELD_RAW_URL, index = Option("false")),
-          KeywordFieldDefinition(name = FieldKeys.FIELD_URL_PATH),
-          BasicFieldDefinition(name = FieldKeys.FIELD_PORT, `type` = "integer"),
-          ObjectFieldDefinition(name = FieldKeys.FIELD_AUTH, fields = Seq(
-            KeywordFieldDefinition(name = FieldKeys.FIELD_TYPE),
-            ObjectFieldDefinition(name = FieldKeys.FIELD_DATA, dynamic = Some("false")),
+          KeywordField(name = FieldKeys.FIELD_PROTOCOL),
+          KeywordField(name = FieldKeys.FIELD_HOST),
+          KeywordField(name = FieldKeys.FIELD_RAW_URL, index = Option("false")),
+          KeywordField(name = FieldKeys.FIELD_URL_PATH),
+          BasicField(name = FieldKeys.FIELD_PORT, `type` = "integer"),
+          ObjectField(name = FieldKeys.FIELD_AUTH, fields = Seq(
+            KeywordField(name = FieldKeys.FIELD_TYPE),
+            ObjectField(name = FieldKeys.FIELD_DATA, dynamic = Some("false")),
           )),
-          KeywordFieldDefinition(name = FieldKeys.FIELD_METHOD),
-          NestedFieldDefinition(name = FieldKeys.FIELD_PATH, fields = Seq(
-            KeywordFieldDefinition(name = FieldKeys.FIELD_KEY),
-            TextFieldDefinition(name = FieldKeys.FIELD_VALUE, analysis = EsConfig.IK_ANALYZER),
-            BasicFieldDefinition(name = FieldKeys.FIELD_ENABLED, `type` = "boolean"),
+          KeywordField(name = FieldKeys.FIELD_METHOD),
+          NestedField(name = FieldKeys.FIELD_PATH, fields = Seq(
+            KeywordField(name = FieldKeys.FIELD_KEY),
+            TextField(name = FieldKeys.FIELD_VALUE, analysis = EsConfig.IK_ANALYZER),
+            BasicField(name = FieldKeys.FIELD_ENABLED, `type` = "boolean"),
           )),
-          NestedFieldDefinition(name = FieldKeys.FIELD_QUERY, fields = Seq(
-            KeywordFieldDefinition(name = FieldKeys.FIELD_KEY),
-            TextFieldDefinition(name = FieldKeys.FIELD_VALUE, analysis = EsConfig.IK_ANALYZER),
-            BasicFieldDefinition(name = FieldKeys.FIELD_ENABLED, `type` = "boolean"),
+          NestedField(name = FieldKeys.FIELD_QUERY, fields = Seq(
+            KeywordField(name = FieldKeys.FIELD_KEY),
+            TextField(name = FieldKeys.FIELD_VALUE, analysis = EsConfig.IK_ANALYZER),
+            BasicField(name = FieldKeys.FIELD_ENABLED, `type` = "boolean"),
           )),
-          NestedFieldDefinition(name = FieldKeys.FIELD_HEADER, fields = Seq(
-            KeywordFieldDefinition(name = FieldKeys.FIELD_KEY),
-            TextFieldDefinition(name = FieldKeys.FIELD_VALUE, analysis = EsConfig.IK_ANALYZER),
-            BasicFieldDefinition(name = FieldKeys.FIELD_ENABLED, `type` = "boolean"),
+          NestedField(name = FieldKeys.FIELD_HEADER, fields = Seq(
+            KeywordField(name = FieldKeys.FIELD_KEY),
+            TextField(name = FieldKeys.FIELD_VALUE, analysis = EsConfig.IK_ANALYZER),
+            BasicField(name = FieldKeys.FIELD_ENABLED, `type` = "boolean"),
           )),
-          NestedFieldDefinition(name = FieldKeys.FIELD_COOKIE, fields = Seq(
-            KeywordFieldDefinition(name = FieldKeys.FIELD_KEY),
-            TextFieldDefinition(name = FieldKeys.FIELD_VALUE, analysis = EsConfig.IK_ANALYZER),
-            BasicFieldDefinition(name = FieldKeys.FIELD_ENABLED, `type` = "boolean"),
+          NestedField(name = FieldKeys.FIELD_COOKIE, fields = Seq(
+            KeywordField(name = FieldKeys.FIELD_KEY),
+            TextField(name = FieldKeys.FIELD_VALUE, analysis = EsConfig.IK_ANALYZER),
+            BasicField(name = FieldKeys.FIELD_ENABLED, `type` = "boolean"),
           )),
-          KeywordFieldDefinition(name = FieldKeys.FIELD_CONTENT_TYPE),
-          NestedFieldDefinition(name = FieldKeys.FIELD_BODY, fields = Seq(
-            KeywordFieldDefinition(name = FieldKeys.FIELD_CONTENT_TYPE),
-            TextFieldDefinition(name = FieldKeys.FIELD_DATA, analysis = EsConfig.IK_ANALYZER),
+          KeywordField(name = FieldKeys.FIELD_CONTENT_TYPE),
+          NestedField(name = FieldKeys.FIELD_BODY, fields = Seq(
+            KeywordField(name = FieldKeys.FIELD_CONTENT_TYPE),
+            TextField(name = FieldKeys.FIELD_DATA, analysis = EsConfig.IK_ANALYZER),
           )),
         )),
-      ObjectFieldDefinition(name = FieldKeys.FIELD_ASSERT, dynamic = Some("false")),
+      ObjectField(name = FieldKeys.FIELD_ASSERT, dynamic = Some("false")),
     )
   )
 }

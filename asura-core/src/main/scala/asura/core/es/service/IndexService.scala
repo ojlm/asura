@@ -9,30 +9,28 @@ object IndexService {
 
   /** this will block current thread,it will only be used at startup */
   def initCheck(idx: IndexSetting): Boolean = {
-    val cli = EsClient.httpClient
-    cli.execute {
-      indexExists(idx.Index)
-    }.await match {
-      case Right(res) =>
-        if (res.result.exists) {
+    val cli = EsClient.esClient
+    val res = cli.execute(indexExists(idx.Index)).await
+    if (res.isSuccess) {
+      if (res.result.exists) {
+        true
+      } else {
+        val res2 = cli.execute {
+          createIndex(idx.Index)
+            .shards(idx.shards)
+            .replicas(idx.replicas)
+            .mappings(idx.mappings)
+        }.await
+        if (res2.isSuccess) {
           true
         } else {
-          cli.execute {
-            createIndex(idx.Index)
-              .shards(idx.shards)
-              .replicas(idx.replicas)
-              .mappings(idx.mappings)
-          }.await match {
-            case Right(_) =>
-              true
-            case Left(res) =>
-              logger.error(res.error.reason)
-              false
-          }
+          logger.error(res2.error.reason)
+          false
         }
-      case Left(res) =>
-        logger.error(res.error.reason)
-        false
+      }
+    } else {
+      logger.error(res.error.reason)
+      false
     }
   }
 

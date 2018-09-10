@@ -80,19 +80,19 @@ object RestApi extends IndexSetting {
   val mappings: MappingDefinition = MappingDefinition(
     `type` = EsConfig.DefaultType,
     fields = BaseIndex.fieldDefinitions ++ Seq(
-      KeywordFieldDefinition(name = FieldKeys.FIELD_ID),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_PATH, copyTo = Seq(FieldKeys.FIELD__TEXT)),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_METHOD),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_GROUP),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_PROJECT),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_SERVICE),
-      BasicFieldDefinition(name = FieldKeys.FIELD_DEPRECATED, `type` = "boolean"),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_VERSION),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_TYPE),
-      NestedFieldDefinition(name = FieldKeys.FIELD_LABELS, fields = Seq(
-        KeywordFieldDefinition(name = FieldKeys.FIELD_NAME),
+      KeywordField(name = FieldKeys.FIELD_ID),
+      KeywordField(name = FieldKeys.FIELD_PATH, copyTo = Seq(FieldKeys.FIELD__TEXT)),
+      KeywordField(name = FieldKeys.FIELD_METHOD),
+      KeywordField(name = FieldKeys.FIELD_GROUP),
+      KeywordField(name = FieldKeys.FIELD_PROJECT),
+      KeywordField(name = FieldKeys.FIELD_SERVICE),
+      BasicField(name = FieldKeys.FIELD_DEPRECATED, `type` = "boolean"),
+      KeywordField(name = FieldKeys.FIELD_VERSION),
+      KeywordField(name = FieldKeys.FIELD_TYPE),
+      NestedField(name = FieldKeys.FIELD_LABELS, fields = Seq(
+        KeywordField(name = FieldKeys.FIELD_NAME),
       )),
-      ObjectFieldDefinition(name = FieldKeys.FIELD_SCHEMA, dynamic = Some("false")),
+      ObjectField(name = FieldKeys.FIELD_SCHEMA, dynamic = Some("false")),
     )
   )
 }
