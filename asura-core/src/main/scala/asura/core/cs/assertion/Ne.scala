@@ -1,6 +1,6 @@
 package asura.core.cs.assertion
 
-import asura.core.cs.assertion.engine.AssertResult
+import asura.core.cs.assertion.engine.{AssertResult, FailAssertResult, PassAssertResult}
 
 import scala.concurrent.Future
 
@@ -12,9 +12,15 @@ object Ne extends CompareOperator with Assertion {
     Future.successful(apply(actual, expect))
   }
 
-  def apply(src: Any, target: Any): AssertResult = {
-    compareTwo(src, target) { (src, target) =>
-      src.compareTo(target) != 0
+  def apply(actual: Any, expect: Any): AssertResult = {
+    if (null == actual && null == expect) {
+      FailAssertResult(1)
+    } else if (null == actual || null == expect) {
+      PassAssertResult(1)
+    } else {
+      compareTwo(actual, expect) { (src, target) =>
+        src.compareTo(target) != 0
+      }
     }
   }
 }
