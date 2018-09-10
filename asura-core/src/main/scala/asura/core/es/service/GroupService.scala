@@ -11,7 +11,7 @@ import asura.core.es.{EsClient, EsConfig}
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
-import com.sksamuel.elastic4s.searches.queries.QueryDefinition
+import com.sksamuel.elastic4s.searches.queries.Query
 import com.typesafe.scalalogging.Logger
 
 import scala.collection.mutable.ArrayBuffer
@@ -26,17 +26,16 @@ object GroupService extends CommonService {
       ErrorMessages.error_IllegalGroupId.toFutureFail
     } else {
       docExists(group.id).flatMap(isExist => {
-        isExist match {
-          case Right(result) =>
-            if (result.result) {
-              ErrorMessages.error_GroupExists.toFutureFail
-            } else {
-              EsClient.httpClient.execute {
-                indexInto(Group.Index / EsConfig.DefaultType).doc(group).id(group.id).refresh(RefreshPolicy.WAIT_UNTIL)
-              }.map(toIndexDocResponse(_))
-            }
-          case Left(err) =>
-            ErrorMessages.error_EsRequestFail(err).toFutureFail
+        if (isExist.isSuccess) {
+          if (isExist.result) {
+            ErrorMessages.error_GroupExists.toFutureFail
+          } else {
+            EsClient.esClient.execute {
+              indexInto(Group.Index / EsConfig.DefaultType).doc(group).id(group.id).refresh(RefreshPolicy.WAIT_UNTIL)
+            }.map(toIndexDocResponse(_))
+          }
+        } else {
+          ErrorMessages.error_EsRequestFail(isExist).toFutureFail
         }
       })
     }
@@ -46,7 +45,7 @@ object GroupService extends CommonService {
     if (StringUtils.isEmpty(id)) {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
-      EsClient.httpClient.execute {
+      EsClient.esClient.execute {
         delete(id).from(Group.Index / EsConfig.DefaultType).refresh(RefreshPolicy.WAIT_UNTIL)
       }
     }
@@ -56,14 +55,14 @@ object GroupService extends CommonService {
     if (StringUtils.isEmpty(id)) {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
-      EsClient.httpClient.execute {
+      EsClient.esClient.execute {
         search(Group.Index).query(idsQuery(id)).size(1)
       }
     }
   }
 
   def getAll() = {
-    EsClient.httpClient.execute {
+    EsClient.esClient.execute {
       search(Group.Index)
         .query(matchAllQuery())
         .limit(EsConfig.MaxCount)
@@ -75,24 +74,24 @@ object GroupService extends CommonService {
     if (null == group || null == group.id) {
       ErrorMessages.error_EmptyId.toFutureFail
     } else {
-      EsClient.httpClient.execute {
+      EsClient.esClient.execute {
         update(group.id).in(Group.Index / EsConfig.DefaultType).doc(group.toUpdateMap)
       }
     }.map(toUpdateDocResponse(_))
   }
 
   def docExists(id: String) = {
-    EsClient.httpClient.execute {
+    EsClient.esClient.execute {
       exists(id, Group.Index, EsConfig.DefaultType)
     }
   }
 
   def queryGroup(query: QueryGroup) = {
-    val queryDefinitions = ArrayBuffer[QueryDefinition]()
-    if (StringUtils.isNotEmpty(query.id)) queryDefinitions += wildcardQuery(FieldKeys.FIELD_ID, query.id + "*")
-    if (StringUtils.isNotEmpty(query.text)) queryDefinitions += matchQuery(FieldKeys.FIELD__TEXT, query.text)
-    EsClient.httpClient.execute {
-      search(Group.Index).query(boolQuery().must(queryDefinitions))
+    val esQueries = ArrayBuffer[Query]()
+    if (StringUtils.isNotEmpty(query.id)) esQueries += wildcardQuery(FieldKeys.FIELD_ID, query.id + "*")
+    if (StringUtils.isNotEmpty(query.text)) esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
+    EsClient.esClient.execute {
+      search(Group.Index).query(boolQuery().must(esQueries))
         .from(query.pageFrom)
         .size(query.pageSize)
         .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)

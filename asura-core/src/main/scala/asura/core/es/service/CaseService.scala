@@ -5,14 +5,15 @@ import asura.common.util.StringUtils
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.CaseValidator
-import asura.core.cs.model.QueryCase
+import asura.core.cs.model.{QueryCase, QueryHistory}
 import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig, EsResponse}
 import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl.{bulk, delete, indexInto, _}
-import com.sksamuel.elastic4s.searches.queries.QueryDefinition
+import com.sksamuel.elastic4s.searches.queries.Query
+import com.sksamuel.elastic4s.searches.sort.FieldSort
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -23,7 +24,7 @@ object CaseService extends CommonService {
   def index(cs: Case): Future[IndexDocResponse] = {
     val error = CaseValidator.check(cs)
     if (null == error) {
-      EsClient.httpClient.execute {
+      EsClient.esClient.execute {
         indexInto(Case.Index / EsConfig.DefaultType).doc(cs).refresh(RefreshPolicy.WAIT_UNTIL)
       }.map(toIndexDocResponse(_))
     } else {
@@ -36,7 +37,7 @@ object CaseService extends CommonService {
     if (null != error) {
       error.toFutureFail
     } else {
-      EsClient.httpClient.execute {
+      EsClient.esClient.execute {
         bulk(
           css.map(cs => indexInto(Case.Index / EsConfig.DefaultType).doc(cs))
         )
@@ -45,26 +46,26 @@ object CaseService extends CommonService {
   }
 
   def deleteDoc(id: String): Future[DeleteDocResponse] = {
-    EsClient.httpClient.execute {
+    EsClient.esClient.execute {
       delete(id).from(Case.Index / EsConfig.DefaultType).refresh(RefreshPolicy.WAIT_UNTIL)
     }.map(toDeleteDocResponse(_))
   }
 
   def deleteDoc(ids: Seq[String]): Future[DeleteDocResponse] = {
-    EsClient.httpClient.execute {
+    EsClient.esClient.execute {
       bulk(ids.map(id => delete(id).from(Case.Index / EsConfig.DefaultType)))
     }.map(toDeleteDocResponseFromBulk(_))
   }
 
   def getById(id: String) = {
-    EsClient.httpClient.execute {
+    EsClient.esClient.execute {
       search(Case.Index).query(idsQuery(id)).size(1)
     }
   }
 
   private def getByIds(ids: Seq[String]) = {
     if (null != ids) {
-      EsClient.httpClient.execute {
+      EsClient.esClient.execute {
         search(Case.Index).query(idsQuery(ids)).from(0).size(ids.length).sortByFieldDesc(FieldKeys.FIELD_CREATED_AT)
       }
     } else {
@@ -78,7 +79,7 @@ object CaseService extends CommonService {
     } else {
       val error = CaseValidator.check(cs)
       if (null == error) {
-        EsClient.httpClient.execute {
+        EsClient.esClient.execute {
           val (src, params) = cs.toUpdateScriptParams
           update(id).in(Case.Index / EsConfig.DefaultType).script {
             script(src).params(params)
@@ -96,15 +97,14 @@ object CaseService extends CommonService {
   def getCasesByIds(ids: Seq[String])(implicit executor: ExecutionContext): Future[Seq[(String, Case)]] = {
     if (null != ids && ids.nonEmpty) {
       getByIds(ids).map(res => {
-        res match {
-          case Right(success) =>
-            if (success.result.isEmpty) {
-              throw ErrorMessages.error_IdsNotFound(ids).toException
-            } else {
-              success.result.hits.hits.map(hit => (hit.id, JacksonSupport.parse(hit.sourceAsString, classOf[Case])))
-            }
-          case Left(failure) =>
-            throw RequestFailException(failure.error.reason)
+        if (res.isSuccess) {
+          if (res.result.isEmpty) {
+            throw ErrorMessages.error_IdsNotFound(ids).toException
+          } else {
+            res.result.hits.hits.map(hit => (hit.id, JacksonSupport.parse(hit.sourceAsString, classOf[Case])))
+          }
+        } else {
+          throw RequestFailException(res.error.reason)
         }
       })
     } else {
@@ -116,16 +116,15 @@ object CaseService extends CommonService {
     if (null != ids && ids.nonEmpty) {
       val map = mutable.HashMap[String, Case]()
       getByIds(ids).map(res => {
-        res match {
-          case Right(success) =>
-            if (success.result.isEmpty) {
-              throw ErrorMessages.error_IdsNotFound(ids).toException
-            } else {
-              success.result.hits.hits.foreach(hit => map += (hit.id -> JacksonSupport.parse(hit.sourceAsString, classOf[Case])))
-              map.toMap
-            }
-          case Left(failure) =>
-            throw ErrorMessages.error_EsRequestFail(failure).toException
+        if (res.isSuccess) {
+          if (res.result.isEmpty) {
+            throw ErrorMessages.error_IdsNotFound(ids).toException
+          } else {
+            res.result.hits.hits.foreach(hit => map += (hit.id -> JacksonSupport.parse(hit.sourceAsString, classOf[Case])))
+            map.toMap
+          }
+        } else {
+          throw ErrorMessages.error_EsRequestFail(res).toException
         }
       })
     } else {
@@ -139,35 +138,56 @@ object CaseService extends CommonService {
   def queryCase(query: QueryCase): Future[Map[String, Any]] = {
     if (null != query.ids && query.ids.nonEmpty) {
       getByIds(query.ids).map(res => {
-        res match {
-          case Right(success) => {
-            val idMap = scala.collection.mutable.HashMap[String, Any]()
-            success.result.hits.hits.foreach(hit => {
-              idMap += (hit.id -> (hit.sourceAsMap + (FieldKeys.FIELD__ID -> hit.id)))
-            })
-            Map("total" -> success.result.hits.total, "list" -> query.ids.map(id => idMap(id)))
-          }
-          case Left(failure) => throw ErrorMessages.error_EsRequestFail(failure).toException
+        if (res.isSuccess) {
+          val idMap = scala.collection.mutable.HashMap[String, Any]()
+          res.result.hits.hits.foreach(hit => {
+            idMap += (hit.id -> (hit.sourceAsMap + (FieldKeys.FIELD__ID -> hit.id)))
+          })
+          Map("total" -> res.result.hits.total, "list" -> query.ids.map(id => idMap(id)))
+        } else {
+          throw ErrorMessages.error_EsRequestFail(res).toException
         }
       })
     } else {
-      val queryDefinitions = ArrayBuffer[QueryDefinition]()
-      if (StringUtils.isNotEmpty(query.group)) queryDefinitions += termQuery(FieldKeys.FIELD_GROUP, query.group)
-      if (StringUtils.isNotEmpty(query.project)) queryDefinitions += termQuery(FieldKeys.FIELD_PROJECT, query.project)
-      if (StringUtils.isNotEmpty(query.api)) queryDefinitions += termQuery(FieldKeys.FIELD_API, query.api)
-      if (StringUtils.isNotEmpty(query.text)) queryDefinitions += matchQuery(FieldKeys.FIELD__TEXT, query.text)
-      if (StringUtils.isNotEmpty(query.path)) queryDefinitions += wildcardQuery(FieldKeys.FIELD_NESTED_REQUEST_URLPATH, s"${query.path}*")
-      EsClient.httpClient.execute {
-        search(Case.Index).query(boolQuery().must(queryDefinitions))
+      val esQueries = ArrayBuffer[Query]()
+      if (StringUtils.isNotEmpty(query.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, query.group)
+      if (StringUtils.isNotEmpty(query.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, query.project)
+      if (StringUtils.isNotEmpty(query.api)) esQueries += termQuery(FieldKeys.FIELD_API, query.api)
+      if (StringUtils.isNotEmpty(query.text)) esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
+      if (StringUtils.isNotEmpty(query.path)) esQueries += wildcardQuery(FieldKeys.FIELD_NESTED_REQUEST_URLPATH, s"${query.path}*")
+      EsClient.esClient.execute {
+        search(Case.Index).query(boolQuery().must(esQueries))
           .from(query.pageFrom)
           .size(query.pageSize)
           .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
       }.map(res => {
-        res match {
-          case Right(success) => EsResponse.toApiData(success.result)
-          case Left(failure) => throw ErrorMessages.error_EsRequestFail(failure).toException
+        if (res.isSuccess) {
+          EsResponse.toApiData(res.result)
+        } else {
+          throw ErrorMessages.error_EsRequestFail(res).toException
         }
       })
+    }
+  }
+
+  def queryHistory(query: QueryHistory) = {
+    val esQueries = ArrayBuffer[Query]()
+    if (StringUtils.isNotEmpty(query.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, query.group)
+    if (StringUtils.isNotEmpty(query.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, query.project)
+    EsClient.esClient.execute {
+      val clause = search(Case.Index)
+        .query(boolQuery().must(esQueries))
+        .sortBy(FieldSort(FieldKeys.FIELD_CREATED_AT).desc(), FieldSort(FieldKeys.FIELD__ID).desc())
+      if (StringUtils.isNotEmpty(query.id) && StringUtils.isNotEmpty(query.createdAt)) {
+        clause.searchAfter(Seq(query.createdAt, query.id))
+      }
+      clause
+    }.map { res =>
+      if (res.isSuccess) {
+        EsResponse.toApiData(res.result)
+      } else {
+        throw ErrorMessages.error_EsRequestFail(res).toException
+      }
     }
   }
 }

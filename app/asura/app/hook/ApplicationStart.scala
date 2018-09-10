@@ -58,7 +58,7 @@ class ApplicationStart @Inject()(
   // add stop hook
   lifecycle.addStopHook { () =>
     Future {
-      if (null != EsClient.httpClient) EsClient.httpClient.close()
+      if (null != EsClient.esClient) EsClient.esClient.close()
     }(system.dispatcher)
   }
 }

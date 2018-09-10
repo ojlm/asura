@@ -4,7 +4,7 @@ object Dependencies {
 
   val akkaVersion = "2.5.11"
   val akkaHttpVersion = "10.0.13"
-  val elastic4sVersion = "6.1.1"
+  val elastic4sVersion = "6.3.7"
   val playPac4jVersion = "6.0.0"
   val pac4jVersion = "3.0.1"
 

@@ -1,13 +1,13 @@
 package asura.core
 
-import com.sksamuel.elastic4s.http.RequestFailure
+import com.sksamuel.elastic4s.http.Response
 
 import scala.concurrent.Future
 
 object ErrorMessages extends Enumeration {
 
   // message enumeration
-  def error_EsRequestFail(failure: RequestFailure) = Val(failure.error.reason)
+  def error_EsRequestFail(response: Response[_]) = Val(response.error.reason)
 
   val error_IllegalGroupId = Val("Illegal group id")
   val error_GroupExists = Val("Group already exists")

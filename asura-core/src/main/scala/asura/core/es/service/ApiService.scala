@@ -7,11 +7,10 @@ import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.model.QueryApi
 import asura.core.es.model.{BulkDocResponse, FieldKeys, IndexDocResponse, RestApi}
 import asura.core.es.{EsClient, EsConfig}
-import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
-import com.sksamuel.elastic4s.searches.queries.QueryDefinition
+import com.sksamuel.elastic4s.searches.queries.Query
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -28,7 +27,7 @@ object ApiService extends CommonService {
         error.toFutureFail
       } else {
         api.id = api.generateId()
-        EsClient.httpClient.execute {
+        EsClient.esClient.execute {
           indexInto(RestApi.Index / EsConfig.DefaultType)
             .doc(api)
             .refresh(RefreshPolicy.WAIT_UNTIL)
@@ -45,7 +44,7 @@ object ApiService extends CommonService {
       if (null != error) {
         error.toFutureFail
       } else {
-        EsClient.httpClient.execute {
+        EsClient.esClient.execute {
           bulk {
             apis.map(api => {
               api.id = api.generateId()
@@ -58,13 +57,13 @@ object ApiService extends CommonService {
   }
 
   def queryApi(query: QueryApi) = {
-    val queryDefinitions = ArrayBuffer[QueryDefinition]()
-    if (StringUtils.isNotEmpty(query.path)) queryDefinitions += wildcardQuery(FieldKeys.FIELD_PATH, query.path + "*")
-    if (StringUtils.isNotEmpty(query.text)) queryDefinitions += matchQuery(FieldKeys.FIELD__TEXT, query.text)
-    if (StringUtils.isNotEmpty(query.group)) queryDefinitions += termQuery(FieldKeys.FIELD_GROUP, query.group)
-    if (StringUtils.isNotEmpty(query.project)) queryDefinitions += termQuery(FieldKeys.FIELD_PROJECT, query.project)
-    EsClient.httpClient.execute {
-      search(RestApi.Index).query(boolQuery().must(queryDefinitions))
+    val esQueries = ArrayBuffer[Query]()
+    if (StringUtils.isNotEmpty(query.path)) esQueries += wildcardQuery(FieldKeys.FIELD_PATH, query.path + "*")
+    if (StringUtils.isNotEmpty(query.text)) esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
+    if (StringUtils.isNotEmpty(query.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, query.group)
+    if (StringUtils.isNotEmpty(query.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, query.project)
+    EsClient.esClient.execute {
+      search(RestApi.Index).query(boolQuery().must(esQueries))
         .from(query.pageFrom)
         .size(query.pageSize)
         .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
@@ -80,7 +79,7 @@ object ApiService extends CommonService {
       if (null != error) {
         error.toFutureFail
       } else {
-        EsClient.httpClient.execute {
+        EsClient.esClient.execute {
           search(RestApi.Index).bool(should(
             apis.map(api => must(
               termQuery(FieldKeys.FIELD_PROJECT, api.project),
@@ -98,7 +97,7 @@ object ApiService extends CommonService {
     if (StringUtils.isEmpty(id)) {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
-      EsClient.httpClient.execute {
+      EsClient.esClient.execute {
         delete(id).from(RestApi.Index / EsConfig.DefaultType).refresh(RefreshPolicy.WAIT_UNTIL)
       }
     }
@@ -108,7 +107,7 @@ object ApiService extends CommonService {
     if (null == ids || ids.isEmpty) {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
-      EsClient.httpClient.execute {
+      EsClient.esClient.execute {
         bulk(ids.map(id => delete(id).from(RestApi.Index / EsConfig.DefaultType)))
       }
     }
@@ -119,7 +118,7 @@ object ApiService extends CommonService {
     if (null != error) {
       error.toFutureFail
     } else {
-      EsClient.httpClient.execute {
+      EsClient.esClient.execute {
         search(RestApi.Index).query(idsQuery(api.generateId()))
       }
     }
@@ -129,7 +128,7 @@ object ApiService extends CommonService {
     if (StringUtils.isEmpty(id)) {
       ErrorMessages.error_IdNonExists.toFutureFail
     } else {
-      EsClient.httpClient.execute {
+      EsClient.esClient.execute {
         search(RestApi.Index).query(idsQuery(id)).size(1)
       }
     }
@@ -139,14 +138,14 @@ object ApiService extends CommonService {
     if (null == ids || ids.isEmpty) {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
-      EsClient.httpClient.execute {
+      EsClient.esClient.execute {
         search(RestApi.Index).query(idsQuery(ids))
       }
     }
   }
 
   def getAll(project: String) = {
-    EsClient.httpClient.execute {
+    EsClient.esClient.execute {
       search(RestApi.Index)
         .query(termQuery(FieldKeys.FIELD_PROJECT, project))
         .limit(EsConfig.MaxCount)
@@ -161,7 +160,7 @@ object ApiService extends CommonService {
       val api = apiUpdate.api
       val error = validate(api)
       if (null == error) {
-        EsClient.httpClient.execute {
+        EsClient.esClient.execute {
           update(apiUpdate.id).in(RestApi.Index / EsConfig.DefaultType).doc(api.toUpdateMap)
         }
       } else {
@@ -171,7 +170,7 @@ object ApiService extends CommonService {
   }
 
   def docCount(path: String, project: String) = {
-    EsClient.httpClient.execute {
+    EsClient.esClient.execute {
       count(RestApi.Index).filter {
         boolQuery().must(
           termQuery(FieldKeys.FIELD_PATH, path),
@@ -182,7 +181,7 @@ object ApiService extends CommonService {
   }
 
   def docCount(path: String, method: String, version: String, project: String) = {
-    EsClient.httpClient.execute {
+    EsClient.esClient.execute {
       count(RestApi.Index).filter {
         boolQuery().must(
           termQuery(FieldKeys.FIELD_PATH, path),
@@ -228,26 +227,6 @@ object ApiService extends CommonService {
       }
     }
     errMsg
-  }
-
-  def getApiById(id: String): Future[RestApi] = {
-    if (StringUtils.isEmpty(id)) {
-      Future.successful(null)
-    } else {
-      getById(id).map(res => {
-        res match {
-          case Right(success) =>
-            if (success.result.isEmpty) {
-              throw ErrorMessages.error_IdNonExists.toException
-            } else {
-              val hit = success.result.hits.hits(0)
-              JacksonSupport.parse(hit.sourceAsString, classOf[RestApi])
-            }
-          case Left(failure) =>
-            throw ErrorMessages.error_EsRequestFail(failure).toException
-        }
-      })
-    }
   }
 
   case class ApiUpdate(

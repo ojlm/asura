@@ -9,7 +9,7 @@ import asura.core.es.{EsClient, EsConfig}
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
-import com.sksamuel.elastic4s.searches.queries.QueryDefinition
+import com.sksamuel.elastic4s.searches.queries.Query
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
@@ -31,7 +31,7 @@ object JobReportService extends CommonService {
           })
         }
       }
-      EsClient.httpClient.execute {
+      EsClient.esClient.execute {
         indexInto(JobReport.Index / EsConfig.DefaultType).doc(report).refresh(RefreshPolicy.WAIT_UNTIL)
       }.map(toIndexDocResponse(_))
     }
@@ -41,7 +41,7 @@ object JobReportService extends CommonService {
     if (StringUtils.isEmpty(id)) {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
-      EsClient.httpClient.execute {
+      EsClient.esClient.execute {
         delete(id).from(JobReport.Index).refresh(RefreshPolicy.WAIT_UNTIL)
       }.map(toDeleteDocResponse(_))
     }
@@ -51,7 +51,7 @@ object JobReportService extends CommonService {
     if (null == ids || ids.isEmpty) {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
-      EsClient.httpClient.execute {
+      EsClient.esClient.execute {
         bulk(ids.map(id => delete(id).from(JobReport.Index)))
       }.map(toBulkDocResponse(_))
     }
@@ -61,7 +61,7 @@ object JobReportService extends CommonService {
     if (StringUtils.isEmpty(id)) {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
-      EsClient.httpClient.execute {
+      EsClient.esClient.execute {
         search(JobReport.Index).query(idsQuery(id)).size(1)
       }
     }
@@ -72,29 +72,29 @@ object JobReportService extends CommonService {
     if (null == jobReport && jobReport.toUpdateMap.nonEmpty) {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
-      EsClient.httpClient.execute {
+      EsClient.esClient.execute {
         update(id).in(JobReport.Index / EsConfig.DefaultType).doc(jobReport.toUpdateMap)
       }.map(toUpdateDocResponse(_))
     }
   }
 
   def query(report: QueryJobReport) = {
-    val queryDefinitions = ArrayBuffer[QueryDefinition]()
+    val esQueries = ArrayBuffer[Query]()
     if (StringUtils.isNotEmpty(report.group)) {
-      queryDefinitions += termQuery(FieldKeys.FIELD_GROUP, report.group)
+      esQueries += termQuery(FieldKeys.FIELD_GROUP, report.group)
     }
     if (StringUtils.isNotEmpty(report.classAlias)) {
-      queryDefinitions += termQuery(FieldKeys.FIELD_CLASS_ALIAS, report.classAlias)
+      esQueries += termQuery(FieldKeys.FIELD_CLASS_ALIAS, report.classAlias)
     }
     if (StringUtils.isNotEmpty(report.scheduler)) {
-      queryDefinitions += termQuery(FieldKeys.FIELD_SCHEDULER, report.scheduler)
+      esQueries += termQuery(FieldKeys.FIELD_SCHEDULER, report.scheduler)
     }
     if (StringUtils.isNotEmpty(report.`type`)) {
-      queryDefinitions += termQuery(FieldKeys.FIELD_TYPE, report.`type`)
+      esQueries += termQuery(FieldKeys.FIELD_TYPE, report.`type`)
     }
-    EsClient.httpClient.execute {
+    EsClient.esClient.execute {
       val clause = search(JobReport.Index).query {
-        boolQuery().must(queryDefinitions)
+        boolQuery().must(esQueries)
       }
       clause.sourceExclude(FieldKeys.FIELD_DATA)
         .from(report.pageFrom)

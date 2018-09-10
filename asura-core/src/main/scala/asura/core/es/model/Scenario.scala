@@ -34,13 +34,13 @@ object Scenario extends IndexSetting {
   val mappings: MappingDefinition = MappingDefinition(
     `type` = EsConfig.DefaultType,
     fields = BaseIndex.fieldDefinitions ++ Seq(
-      KeywordFieldDefinition(name = FieldKeys.FIELD_GROUP),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_PROJECT),
-      NestedFieldDefinition(name = FieldKeys.FIELD_CASES, fields = Seq(
-        KeywordFieldDefinition(name = FieldKeys.FIELD_ID),
+      KeywordField(name = FieldKeys.FIELD_GROUP),
+      KeywordField(name = FieldKeys.FIELD_PROJECT),
+      NestedField(name = FieldKeys.FIELD_CASES, fields = Seq(
+        KeywordField(name = FieldKeys.FIELD_ID),
       )),
-      NestedFieldDefinition(name = FieldKeys.FIELD_LABELS, fields = Seq(
-        KeywordFieldDefinition(name = FieldKeys.FIELD_NAME),
+      NestedField(name = FieldKeys.FIELD_LABELS, fields = Seq(
+        KeywordField(name = FieldKeys.FIELD_NAME),
       )),
     )
   )

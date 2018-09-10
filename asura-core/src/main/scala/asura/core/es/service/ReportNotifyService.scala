@@ -11,7 +11,7 @@ import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
-import com.sksamuel.elastic4s.searches.queries.QueryDefinition
+import com.sksamuel.elastic4s.searches.queries.Query
 import com.typesafe.scalalogging.Logger
 
 import scala.collection.mutable.ArrayBuffer
@@ -22,7 +22,7 @@ object ReportNotifyService extends CommonService {
   val logger = Logger("ReportNotifyService")
 
   def index(notify: ReportNotify): Future[IndexDocResponse] = {
-    EsClient.httpClient.execute {
+    EsClient.esClient.execute {
       indexInto(ReportNotify.Index / EsConfig.DefaultType).doc(notify).refresh(RefreshPolicy.WAIT_UNTIL)
     }.map(toIndexDocResponse(_))
   }
@@ -31,7 +31,7 @@ object ReportNotifyService extends CommonService {
     if (StringUtils.isEmpty(id)) {
       ErrorMessages.error_EmptyId.toFutureFail
     } else {
-      EsClient.httpClient.execute {
+      EsClient.esClient.execute {
         delete(id).from(ReportNotify.Index / EsConfig.DefaultType).refresh(RefreshPolicy.WAIT_UNTIL)
       }.map(toDeleteDocResponse(_))
     }
@@ -39,24 +39,26 @@ object ReportNotifyService extends CommonService {
 
   // TODO: pagination
   def getSubscribers(jobId: String, enabled: Boolean = true, trigger: String = null): Future[Seq[ReportNotify]] = {
-    val queryDefinitions = ArrayBuffer[QueryDefinition]()
-    if (StringUtils.isNotEmpty(jobId)) queryDefinitions += termQuery(FieldKeys.FIELD_JOB_ID, jobId)
-    if (StringUtils.isNotEmpty(trigger)) queryDefinitions += termQuery(FieldKeys.FIELD_TRIGGER, trigger)
-    if (Option(enabled).isDefined) queryDefinitions += matchQuery(FieldKeys.FIELD_ENABLED, enabled)
-    EsClient.httpClient.execute {
+    val esQueries = ArrayBuffer[Query]()
+    if (StringUtils.isNotEmpty(jobId)) esQueries += termQuery(FieldKeys.FIELD_JOB_ID, jobId)
+    if (StringUtils.isNotEmpty(trigger)) esQueries += termQuery(FieldKeys.FIELD_TRIGGER, trigger)
+    if (Option(enabled).isDefined) esQueries += matchQuery(FieldKeys.FIELD_ENABLED, enabled)
+    EsClient.esClient.execute {
       search(ReportNotify.Index)
-        .query(boolQuery().must(queryDefinitions))
+        .query(boolQuery().must(esQueries))
         .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
         .sourceExclude(FieldKeys.FIELD_CREATOR, FieldKeys.FIELD_CREATED_AT)
-    }.map(res => res match {
-      case Right(success) =>
-        if (success.result.isEmpty) {
+    }.map { res =>
+      if (res.isSuccess) {
+        if (res.result.isEmpty) {
           Nil
         } else {
-          success.result.hits.hits.map(hit => JacksonSupport.parse(hit.sourceAsString, classOf[ReportNotify]))
+          res.result.hits.hits.map(hit => JacksonSupport.parse(hit.sourceAsString, classOf[ReportNotify]))
         }
-      case Left(failure) => throw ErrorMessages.error_EsRequestFail(failure).toException
-    })
+      } else {
+        throw ErrorMessages.error_EsRequestFail(res).toException
+      }
+    }
   }
 
   def notifySubscribers(execDesc: JobExecDesc, reportId: String): Future[NotifyResponses] = {

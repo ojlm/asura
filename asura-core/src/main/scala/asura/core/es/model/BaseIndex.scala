@@ -2,7 +2,7 @@ package asura.core.es.model
 
 import asura.common.util.{DateUtils, StringUtils}
 import asura.core.es.EsConfig
-import com.sksamuel.elastic4s.mappings.{BasicFieldDefinition, FieldDefinition, KeywordFieldDefinition, TextFieldDefinition}
+import com.sksamuel.elastic4s.mappings.{BasicField, FieldDefinition, KeywordField, TextField}
 
 import scala.collection.mutable
 
@@ -42,11 +42,11 @@ trait BaseIndex {
 object BaseIndex {
 
   val fieldDefinitions: Seq[FieldDefinition] = Seq(
-    TextFieldDefinition(name = FieldKeys.FIELD_SUMMARY, copyTo = Seq(FieldKeys.FIELD__TEXT), analysis = EsConfig.IK_ANALYZER),
-    TextFieldDefinition(name = FieldKeys.FIELD_DESCRIPTION, copyTo = Seq(FieldKeys.FIELD__TEXT), analysis = EsConfig.IK_ANALYZER),
-    TextFieldDefinition(name = FieldKeys.FIELD__TEXT, analysis = EsConfig.IK_ANALYZER),
-    KeywordFieldDefinition(name = FieldKeys.FIELD_CREATOR),
-    BasicFieldDefinition(name = FieldKeys.FIELD_CREATED_AT, `type` = "date", format = Some(EsConfig.DateFormat))
+    TextField(name = FieldKeys.FIELD_SUMMARY, copyTo = Seq(FieldKeys.FIELD__TEXT), analysis = EsConfig.IK_ANALYZER),
+    TextField(name = FieldKeys.FIELD_DESCRIPTION, copyTo = Seq(FieldKeys.FIELD__TEXT), analysis = EsConfig.IK_ANALYZER),
+    TextField(name = FieldKeys.FIELD__TEXT, analysis = EsConfig.IK_ANALYZER),
+    KeywordField(name = FieldKeys.FIELD_CREATOR),
+    BasicField(name = FieldKeys.FIELD_CREATED_AT, `type` = "date", format = Some(EsConfig.DateFormat))
   )
 
   /** user login by ldap */

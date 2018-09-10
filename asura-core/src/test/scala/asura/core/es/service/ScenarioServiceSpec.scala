@@ -12,7 +12,7 @@ class ScenarioServiceSpec extends ScalaTestBaseSpec with EsClientConfig {
   private val docRefs = Seq(DocRef("eztxpWMBW6aeaWsYaB8i"), DocRef("fDtxpWMBW6aeaWsYpR-s"), DocRef("fTtxpWMBW6aeaWsYvB9D"))
 
   test("delete-index") {
-    EsClient.httpClient.execute {
+    EsClient.esClient.execute {
       deleteIndex(Scenario.Index)
     }.await match {
       case Right(res) =>

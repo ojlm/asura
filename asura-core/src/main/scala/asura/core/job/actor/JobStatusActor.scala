@@ -31,12 +31,11 @@ class JobStatusActor() extends BaseActor {
   def query(outSender: ActorRef): Receive = {
     case query: JobQueryMessage =>
       this.query = query
-      JobService.query(query).map(esResponse => esResponse match {
-        case Left(failure) => outSender ! ErrorActorEvent(failure.error.reason)
-        case Right(success) =>
+      JobService.query(query).map(esResponse =>
+        if (esResponse.isSuccess) {
           val items = ArrayBuffer[JobListItem]()
           val jobsTable = mutable.HashMap[String, JobListItem]()
-          val hits = success.result.hits
+          val hits = esResponse.result.hits
           watchIds.clear()
           hits.hits.foreach(hit => {
             val jobId = hit.id
@@ -60,7 +59,9 @@ class JobStatusActor() extends BaseActor {
           } else {
             outSender ! ListActorEvent(Map("total" -> 0, "list" -> Nil))
           }
-      })(context.system.dispatcher)
+        } else {
+          outSender ! ErrorActorEvent(esResponse.error.reason)
+        })(context.system.dispatcher)
     case JobStatusNotificationMessage(_, operator, scheduler, group, name, data) =>
       val jobKey = Job.buildJobKey(scheduler, group, name)
       if (watchIds.contains(jobKey)) {

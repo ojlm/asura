@@ -3,7 +3,7 @@ package asura.core.es.service
 import asura.common.model.{ApiMsg, BoolErrorRes}
 import asura.common.util.{FutureUtils, JsonUtils, StringUtils}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.es.model.{IndexDocResponse, UserProfile}
+import asura.core.es.model.{DeleteDocResponse, IndexDocResponse, UpdateDocResponse, UserProfile}
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
@@ -21,30 +21,30 @@ object UserProfileService extends CommonService {
       if (!isOK) {
         FutureUtils.illegalArgs(errMsg)
       } else {
-        EsClient.httpClient.execute {
+        EsClient.esClient.execute {
           indexInto(UserProfile.Index / EsConfig.DefaultType).doc(profile).id(profile.username).refresh(RefreshPolicy.WAIT_UNTIL)
         }.map(toIndexDocResponse(_))
       }
     }
   }
 
-  def deleteDoc(id: String): Future[BoolErrorRes] = {
+  def deleteDoc(id: String): Future[DeleteDocResponse] = {
     if (StringUtils.isEmpty(id)) {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
-      EsClient.httpClient.execute {
+      EsClient.esClient.execute {
         delete(id).from(UserProfile.Index / EsConfig.DefaultType).refresh(RefreshPolicy.WAIT_UNTIL)
-      }.map(toBoolErrorResFromDelete(_))
+      }.map(toDeleteDocResponse(_))
     }
   }
 
-  def updateProfile(profile: UserProfile): Future[BoolErrorRes] = {
+  def updateProfile(profile: UserProfile): Future[UpdateDocResponse] = {
     if (null == profile || null == profile.username) {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
-      EsClient.httpClient.execute {
+      EsClient.esClient.execute {
         update(profile.username).in(UserProfile.Index / EsConfig.DefaultType).doc(profile.toUpdateMap)
-      }.map(toBoolErrorResFromUpdate(_))
+      }.map(toUpdateDocResponse(_))
     }
   }
 
@@ -63,9 +63,9 @@ object UserProfileService extends CommonService {
       if (StringUtils.isEmpty(id)) {
         FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
       } else {
-        EsClient.httpClient.execute {
+        EsClient.esClient.execute {
           search(UserProfile.Index).query(idsQuery(id)).size(1)
-        }.map(either => toSingleClass(either, id)(str => {
+        }.map(response => toSingleClass(response, id)(str => {
           if (StringUtils.isNotEmpty(str)) {
             JsonUtils.parse(str, classOf[UserProfile])
           } else {

@@ -8,7 +8,7 @@ import com.sksamuel.elastic4s.http.ElasticDsl._
 class GroupServiceSpec extends ScalaTestBaseSpec with EsClientConfig {
 
   test("delete-group") {
-    EsClient.httpClient.execute {
+    EsClient.esClient.execute {
       deleteIndex(Group.Index)
     }.await match {
       case Right(res) =>

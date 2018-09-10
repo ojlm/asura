@@ -11,7 +11,7 @@ import asura.core.es.{EsClient, EsConfig}
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
-import com.sksamuel.elastic4s.searches.queries.QueryDefinition
+import com.sksamuel.elastic4s.searches.queries.Query
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
@@ -24,21 +24,22 @@ object ProjectService extends CommonService {
     } else if (!CommonValidator.isIdLegal(project.id)) {
       ErrorMessages.error_IllegalProjectId.toFutureFail
     } else {
-      docCount(project.group, project.id).flatMap {
-        case Right(countRes) =>
-          if (countRes.result.count > 0) {
+      docCount(project.group, project.id).flatMap(res => {
+        if (res.isSuccess) {
+          if (res.result.count > 0) {
             ErrorMessages.error_ProjectExists.toFutureFail
           } else {
-            EsClient.httpClient.execute {
+            EsClient.esClient.execute {
               indexInto(Project.Index / EsConfig.DefaultType)
                 .doc(project)
                 .id(project.generateDocId())
                 .refresh(RefreshPolicy.WAIT_UNTIL)
             }.map(toIndexDocResponse(_))
           }
-        case Left(failure) =>
-          ErrorMessages.error_EsRequestFail(failure).toFutureFail
-      }
+        } else {
+          ErrorMessages.error_EsRequestFail(res).toFutureFail
+        }
+      })
     }
   }
 
@@ -46,7 +47,7 @@ object ProjectService extends CommonService {
     if (StringUtils.isEmpty(id)) {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
-      EsClient.httpClient.execute {
+      EsClient.esClient.execute {
         delete(id).from(Project.Index).refresh(RefreshPolicy.WAIT_UNTIL)
       }
     }
@@ -58,14 +59,14 @@ object ProjectService extends CommonService {
     } else if (StringUtils.isEmpty(id)) {
       ErrorMessages.error_IdNonExists.toFutureFail
     } else {
-      val queryDefinitions = ArrayBuffer[QueryDefinition]()
-      queryDefinitions += matchQuery(FieldKeys.FIELD_ID, id)
-      queryDefinitions += matchQuery(FieldKeys.FIELD_GROUP, group)
-      EsClient.httpClient.execute {
+      val esQueries = ArrayBuffer[Query]()
+      esQueries += matchQuery(FieldKeys.FIELD_ID, id)
+      esQueries += matchQuery(FieldKeys.FIELD_GROUP, group)
+      EsClient.esClient.execute {
         if (includeOpenapi) {
-          search(Project.Index).query(boolQuery().must(queryDefinitions)).size(1)
+          search(Project.Index).query(boolQuery().must(esQueries)).size(1)
         } else {
-          search(Project.Index).query(boolQuery().must(queryDefinitions)).size(1).sourceExclude(FieldKeys.FIELD_OPENAPI)
+          search(Project.Index).query(boolQuery().must(esQueries)).size(1).sourceExclude(FieldKeys.FIELD_OPENAPI)
         }
       }
     }
@@ -77,11 +78,11 @@ object ProjectService extends CommonService {
     } else if (StringUtils.isEmpty(projectId)) {
       ErrorMessages.error_IdNonExists.toFutureFail
     } else {
-      val queryDefinitions = ArrayBuffer[QueryDefinition]()
-      queryDefinitions += matchQuery(FieldKeys.FIELD_ID, projectId)
-      queryDefinitions += matchQuery(FieldKeys.FIELD_GROUP, group)
-      EsClient.httpClient.execute {
-        search(Project.Index).query(boolQuery().must(queryDefinitions)).size(1).sourceInclude(FieldKeys.FIELD_OPENAPI)
+      val esQueries = ArrayBuffer[Query]()
+      esQueries += matchQuery(FieldKeys.FIELD_ID, projectId)
+      esQueries += matchQuery(FieldKeys.FIELD_GROUP, group)
+      EsClient.esClient.execute {
+        search(Project.Index).query(boolQuery().must(esQueries)).size(1).sourceInclude(FieldKeys.FIELD_OPENAPI)
       }
     }
   }
@@ -92,7 +93,7 @@ object ProjectService extends CommonService {
     } else if (StringUtils.isEmpty(projectId)) {
       ErrorMessages.error_IdNonExists.toFutureFail
     } else {
-      EsClient.httpClient.execute {
+      EsClient.esClient.execute {
         update(Project.generateDocId(group, projectId)).in(Project.Index / EsConfig.DefaultType).doc(Map(FieldKeys.FIELD_OPENAPI -> openapi))
       }.map(toUpdateDocResponse(_))
     }
@@ -102,14 +103,14 @@ object ProjectService extends CommonService {
     if (null == project || StringUtils.isEmpty(project.group) || StringUtils.isEmpty(project.id)) {
       ErrorMessages.error_IdNonExists.toFutureFail
     } else {
-      EsClient.httpClient.execute {
+      EsClient.esClient.execute {
         update(project.generateDocId()).in(Project.Index / EsConfig.DefaultType).doc(project.toUpdateMap)
       }.map(toUpdateDocResponse(_))
     }
   }
 
   def docCount(group: String, id: String) = {
-    EsClient.httpClient.execute {
+    EsClient.esClient.execute {
       count(Project.Index).filter {
         boolQuery().must(
           termQuery(FieldKeys.FIELD_GROUP, group),
@@ -120,12 +121,12 @@ object ProjectService extends CommonService {
   }
 
   def queryProject(query: QueryProject) = {
-    val queryDefinitions = ArrayBuffer[QueryDefinition]()
-    if (StringUtils.isNotEmpty(query.id)) queryDefinitions += wildcardQuery(FieldKeys.FIELD_ID, query.id + "*")
-    if (StringUtils.isNotEmpty(query.text)) queryDefinitions += matchQuery(FieldKeys.FIELD__TEXT, query.text)
-    if (StringUtils.isNotEmpty(query.group)) queryDefinitions += termQuery(FieldKeys.FIELD_GROUP, query.group)
-    EsClient.httpClient.execute {
-      search(Project.Index).query(boolQuery().must(queryDefinitions))
+    val esQueries = ArrayBuffer[Query]()
+    if (StringUtils.isNotEmpty(query.id)) esQueries += wildcardQuery(FieldKeys.FIELD_ID, query.id + "*")
+    if (StringUtils.isNotEmpty(query.text)) esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
+    if (StringUtils.isNotEmpty(query.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, query.group)
+    EsClient.esClient.execute {
+      search(Project.Index).query(boolQuery().must(esQueries))
         .from(query.pageFrom)
         .size(query.pageSize)
         .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)

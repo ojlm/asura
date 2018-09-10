@@ -12,7 +12,7 @@ import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
-import com.sksamuel.elastic4s.searches.queries.QueryDefinition
+import com.sksamuel.elastic4s.searches.queries.Query
 import com.typesafe.scalalogging.Logger
 
 import scala.collection.mutable.ArrayBuffer
@@ -27,7 +27,7 @@ object EnvironmentService extends CommonService {
     if (null != error) {
       error.toFutureFail
     } else {
-      EsClient.httpClient.execute {
+      EsClient.esClient.execute {
         indexInto(Environment.Index / EsConfig.DefaultType).doc(env).refresh(RefreshPolicy.WAIT_UNTIL)
       }.map(toIndexDocResponse(_))
     }
@@ -37,7 +37,7 @@ object EnvironmentService extends CommonService {
     if (StringUtils.isEmpty(id)) {
       ErrorMessages.error_EmptyId.toFutureFail
     } else {
-      EsClient.httpClient.execute {
+      EsClient.esClient.execute {
         delete(id).from(Environment.Index / EsConfig.DefaultType).refresh(RefreshPolicy.WAIT_UNTIL)
       }.map(toDeleteDocResponse(_))
     }
@@ -47,14 +47,14 @@ object EnvironmentService extends CommonService {
     if (StringUtils.isEmpty(id)) {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
-      EsClient.httpClient.execute {
+      EsClient.esClient.execute {
         search(Environment.Index).query(idsQuery(id)).size(1)
       }
     }
   }
 
   def getAll(project: String) = {
-    EsClient.httpClient.execute {
+    EsClient.esClient.execute {
       search(Environment.Index)
         .query(termQuery(FieldKeys.FIELD_PROJECT, project))
         .limit(EsConfig.MaxCount)
@@ -70,7 +70,7 @@ object EnvironmentService extends CommonService {
       if (null != error) {
         error.toFutureFail
       } else {
-        EsClient.httpClient.execute {
+        EsClient.esClient.execute {
           update(id).in(Environment.Index / EsConfig.DefaultType)
             .doc(JacksonSupport.stringify(env.toUpdateMap))
             .refresh(RefreshPolicy.WAIT_UNTIL)
@@ -96,28 +96,27 @@ object EnvironmentService extends CommonService {
       Future.successful(null)
     } else {
       getById(id).map(res => {
-        res match {
-          case Right(success) =>
-            if (success.result.isEmpty) {
-              throw IllegalRequestException(s"Env: ${id} not found.")
-            } else {
-              val hit = success.result.hits.hits(0)
-              JacksonSupport.parse(hit.sourceAsString, classOf[Environment])
-            }
-          case Left(failure) =>
-            throw RequestFailException(failure.error.reason)
+        if (res.isSuccess) {
+          if (res.result.isEmpty) {
+            throw IllegalRequestException(s"Env: ${id} not found.")
+          } else {
+            val hit = res.result.hits.hits(0)
+            JacksonSupport.parse(hit.sourceAsString, classOf[Environment])
+          }
+        } else {
+          throw RequestFailException(res.error.reason)
         }
       })
     }
   }
 
   def queryEnv(query: QueryEnv) = {
-    val queryDefinitions = ArrayBuffer[QueryDefinition]()
-    if (StringUtils.isNotEmpty(query.text)) queryDefinitions += matchQuery(FieldKeys.FIELD__TEXT, query.text)
-    if (StringUtils.isNotEmpty(query.group)) queryDefinitions += termQuery(FieldKeys.FIELD_GROUP, query.group)
-    if (StringUtils.isNotEmpty(query.project)) queryDefinitions += termQuery(FieldKeys.FIELD_PROJECT, query.project)
-    EsClient.httpClient.execute {
-      search(Environment.Index).query(boolQuery().must(queryDefinitions))
+    val esQueries = ArrayBuffer[Query]()
+    if (StringUtils.isNotEmpty(query.text)) esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
+    if (StringUtils.isNotEmpty(query.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, query.group)
+    if (StringUtils.isNotEmpty(query.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, query.project)
+    EsClient.esClient.execute {
+      search(Environment.Index).query(boolQuery().must(esQueries))
         .from(query.pageFrom)
         .size(query.pageSize)
         .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)

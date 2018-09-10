@@ -3,18 +3,17 @@ package asura.core.es
 import asura.common.util.StringUtils
 import asura.core.es.model._
 import asura.core.es.service.IndexService
-import com.sksamuel.elastic4s.ElasticsearchClientUri
 import com.sksamuel.elastic4s.embedded.LocalNode
-import com.sksamuel.elastic4s.http.HttpClient
+import com.sksamuel.elastic4s.http.{ElasticClient, ElasticProperties}
 import com.sksamuel.elastic4s.mappings.Analysis
 import com.typesafe.scalalogging.Logger
 
 object EsClient {
 
   val logger = Logger("EsClient")
-  private var client: HttpClient = _
+  private var client: ElasticClient = _
 
-  def httpClient: HttpClient = client
+  def esClient: ElasticClient = client
 
   /**
     * check if index exists, if not create
@@ -23,14 +22,14 @@ object EsClient {
     if (useLocalNode) {
       EsConfig.IK_ANALYZER = Analysis()
       if (StringUtils.isNotEmpty(url)) {
-        client = HttpClient(ElasticsearchClientUri(url))
+        client = ElasticClient(ElasticProperties(url))
       } else {
         val localNode = LocalNode("asura", dataDir)
         logger.info(s"start local es node: ${localNode.ipAndPort}")
-        client = localNode.http(true)
+        client = localNode.client(true)
       }
     } else {
-      client = HttpClient(ElasticsearchClientUri(url))
+      client = ElasticClient(ElasticProperties(url))
     }
     var isAllOk = true
     val indices: Seq[IndexSetting] = Seq(

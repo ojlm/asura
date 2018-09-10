@@ -45,14 +45,14 @@ object ReportNotify extends IndexSetting {
   val mappings: MappingDefinition = MappingDefinition(
     `type` = EsConfig.DefaultType,
     fields = BaseIndex.fieldDefinitions ++ Seq(
-      KeywordFieldDefinition(name = FieldKeys.FIELD_GROUP),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_PROJECT),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_JOB_ID),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_SUBSCRIBER),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_TYPE),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_TRIGGER),
-      BasicFieldDefinition(name = FieldKeys.FIELD_ENABLED, `type` = "boolean"),
-      ObjectFieldDefinition(name = FieldKeys.FIELD_DATA, dynamic = Some("false"))
+      KeywordField(name = FieldKeys.FIELD_GROUP),
+      KeywordField(name = FieldKeys.FIELD_PROJECT),
+      KeywordField(name = FieldKeys.FIELD_JOB_ID),
+      KeywordField(name = FieldKeys.FIELD_SUBSCRIBER),
+      KeywordField(name = FieldKeys.FIELD_TYPE),
+      KeywordField(name = FieldKeys.FIELD_TRIGGER),
+      BasicField(name = FieldKeys.FIELD_ENABLED, `type` = "boolean"),
+      ObjectField(name = FieldKeys.FIELD_DATA, dynamic = Some("false"))
     )
   )
 }

@@ -39,18 +39,18 @@ object JobReport extends IndexSetting {
   val mappings: MappingDefinition = MappingDefinition(
     `type` = EsConfig.DefaultType,
     fields = BaseIndex.fieldDefinitions ++ Seq(
-      KeywordFieldDefinition(name = FieldKeys.FIELD_SCHEDULER),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_GROUP),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_JOB_NAME),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_TYPE),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_CLASS_ALIAS),
-      BasicFieldDefinition(name = FieldKeys.FIELD_START_AT, `type` = "date", format = Some(EsConfig.DateFormat)),
-      BasicFieldDefinition(name = FieldKeys.FIELD_END_AT, `type` = "date", format = Some(EsConfig.DateFormat)),
-      BasicFieldDefinition(name = FieldKeys.FIELD_ELAPSE, `type` = "long"),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_RESULT),
-      TextFieldDefinition(name = FieldKeys.FIELD_ERROR_MSG, analysis = EsConfig.IK_ANALYZER),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_NODE),
-      ObjectFieldDefinition(name = FieldKeys.FIELD_DATA, dynamic = Some("false")),
+      KeywordField(name = FieldKeys.FIELD_SCHEDULER),
+      KeywordField(name = FieldKeys.FIELD_GROUP),
+      KeywordField(name = FieldKeys.FIELD_JOB_NAME),
+      KeywordField(name = FieldKeys.FIELD_TYPE),
+      KeywordField(name = FieldKeys.FIELD_CLASS_ALIAS),
+      BasicField(name = FieldKeys.FIELD_START_AT, `type` = "date", format = Some(EsConfig.DateFormat)),
+      BasicField(name = FieldKeys.FIELD_END_AT, `type` = "date", format = Some(EsConfig.DateFormat)),
+      BasicField(name = FieldKeys.FIELD_ELAPSE, `type` = "long"),
+      KeywordField(name = FieldKeys.FIELD_RESULT),
+      TextField(name = FieldKeys.FIELD_ERROR_MSG, analysis = EsConfig.IK_ANALYZER),
+      KeywordField(name = FieldKeys.FIELD_NODE),
+      ObjectField(name = FieldKeys.FIELD_DATA, dynamic = Some("false")),
     )
   )
 

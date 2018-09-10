@@ -9,7 +9,7 @@ import com.sksamuel.elastic4s.http.ElasticDsl._
 class JobServiceSpec extends ScalaTestBaseSpec with EsClientConfig {
 
   test("delete-index") {
-    EsClient.httpClient.execute {
+    EsClient.esClient.execute {
       deleteIndex(Job.Index)
     }.await match {
       case Right(res) =>

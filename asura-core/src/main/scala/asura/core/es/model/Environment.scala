@@ -67,20 +67,20 @@ object Environment extends IndexSetting {
   val mappings: MappingDefinition = MappingDefinition(
     `type` = EsConfig.DefaultType,
     fields = BaseIndex.fieldDefinitions ++ Seq(
-      KeywordFieldDefinition(name = FieldKeys.FIELD_GROUP),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_PROJECT),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_PROTOCOL),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_HOST),
-      BasicFieldDefinition(name = FieldKeys.FIELD_PORT, `type` = "integer"),
-      KeywordFieldDefinition(name = FieldKeys.FIELD_NAMESPACE),
-      ObjectFieldDefinition(name = FieldKeys.FIELD_AUTH, fields = Seq(
-        KeywordFieldDefinition(name = FieldKeys.FIELD_TYPE),
-        ObjectFieldDefinition(name = FieldKeys.FIELD_DATA, dynamic = Some("false")),
+      KeywordField(name = FieldKeys.FIELD_GROUP),
+      KeywordField(name = FieldKeys.FIELD_PROJECT),
+      KeywordField(name = FieldKeys.FIELD_PROTOCOL),
+      KeywordField(name = FieldKeys.FIELD_HOST),
+      BasicField(name = FieldKeys.FIELD_PORT, `type` = "integer"),
+      KeywordField(name = FieldKeys.FIELD_NAMESPACE),
+      ObjectField(name = FieldKeys.FIELD_AUTH, fields = Seq(
+        KeywordField(name = FieldKeys.FIELD_TYPE),
+        ObjectField(name = FieldKeys.FIELD_DATA, dynamic = Some("false")),
       )),
-      NestedFieldDefinition(name = FieldKeys.FIELD_CUSTOM, fields = Seq(
-        KeywordFieldDefinition(name = FieldKeys.FIELD_KEY),
-        KeywordFieldDefinition(name = FieldKeys.FIELD_VALUE),
-        BasicFieldDefinition(name = FieldKeys.FIELD_ENABLED, `type` = "boolean"),
+      NestedField(name = FieldKeys.FIELD_CUSTOM, fields = Seq(
+        KeywordField(name = FieldKeys.FIELD_KEY),
+        KeywordField(name = FieldKeys.FIELD_VALUE),
+        BasicField(name = FieldKeys.FIELD_ENABLED, `type` = "boolean"),
       )),
     )
   )

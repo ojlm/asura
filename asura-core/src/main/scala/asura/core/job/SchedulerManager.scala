@@ -3,7 +3,6 @@ package asura.core.job
 import java.util.Properties
 import java.util.concurrent.ConcurrentHashMap
 
-import asura.common.exceptions.IllegalRequestException
 import asura.common.model.{ApiMsg, BoolErrorRes}
 import asura.common.util.{DateUtils, FutureUtils, StringUtils}
 import asura.core.concurrent.ExecutionContextManager.cachedExecutor
@@ -49,25 +48,20 @@ object SchedulerManager {
         val job = buildJob(jobMeta, triggerMeta, jobData)
         job.fillCommonFields(creator)
         JobService.index(job).map(res => {
-          res match {
-            case Left(failure) =>
-              throw IllegalRequestException(failure.error.reason)
-            case Right(success) =>
-              val jobId = success.result.id
-              val triggerOpt = triggerMeta.toTrigger()
-              if (triggerOpt.nonEmpty) {
-                try {
-                  val date = scheduler.scheduleJob(jobDetail, triggerOpt.get)
-                  date.toString
-                } catch {
-                  case t: Throwable =>
-                    JobService.deleteDoc(jobId)
-                    throw t
-                }
-              } else {
-                scheduler.addJob(jobDetail, true)
-                StringUtils.EMPTY
-              }
+          val jobId = res.id
+          val triggerOpt = triggerMeta.toTrigger()
+          if (triggerOpt.nonEmpty) {
+            try {
+              val date = scheduler.scheduleJob(jobDetail, triggerOpt.get)
+              date.toString
+            } catch {
+              case t: Throwable =>
+                JobService.deleteDoc(jobId)
+                throw t
+            }
+          } else {
+            scheduler.addJob(jobDetail, true)
+            StringUtils.EMPTY
           }
         })
       } else {
@@ -125,11 +119,7 @@ object SchedulerManager {
       if (schedulerOpt.nonEmpty) {
         try {
           schedulerOpt.get.deleteJob(JobKey.jobKey(job.name, job.group))
-          JobService.deleteDoc(job.id).map(res => res match {
-            case Left(failure) =>
-              logger.error(failure.error.reason)
-            case Right(_) =>
-          })
+          JobService.deleteDoc(job.id)
           (true, ApiMsg.SUCCESS)
         } catch {
           case t: Throwable => (false, t.getMessage)
@@ -172,39 +162,34 @@ object SchedulerManager {
         if (isOk) {
           val job = buildJob(jobMeta, triggerMeta, jobData)
           JobService.updateJob(job).map { res =>
-            res match {
-              case Left(failure) =>
-                throw IllegalRequestException(failure.error.reason)
-              case Right(_) =>
-                // replace job
-                scheduler.addJob(jobDetail, true)
-                // replace trigger
-                val triggerKey = TriggerKey.triggerKey(triggerMeta.name, triggerMeta.group)
-                val oldTrigger = scheduler.getTrigger(triggerKey)
-                if (null != oldTrigger) {
-                  val triggerOpt = triggerMeta.toTrigger()
-                  if (triggerOpt.nonEmpty) {
-                    val newTrigger = triggerOpt.get
-                    scheduler.rescheduleJob(triggerKey, newTrigger)
-                  } else {
-                    scheduler.unscheduleJob(triggerKey)
-                  }
-                } else {
-                  val triggerOpt = triggerMeta.toTrigger()
-                  if (triggerOpt.nonEmpty) {
-                    val newTrigger = triggerMeta.triggerType match {
-                      case TriggerMeta.TYPE_SIMPLE =>
-                        triggerOpt.get.asInstanceOf[SimpleTriggerImpl]
-                      case TriggerMeta.TYPE_CRON =>
-                        triggerOpt.get.asInstanceOf[CronTriggerImpl]
-                    }
-                    newTrigger.setJobName(jobMeta.name)
-                    newTrigger.setJobGroup(jobMeta.group)
-                    scheduler.scheduleJob(newTrigger)
-                  }
+            // replace job
+            scheduler.addJob(jobDetail, true)
+            // replace trigger
+            val triggerKey = TriggerKey.triggerKey(triggerMeta.name, triggerMeta.group)
+            val oldTrigger = scheduler.getTrigger(triggerKey)
+            if (null != oldTrigger) {
+              val triggerOpt = triggerMeta.toTrigger()
+              if (triggerOpt.nonEmpty) {
+                val newTrigger = triggerOpt.get
+                scheduler.rescheduleJob(triggerKey, newTrigger)
+              } else {
+                scheduler.unscheduleJob(triggerKey)
+              }
+            } else {
+              val triggerOpt = triggerMeta.toTrigger()
+              if (triggerOpt.nonEmpty) {
+                val newTrigger = triggerMeta.triggerType match {
+                  case TriggerMeta.TYPE_SIMPLE =>
+                    triggerOpt.get.asInstanceOf[SimpleTriggerImpl]
+                  case TriggerMeta.TYPE_CRON =>
+                    triggerOpt.get.asInstanceOf[CronTriggerImpl]
                 }
-                StringUtils.EMPTY
+                newTrigger.setJobName(jobMeta.name)
+                newTrigger.setJobGroup(jobMeta.group)
+                scheduler.scheduleJob(newTrigger)
+              }
             }
+            StringUtils.EMPTY
           }
         }
         else {
