@@ -1,6 +1,7 @@
 package asura.core.cs.asserts
 
 import asura.common.ScalaTestBaseSpec
+import asura.core.cs.assertion.engine.{AssertionContext, Statistic}
 import asura.core.util.{JacksonSupport, JsonPathUtils}
 
 class AssertSpec extends ScalaTestBaseSpec {
@@ -34,7 +35,7 @@ class AssertSpec extends ScalaTestBaseSpec {
     val assert = JacksonSupport.parse(assertJson, classOf[Map[String, Any]])
     println(assert)
     val statis = Statistic()
-    val result = Assert(assert, ctx, statis).result
+    val result = AssertionContext(assert, ctx, statis).result
     println("\nresult ===>")
     println(result)
     println(s"\nstatis(${statis.total}, success: ${statis.isSuccessful}) ===>")

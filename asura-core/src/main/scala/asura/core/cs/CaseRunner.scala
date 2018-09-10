@@ -4,7 +4,7 @@ import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import asura.common.util.StringUtils
 import asura.core.CoreConfig._
-import asura.core.cs.asserts.HttpResponseAssert
+import asura.core.cs.assertion.engine.HttpResponseAssert
 import asura.core.es.model.{Case, KeyValueObject}
 import asura.core.es.service.EnvironmentService
 import asura.core.http.{HttpContentTypes, HttpEngine}
@@ -25,13 +25,13 @@ object CaseRunner {
         .flatMap(tuple => {
           if (Option(cs.useProxy).isDefined && cs.useProxy) {
             HttpEngine.singleRequestWithProxy(tuple._1).flatMap(res => {
-              Unmarshal(res.entity).to[String].map(resBody => {
+              Unmarshal(res.entity).to[String].flatMap(resBody => {
                 HttpResponseAssert.generateCaseReport(id, cs.assert, res, resBody, tuple._2, context)
               })
             })
           } else {
             HttpEngine.singleRequest(tuple._1).flatMap(res => {
-              Unmarshal(res.entity).to[String].map(resBody => {
+              Unmarshal(res.entity).to[String].flatMap(resBody => {
                 HttpResponseAssert.generateCaseReport(id, cs.assert, res, resBody, tuple._2, context)
               })
             })
@@ -42,7 +42,7 @@ object CaseRunner {
         .flatMap(toCaseRequestTuple)
         .flatMap(tuple => {
           HttpEngine.singleRequest(tuple._1).flatMap(res => {
-            Unmarshal(res.entity).to[String].map(resBody => {
+            Unmarshal(res.entity).to[String].flatMap(resBody => {
               HttpResponseAssert.generateCaseReport(id, cs.assert, res, resBody, tuple._2, context)
             })
           })
