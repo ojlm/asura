@@ -27,6 +27,11 @@ class CaseApi @Inject()(implicit exec: ExecutionContext, val controllerComponent
     CaseService.index(cs).toOkResult
   }
 
+  def update(id: String) = Action(parse.byteString).async { implicit req =>
+    val cs = req.bodyAs(classOf[Case])
+    CaseService.updateCs(id, cs).toOkResult
+  }
+
   def query() = Action(parse.byteString).async { implicit req =>
     val queryCase = req.bodyAs(classOf[QueryCase])
     CaseService.queryCase(queryCase).toOkResult
