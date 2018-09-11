@@ -130,7 +130,7 @@ object ProjectService extends CommonService {
         .from(query.pageFrom)
         .size(query.pageSize)
         .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
-        .sourceInclude(defaultIncludeFields :+ FieldKeys.FIELD_ID :+ FieldKeys.FIELD_AVATAR)
+        .sourceInclude(defaultIncludeFields :+ FieldKeys.FIELD_GROUP :+ FieldKeys.FIELD_ID :+ FieldKeys.FIELD_AVATAR)
     }
   }
 }
