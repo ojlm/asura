@@ -5,8 +5,8 @@ import akka.actor.{ActorRef, Props}
 import asura.common.actor._
 import asura.common.model.Pagination
 import asura.core.actor.messages.SenderMessage
+import asura.core.cs.model.QueryJob
 import asura.core.es.service.JobService
-import asura.core.job.actor.JobStatusActor.JobQueryMessage
 import asura.core.job.actor.JobStatusMonitorActor.JobStatusOperationMessage
 import asura.core.job.eventbus.JobStatusBus.JobStatusNotificationMessage
 import asura.core.job.{JobListItem, JobStates}
@@ -19,7 +19,7 @@ import scala.collection.mutable.ArrayBuffer
 
 class JobStatusActor() extends BaseActor {
 
-  var query: JobQueryMessage = null
+  var query: QueryJob = null
   val watchIds = mutable.HashSet[String]()
 
   override def receive: Receive = {
@@ -28,9 +28,9 @@ class JobStatusActor() extends BaseActor {
   }
 
   def query(outSender: ActorRef): Receive = {
-    case query: JobQueryMessage =>
+    case query: QueryJob =>
       this.query = query
-      JobService.query(query).map(esResponse =>
+      JobService.queryJob(query).map(esResponse =>
         if (esResponse.isSuccess) {
           val items = ArrayBuffer[JobListItem]()
           val jobsTable = mutable.HashMap[String, JobListItem]()
