@@ -2,32 +2,33 @@
 # https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md
 # http://localhost:9000/docs/swagger-ui/index.html?url=/assets/swagger.json
 ### NoDocs ###
-GET        /                                    controllers.Assets.at(path="/public", file="index.html")
+GET         /                                    controllers.Assets.at(path="/public", file="index.html")
 ### NoDocs ###
-GET        /openapi/swagger-ui/*file            controllers.Assets.at(path:String="/public/lib/swagger-ui", file:String)
+GET         /openapi/swagger-ui/*file            controllers.Assets.at(path:String="/public/lib/swagger-ui", file:String)
 ### NoDocs ###
-GET        /openapi/swagger-editor/*file        controllers.Assets.at(path:String="/public/lib/swagger-editor-dist", file:String)
+GET         /openapi/swagger-editor/*file        controllers.Assets.at(path:String="/public/lib/swagger-editor-dist", file:String)
 ### NoDocs ###
-GET        /assets/*file                        controllers.Assets.versioned(path="/public", file: Asset)
+GET         /assets/*file                        controllers.Assets.versioned(path="/public", file: Asset)
 ### NoDocs ###
-GET        /openapi                             asura.app.api.SwaggerApi.home
+GET         /openapi                             asura.app.api.SwaggerApi.home
 ### NoDocs ###
-GET        /openapi/                            asura.app.api.SwaggerApi.home
+GET         /openapi/                            asura.app.api.SwaggerApi.home
 ### NoDocs ###
-GET        /openapi/editor                      asura.app.api.SwaggerApi.editor(url: Option[String])
+GET         /openapi/editor                      asura.app.api.SwaggerApi.editor(url: Option[String])
 ### NoDocs ###
-GET        /openapi/editor/                     asura.app.api.SwaggerApi.editor(url: Option[String])
+GET         /openapi/editor/                     asura.app.api.SwaggerApi.editor(url: Option[String])
 
-->         /api/v1                              v1.Routes
-->         /api/v2                              v2.Routes
-->         /api/user                            user.Routes
-->         /api/group                           group.Routes
-->         /api/project                         project.Routes
-->         /api/openapi                         openapi.Routes
-->         /api/api                             api.Routes
-->         /api/cs                              cs.Routes
-->         /api/env                             env.Routes
-->         /api/job                             job.Routes
-->         /api/linkerd                         linkerd.Routes
-->         /api/ws                              ws.Routes
-->         /api/scenario                        scenario.Routes
+POST        /api/home                            asura.app.api.HomeApi.query()
+->          /api/v1                              v1.Routes
+->          /api/v2                              v2.Routes
+->          /api/user                            user.Routes
+->          /api/group                           group.Routes
+->          /api/project                         project.Routes
+->          /api/openapi                         openapi.Routes
+->          /api/api                             api.Routes
+->          /api/cs                              cs.Routes
+->          /api/env                             env.Routes
+->          /api/job                             job.Routes
+->          /api/linkerd                         linkerd.Routes
+->          /api/ws                              ws.Routes
+->          /api/scenario                        scenario.Routes
