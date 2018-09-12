@@ -5,6 +5,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 import asura.common.model.{ApiMsg, BoolErrorRes}
 import asura.common.util.{DateUtils, FutureUtils, StringUtils}
+import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.cachedExecutor
 import asura.core.es.model.{Job, JobData, JobTrigger}
 import asura.core.es.service.JobService
@@ -43,37 +44,37 @@ object SchedulerManager {
     val schedulerOpt = getScheduler(jobMeta.scheduler)
     if (schedulerOpt.nonEmpty) {
       val scheduler = schedulerOpt.get
-      val (isOk, errMsg, jobDetail) = jobMeta.toJobDetail()
-      if (isOk) {
-        val job = buildJob(jobMeta, triggerMeta, jobData)
-        job.fillCommonFields(creator)
-        JobService.index(job).map(res => {
-          val jobId = res.id
-          val triggerOpt = triggerMeta.toTrigger()
+      val job = buildJob(jobMeta, triggerMeta, jobData)
+      job.fillCommonFields(creator)
+      JobService.index(job).map(res => {
+        val (error, jobDetail) = jobMeta.toJobDetail(res.id)
+        if (null == error) {
+          val triggerOpt = triggerMeta.toTrigger(res.id)
           if (triggerOpt.nonEmpty) {
             try {
               val date = scheduler.scheduleJob(jobDetail, triggerOpt.get)
               date.toString
             } catch {
               case t: Throwable =>
-                JobService.deleteDoc(jobId)
-                throw t
+                logger.error(s"job(${jobMeta.group}_${jobMeta.project}_${res.id}) fail to be scheduled")
+                JobService.deleteDoc(res.id)
+                throw ErrorMessages.error_Throwable(t).toException
             }
           } else {
             scheduler.addJob(jobDetail, true)
             StringUtils.EMPTY
           }
-        })
-      } else {
-        FutureUtils.illegalArgs(errMsg)
-      }
+        } else {
+          throw error.toException
+        }
+      })
     } else {
-      FutureUtils.illegalArgs(ErrorMsg.ERROR_INVALID_SCHEDULER_TYPE)
+      ErrorMessages.error_NoSchedulerDefined(jobMeta.scheduler).toFutureFail
     }
   }
 
   def pauseJob(job: PauseJob): BoolErrorRes = {
-    val (isOk, errMsg) = job.validate()
+    val error = job.validate()
     if (!isOk) {
       (false, errMsg)
     } else {
@@ -154,49 +155,48 @@ object SchedulerManager {
     val jobMeta = jobToUpdate.jobMeta
     val triggerMeta = jobToUpdate.triggerMeta
     val jobData = jobToUpdate.jobData
-    JobUtils.validateJobAndTrigger(jobMeta, triggerMeta, jobData) match {
-      case (true, _) =>
-        val schedulerOpt = getScheduler(jobMeta.scheduler)
-        val scheduler = schedulerOpt.get
-        val (isOk, errMsg, jobDetail) = jobMeta.toJobDetail()
-        if (isOk) {
-          val job = buildJob(jobMeta, triggerMeta, jobData)
-          JobService.updateJob(job).map { res =>
-            // replace job
-            scheduler.addJob(jobDetail, true)
-            // replace trigger
-            val triggerKey = TriggerKey.triggerKey(triggerMeta.name, triggerMeta.group)
-            val oldTrigger = scheduler.getTrigger(triggerKey)
-            if (null != oldTrigger) {
-              val triggerOpt = triggerMeta.toTrigger()
-              if (triggerOpt.nonEmpty) {
-                val newTrigger = triggerOpt.get
-                scheduler.rescheduleJob(triggerKey, newTrigger)
-              } else {
-                scheduler.unscheduleJob(triggerKey)
-              }
+    val error = JobUtils.validateJobAndTrigger(jobMeta, triggerMeta, jobData)
+    if (null == error) {
+      val schedulerOpt = getScheduler(jobMeta.scheduler)
+      val scheduler = schedulerOpt.get
+      val (isOk, errMsg, jobDetail) = jobMeta.toJobDetail()
+      if (isOk) {
+        val job = buildJob(jobMeta, triggerMeta, jobData)
+        JobService.updateJob(job).map { res =>
+          // replace job
+          scheduler.addJob(jobDetail, true)
+          // replace trigger
+          val triggerKey = TriggerKey.triggerKey(triggerMeta.name, triggerMeta.group)
+          val oldTrigger = scheduler.getTrigger(triggerKey)
+          if (null != oldTrigger) {
+            val triggerOpt = triggerMeta.toTrigger()
+            if (triggerOpt.nonEmpty) {
+              val newTrigger = triggerOpt.get
+              scheduler.rescheduleJob(triggerKey, newTrigger)
             } else {
-              val triggerOpt = triggerMeta.toTrigger()
-              if (triggerOpt.nonEmpty) {
-                val newTrigger = triggerMeta.triggerType match {
-                  case TriggerMeta.TYPE_SIMPLE =>
-                    triggerOpt.get.asInstanceOf[SimpleTriggerImpl]
-                  case TriggerMeta.TYPE_CRON =>
-                    triggerOpt.get.asInstanceOf[CronTriggerImpl]
-                }
-                newTrigger.setJobName(jobMeta.name)
-                newTrigger.setJobGroup(jobMeta.group)
-                scheduler.scheduleJob(newTrigger)
-              }
+              scheduler.unscheduleJob(triggerKey)
             }
-            StringUtils.EMPTY
+          } else {
+            val triggerOpt = triggerMeta.toTrigger()
+            if (triggerOpt.nonEmpty) {
+              val newTrigger = triggerMeta.triggerType match {
+                case TriggerMeta.TYPE_SIMPLE =>
+                  triggerOpt.get.asInstanceOf[SimpleTriggerImpl]
+                case TriggerMeta.TYPE_CRON =>
+                  triggerOpt.get.asInstanceOf[CronTriggerImpl]
+              }
+              newTrigger.setJobName(jobMeta.name)
+              newTrigger.setJobGroup(jobMeta.group)
+              scheduler.scheduleJob(newTrigger)
+            }
           }
+          StringUtils.EMPTY
         }
-        else {
-          FutureUtils.illegalArgs(errMsg)
-        }
-      case (false, errMsg) =>
+      } else {
         FutureUtils.illegalArgs(errMsg)
+      }
+    } else {
+      error.toFutureFail
     }
   }
 
@@ -206,12 +206,12 @@ object SchedulerManager {
       description = jobMeta.desc,
       name = jobMeta.name,
       group = jobMeta.group,
+      project = jobMeta.project,
       scheduler = jobMeta.scheduler,
       classAlias = jobMeta.classAlias,
       trigger = Seq(JobTrigger(
-        name = triggerMeta.name,
-        description = triggerMeta.desc,
         group = triggerMeta.group,
+        project = triggerMeta.project,
         cron = if (StringUtils.isEmpty(triggerMeta.cron)) StringUtils.EMPTY else triggerMeta.cron,
         triggerType = if (StringUtils.isEmpty(triggerMeta.triggerType)) StringUtils.EMPTY else triggerMeta.triggerType,
         startNow = if (Option(triggerMeta.startNow).isDefined) triggerMeta.startNow else false,

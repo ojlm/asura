@@ -1,34 +1,32 @@
 package asura.core.job
 
-import asura.common.model.ApiMsg
 import asura.common.util.StringUtils
+import asura.core.ErrorMessages
 import asura.core.es.model.JobData
 
 object JobUtils {
 
-  def validateJobAndTrigger(jobMeta: JobMeta, triggerMeta: TriggerMeta, jobData: JobData): (Boolean, String) = {
+  def validateJobAndTrigger(jobMeta: JobMeta, triggerMeta: TriggerMeta, jobData: JobData): ErrorMessages.Val = {
     if (StringUtils.isEmpty(jobMeta.name) || StringUtils.isEmpty(triggerMeta.name)) {
-      (false, "任务名称为空")
+      ErrorMessages.error_EmptyJobName
     } else if (StringUtils.isEmpty(jobMeta.group) || StringUtils.isEmpty(triggerMeta.group)) {
-      (false, "任务组名为空")
-    } else if (StringUtils.isEmpty(jobMeta.desc) || StringUtils.isEmpty(triggerMeta.desc)) {
-      (false, "任务描述为空")
+      ErrorMessages.error_EmptyJobName
     } else if (StringUtils.isEmpty(jobMeta.classAlias)) {
-      (false, "任务类型为空")
+      ErrorMessages.error_EmptyJobType
     } else if (SchedulerManager.getScheduler(jobMeta.scheduler).isEmpty) {
-      (false, "调度器不存在")
+      ErrorMessages.error_NoSchedulerDefined(jobMeta.scheduler)
     } else {
       // check job data
       val job = JobCenter.classAliasJobMap.get(jobMeta.classAlias)
       if (job.nonEmpty) {
         val (ret, msg) = job.get.checkJobData(jobData)
         if (ret) {
-          (true, ApiMsg.SUCCESS)
+          null
         } else {
-          (false, msg)
+          ErrorMessages.error_JobValidate(msg)
         }
       } else {
-        (false, "不支持的任务类型")
+        ErrorMessages.error_NoJobDefined(jobMeta.classAlias)
       }
     }
   }

@@ -30,6 +30,15 @@ object ErrorMessages extends Enumeration {
   val error_ServerError = Val("Server Error")
   val error_EmptyEnv = Val("Empty env")
   val error_EmptyScenario = Val("Empty scenario")
+  val error_EmptyJobName = Val("Empty job name")
+  val error_EmptyJobType = Val("Empty job type")
+  val error_EmptyScheduler = Val("Empty scheduler")
+
+  def error_NoSchedulerDefined(scheduler: String) = Val(scheduler)
+
+  def error_NoJobDefined(job: String) = Val(job)
+
+  def error_JobValidate(msg: String) = Val(msg)
 
   def error_NoNotifyImplementation(`type`: String) = Val(`type`)
 
