@@ -30,10 +30,11 @@ class JobApi @Inject()(implicit exec: ExecutionContext, val controllerComponents
     val jobMeta = job.jobMeta
     val jobData = job.jobData
     val triggerMeta = job.triggerMeta
-    val username = getProfileId()
-    JobUtils.validateJobAndTrigger(jobMeta, triggerMeta, jobData) match {
-      case (true, _) => SchedulerManager.scheduleJob(jobMeta, triggerMeta, jobData, username).toOkResult
-      case (false, errMsg) => Future.successful(OkApiRes(ApiResError(errMsg)))
+    val error = JobUtils.validateJobAndTrigger(jobMeta, triggerMeta, jobData)
+    if (null == error) {
+      SchedulerManager.scheduleJob(jobMeta, triggerMeta, jobData, getProfileId()).toOkResult
+    } else {
+      Future.successful(OkApiRes(ApiResError(getI18nMessage(error.name, error.errMsg))))
     }
   }
 
