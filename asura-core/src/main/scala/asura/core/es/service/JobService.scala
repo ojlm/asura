@@ -1,7 +1,7 @@
 package asura.core.es.service
 
 import asura.common.exceptions.{IllegalRequestException, RequestFailException}
-import asura.common.model.{ApiMsg, BoolErrorRes}
+import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
@@ -23,26 +23,13 @@ object JobService extends CommonService {
     if (null == job) {
       ErrorMessages.error_EmptyRequestBody.toFutureFail
     } else {
-      val (isOK, errMsg) = validate(job)
-      if (!isOK) {
-        FutureUtils.illegalArgs(errMsg)
+      val error = validate(job)
+      if (null != error) {
+        error.toFutureFail
       } else {
-        val jobId = Job.buildJobKey(job)
         EsClient.esClient.execute {
-          exists(jobId, Job.Index, EsConfig.DefaultType)
-        }.flatMap(res => {
-          if (res.isSuccess) {
-            if (res.result) {
-              FutureUtils.illegalArgs(s"${job.scheduler}:${job.group}:${job.name} already exists.")
-            } else {
-              EsClient.esClient.execute {
-                indexInto(Job.Index / EsConfig.DefaultType).doc(job).id(jobId).refresh(RefreshPolicy.WAIT_UNTIL)
-              }.map(toIndexDocResponse(_))
-            }
-          } else {
-            FutureUtils.requestFail(res.error.reason)
-          }
-        })
+          indexInto(Job.Index / EsConfig.DefaultType).doc(job).refresh(RefreshPolicy.WAIT_UNTIL)
+        }.map(toIndexDocResponse(_))
       }
     }
   }
@@ -78,16 +65,16 @@ object JobService extends CommonService {
     }
   }
 
-  def updateJob(job: Job): Future[UpdateDocResponse] = {
-    if (null == job) {
+  def updateJob(id: String, job: Job): Future[UpdateDocResponse] = {
+    if (null == job || StringUtils.isEmpty(id)) {
       ErrorMessages.error_EmptyRequestBody.toFutureFail
     } else {
-      val (isOk, errMsg) = validate(job)
-      if (!isOk) {
-        FutureUtils.illegalArgs(errMsg)
+      val error = validate(job)
+      if (null != error) {
+        error.toFutureFail
       } else {
         EsClient.esClient.execute {
-          update(Job.buildJobKey(job)).in(Job.Index / EsConfig.DefaultType).doc(JacksonSupport.stringify(job.toUpdateMap))
+          update(id).in(Job.Index / EsConfig.DefaultType).doc(JacksonSupport.stringify(job.toUpdateMap))
         }.map(toUpdateDocResponse(_))
       }
     }
@@ -117,20 +104,19 @@ object JobService extends CommonService {
     }
   }
 
-  def validate(job: Job): BoolErrorRes = {
+  def validate(job: Job): ErrorMessages.Val = {
     if (StringUtils.isEmpty(job.summary)) {
-      (false, "Empty job name")
+      ErrorMessages.error_EmptyJobName
     } else if (StringUtils.isEmpty(job.classAlias)) {
-      (false, "Empty job class")
+      ErrorMessages.error_EmptyJobType
     } else if (StringUtils.isEmpty(job.group)) {
-      (false, "Empty job group")
+      ErrorMessages.error_EmptyGroup
     } else if (StringUtils.isEmpty(job.scheduler)) {
-      (false, "Empty job scheduler")
+      ErrorMessages.error_EmptyScheduler
     } else {
-      (true, null)
+      null
     }
   }
-
 
   def geJobById(id: String): Future[Job] = {
     getById(id).map(res => {

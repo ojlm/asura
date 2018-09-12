@@ -3,13 +3,12 @@ package asura.core.job
 import java.util.Properties
 import java.util.concurrent.ConcurrentHashMap
 
-import asura.common.model.{ApiMsg, BoolErrorRes}
-import asura.common.util.{DateUtils, FutureUtils, StringUtils}
+import asura.common.util.{DateUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.cachedExecutor
 import asura.core.es.model.{Job, JobData, JobTrigger}
 import asura.core.es.service.JobService
-import asura.core.job.actor._
+import asura.core.job.actor.{JobActionValidator, _}
 import com.typesafe.scalalogging.Logger
 import org.quartz.impl.StdSchedulerFactory
 import org.quartz.impl.triggers.{CronTriggerImpl, SimpleTriggerImpl}
@@ -73,103 +72,78 @@ object SchedulerManager {
     }
   }
 
-  def pauseJob(job: PauseJob): BoolErrorRes = {
-    val error = job.validate()
-    if (!isOk) {
-      (false, errMsg)
-    } else {
-      val schedulerOpt = getScheduler(job.scheduler)
-      if (schedulerOpt.nonEmpty) {
+  def pauseJob(job: PauseJob): Future[Boolean] = {
+    commonActionValidate(job) { scheduler =>
+      Future {
         try {
-          schedulerOpt.get.pauseJob(JobKey.jobKey(job.name, job.group))
-          (true, ApiMsg.SUCCESS)
+          scheduler.pauseJob(JobKey.jobKey(job.id, job.getQuartzGroup))
+          true
         } catch {
-          case t: Throwable => (false, t.getMessage)
+          case t: Throwable => throw ErrorMessages.error_Throwable(t).toException
         }
-      } else {
-        (false, ErrorMsg.ERROR_INVALID_SCHEDULER_TYPE)
       }
     }
   }
 
-  def resumeJob(job: ResumeJob): BoolErrorRes = {
-    val (isOk, errMsg) = job.validate()
-    if (!isOk) {
-      (false, errMsg)
-    } else {
-      val schedulerOpt = getScheduler(job.scheduler)
-      if (schedulerOpt.nonEmpty) {
+  def resumeJob(job: ResumeJob): Future[Boolean] = {
+    commonActionValidate(job) { scheduler =>
+      Future {
         try {
-          schedulerOpt.get.resumeJob(JobKey.jobKey(job.name, job.group))
-          (true, ApiMsg.SUCCESS)
+          scheduler.resumeJob(JobKey.jobKey(job.id, job.getQuartzGroup))
+          true
         } catch {
-          case t: Throwable => (false, t.getMessage)
+          case t: Throwable => throw ErrorMessages.error_Throwable(t).toException
         }
-      } else {
-        (false, ErrorMsg.ERROR_INVALID_SCHEDULER_TYPE)
       }
     }
   }
 
-  def deleteJob(job: DeleteJob): BoolErrorRes = {
-    val (isOk, errMsg) = job.validate()
-    if (!isOk) {
-      (false, errMsg)
-    } else {
-      val schedulerOpt = getScheduler(job.scheduler)
-      if (schedulerOpt.nonEmpty) {
+  def deleteJob(job: DeleteJob): Future[Boolean] = {
+    commonActionValidate(job) { scheduler =>
+      Future {
         try {
-          schedulerOpt.get.deleteJob(JobKey.jobKey(job.name, job.group))
-          JobService.deleteDoc(job.id)
-          (true, ApiMsg.SUCCESS)
+          scheduler.deleteJob(JobKey.jobKey(job.id, job.getQuartzGroup))
+          true
         } catch {
-          case t: Throwable => (false, t.getMessage)
+          case t: Throwable => throw ErrorMessages.error_Throwable(t).toException
         }
-      } else {
-        (false, ErrorMsg.ERROR_INVALID_SCHEDULER_TYPE)
-      }
+      }.flatMap(_ => JobService.deleteDoc(job.id)).map(_ => true)
     }
   }
 
-  def triggerJob(job: TriggerJob): BoolErrorRes = {
-    val (isOk, errMsg) = job.validate()
-    if (!isOk) {
-      (false, errMsg)
-    } else {
-      val schedulerOpt = getScheduler(job.scheduler)
-      if (schedulerOpt.nonEmpty) {
+  def triggerJob(job: TriggerJob): Future[Boolean] = {
+    commonActionValidate(job) { scheduler =>
+      Future {
         try {
-          schedulerOpt.get.triggerJob(JobKey.jobKey(job.name, job.group))
-          (true, ApiMsg.SUCCESS)
+          scheduler.triggerJob(JobKey.jobKey(job.id, job.getQuartzGroup))
+          true
         } catch {
-          case t: Throwable => (false, t.getMessage)
+          case t: Throwable => throw ErrorMessages.error_Throwable(t).toException
         }
-      } else {
-        (false, ErrorMsg.ERROR_INVALID_SCHEDULER_TYPE)
       }
     }
   }
 
   /** jobName, jobGroup must be same with the old one */
-  def updateJob(jobToUpdate: UpdateJob): Future[String] = {
-    val jobMeta = jobToUpdate.jobMeta
-    val triggerMeta = jobToUpdate.triggerMeta
-    val jobData = jobToUpdate.jobData
+  def updateJob(toUpdate: UpdateJob): Future[String] = {
+    val jobMeta = toUpdate.jobMeta
+    val triggerMeta = toUpdate.triggerMeta
+    val jobData = toUpdate.jobData
     val error = JobUtils.validateJobAndTrigger(jobMeta, triggerMeta, jobData)
     if (null == error) {
       val schedulerOpt = getScheduler(jobMeta.scheduler)
       val scheduler = schedulerOpt.get
-      val (isOk, errMsg, jobDetail) = jobMeta.toJobDetail()
-      if (isOk) {
+      val (error, jobDetail) = jobMeta.toJobDetail(toUpdate.id)
+      if (null == error) {
         val job = buildJob(jobMeta, triggerMeta, jobData)
-        JobService.updateJob(job).map { res =>
+        JobService.updateJob(toUpdate.id, job).map { res =>
           // replace job
           scheduler.addJob(jobDetail, true)
           // replace trigger
-          val triggerKey = TriggerKey.triggerKey(triggerMeta.name, triggerMeta.group)
+          val triggerKey = TriggerKey.triggerKey(toUpdate.id, JobUtils.generateQuartzGroup(jobMeta.group, jobMeta.project))
           val oldTrigger = scheduler.getTrigger(triggerKey)
           if (null != oldTrigger) {
-            val triggerOpt = triggerMeta.toTrigger()
+            val triggerOpt = triggerMeta.toTrigger(toUpdate.id)
             if (triggerOpt.nonEmpty) {
               val newTrigger = triggerOpt.get
               scheduler.rescheduleJob(triggerKey, newTrigger)
@@ -177,7 +151,7 @@ object SchedulerManager {
               scheduler.unscheduleJob(triggerKey)
             }
           } else {
-            val triggerOpt = triggerMeta.toTrigger()
+            val triggerOpt = triggerMeta.toTrigger(toUpdate.id)
             if (triggerOpt.nonEmpty) {
               val newTrigger = triggerMeta.triggerType match {
                 case TriggerMeta.TYPE_SIMPLE =>
@@ -193,7 +167,7 @@ object SchedulerManager {
           StringUtils.EMPTY
         }
       } else {
-        FutureUtils.illegalArgs(errMsg)
+        error.toFutureFail
       }
     } else {
       error.toFutureFail
@@ -204,7 +178,6 @@ object SchedulerManager {
     Job(
       summary = jobMeta.name,
       description = jobMeta.desc,
-      name = jobMeta.name,
       group = jobMeta.group,
       project = jobMeta.project,
       scheduler = jobMeta.scheduler,
@@ -222,6 +195,20 @@ object SchedulerManager {
       )),
       jobData = jobData
     )
+  }
+
+  private def commonActionValidate(action: JobActionValidator)(func: Scheduler => Future[Boolean]): Future[Boolean] = {
+    val error = action.validate()
+    if (null == error) {
+      val schedulerOpt = getScheduler(action.scheduler)
+      if (schedulerOpt.nonEmpty) {
+        func(schedulerOpt.get)
+      } else {
+        ErrorMessages.error_NoSchedulerDefined(action.scheduler).toFutureFail
+      }
+    } else {
+      error.toFutureFail
+    }
   }
 }
 

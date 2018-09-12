@@ -5,7 +5,6 @@ import akka.actor.{ActorRef, Props}
 import asura.common.actor._
 import asura.common.model.Pagination
 import asura.core.actor.messages.SenderMessage
-import asura.core.es.model.Job
 import asura.core.es.service.JobService
 import asura.core.job.actor.JobStatusActor.JobQueryMessage
 import asura.core.job.actor.JobStatusMonitorActor.JobStatusOperationMessage
@@ -63,8 +62,7 @@ class JobStatusActor() extends BaseActor {
           outSender ! ErrorActorEvent(esResponse.error.reason)
         })(context.system.dispatcher)
     case JobStatusNotificationMessage(_, operator, scheduler, group, name, data) =>
-      val jobKey = Job.buildJobKey(scheduler, group, name)
-      if (watchIds.contains(jobKey)) {
+      if (watchIds.contains(name)) {
         outSender ! ItemActorEvent(JobStatusOperationMessage(operator, scheduler, group, name, data))
       }
     case eventMessage: ActorEvent =>

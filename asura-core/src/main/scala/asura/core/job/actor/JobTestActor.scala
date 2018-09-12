@@ -5,7 +5,7 @@ import akka.pattern.pipe
 import asura.common.actor._
 import asura.core.CoreConfig
 import asura.core.actor.messages.SenderMessage
-import asura.core.es.model.{Job, JobData, JobReport}
+import asura.core.es.model.{JobData, JobReport}
 import asura.core.es.service.JobReportService
 import asura.core.job.actor.JobTestActor.JobTestMessage
 import asura.core.job.{JobCenter, JobExecDesc, JobMeta}
@@ -33,7 +33,7 @@ class JobTestActor(user: String, out: ActorRef) extends BaseActor {
         val job = jobOpt.get
         val (isOk, errMsg) = job.checkJobData(jobData)
         if (isOk) {
-          job.doTestAsync(JobExecDesc.from(jobMeta, jobData, JobReport.TYPE_TEST, null), logMsg => {
+          job.doTestAsync(JobExecDesc.from(null, jobMeta, jobData, JobReport.TYPE_TEST, null), logMsg => {
             webActor ! NotifyActorEvent(logMsg)
           }).pipeTo(self)
         } else {
@@ -46,7 +46,7 @@ class JobTestActor(user: String, out: ActorRef) extends BaseActor {
       val report = execDesc.report
       report.fillCommonFields(user)
       JobReportService.index(report).map { res =>
-        logger.debug(s"job(${Job.buildJobKey(execDesc.job)}) report(${res.id}) is saved.")
+        logger.debug(s"job(${execDesc.job.summary}) report(${res.id}) is saved.")
         val reportUrl = s"view report: ${CoreConfig.reportBaseUrl}/${res.id}"
         webActor ! NotifyActorEvent(reportUrl)
         webActor ! ItemActorEvent(execDesc)

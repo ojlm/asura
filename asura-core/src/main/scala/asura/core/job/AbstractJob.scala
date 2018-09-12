@@ -2,7 +2,7 @@ package asura.core.job
 
 import asura.common.util.FutureUtils.RichFuture
 import asura.common.util.LogUtils
-import asura.core.es.model.{BaseIndex, JobReport, Job => AsuraJob}
+import asura.core.es.model.{BaseIndex, JobReport}
 import asura.core.es.service.{JobReportService, JobService, ReportNotifyService}
 import asura.core.job.actor.{JobFinished, JobRunning, SchedulerActor}
 import com.typesafe.scalalogging.Logger
@@ -19,7 +19,7 @@ abstract class AbstractJob extends Job {
     val execDesc = beforeRun(context)
     try {
       val job = execDesc.job
-      SchedulerActor.statusMonitor ! JobRunning(job.scheduler, job.group, job.name)
+      SchedulerActor.statusMonitor ! JobRunning(job.scheduler, job.group, job.summary)
       run(execDesc)
     } catch {
       case t: Throwable =>
@@ -30,11 +30,10 @@ abstract class AbstractJob extends Job {
   }
 
   private def beforeRun(context: JobExecutionContext): JobExecDesc = {
-    val scheduler = context.getScheduler.getSchedulerName
     val jobKey = context.getJobDetail.getKey
-    val jobId = AsuraJob.buildJobKey(scheduler, jobKey.getGroup, jobKey.getName)
+    val jobId = jobKey.getName
     val job = JobService.geJobById(jobId).await
-    JobExecDesc.from(job, JobReport.TYPE_QUARTZ, null)
+    JobExecDesc.from(jobId, job, JobReport.TYPE_QUARTZ, null)
   }
 
   private def afterRun(jobExecDesc: JobExecDesc): Unit = {
@@ -46,7 +45,7 @@ abstract class AbstractJob extends Job {
     val job = execDesc.job
     val report = execDesc.report
     report.fillCommonFields(BaseIndex.CREATOR_QUARTZ)
-    SchedulerActor.statusMonitor ! JobFinished(job.scheduler, job.group, job.name, execDesc.report)
+    SchedulerActor.statusMonitor ! JobFinished(job.scheduler, job.group, job.summary, execDesc.report)
     try {
       val reportDoc = JobReportService.index(report).await
       ReportNotifyService.notifySubscribers(execDesc, reportDoc.id).await

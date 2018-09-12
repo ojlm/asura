@@ -35,7 +35,7 @@ class JobCiActor(id: String, out: ActorRef, options: ContextOptions) extends Bas
         val jobImpl = jobImplOpt.get
         val (isOk, errMsg) = jobImpl.checkJobData(job.jobData)
         if (isOk) {
-          jobImpl.doTestAsync(JobExecDesc.from(job, JobReport.TYPE_CI, options), logMsg => {
+          jobImpl.doTestAsync(JobExecDesc.from(id, job, JobReport.TYPE_CI, options), logMsg => {
             webActor ! logMsg
           }).pipeTo(self)
         } else {

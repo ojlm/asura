@@ -19,7 +19,7 @@ case class JobMeta(
       (ErrorMessages.error_NoJobDefined(classAlias), null)
     } else {
       val jobDetail = JobBuilder.newJob(clazz.get)
-        .withIdentity(docId, s"${group}_${project}")
+        .withIdentity(docId, JobUtils.generateQuartzGroup(group, project))
         .storeDurably(true)
         .build()
       (null, jobDetail)

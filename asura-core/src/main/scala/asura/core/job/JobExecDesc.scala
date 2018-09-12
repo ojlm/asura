@@ -9,6 +9,7 @@ import asura.core.es.model.{Job, JobData, JobReport}
 
 /** job meta data and status container during execution */
 case class JobExecDesc(
+                        val jobId: String,
                         val job: Job,
                         val report: JobReport,
                         val startNano: Long,
@@ -46,7 +47,7 @@ case class JobExecDesc(
     if (null == jobWorkDir) {
       val pattern = new SimpleDateFormat("yyyyMMddHHmmss")
       currentJobFolder = pattern.format(new java.util.Date())
-      jobWorkDir = s"$configWorkDir/${job.group}/${job.name}/$currentJobFolder"
+      jobWorkDir = s"$configWorkDir/${job.group}/${job.project}/${jobId}/$currentJobFolder"
       val file = new File(jobWorkDir)
       if (!file.exists()) {
         file.mkdirs()
@@ -78,16 +79,17 @@ object JobExecDesc {
   val STATUS_WARN = "warn"
   val STATUS_ABORTED = "aborted"
 
-  def from(job: Job, `type`: String, options: ContextOptions): JobExecDesc = {
+  def from(jobId: String, job: Job, `type`: String, options: ContextOptions): JobExecDesc = {
     val report = JobReport(
       scheduler = job.scheduler,
       group = job.group,
-      jobName = job.name,
+      jobName = job.summary,
       `type` = `type`,
       classAlias = job.classAlias,
       startAt = DateUtils.nowDateTime
     )
     JobExecDesc(
+      jobId = jobId,
       job = job,
       report = report,
       startNano = System.nanoTime(),
@@ -96,12 +98,12 @@ object JobExecDesc {
     )
   }
 
-  def from(jobMeta: JobMeta, jobData: JobData, `type`: String, options: ContextOptions): JobExecDesc = {
+  def from(jobId: String, jobMeta: JobMeta, jobData: JobData, `type`: String, options: ContextOptions): JobExecDesc = {
     val job = Job(
       summary = jobMeta.name,
       description = jobMeta.desc,
-      name = jobMeta.name,
       group = jobMeta.group,
+      project = jobMeta.project,
       scheduler = jobMeta.scheduler,
       classAlias = jobMeta.classAlias,
       trigger = Nil,
@@ -116,6 +118,7 @@ object JobExecDesc {
       startAt = DateUtils.nowDateTime
     )
     JobExecDesc(
+      jobId = jobId,
       job = job,
       report = report,
       startNano = System.nanoTime(),

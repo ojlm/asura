@@ -13,8 +13,10 @@ import scala.concurrent.Future
 object RunCaseJob extends JobBase {
 
   override val meta = JobMeta(
-    name = "执行接口测试",
-    desc = "执行接口测~~",
+    group = "",
+    project = "",
+    name = "job for running case",
+    desc = "job for running case~~",
     classAlias = "RunCaseJob"
   )
 
