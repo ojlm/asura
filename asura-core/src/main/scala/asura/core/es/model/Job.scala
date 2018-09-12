@@ -8,7 +8,6 @@ import scala.collection.mutable
 case class Job(
                 val summary: String,
                 val description: String,
-                val name: String,
                 val group: String,
                 val project: String,
                 val scheduler: String,
@@ -37,7 +36,6 @@ object Job extends IndexSetting {
   val mappings: MappingDefinition = MappingDefinition(
     `type` = EsConfig.DefaultType,
     fields = BaseIndex.fieldDefinitions ++ Seq(
-      KeywordField(name = FieldKeys.FIELD_NAME),
       KeywordField(name = FieldKeys.FIELD_GROUP),
       KeywordField(name = FieldKeys.FIELD_PROJECT),
       KeywordField(name = FieldKeys.FIELD_SCHEDULER),
@@ -66,14 +64,4 @@ object Job extends IndexSetting {
       )),
     )
   )
-
-  def buildJobKey(scheduler: String, jobGroup: String, jobName: String): String = {
-    val sb = StringBuilder.newBuilder
-    sb.append(scheduler).append("_").append(jobGroup).append("_").append(jobName)
-    sb.toString
-  }
-
-  def buildJobKey(job: Job): String = {
-    buildJobKey(job.scheduler, job.group, job.name)
-  }
 }

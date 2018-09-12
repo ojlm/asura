@@ -30,7 +30,7 @@ case class TriggerMeta(
         } else {
           scheduleBuilder.repeatForever()
         }
-        val triggerBuilder = TriggerBuilder.newTrigger().withIdentity(docId, s"${group}_${project}")
+        val triggerBuilder = TriggerBuilder.newTrigger().withIdentity(docId, JobUtils.generateQuartzGroup(group, project))
         if (!startNow && Option(startDate).isDefined && startDate > 0) {
           triggerBuilder.startAt(new Date(startDate))
         } else {
@@ -42,7 +42,7 @@ case class TriggerMeta(
         Option(triggerBuilder.withSchedule(scheduleBuilder).build())
       case TriggerMeta.TYPE_CRON =>
         Option(TriggerBuilder.newTrigger()
-          .withIdentity(docId, s"${group}_${project}")
+          .withIdentity(docId, JobUtils.generateQuartzGroup(group, project))
           .withSchedule(CronScheduleBuilder.cronSchedule(cron))
           .build()
         )

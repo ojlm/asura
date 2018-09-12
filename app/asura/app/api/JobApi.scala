@@ -45,28 +45,19 @@ class JobApi @Inject()(implicit exec: ExecutionContext, val controllerComponents
     })
   }
 
-  def pause() = Action(parse.byteString) { implicit req =>
+  def pause() = Action(parse.byteString).async { implicit req =>
     val job = req.bodyAs(classOf[PauseJob])
-    SchedulerManager.pauseJob(job) match {
-      case (true, _) => OkApiRes(ApiRes())
-      case (false, errMsg) => OkApiRes(ApiResError(errMsg))
-    }
+    SchedulerManager.pauseJob(job).toOkResult
   }
 
-  def resume() = Action(parse.byteString) { implicit req =>
+  def resume() = Action(parse.byteString).async { implicit req =>
     val job = req.bodyAs(classOf[ResumeJob])
-    SchedulerManager.resumeJob(job) match {
-      case (true, _) => OkApiRes(ApiRes())
-      case (false, errMsg) => OkApiRes(ApiResError(errMsg))
-    }
+    SchedulerManager.resumeJob(job).toOkResult
   }
 
-  def delete() = Action(parse.byteString) { implicit req =>
+  def delete() = Action(parse.byteString).async { implicit req =>
     val job = req.bodyAs(classOf[DeleteJob])
-    SchedulerManager.deleteJob(job) match {
-      case (true, _) => OkApiRes(ApiRes())
-      case (false, errMsg) => OkApiRes(ApiResError(errMsg))
-    }
+    SchedulerManager.deleteJob(job).toOkResult
   }
 
   def detail(id: String) = Action(parse.byteString).async { implicit req =>

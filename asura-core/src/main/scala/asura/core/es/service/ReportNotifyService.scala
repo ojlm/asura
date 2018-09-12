@@ -62,9 +62,8 @@ object ReportNotifyService extends CommonService {
   }
 
   def notifySubscribers(execDesc: JobExecDesc, reportId: String): Future[NotifyResponses] = {
-    val job = execDesc.job
     val report = execDesc.report
-    ReportNotifyService.getSubscribers(Job.buildJobKey(job)).flatMap(subscribers => {
+    ReportNotifyService.getSubscribers(execDesc.jobId).flatMap(subscribers => {
       val responses = subscribers.map(subscriber => {
         val func = JobNotifyManager.get(subscriber.`type`)
         if (func.nonEmpty) {
