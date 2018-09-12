@@ -10,6 +10,7 @@ case class Job(
                 val description: String,
                 val name: String,
                 val group: String,
+                val project: String,
                 val scheduler: String,
                 val classAlias: String,
                 val trigger: Seq[JobTrigger],
@@ -38,11 +39,13 @@ object Job extends IndexSetting {
     fields = BaseIndex.fieldDefinitions ++ Seq(
       KeywordField(name = FieldKeys.FIELD_NAME),
       KeywordField(name = FieldKeys.FIELD_GROUP),
+      KeywordField(name = FieldKeys.FIELD_PROJECT),
       KeywordField(name = FieldKeys.FIELD_SCHEDULER),
       KeywordField(name = FieldKeys.FIELD_CLASS_ALIAS),
       NestedField(name = FieldKeys.FIELD_TRIGGER, fields = Seq(
         KeywordField(name = FieldKeys.FIELD_NAME),
         KeywordField(name = FieldKeys.FIELD_GROUP),
+        KeywordField(name = FieldKeys.FIELD_PROJECT),
         TextField(name = FieldKeys.FIELD_DESCRIPTION, analysis = EsConfig.IK_ANALYZER),
         KeywordField(name = FieldKeys.FIELD_CRON),
         KeywordField(name = FieldKeys.FIELD_TRIGGER_TYPE),

@@ -1,31 +1,28 @@
 package asura.core.job
 
-import asura.common.model.{ApiMsg, BoolErrorTypeRes}
 import asura.common.util.StringUtils
+import asura.core.ErrorMessages
 import org.quartz.{JobBuilder, JobDetail}
 
 case class JobMeta(
+                    group: String,
+                    project: String,
                     name: String,
-                    group: String = StringUtils.EMPTY,
                     desc: String = StringUtils.EMPTY,
                     scheduler: String = StringUtils.EMPTY,
                     classAlias: String
                   ) {
 
-  def toJobDetail(): BoolErrorTypeRes[JobDetail] = {
+  def toJobDetail(docId: String): (ErrorMessages.Val, JobDetail) = {
     val clazz = JobCenter.supportedJobClasses.get(classAlias)
     if (clazz.isEmpty) {
-      (false, ErrorMsg.ERROR_INVALID_JOB_CLASS, null)
+      (ErrorMessages.error_NoJobDefined(classAlias), null)
     } else {
       val jobDetail = JobBuilder.newJob(clazz.get)
-        .withIdentity(name, group)
-        //.withDescription(desc) // saved in es
+        .withIdentity(docId, s"${group}_${project}")
         .storeDurably(true)
         .build()
-      (true, ApiMsg.SUCCESS, jobDetail)
+      (null, jobDetail)
     }
   }
-}
-
-object JobMeta {
 }

@@ -2,13 +2,11 @@ package asura.core.job
 
 import java.util.Date
 
-import asura.common.util.StringUtils
 import org.quartz.{CronScheduleBuilder, SimpleScheduleBuilder, Trigger, TriggerBuilder}
 
 case class TriggerMeta(
-                        name: String,
                         group: String,
-                        desc: String = StringUtils.EMPTY,
+                        project: String,
                         cron: String,
                         triggerType: String = TriggerMeta.TYPE_MANUAL,
                         startNow: Boolean = true,
@@ -18,7 +16,7 @@ case class TriggerMeta(
                         interval: Int = 0
                       ) {
 
-  def toTrigger(): Option[Trigger] = {
+  def toTrigger(docId: String): Option[Trigger] = {
     triggerType match {
       case TriggerMeta.TYPE_MANUAL =>
         None
@@ -32,7 +30,7 @@ case class TriggerMeta(
         } else {
           scheduleBuilder.repeatForever()
         }
-        val triggerBuilder = TriggerBuilder.newTrigger().withIdentity(name, group).withDescription(desc)
+        val triggerBuilder = TriggerBuilder.newTrigger().withIdentity(docId, s"${group}_${project}")
         if (!startNow && Option(startDate).isDefined && startDate > 0) {
           triggerBuilder.startAt(new Date(startDate))
         } else {
@@ -44,13 +42,11 @@ case class TriggerMeta(
         Option(triggerBuilder.withSchedule(scheduleBuilder).build())
       case TriggerMeta.TYPE_CRON =>
         Option(TriggerBuilder.newTrigger()
-          .withIdentity(name, group)
-          // .withDescription(desc) // saved in es
+          .withIdentity(docId, s"${group}_${project}")
           .withSchedule(CronScheduleBuilder.cronSchedule(cron))
           .build()
         )
       case TriggerMeta.TYPE_API =>
-        // TODO
         None
     }
   }
