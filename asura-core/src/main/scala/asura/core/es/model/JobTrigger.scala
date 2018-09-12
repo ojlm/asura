@@ -3,9 +3,8 @@ package asura.core.es.model
 import asura.common.util.StringUtils
 
 case class JobTrigger(
-                       name: String,
                        group: String,
-                       description: String = StringUtils.EMPTY,
+                       project: String,
                        cron: String,
                        triggerType: String = JobTrigger.TYPE_MANUAL,
                        startNow: Boolean = true,
@@ -13,9 +12,7 @@ case class JobTrigger(
                        endDate: String = StringUtils.EMPTY,
                        repeatCount: Int = 1,
                        interval: Int = 0
-                     ) {
-
-}
+                     )
 
 object JobTrigger {
   val TYPE_MANUAL = "manual"

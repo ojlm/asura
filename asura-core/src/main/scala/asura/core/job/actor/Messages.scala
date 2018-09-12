@@ -1,7 +1,7 @@
 package asura.core.job.actor
 
-import asura.common.model.BoolErrorRes
 import asura.common.util.StringUtils
+import asura.core.ErrorMessages
 import asura.core.es.model.{JobData, JobReport}
 import asura.core.job.{JobMeta, TriggerMeta}
 
@@ -29,18 +29,20 @@ case class JobUnscheduled(scheduler: String, triggerGroup: String, triggerName: 
 trait JobActionValidator {
 
   val scheduler: String
+  /** doc: group_project */
   val group: String
+  /** doc: id */
   val name: String
 
-  def validate(): BoolErrorRes = {
+  def validate(): ErrorMessages.Val = {
     if (StringUtils.isEmpty(scheduler)) {
-      (false, "Empty scheduler")
+      ErrorMessages.error_EmptyScheduler
     } else if (StringUtils.isEmpty(group)) {
-      (false, "Empty group")
+      ErrorMessages.error_EmptyGroup
     } else if (StringUtils.isEmpty(name)) {
-      (false, "Empty name")
+      ErrorMessages.error_EmptyJobName
     } else {
-      (true, null)
+      null
     }
   }
 }
