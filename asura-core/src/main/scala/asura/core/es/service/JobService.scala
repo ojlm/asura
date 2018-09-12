@@ -5,9 +5,9 @@ import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
+import asura.core.cs.model.QueryJob
 import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig}
-import asura.core.job.actor.JobStatusActor.JobQueryMessage
 import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
@@ -132,24 +132,16 @@ object JobService extends CommonService {
     })
   }
 
-  def query(query: JobQueryMessage) = {
+  def queryJob(query: QueryJob) = {
     val esQueries = ArrayBuffer[Query]()
-    if (StringUtils.isNotEmpty(query.scheduler)) {
-      esQueries += termQuery(FieldKeys.FIELD_SCHEDULER, query.scheduler)
-    }
-    if (StringUtils.isNotEmpty(query.group)) {
-      esQueries += termQuery(FieldKeys.FIELD_GROUP, query.group)
-    }
-    if (StringUtils.isNotEmpty(query.text)) {
-      esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
-    }
+    if (StringUtils.isNotEmpty(query.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, query.group)
+    if (StringUtils.isNotEmpty(query.text)) esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
     EsClient.esClient.execute {
-      if (Option(query.from).isEmpty || query.from < 0) query.from = 0
-      if (Option(query.size).isEmpty || query.size < 0) query.size = 0
-      val clause = search(Job.Index).query {
-        boolQuery().must(esQueries)
-      }.from(query.from).size(query.size)
-      clause
+      search(Job.Index)
+        .query(boolQuery().must(esQueries))
+        .from(query.pageFrom)
+        .size(query.pageSize)
+        .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
     }
   }
 }

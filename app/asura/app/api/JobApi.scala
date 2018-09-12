@@ -2,7 +2,7 @@ package asura.app.api
 
 import asura.app.api.BaseApi.OkApiRes
 import asura.common.model.{ApiRes, ApiResError}
-import asura.core.cs.model.QueryJobReport
+import asura.core.cs.model.{QueryJob, QueryJobReport}
 import asura.core.es.service.{JobReportService, JobService}
 import asura.core.job.actor._
 import asura.core.job.{JobCenter, JobUtils, SchedulerManager}
@@ -62,6 +62,11 @@ class JobApi @Inject()(implicit exec: ExecutionContext, val controllerComponents
 
   def detail(id: String) = Action(parse.byteString).async { implicit req =>
     JobService.getById(id).toOkResultByEsOneDoc(id)
+  }
+
+  def query() = Action(parse.byteString).async { implicit req =>
+    val query = req.bodyAs(classOf[QueryJob])
+    JobService.queryJob(query).toOkResultByEsList()
   }
 
   def reports() = Action(parse.byteString).async { implicit req =>
