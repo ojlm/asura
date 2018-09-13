@@ -78,7 +78,7 @@ object Case extends IndexSetting {
         fields = Seq(
           KeywordField(name = FieldKeys.FIELD_PROTOCOL),
           KeywordField(name = FieldKeys.FIELD_HOST),
-          KeywordField(name = FieldKeys.FIELD_RAW_URL, index = Option("false")),
+          KeywordField(name = FieldKeys.FIELD_RAW_URL, copyTo = Seq(FieldKeys.FIELD__TEXT), index = Option("false")),
           KeywordField(name = FieldKeys.FIELD_URL_PATH),
           BasicField(name = FieldKeys.FIELD_PORT, `type` = "integer"),
           ObjectField(name = FieldKeys.FIELD_AUTH, fields = Seq(

@@ -79,6 +79,7 @@ object FieldKeys {
 
 
   val FIELD_NESTED_REQUEST_URLPATH = "request.urlPath"
+  val FIELD_NESTED_REQUEST_METHOD = "request.method"
 
   /** copied from [[FIELD_SUMMARY]] and [[FIELD_DESCRIPTION]] */
   val FIELD__TEXT = "_text"
