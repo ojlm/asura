@@ -21,6 +21,17 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object CaseService extends CommonService {
 
+  val queryFields = Seq(
+    FieldKeys.FIELD_SUMMARY,
+    FieldKeys.FIELD_DESCRIPTION,
+    FieldKeys.FIELD_CREATOR,
+    FieldKeys.FIELD_CREATED_AT,
+    FieldKeys.FIELD_GROUP,
+    FieldKeys.FIELD_PROJECT,
+    FieldKeys.FIELD_NESTED_REQUEST_URLPATH,
+    FieldKeys.FIELD_NESTED_REQUEST_METHOD,
+  )
+
   def index(cs: Case): Future[IndexDocResponse] = {
     val error = CaseValidator.check(cs)
     if (null == error) {
@@ -66,7 +77,12 @@ object CaseService extends CommonService {
   private def getByIds(ids: Seq[String]) = {
     if (null != ids) {
       EsClient.esClient.execute {
-        search(Case.Index).query(idsQuery(ids)).from(0).size(ids.length).sortByFieldDesc(FieldKeys.FIELD_CREATED_AT)
+        search(Case.Index)
+          .query(idsQuery(ids))
+          .from(0)
+          .size(ids.length)
+          .sortByFieldDesc(FieldKeys.FIELD_CREATED_AT)
+          .sourceInclude(queryFields)
       }
     } else {
       ErrorMessages.error_EmptyId.toFutureFail
@@ -152,7 +168,6 @@ object CaseService extends CommonService {
       val esQueries = ArrayBuffer[Query]()
       if (StringUtils.isNotEmpty(query.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, query.group)
       if (StringUtils.isNotEmpty(query.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, query.project)
-      if (StringUtils.isNotEmpty(query.api)) esQueries += termQuery(FieldKeys.FIELD_API, query.api)
       if (StringUtils.isNotEmpty(query.text)) esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
       if (StringUtils.isNotEmpty(query.path)) esQueries += wildcardQuery(FieldKeys.FIELD_NESTED_REQUEST_URLPATH, s"${query.path}*")
       EsClient.esClient.execute {
@@ -160,6 +175,7 @@ object CaseService extends CommonService {
           .from(query.pageFrom)
           .size(query.pageSize)
           .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
+          .sourceInclude(queryFields)
       }.map(res => {
         if (res.isSuccess) {
           EsResponse.toApiData(res.result)
