@@ -14,6 +14,9 @@ import scala.concurrent.duration._
 
 object WebSocketMessageHandler {
 
+  val DEFAULT_BUFFER_SIZE = 100
+  val KEEP_ALIVE_INTERVAL = 2
+
   def newHandleFlow[T <: AnyRef](workActor: ActorRef, msgClass: Class[T]): Flow[Message, Message, NotUsed] = {
     val incomingMessages: Sink[Message, NotUsed] =
       Flow[Message].map {
@@ -21,13 +24,13 @@ object WebSocketMessageHandler {
         case _ => throw InvalidStatusException("Unsupported message type")
       }.to(Sink.actorRef[T](workActor, PoisonPill))
     val outgoingMessages: Source[Message, NotUsed] =
-      Source.actorRef[ActorEvent](100, OverflowStrategy.dropHead)
+      Source.actorRef[ActorEvent](DEFAULT_BUFFER_SIZE, OverflowStrategy.dropHead)
         .mapMaterializedValue { outActor =>
           workActor ! SenderMessage(outActor)
           NotUsed
         }
         .map(result => TextMessage(JacksonSupport.stringify(result)))
-        .keepAlive(2.seconds, () => TextMessage.Strict(""))
+        .keepAlive(KEEP_ALIVE_INTERVAL.seconds, () => TextMessage.Strict(""))
     Flow.fromSinkAndSource(incomingMessages, outgoingMessages)
   }
 
@@ -38,13 +41,43 @@ object WebSocketMessageHandler {
         case _ => throw InvalidStatusException("Unsupported message type")
       }.to(Sink.actorRef[T](workActor, PoisonPill))
     val outgoingMessages: Source[Message, NotUsed] =
-      Source.actorRef[String](100, OverflowStrategy.dropHead)
+      Source.actorRef[String](DEFAULT_BUFFER_SIZE, OverflowStrategy.dropHead)
         .mapMaterializedValue { outActor =>
           workActor ! SenderMessage(outActor)
           NotUsed
         }
         .map(result => TextMessage(result))
-        .keepAlive(2.seconds, () => TextMessage.Strict(""))
+        .keepAlive(KEEP_ALIVE_INTERVAL.seconds, () => TextMessage.Strict(""))
+    Flow.fromSinkAndSource(incomingMessages, outgoingMessages)
+  }
+
+  def stringToActorEventFlow[T <: AnyRef](workActor: ActorRef, msgClass: Class[T]): Flow[String, String, NotUsed] = {
+    val incomingMessages: Sink[String, NotUsed] =
+      Flow[String].map {
+        case text: String => JacksonSupport.parse(text, msgClass)
+      }.to(Sink.actorRef[T](workActor, PoisonPill))
+    val outgoingMessages: Source[String, NotUsed] =
+      Source.actorRef[ActorEvent](DEFAULT_BUFFER_SIZE, OverflowStrategy.dropHead)
+        .mapMaterializedValue { outActor =>
+          workActor ! SenderMessage(outActor)
+          NotUsed
+        }
+        .map(result => JacksonSupport.stringify(result))
+        .keepAlive(KEEP_ALIVE_INTERVAL.seconds, () => "")
+    Flow.fromSinkAndSource(incomingMessages, outgoingMessages)
+  }
+
+  def stringToActorEventFlow[T <: AnyRef](workActor: ActorRef): Flow[String, String, NotUsed] = {
+    val incomingMessages: Sink[String, NotUsed] =
+      Flow[String].to(Sink.actorRef[String](workActor, PoisonPill))
+    val outgoingMessages: Source[String, NotUsed] =
+      Source.actorRef[ActorEvent](DEFAULT_BUFFER_SIZE, OverflowStrategy.dropHead)
+        .mapMaterializedValue { outActor =>
+          workActor ! SenderMessage(outActor)
+          NotUsed
+        }
+        .map(result => JacksonSupport.stringify(result))
+        .keepAlive(KEEP_ALIVE_INTERVAL.seconds, () => "")
     Flow.fromSinkAndSource(incomingMessages, outgoingMessages)
   }
 }
