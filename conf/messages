@@ -14,3 +14,4 @@ error_NotRegisteredAuth=认证类型未注册：{0}
 error_EmptyProfile=无法获取用户信息
 error_TokenGeneratedError=无法生成登录Token
 error_FailToCreateUser=创建用户失败
+error_InvalidToken=无效Token

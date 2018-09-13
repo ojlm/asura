@@ -14,3 +14,4 @@ error_NotRegisteredAuth=Non registered auth type: {0}
 error_EmptyProfile=fail to get user profile
 error_TokenGeneratedError=fail to generate login token
 error_FailToCreateUser=fail to create user profile
+error_InvalidToken=Invalid token

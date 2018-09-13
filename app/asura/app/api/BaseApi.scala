@@ -8,6 +8,7 @@ import asura.core.es.EsResponse
 import com.sksamuel.elastic4s.http.Response
 import com.sksamuel.elastic4s.http.search.SearchResponse
 import org.pac4j.core.profile.{CommonProfile, ProfileManager}
+import org.pac4j.jwt.credentials.authenticator.JwtAuthenticator
 import org.pac4j.play.PlayWebContext
 import org.pac4j.play.scala.Security
 import play.api.http.{ContentTypes, HttpEntity}
@@ -19,6 +20,15 @@ import scala.concurrent.{ExecutionContext, Future}
 trait BaseApi extends Security[CommonProfile] {
 
   import BaseApi._
+
+  def getWsProfile(auth: JwtAuthenticator)(implicit request: RequestHeader): CommonProfile = {
+    val token = request.getQueryString("token")
+    if (token.nonEmpty) {
+      auth.validateToken(token.get)
+    } else {
+      null
+    }
+  }
 
   def getProfiles()(implicit request: RequestHeader): List[CommonProfile] = {
     val webContext = new PlayWebContext(request, playSessionStore)
