@@ -100,21 +100,21 @@ object JobExecDesc {
 
   def from(jobId: String, jobMeta: JobMeta, jobData: JobData, `type`: String, options: ContextOptions): JobExecDesc = {
     val job = Job(
-      summary = jobMeta.name,
-      description = jobMeta.desc,
+      summary = jobMeta.summary,
+      description = jobMeta.description,
       group = jobMeta.group,
       project = jobMeta.project,
-      scheduler = jobMeta.scheduler,
-      classAlias = jobMeta.classAlias,
+      scheduler = jobMeta.getScheduler(),
+      classAlias = jobMeta.getJobAlias(),
       trigger = Nil,
       jobData = jobData
     )
     val report = JobReport(
-      scheduler = jobMeta.scheduler,
+      scheduler = jobMeta.getScheduler(),
       group = jobMeta.group,
-      jobName = jobMeta.name,
+      jobName = jobMeta.summary,
       `type` = `type`,
-      classAlias = jobMeta.classAlias,
+      classAlias = jobMeta.getJobAlias(),
       startAt = DateUtils.nowDateTime
     )
     JobExecDesc(

@@ -62,9 +62,9 @@ object Dependencies {
   )
 
   val commonDependencies = Seq(akkaTestKit, config, akkaActor, jackson) ++ scalaTestDeps ++ loggingDeps
-  val coreDependencies = Seq(commonsLang3, jackson, faststring, elastic4sCore, elastic4sHttp, elastic4sEmbedded, joddCore, jsonPath, swaggerParser, quartz, redisson) ++ commonDependencies ++ httpDeps
+  val coreDependencies = Seq(commonsLang3, jackson, faststring, elastic4sCore, elastic4sHttp, elastic4sEmbedded, joddCore, jsonPath, swaggerParser, quartz, redisson) ++ commonDependencies ++ httpDeps ++ databaseDeps
   val pcapDependencies = Seq(pcap4jCore, pcap4jPacketFactoryStatic) ++ loggingDeps ++ scalaTestDeps
-  val appDependencies = Seq(config, guava, commonsCodec) ++ loggingDeps ++ httpDeps ++ databaseDeps ++ testDeps ++ pcapDependencies
+  val appDependencies = Seq(config, guava, commonsCodec) ++ loggingDeps ++ httpDeps ++ testDeps ++ pcapDependencies
   val webDependencies = Seq(seleniumJava, jBrowserDriver, htmlunitDriver) ++ loggingDeps ++ httpDeps ++ testDeps
   val namerdDependencies = Seq(akkaStream, akkaHttp) ++ commonDependencies
 }

@@ -15,8 +15,8 @@ object RunCaseJob extends JobBase {
   override val meta = JobMeta(
     group = "",
     project = "",
-    name = "job for running case",
-    desc = "job for running case~~",
+    summary = "job for running case",
+    description = "job for running case~~",
     classAlias = "RunCaseJob"
   )
 

@@ -18,17 +18,24 @@ import scala.concurrent.Future
 
 object SchedulerManager {
 
+  /** use the first scheduler as the default one */
+  var DEFAULT_SCHEDULER: String = null
   val logger = Logger("SchedulerManager")
   val schedulers = new ConcurrentHashMap[String, Scheduler]()
 
   def init(props: Properties*): Unit = {
-    props.foreach(prop => {
-      val scheduler = new StdSchedulerFactory(prop).getScheduler
-      val name = scheduler.getSchedulerName
-      schedulers.put(name, scheduler)
-      scheduler.getListenerManager.addSchedulerListener(NamedSchedulerListener(name))
-      scheduler.start()
-    })
+    if (null != props && props.nonEmpty) {
+      props.foreach(prop => {
+        val scheduler = new StdSchedulerFactory(prop).getScheduler
+        val name = scheduler.getSchedulerName
+        if (null != DEFAULT_SCHEDULER) {
+          DEFAULT_SCHEDULER = name
+        }
+        schedulers.put(name, scheduler)
+        scheduler.getListenerManager.addSchedulerListener(NamedSchedulerListener(name))
+        scheduler.start()
+      })
+    }
   }
 
   def shutdown(): Unit = {
@@ -40,7 +47,7 @@ object SchedulerManager {
   }
 
   def scheduleJob(jobMeta: JobMeta, triggerMeta: TriggerMeta, jobData: JobData, creator: String): Future[String] = {
-    val schedulerOpt = getScheduler(jobMeta.scheduler)
+    val schedulerOpt = getScheduler(jobMeta.getScheduler())
     if (schedulerOpt.nonEmpty) {
       val scheduler = schedulerOpt.get
       val job = buildJob(jobMeta, triggerMeta, jobData)
@@ -68,7 +75,7 @@ object SchedulerManager {
         }
       })
     } else {
-      ErrorMessages.error_NoSchedulerDefined(jobMeta.scheduler).toFutureFail
+      ErrorMessages.error_NoSchedulerDefined(jobMeta.getScheduler()).toFutureFail
     }
   }
 
@@ -131,7 +138,7 @@ object SchedulerManager {
     val jobData = toUpdate.jobData
     val error = JobUtils.validateJobAndTrigger(jobMeta, triggerMeta, jobData)
     if (null == error) {
-      val schedulerOpt = getScheduler(jobMeta.scheduler)
+      val schedulerOpt = getScheduler(jobMeta.getScheduler())
       val scheduler = schedulerOpt.get
       val (error, jobDetail) = jobMeta.toJobDetail(toUpdate.id)
       if (null == error) {
@@ -159,8 +166,8 @@ object SchedulerManager {
                 case TriggerMeta.TYPE_CRON =>
                   triggerOpt.get.asInstanceOf[CronTriggerImpl]
               }
-              newTrigger.setJobName(jobMeta.name)
-              newTrigger.setJobGroup(jobMeta.group)
+              newTrigger.setJobName(toUpdate.id)
+              newTrigger.setJobGroup(JobUtils.generateQuartzGroup(jobMeta.group, jobMeta.project))
               scheduler.scheduleJob(newTrigger)
             }
           }
@@ -176,12 +183,12 @@ object SchedulerManager {
 
   def buildJob(jobMeta: JobMeta, triggerMeta: TriggerMeta, jobData: JobData): Job = {
     Job(
-      summary = jobMeta.name,
-      description = jobMeta.desc,
+      summary = jobMeta.summary,
+      description = jobMeta.description,
       group = jobMeta.group,
       project = jobMeta.project,
-      scheduler = jobMeta.scheduler,
-      classAlias = jobMeta.classAlias,
+      scheduler = jobMeta.getScheduler(),
+      classAlias = jobMeta.getJobAlias(),
       trigger = Seq(JobTrigger(
         group = triggerMeta.group,
         project = triggerMeta.project,
@@ -211,4 +218,3 @@ object SchedulerManager {
     }
   }
 }
-

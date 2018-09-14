@@ -26,7 +26,7 @@ class ApplicationStart @Inject()(
   // init other modules
   if (configuration.getOptional[Boolean]("asura.job.enabled").getOrElse(false)) {
     logger.info("init job modules")
-    JobCenter.init(configuration.get[String]("asura.workDir"), configuration.get[String]("asura.reportBaseUrl"))
+    JobCenter.init(configuration.get[String]("asura.job.workDir"), configuration.get[String]("asura.reportBaseUrl"))
     import asura.common.config.PropertiesConversions.toProperties
     system.actorOf(SchedulerActor.props(config.getConfig("asura.job.quartz")), "JobScheduler")
   }
