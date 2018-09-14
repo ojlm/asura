@@ -65,7 +65,7 @@ object RunCaseJob extends JobBase {
     val cases = jobData.cs
     if (null != cases && !cases.isEmpty) {
       if (null != log) log("start fetch cases...")
-      CaseService.getCasesByIds(cases.map(_.id)).flatMap(cases => {
+      CaseService.getCasesByIds(cases.map(_.id), false).flatMap(cases => {
         if (null != log) log(s"fetch ${cases.length} cases.")
         ScenarioRunner.test(null, "job cases", cases, log, execDesc.options)
       }).map(scenarioReport => {

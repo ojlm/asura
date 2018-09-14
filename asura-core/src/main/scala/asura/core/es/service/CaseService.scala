@@ -74,15 +74,18 @@ object CaseService extends CommonService {
     }
   }
 
-  private def getByIds(ids: Seq[String]) = {
+  private def getByIds(ids: Seq[String], filterFields: Boolean = false) = {
     if (null != ids) {
       EsClient.esClient.execute {
-        search(Case.Index)
+        val clause = search(Case.Index)
           .query(idsQuery(ids))
           .from(0)
           .size(ids.length)
           .sortByFieldDesc(FieldKeys.FIELD_CREATED_AT)
-          .sourceInclude(queryFields)
+        if (!filterFields) {
+          clause.sourceInclude(queryFields)
+        }
+        clause
       }
     } else {
       ErrorMessages.error_EmptyId.toFutureFail
@@ -109,10 +112,12 @@ object CaseService extends CommonService {
 
   /**
     * Seq({id->case})
+    *
+    * @param filterFields if false return all fields of doc, other only return filed in [[queryFields]]
     */
-  def getCasesByIds(ids: Seq[String])(implicit executor: ExecutionContext): Future[Seq[(String, Case)]] = {
+  def getCasesByIds(ids: Seq[String], filterFields: Boolean = false)(implicit executor: ExecutionContext): Future[Seq[(String, Case)]] = {
     if (null != ids && ids.nonEmpty) {
-      getByIds(ids).map(res => {
+      getByIds(ids, filterFields).map(res => {
         if (res.isSuccess) {
           if (res.result.isEmpty) {
             throw ErrorMessages.error_IdsNotFound(ids).toException
