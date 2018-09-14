@@ -17,9 +17,9 @@ class JobApi @Inject()(implicit exec: ExecutionContext, val controllerComponents
 
   def types() = Action {
     val jobTypes = JobCenter.supportedJobs.values.map(value => Map(
-      "label" -> value.name,
+      "label" -> value.summary,
       "value" -> value.classAlias,
-      "desc" -> value.desc))
+      "desc" -> value.description))
     OkApiRes(ApiRes(data = Map(
       "jobTypes" -> jobTypes, "schedulers" -> SchedulerManager.schedulers.keys()
     )))

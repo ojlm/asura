@@ -3,6 +3,7 @@ package asura.core.job.actor
 import akka.actor.{ActorRef, PoisonPill, Props, Status}
 import akka.pattern.pipe
 import asura.common.actor._
+import asura.common.util.LogUtils
 import asura.core.CoreConfig
 import asura.core.actor.messages.SenderMessage
 import asura.core.es.model.{JobData, JobReport}
@@ -25,9 +26,9 @@ class JobTestActor(user: String, out: ActorRef) extends BaseActor {
 
   def handleRequest(webActor: ActorRef): Receive = {
     case JobTestMessage(jobMeta, jobData) =>
-      val jobOpt = JobCenter.classAliasJobMap.get(jobMeta.classAlias)
+      val jobOpt = JobCenter.classAliasJobMap.get(jobMeta.getJobAlias())
       if (jobOpt.isEmpty) {
-        webActor ! ErrorActorEvent(s"Can't find job implementation of ${jobMeta.classAlias}")
+        webActor ! ErrorActorEvent(s"Can't find job implementation of ${jobMeta.getJobAlias()}")
         webActor ! PoisonPill
       } else {
         val job = jobOpt.get
@@ -55,7 +56,9 @@ class JobTestActor(user: String, out: ActorRef) extends BaseActor {
     case eventMessage: ActorEvent =>
       webActor ! eventMessage
     case Status.Failure(t) =>
-      webActor ! ErrorActorEvent(t.getMessage)
+      val errLog = LogUtils.stackTraceToString(t)
+      logger.warn(errLog)
+      webActor ! ErrorActorEvent(errLog)
       webActor ! PoisonPill
   }
 

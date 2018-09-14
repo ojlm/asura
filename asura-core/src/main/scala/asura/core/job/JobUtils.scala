@@ -7,17 +7,15 @@ import asura.core.es.model.JobData
 object JobUtils {
 
   def validateJobAndTrigger(jobMeta: JobMeta, triggerMeta: TriggerMeta, jobData: JobData): ErrorMessages.Val = {
-    if (StringUtils.isEmpty(jobMeta.name)) {
+    if (StringUtils.isEmpty(jobMeta.summary)) {
       ErrorMessages.error_EmptyJobName
     } else if (StringUtils.isEmpty(jobMeta.group) || StringUtils.isEmpty(triggerMeta.group)) {
-      ErrorMessages.error_EmptyJobName
-    } else if (StringUtils.isEmpty(jobMeta.classAlias)) {
-      ErrorMessages.error_EmptyJobType
-    } else if (SchedulerManager.getScheduler(jobMeta.scheduler).isEmpty) {
-      ErrorMessages.error_NoSchedulerDefined(jobMeta.scheduler)
+      ErrorMessages.error_EmptyGroup
+    } else if (StringUtils.isEmpty(jobMeta.project) || StringUtils.isEmpty(triggerMeta.project)) {
+      ErrorMessages.error_EmptyProject
     } else {
       // check job data
-      val job = JobCenter.classAliasJobMap.get(jobMeta.classAlias)
+      val job = JobCenter.classAliasJobMap.get(jobMeta.getJobAlias())
       if (job.nonEmpty) {
         val (ret, msg) = job.get.checkJobData(jobData)
         if (ret) {
@@ -26,7 +24,7 @@ object JobUtils {
           ErrorMessages.error_JobValidate(msg)
         }
       } else {
-        ErrorMessages.error_NoJobDefined(jobMeta.classAlias)
+        ErrorMessages.error_NoJobDefined(jobMeta.getJobAlias())
       }
     }
   }

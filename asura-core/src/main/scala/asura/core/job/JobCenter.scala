@@ -24,8 +24,8 @@ object JobCenter {
 
   def register[T <: Job](job: JobBase, clazz: Class[T]): Unit = {
     val meta = job.meta
-    require(!supportedJobs.contains(meta.name), s"Job's name ${meta.name} already exists, please change another name")
-    supportedJobs += (meta.name -> meta)
+    require(!supportedJobs.contains(meta.summary), s"Job's name ${meta.summary} already exists, please change another name")
+    supportedJobs += (meta.summary -> meta)
     supportedJobClasses += (meta.classAlias -> clazz)
     classAliasJobMap += (meta.classAlias -> job)
   }
