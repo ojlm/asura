@@ -2,6 +2,7 @@ package asura.core.job
 
 import java.util.Date
 
+import asura.common.util.StringUtils
 import org.quartz.{CronScheduleBuilder, SimpleScheduleBuilder, Trigger, TriggerBuilder}
 
 case class TriggerMeta(
@@ -17,37 +18,41 @@ case class TriggerMeta(
                       ) {
 
   def toTrigger(docId: String): Option[Trigger] = {
-    triggerType match {
-      case TriggerMeta.TYPE_MANUAL =>
-        None
-      case TriggerMeta.TYPE_SIMPLE =>
-        val scheduleBuilder = SimpleScheduleBuilder.simpleSchedule()
-        if (Option(interval).isDefined && interval >= 0) {
-          scheduleBuilder.withIntervalInSeconds(interval)
-        }
-        if (Option(repeatCount).isDefined && repeatCount >= 0) {
-          scheduleBuilder.withRepeatCount(repeatCount)
-        } else {
-          scheduleBuilder.repeatForever()
-        }
-        val triggerBuilder = TriggerBuilder.newTrigger().withIdentity(docId, JobUtils.generateQuartzGroup(group, project))
-        if (!startNow && Option(startDate).isDefined && startDate > 0) {
-          triggerBuilder.startAt(new Date(startDate))
-        } else {
-          triggerBuilder.startNow()
-        }
-        if (Option(endDate).isDefined && endDate > 0) {
-          triggerBuilder.endAt(new Date(endDate))
-        }
-        Option(triggerBuilder.withSchedule(scheduleBuilder).build())
-      case TriggerMeta.TYPE_CRON =>
-        Option(TriggerBuilder.newTrigger()
-          .withIdentity(docId, JobUtils.generateQuartzGroup(group, project))
-          .withSchedule(CronScheduleBuilder.cronSchedule(cron))
-          .build()
-        )
-      case TriggerMeta.TYPE_API =>
-        None
+    if (StringUtils.isNotEmpty(triggerType)) {
+      triggerType match {
+        case TriggerMeta.TYPE_MANUAL =>
+          None
+        case TriggerMeta.TYPE_SIMPLE =>
+          val scheduleBuilder = SimpleScheduleBuilder.simpleSchedule()
+          if (Option(interval).isDefined && interval >= 0) {
+            scheduleBuilder.withIntervalInSeconds(interval)
+          }
+          if (Option(repeatCount).isDefined && repeatCount >= 0) {
+            scheduleBuilder.withRepeatCount(repeatCount)
+          } else {
+            scheduleBuilder.repeatForever()
+          }
+          val triggerBuilder = TriggerBuilder.newTrigger().withIdentity(docId, JobUtils.generateQuartzGroup(group, project))
+          if (!startNow && Option(startDate).isDefined && startDate > 0) {
+            triggerBuilder.startAt(new Date(startDate))
+          } else {
+            triggerBuilder.startNow()
+          }
+          if (Option(endDate).isDefined && endDate > 0) {
+            triggerBuilder.endAt(new Date(endDate))
+          }
+          Option(triggerBuilder.withSchedule(scheduleBuilder).build())
+        case TriggerMeta.TYPE_CRON =>
+          Option(TriggerBuilder.newTrigger()
+            .withIdentity(docId, JobUtils.generateQuartzGroup(group, project))
+            .withSchedule(CronScheduleBuilder.cronSchedule(cron))
+            .build()
+          )
+        case TriggerMeta.TYPE_API =>
+          None
+      }
+    } else {
+      None
     }
   }
 }

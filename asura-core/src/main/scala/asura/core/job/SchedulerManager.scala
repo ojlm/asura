@@ -6,7 +6,7 @@ import java.util.concurrent.ConcurrentHashMap
 import asura.common.util.{DateUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.cachedExecutor
-import asura.core.es.model.{Job, JobData, JobTrigger}
+import asura.core.es.model.{IndexDocResponse, Job, JobData, JobTrigger}
 import asura.core.es.service.JobService
 import asura.core.job.actor.{JobActionValidator, _}
 import com.typesafe.scalalogging.Logger
@@ -28,7 +28,7 @@ object SchedulerManager {
       props.foreach(prop => {
         val scheduler = new StdSchedulerFactory(prop).getScheduler
         val name = scheduler.getSchedulerName
-        if (null != DEFAULT_SCHEDULER) {
+        if (null == DEFAULT_SCHEDULER) {
           DEFAULT_SCHEDULER = name
         }
         schedulers.put(name, scheduler)
@@ -46,7 +46,7 @@ object SchedulerManager {
     Option(schedulers.get(name))
   }
 
-  def scheduleJob(jobMeta: JobMeta, triggerMeta: TriggerMeta, jobData: JobData, creator: String): Future[String] = {
+  def scheduleJob(jobMeta: JobMeta, triggerMeta: TriggerMeta, jobData: JobData, creator: String): Future[IndexDocResponse] = {
     val schedulerOpt = getScheduler(jobMeta.getScheduler())
     if (schedulerOpt.nonEmpty) {
       val scheduler = schedulerOpt.get
@@ -58,8 +58,8 @@ object SchedulerManager {
           val triggerOpt = triggerMeta.toTrigger(res.id)
           if (triggerOpt.nonEmpty) {
             try {
-              val date = scheduler.scheduleJob(jobDetail, triggerOpt.get)
-              date.toString
+              scheduler.scheduleJob(jobDetail, triggerOpt.get)
+              IndexDocResponse(res.id)
             } catch {
               case t: Throwable =>
                 logger.error(s"job(${jobMeta.group}_${jobMeta.project}_${res.id}) fail to be scheduled")
@@ -68,7 +68,7 @@ object SchedulerManager {
             }
           } else {
             scheduler.addJob(jobDetail, true)
-            StringUtils.EMPTY
+            IndexDocResponse(res.id)
           }
         } else {
           throw error.toException
@@ -193,7 +193,7 @@ object SchedulerManager {
         group = triggerMeta.group,
         project = triggerMeta.project,
         cron = if (StringUtils.isEmpty(triggerMeta.cron)) StringUtils.EMPTY else triggerMeta.cron,
-        triggerType = if (StringUtils.isEmpty(triggerMeta.triggerType)) StringUtils.EMPTY else triggerMeta.triggerType,
+        triggerType = if (StringUtils.isEmpty(triggerMeta.triggerType)) TriggerMeta.TYPE_MANUAL else triggerMeta.triggerType,
         startNow = if (Option(triggerMeta.startNow).isDefined) triggerMeta.startNow else false,
         startDate = if (Option(triggerMeta.startDate).isDefined && triggerMeta.startDate > 0L) DateUtils.parse(triggerMeta.startDate) else null,
         endDate = if (Option(triggerMeta.endDate).isDefined && triggerMeta.endDate > 0L) DateUtils.parse(triggerMeta.endDate) else null,

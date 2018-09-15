@@ -7,7 +7,12 @@ import asura.core.es.model.JobData
 object JobUtils {
 
   def validateJobAndTrigger(jobMeta: JobMeta, triggerMeta: TriggerMeta, jobData: JobData): ErrorMessages.Val = {
-    if (StringUtils.isEmpty(jobMeta.summary)) {
+    if (null == jobMeta || null == triggerMeta || null == jobData) {
+      ErrorMessages.error_EmptyRequestBody
+    } else if ((null == jobData.cs && null == jobData.scenario) ||
+      (null != jobData.cs && jobData.cs.isEmpty && null != jobData.scenario && jobData.scenario.isEmpty)) {
+      ErrorMessages.error_EmptyJobCaseScenarioCount
+    } else if (StringUtils.isEmpty(jobMeta.summary)) {
       ErrorMessages.error_EmptyJobName
     } else if (StringUtils.isEmpty(jobMeta.group) || StringUtils.isEmpty(triggerMeta.group)) {
       ErrorMessages.error_EmptyGroup
