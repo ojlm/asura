@@ -29,13 +29,13 @@ class UserApi @Inject()(
     val profileManager = new ProfileManager[CommonProfile](webContext)
     val profile = profileManager.get(true)
     if (!profile.isPresent) {
-      Future.successful(OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_EmptyProfile.name))))
+      Future.successful(OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_EmptyProfile))))
     } else {
       val commonProfile = profile.get()
       val token = commonProfile.getAttribute("token")
       val email = commonProfile.getAttribute("mail")
       if (null == token) {
-        Future.successful(OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_TokenGeneratedError.name))))
+        Future.successful(OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_TokenGeneratedError))))
       } else {
         val username = commonProfile.getId
         val emailStr = if (null != email) email.toString else StringUtils.EMPTY
@@ -66,7 +66,7 @@ class UserApi @Inject()(
                   if (StringUtils.isNotEmpty(indexResponse.id)) {
                     OkApiRes(ApiRes(data = apiUserProfile))
                   } else {
-                    OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_FailToCreateUser.name)))
+                    OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_FailToCreateUser)))
                   }
                 })
               } else {

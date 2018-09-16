@@ -16,3 +16,4 @@ error_TokenGeneratedError=无法生成登录Token
 error_FailToCreateUser=创建用户失败
 error_InvalidToken=无效Token
 error_EmptyJobCaseScenarioCount=用例和场景数为零
+error_InvalidCronExpression=无效的Cron表达式
