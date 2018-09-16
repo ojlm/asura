@@ -1,14 +1,20 @@
 package asura.app.api
 
+import java.util.Date
+
+import asura.app.AppErrorMessages
 import asura.app.api.BaseApi.OkApiRes
 import asura.common.model.{ApiRes, ApiResError}
+import asura.common.util.StringUtils
 import asura.core.cs.model.{QueryJob, QueryJobReport}
 import asura.core.es.service.{JobReportService, JobService}
 import asura.core.job.actor._
 import asura.core.job.{JobCenter, JobUtils, SchedulerManager}
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
+import org.quartz.CronExpression
 
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -76,5 +82,21 @@ class JobApi @Inject()(implicit exec: ExecutionContext, val controllerComponents
 
   def report(id: String) = Action(parse.byteString).async { implicit req =>
     JobReportService.getById(id).toOkResultByEsOneDoc(id)
+  }
+
+  def cron() = Action(parse.tolerantText) { implicit req =>
+    val cron = req.body
+    if (StringUtils.isNotEmpty(cron) && CronExpression.isValidExpression(cron)) {
+      val expression = new CronExpression(cron)
+      val dates = ArrayBuffer[Date]()
+      var now = new Date()
+      do {
+        now = expression.getNextValidTimeAfter(now)
+        if (null != now) dates += now
+      } while (dates.length < 5 && null != now)
+      OkApiRes(ApiRes(data = dates))
+    } else {
+      OkApiRes(ApiRes(msg = getI18nMessage(AppErrorMessages.error_InvalidCronExpression)))
+    }
   }
 }
