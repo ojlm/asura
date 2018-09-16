@@ -17,3 +17,6 @@ error_FailToCreateUser=fail to create user profile
 error_InvalidToken=Invalid token
 error_EmptyJobCaseScenarioCount=zero count of case and scenario in job
 error_InvalidCronExpression=Invalid cron expression
+error_EmptyGroup=group can not be empty
+error_EmptyProject=project can not be empty
+error_EmptySummary=summary can not be empty

@@ -1,2 +1,3 @@
+GET        /scenario/test         asura.app.api.WsApi.testScenario()
 GET        /job/test              asura.app.api.WsApi.testJob()
 GET        /job/manual/:id        asura.app.api.WsApi.manualTestJob(id)
