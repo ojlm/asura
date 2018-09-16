@@ -54,7 +54,7 @@ object ScenarioService extends CommonService {
 
   def updateScenario(id: String, s: Scenario): Future[UpdateDocResponse] = {
     if (StringUtils.isEmpty(id)) {
-      Future.failed(new IllegalArgumentException("empty id"))
+      ErrorMessages.error_EmptyId.toFutureFail
     } else {
       EsClient.esClient.execute {
         update(id).in(Scenario.Index / EsConfig.DefaultType).doc(JsonUtils.stringify(s.toUpdateMap))
@@ -80,15 +80,19 @@ object ScenarioService extends CommonService {
   }
 
   def queryScenario(query: QueryScenario) = {
-    val esQueries = ArrayBuffer[Query]()
-    if (StringUtils.isNotEmpty(query.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, query.group)
-    if (StringUtils.isNotEmpty(query.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, query.project)
-    if (StringUtils.isNotEmpty(query.text)) esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
-    EsClient.esClient.execute {
-      search(Scenario.Index).query(boolQuery().must(esQueries))
-        .from(query.pageFrom)
-        .size(query.pageSize)
-        .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
+    if (null != query.ids && query.ids.nonEmpty) {
+      getByIds(query.ids)
+    } else {
+      val esQueries = ArrayBuffer[Query]()
+      if (StringUtils.isNotEmpty(query.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, query.group)
+      if (StringUtils.isNotEmpty(query.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, query.project)
+      if (StringUtils.isNotEmpty(query.text)) esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
+      EsClient.esClient.execute {
+        search(Scenario.Index).query(boolQuery().must(esQueries))
+          .from(query.pageFrom)
+          .size(query.pageSize)
+          .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
+      }
     }
   }
 

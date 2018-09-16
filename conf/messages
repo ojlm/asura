@@ -17,3 +17,6 @@ error_FailToCreateUser=创建用户失败
 error_InvalidToken=无效Token
 error_EmptyJobCaseScenarioCount=用例和场景数为零
 error_InvalidCronExpression=无效的Cron表达式
+error_EmptyGroup=分组不能为空
+error_EmptyProject=项目不能为空
+error_EmptySummary=名称概述不能为空

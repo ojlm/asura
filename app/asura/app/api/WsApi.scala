@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import asura.core.actor.flow.WebSocketMessageHandler
 import asura.core.job.actor.JobTestActor.JobTestMessage
-import asura.core.job.actor.{JobManualActor, JobTestActor}
+import asura.core.job.actor.{JobManualActor, JobTestActor, ScenarioTestActor}
 import javax.inject.{Inject, Singleton}
 import org.pac4j.http.client.direct.HeaderClient
 import org.pac4j.jwt.credentials.authenticator.JwtAuthenticator
@@ -23,6 +23,20 @@ class WsApi @Inject()(
                      ) extends BaseApi {
 
   val auth: JwtAuthenticator = client.getAuthenticator().asInstanceOf[JwtAuthenticator]
+
+  def testScenario() = WebSocket.acceptOrResult[String, String] { implicit req =>
+    Future.successful {
+      val profile = getWsProfile(auth)
+      if (null == profile) {
+        Left(Forbidden)
+      } else {
+        Right {
+          val testActor = system.actorOf(ScenarioTestActor.props(profile.getId))
+          WebSocketMessageHandler.stringToActorEventFlow(testActor, classOf[JobTestMessage])
+        }
+      }
+    }
+  }
 
   def testJob() = WebSocket.acceptOrResult[String, String] { implicit req =>
     Future.successful {

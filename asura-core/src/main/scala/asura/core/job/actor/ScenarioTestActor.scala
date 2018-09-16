@@ -4,6 +4,7 @@ import akka.actor.{ActorRef, PoisonPill, Props, Status}
 import akka.pattern.pipe
 import asura.common.actor._
 import asura.common.util.StringUtils
+import asura.core.actor.messages.SenderMessage
 import asura.core.cs.scenario.ScenarioRunner
 import asura.core.es.model.Case
 import asura.core.es.model.JobReportData.ScenarioReportItem
@@ -15,8 +16,14 @@ import scala.collection.mutable.ArrayBuffer
 class ScenarioTestActor(user: String, out: ActorRef) extends BaseActor {
 
   implicit val executionContext = context.dispatcher
+  if (null != out) self ! SenderMessage(out)
 
   override def receive: Receive = {
+    case SenderMessage(sender) =>
+      context.become(handleRequest(sender))
+  }
+
+  def handleRequest(webActor: ActorRef): Receive = {
     case ScenarioTestMessage(summary, caseIds) =>
       CaseService.getCasesByIdsAsMap(caseIds).map(caseIdMap => {
         val cases = ArrayBuffer[(String, Case)]()
@@ -27,17 +34,17 @@ class ScenarioTestActor(user: String, out: ActorRef) extends BaseActor {
           }
         })
         ScenarioRunner.test(StringUtils.EMPTY, summary, cases, logMsg => {
-          out ! NotifyActorEvent(logMsg)
+          webActor ! NotifyActorEvent(logMsg)
         }).pipeTo(self)
       })
     case report: ScenarioReportItem =>
-      out ! ItemActorEvent(report)
-      out ! PoisonPill
+      webActor ! ItemActorEvent(report)
+      webActor ! PoisonPill
     case eventMessage: ActorEvent =>
-      out ! eventMessage
+      webActor ! eventMessage
     case Status.Failure(t) =>
-      out ! ErrorActorEvent(t.getMessage)
-      out ! PoisonPill
+      webActor ! ErrorActorEvent(t.getMessage)
+      webActor ! PoisonPill
   }
 
   override def postStop(): Unit = {
@@ -47,7 +54,7 @@ class ScenarioTestActor(user: String, out: ActorRef) extends BaseActor {
 
 object ScenarioTestActor {
 
-  def props(user: String, out: ActorRef) = Props(new ScenarioTestActor(user, out))
+  def props(user: String, out: ActorRef = null) = Props(new ScenarioTestActor(user, out))
 
   case class ScenarioTestMessage(summary: String, cases: Seq[String])
 
