@@ -16,10 +16,16 @@ class EnvApi @Inject()(implicit exec: ExecutionContext, val controllerComponents
     EnvironmentService.getById(id).toOkResultByEsOneDoc(id)
   }
 
-  def put() = Action(parse.byteString).async { implicit req =>
+  def put(group: String, project: String) = Action(parse.byteString).async { implicit req =>
     val env = req.bodyAs(classOf[Environment])
     env.fillCommonFields(getProfileId())
     EnvironmentService.index(env).toOkResult
+  }
+
+  def update(group: String, project: String, id: String) = Action(parse.byteString).async { implicit req =>
+    val env = req.bodyAs(classOf[Environment])
+    env.fillCommonFields(getProfileId())
+    EnvironmentService.updateEnv(id, env).toOkResult
   }
 
   def query() = Action(parse.byteString).async { implicit req =>

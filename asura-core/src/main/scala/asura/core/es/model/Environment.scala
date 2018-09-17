@@ -55,6 +55,9 @@ case class Environment(
     if (null != auth) {
       m += (FieldKeys.FIELD_AUTH -> auth)
     }
+    if (null != custom) {
+      m += (FieldKeys.FIELD_CUSTOM -> custom)
+    }
     m.toMap
   }
 }
