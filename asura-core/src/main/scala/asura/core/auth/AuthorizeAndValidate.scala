@@ -9,6 +9,7 @@ import scala.concurrent.Future
 trait AuthorizeAndValidate {
 
   val `type`: String
+  val description: String
 
   def authorize(request: HttpRequest, auth: Authorization): Future[HttpRequest]
 
