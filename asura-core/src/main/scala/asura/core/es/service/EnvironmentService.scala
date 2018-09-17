@@ -1,8 +1,7 @@
 package asura.core.es.service
 
-import asura.common.exceptions.{IllegalRequestException, RequestFailException}
-import asura.common.model.ApiMsg
-import asura.common.util.{FutureUtils, StringUtils}
+import asura.common.exceptions.RequestFailException
+import asura.common.util.StringUtils
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.model.QueryEnv
@@ -45,20 +44,11 @@ object EnvironmentService extends CommonService {
 
   def getById(id: String) = {
     if (StringUtils.isEmpty(id)) {
-      FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
+      ErrorMessages.error_EmptyId.toFutureFail
     } else {
       EsClient.esClient.execute {
-        search(Environment.Index).query(idsQuery(id)).size(1)
+        search(Environment.Index).query(idsQuery(id)).size(1).sourceExclude(defaultExcludeFields)
       }
-    }
-  }
-
-  def getAll(project: String) = {
-    EsClient.esClient.execute {
-      search(Environment.Index)
-        .query(termQuery(FieldKeys.FIELD_PROJECT, project))
-        .limit(EsConfig.MaxCount)
-        .sortByFieldDesc(FieldKeys.FIELD_CREATED_AT)
     }
   }
 
@@ -74,7 +64,7 @@ object EnvironmentService extends CommonService {
           update(id).in(Environment.Index / EsConfig.DefaultType)
             .doc(JacksonSupport.stringify(env.toUpdateMap))
             .refresh(RefreshPolicy.WAIT_UNTIL)
-        }
+        }.map(toUpdateDocResponse(_))
       }
     }
   }
@@ -98,7 +88,7 @@ object EnvironmentService extends CommonService {
       getById(id).map(res => {
         if (res.isSuccess) {
           if (res.result.isEmpty) {
-            throw IllegalRequestException(s"Env: ${id} not found.")
+            throw ErrorMessages.error_IdNonExists.toException
           } else {
             val hit = res.result.hits.hits(0)
             JacksonSupport.parse(hit.sourceAsString, classOf[Environment])
@@ -119,8 +109,8 @@ object EnvironmentService extends CommonService {
       search(Environment.Index).query(boolQuery().must(esQueries))
         .from(query.pageFrom)
         .size(query.pageSize)
-        .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
-        .sourceInclude(defaultIncludeFields :+ FieldKeys.FIELD_PATH :+ FieldKeys.FIELD_METHOD)
+        .sortByFieldDesc(FieldKeys.FIELD_CREATED_AT)
+        .sourceInclude(defaultIncludeFields)
     }
   }
 }
