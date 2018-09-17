@@ -42,13 +42,17 @@ object ScenarioService extends CommonService {
 
   def getById(id: String) = {
     EsClient.esClient.execute {
-      search(Scenario.Index).query(idsQuery(id)).size(1)
+      search(Scenario.Index).query(idsQuery(id)).size(1).sourceExclude(defaultExcludeFields)
     }
   }
 
   def getByIds(ids: Seq[String]) = {
     EsClient.esClient.execute {
-      search(Scenario.Index).query(idsQuery(ids)).size(ids.length).sortByFieldDesc(FieldKeys.FIELD_CREATED_AT)
+      search(Scenario.Index)
+        .query(idsQuery(ids))
+        .size(ids.length)
+        .sortByFieldDesc(FieldKeys.FIELD_CREATED_AT)
+        .sourceExclude(defaultExcludeFields)
     }
   }
 
