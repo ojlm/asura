@@ -17,4 +17,8 @@ object AuthManager {
   def apply(name: String): Option[AuthorizeAndValidate] = {
     Option(operators.get(name))
   }
+
+  def getAll(): java.util.Collection[AuthorizeAndValidate] = {
+    operators.values()
+  }
 }

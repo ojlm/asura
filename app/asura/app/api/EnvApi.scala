@@ -1,5 +1,8 @@
 package asura.app.api
 
+import asura.app.api.BaseApi.OkApiRes
+import asura.common.model.ApiRes
+import asura.core.auth.AuthManager
 import asura.core.cs.model.QueryEnv
 import asura.core.es.model.Environment
 import asura.core.es.service.EnvironmentService
@@ -31,5 +34,9 @@ class EnvApi @Inject()(implicit exec: ExecutionContext, val controllerComponents
   def query() = Action(parse.byteString).async { implicit req =>
     val queryEnv = req.bodyAs(classOf[QueryEnv])
     EnvironmentService.queryEnv(queryEnv).toOkResultByEsList()
+  }
+
+  def getAllAuth() = Action {
+    OkApiRes(ApiRes(data = AuthManager.getAll()))
   }
 }
