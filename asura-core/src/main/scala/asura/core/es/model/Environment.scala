@@ -43,14 +43,8 @@ case class Environment(
   override def toUpdateMap: Map[String, Any] = {
     val m = mutable.Map[String, Any]()
     checkCommFieldsToUpdate(m)
-    if (StringUtils.isNotEmpty(protocol)) {
-      m += (FieldKeys.FIELD_PROTOCOL -> protocol)
-    }
-    if (StringUtils.isNotEmpty(host)) {
-      m += (FieldKeys.FIELD_HOST -> host)
-    }
-    if (Option(port).isDefined) {
-      m += (FieldKeys.FIELD_PORT -> port)
+    if (StringUtils.isNotEmpty(namespace)) {
+      m += (FieldKeys.FIELD_NAMESPACE -> namespace)
     }
     if (null != auth) {
       m += (FieldKeys.FIELD_AUTH -> auth)
