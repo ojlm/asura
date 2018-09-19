@@ -17,7 +17,9 @@ case class Case(
                  val project: String,
                  val request: Request,
                  val assert: Map[String, Any],
+                 @deprecated("use env")
                  val namespace: String = null,
+                 @deprecated("use env")
                  val useProxy: Boolean = false,
                  val env: String = StringUtils.EMPTY,
                  @deprecated("如果 env 不是自认为使用env")
@@ -47,14 +49,6 @@ case class Case(
       m += (FieldKeys.FIELD_ASSERT -> assert)
       addScriptUpdateItem(sb, FieldKeys.FIELD_ASSERT)
     }
-    if (null != namespace) {
-      m += (FieldKeys.FIELD_NAMESPACE -> namespace)
-      addScriptUpdateItem(sb, FieldKeys.FIELD_NAMESPACE)
-    }
-    if (Option(useProxy).isDefined) {
-      m += (FieldKeys.FIELD_USE_PROXY -> useProxy)
-      addScriptUpdateItem(sb, FieldKeys.FIELD_USE_PROXY)
-    }
     (sb.toString, m.toMap)
   }
 }
@@ -68,8 +62,6 @@ object Case extends IndexSetting {
       KeywordField(name = FieldKeys.FIELD_GROUP),
       KeywordField(name = FieldKeys.FIELD_PROJECT),
       KeywordField(name = FieldKeys.FIELD_ENV),
-      KeywordField(name = FieldKeys.FIELD_NAMESPACE),
-      BasicField(name = FieldKeys.FIELD_USE_PROXY, `type` = "boolean"),
       NestedField(name = FieldKeys.FIELD_LABELS, fields = Seq(
         KeywordField(name = FieldKeys.FIELD_NAME),
       )),

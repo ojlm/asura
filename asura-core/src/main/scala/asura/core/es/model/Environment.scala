@@ -35,6 +35,7 @@ case class Environment(
                         val port: Int,
                         val auth: Authorization,
                         val namespace: String = null,
+                        val enableProxy: Boolean = false,
                         val custom: Seq[KeyValueObject] = Nil,
                         var creator: String = null,
                         var createdAt: String = null,
@@ -45,6 +46,9 @@ case class Environment(
     checkCommFieldsToUpdate(m)
     if (StringUtils.isNotEmpty(namespace)) {
       m += (FieldKeys.FIELD_NAMESPACE -> namespace)
+    }
+    if (Option(enableProxy).isDefined) {
+      m += (FieldKeys.FIELD_ENABLE_PROXY -> enableProxy)
     }
     if (null != auth) {
       m += (FieldKeys.FIELD_AUTH -> auth)
@@ -70,6 +74,7 @@ object Environment extends IndexSetting {
       KeywordField(name = FieldKeys.FIELD_HOST),
       BasicField(name = FieldKeys.FIELD_PORT, `type` = "integer"),
       KeywordField(name = FieldKeys.FIELD_NAMESPACE),
+      BasicField(name = FieldKeys.FIELD_ENABLE_PROXY, `type` = "boolean"),
       ObjectField(name = FieldKeys.FIELD_AUTH, fields = Seq(
         KeywordField(name = FieldKeys.FIELD_TYPE),
         ObjectField(name = FieldKeys.FIELD_DATA, dynamic = Some("false")),
