@@ -65,7 +65,7 @@ object FieldKeys {
   val FIELD_NODE = "node"
   val FIELD_SERVICE = "service"
   val FIELD_NAMESPACE = "namespace"
-  val FIELD_USE_PROXY = "useProxy"
+  val FIELD_ENABLE_PROXY = "enableProxy"
   val FIELD_CASES = "cases"
   val FIELD_AVATAR = "avatar"
   val FIELD_EMAIL = "email"
