@@ -11,6 +11,7 @@ import javax.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
 import play.api.Configuration
 import play.api.inject.ApplicationLifecycle
+import play.api.libs.mailer.MailerClient
 
 import scala.concurrent.Future
 
@@ -18,7 +19,8 @@ import scala.concurrent.Future
 class ApplicationStart @Inject()(
                                   lifecycle: ApplicationLifecycle,
                                   system: ActorSystem,
-                                  configuration: Configuration
+                                  configuration: Configuration,
+                                  mailerClient: MailerClient
                                 ) {
   val logger = LoggerFactory.getLogger(classOf[ApplicationStart])
   logger.info("application started")
