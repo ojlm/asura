@@ -31,6 +31,8 @@ libraryDependencies ++= Seq(
   "org.pac4j" % "pac4j-http" % "3.0.1",
   "org.pac4j" % "pac4j-ldap" % "3.0.1",
   "org.pac4j" % "pac4j-jwt" % "3.0.1",
+  "com.typesafe.play" %% "play-mailer" % "6.0.1",
+  "com.typesafe.play" %% "play-mailer-guice" % "6.0.1",
   "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test,
 )
 
