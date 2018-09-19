@@ -14,27 +14,30 @@ object Assertions {
   val IN = "$in"
   val NIN = "$nin"
   val REGEX = "$regex"
-
   // logical
   val AND = "$and"
   val NOT = "$not"
   val NOR = "$nor"
   val OR = "$or"
-
   // element
   val TYPE = "$type"
-
   // array
   val SIZE = "$size"
-
   // script
   val SCRIPT = "$script"
 
   private val assertions = mutable.HashMap[String, Assertion]()
 
-  Seq(
-    And, Eq, Gt, Gte, In, Lt, Lte, Ne, Nin, Nor, Not, Or, Regex, Script, Size, Type
-  ).foreach(register(_))
+  // simple have explicit expect and actual value
+  val normals = Seq(
+    Eq, Gt, Gte, In, Lt, Lte, Ne, Nin, Regex, Size, Type
+  )
+  // logic or complex computation
+  val specials = Seq(
+    And, Nor, Not, Or, Script
+  )
+  normals.foreach(register(_))
+  specials.foreach(register(_))
 
   /** this is not thread safe */
   def register(assertion: Assertion): Unit = {
@@ -42,4 +45,6 @@ object Assertions {
   }
 
   def get(name: String): Option[Assertion] = assertions.get(name)
+
+  def getAll() = normals
 }

@@ -1,6 +1,9 @@
 package asura.app.api
 
+import asura.app.api.BaseApi.OkApiRes
+import asura.common.model.ApiRes
 import asura.core.cs.CaseRunner
+import asura.core.cs.assertion.Assertions
 import asura.core.cs.model.QueryCase
 import asura.core.es.model.Case
 import asura.core.es.service.CaseService
@@ -40,5 +43,9 @@ class CaseApi @Inject()(implicit exec: ExecutionContext, val controllerComponent
   def test() = Action(parse.byteString).async { implicit req =>
     val cs = req.bodyAs(classOf[Case])
     CaseRunner.test("test", cs).toOkResult
+  }
+
+  def getAllAssertions() = Action {
+    OkApiRes(ApiRes(data = Assertions.getAll()))
   }
 }
