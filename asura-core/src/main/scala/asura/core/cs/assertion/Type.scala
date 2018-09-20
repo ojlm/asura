@@ -13,19 +13,19 @@ object Type extends Assertion {
     Future.successful(apply(actual, expect))
   }
 
-  def apply(src: Any, target: Any): AssertResult = {
-    if (null != target && target.isInstanceOf[String]) {
-      target.asInstanceOf[String] match {
+  def apply(actual: Any, expect: Any): AssertResult = {
+    if (null != expect && expect.isInstanceOf[String]) {
+      expect.asInstanceOf[String] match {
         case FieldTypes.BOOLEAN =>
-          if (src.isInstanceOf[Boolean]) {
+          if (actual.isInstanceOf[Boolean]) {
             PassAssertResult(1)
           } else {
             FailAssertResult(1)
           }
         case FieldTypes.BYTE =>
-          src match {
+          actual match {
             case _: Int =>
-              val srcInt = src.asInstanceOf[Int]
+              val srcInt = actual.asInstanceOf[Int]
               if (srcInt >= Byte.MinValue.toInt && srcInt <= Byte.MaxValue.toInt) {
                 PassAssertResult(1)
               } else {
@@ -35,9 +35,9 @@ object Type extends Assertion {
               FailAssertResult(1)
           }
         case FieldTypes.SHORT =>
-          src match {
+          actual match {
             case _: Int =>
-              val srcInt = src.asInstanceOf[Int]
+              val srcInt = actual.asInstanceOf[Int]
               if (srcInt >= Short.MinValue.toInt && srcInt <= Short.MaxValue.toInt) {
                 PassAssertResult(1)
               } else {
@@ -47,25 +47,25 @@ object Type extends Assertion {
               FailAssertResult(1)
           }
         case FieldTypes.INT =>
-          src match {
+          actual match {
             case _: Int =>
               PassAssertResult(1)
             case _ =>
               FailAssertResult(1)
           }
         case FieldTypes.LONG =>
-          src match {
+          actual match {
             case _: Long =>
               PassAssertResult(1)
             case _ =>
               FailAssertResult(1)
           }
         case FieldTypes.FLOAT =>
-          src match {
+          actual match {
             case _: Float =>
               PassAssertResult(1)
             case _: Double =>
-              val dStr = src.asInstanceOf[Double].toString
+              val dStr = actual.asInstanceOf[Double].toString
               if (java.lang.Float.valueOf(dStr).toString.equals(dStr)) {
                 PassAssertResult(1)
               } else {
@@ -75,21 +75,21 @@ object Type extends Assertion {
               FailAssertResult(1)
           }
         case FieldTypes.DOUBLE =>
-          src match {
+          actual match {
             case _: Double =>
               PassAssertResult(1)
             case _ =>
               FailAssertResult(1)
           }
         case FieldTypes.STRING =>
-          src match {
+          actual match {
             case _: String =>
               PassAssertResult(1)
             case _ =>
               FailAssertResult(1)
           }
         case FieldTypes.ARRAY =>
-          src match {
+          actual match {
             case _: java.util.Collection[_] =>
               PassAssertResult(1)
             case _: Seq[_] =>
@@ -98,7 +98,7 @@ object Type extends Assertion {
               FailAssertResult(1)
           }
         case FieldTypes.MAP =>
-          src match {
+          actual match {
             case _: String =>
               FailAssertResult(1)
             case _: AnyRef =>
@@ -106,11 +106,13 @@ object Type extends Assertion {
             case _ =>
               FailAssertResult(1)
           }
+        case FieldTypes.NULL =>
+          if (null == actual) PassAssertResult(1) else FailAssertResult(1)
         case _ =>
           FailAssertResult(1, AssertResult.MSG_UNRECOGNIZED_TYPE)
       }
     } else {
-      FailAssertResult(1, AssertResult.msgIncomparableSourceType(target))
+      FailAssertResult(1, AssertResult.msgIncomparableSourceType(expect))
     }
   }
 }

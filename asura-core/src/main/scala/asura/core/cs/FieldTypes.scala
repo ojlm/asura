@@ -18,4 +18,6 @@ object FieldTypes {
   val STRING = "string"
   val ARRAY = "array"
   val MAP = "map"
+
+  val NULL = "null"
 }
