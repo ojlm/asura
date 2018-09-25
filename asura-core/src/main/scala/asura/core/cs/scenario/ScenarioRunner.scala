@@ -71,7 +71,7 @@ object ScenarioRunner {
     if (null != log) log(s"scenario(${summary}): fetch ${cases.length} cases.")
     val scenarioReportItem = ScenarioReportItem(scenarioId, summary)
     val caseReportItems = ArrayBuffer[CaseReportItem]()
-    val initialCaseResult: CaseResult = CaseResult(null, null, null, null)
+    val initialCaseResult: CaseResult = CaseResult(null, null, null, null, null)
     var isScenarioFailed = false
     val caseContext = CaseContext(options = options)
     val caseIdMap = scala.collection.mutable.Map[String, Case]()

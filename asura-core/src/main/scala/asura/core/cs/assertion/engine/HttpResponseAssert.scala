@@ -44,6 +44,6 @@ object HttpResponseAssert {
           caseContext.setCurrentEntity(entity)
       }
     }
-    CaseResult.eval(id, assert, caseContext.rawContext, request)
+    CaseResult.eval(id, response, assert, caseContext, request)
   }
 }

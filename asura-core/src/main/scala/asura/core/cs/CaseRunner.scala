@@ -5,7 +5,7 @@ import akka.http.scaladsl.unmarshalling.Unmarshal
 import asura.core.CoreConfig.materializer
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.assertion.engine.HttpResponseAssert
-import asura.core.es.model.{Case, KeyValueObject}
+import asura.core.es.model.Case
 import asura.core.http.{HttpContentTypes, HttpEngine}
 import com.typesafe.scalalogging.Logger
 
@@ -49,9 +49,9 @@ object CaseRunner {
   def toCaseRequestTuple(req: HttpRequest): Future[(HttpRequest, CaseRequest)] = {
     Unmarshal(req.entity).to[String].map(reqBody => {
       val mediaType = req.entity.contentType.mediaType.value
-      val headers = req.headers
-        .map(h => KeyValueObject(h.name(), h.value()))
-        .+:(KeyValueObject(HttpContentTypes.KEY_CONTENT_TYPE, mediaType))
+      val headers = scala.collection.mutable.HashMap[String, String]()
+      req.headers.foreach(h => headers += (h.name() -> h.value()))
+      headers += (HttpContentTypes.KEY_CONTENT_TYPE -> mediaType)
       (req, CaseRequest(req.method.value, req.getUri().toString, headers, reqBody))
     })
   }
