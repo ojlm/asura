@@ -12,7 +12,7 @@ import scala.concurrent.Future
 
 object CaseParser {
 
-  def toHttpRequest(cs: Case, context: CaseContext): Future[HttpRequest] = {
+  def toHttpRequest(cs: Case, context: CaseContext)(implicit metrics: CaseRuntimeMetrics): Future[HttpRequest] = {
     var method: HttpMethod = null
     val headers: immutable.Seq[HttpHeader] = HeaderUtils.toHeaders(cs, context)
     val request = cs.request
@@ -24,12 +24,14 @@ object CaseParser {
     val uri: Uri = UriUtils.toUri(cs, context)
     val entity = EntityUtils.toEntity(cs, context)
     val notAuthoredRequest = HttpRequest(method = method, uri = uri, headers = headers, entity = entity)
+    metrics.renderRequestEnd()
     val authUsed: Seq[Authorization] = if (null != context.options && null != context.options.getUsedEnv()) {
       context.options.getUsedEnv().auth
     } else {
       Nil
     }
     if (null != authUsed && authUsed.nonEmpty) {
+      metrics.renderAuthBegin()
       authUsed.foldLeft(Future.successful(notAuthoredRequest))((futureRequest, auth) => {
         for {
           initialAuthoredRequest <- futureRequest
@@ -42,6 +44,9 @@ object CaseParser {
             }
           }
         } yield authoredRequest
+      }).map(req => {
+        metrics.renderAuthEnd()
+        req
       })
     } else {
       Future.successful(notAuthoredRequest)
