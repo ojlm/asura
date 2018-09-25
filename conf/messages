@@ -20,3 +20,4 @@ error_InvalidCronExpression=无效的Cron表达式
 error_EmptyGroup=分组不能为空
 error_EmptyProject=项目不能为空
 error_EmptySummary=名称概述不能为空
+error_NullKeyOrValue=键和值不能为空

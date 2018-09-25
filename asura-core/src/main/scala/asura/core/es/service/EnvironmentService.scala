@@ -77,7 +77,16 @@ object EnvironmentService extends CommonService {
     } else if (StringUtils.isEmpty(env.project)) {
       ErrorMessages.error_EmptyProject
     } else {
-      null
+      val custom = env.custom
+      if (null != custom && custom.nonEmpty) {
+        if (custom.forall(kv => StringUtils.isNotEmpty(kv.key) && StringUtils.isNotEmpty(kv.value))) {
+          null
+        } else {
+          ErrorMessages.error_NullKeyOrValue
+        }
+      } else {
+        null
+      }
     }
   }
 
