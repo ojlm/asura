@@ -206,16 +206,19 @@ case class CaseContext(
     this
   }
 
-  def setCurrentStatus(status: Any): CaseContext = {
+  def setCurrentStatus(status: Int): CaseContext = {
     ctx.put(CaseContext.KEY_STATUS, status)
     this
   }
 
-  def setCurrentHeaders(headers: Any): CaseContext = {
+  def setCurrentHeaders(headers: java.util.HashMap[String, String]): CaseContext = {
     ctx.put(CaseContext.KEY_HEADERS, headers)
     this
   }
 
+  /**
+    * @param entity `String` or `java.util.Map`
+    */
   def setCurrentEntity(entity: Any): CaseContext = {
     ctx.put(CaseContext.KEY_ENTITY, entity)
     this
@@ -243,6 +246,14 @@ case class CaseContext(
       }
     }
     this
+  }
+
+  def getCaseResponse(statusMsg: String): CaseResponse = {
+    val statusCode = ctx.getOrDefault(CaseContext.KEY_STATUS, 0).asInstanceOf[Int]
+    val headers = ctx.get(CaseContext.KEY_HEADERS).asInstanceOf[util.HashMap[String, String]]
+    val body = ctx.getOrDefault(CaseContext.KEY_ENTITY, StringUtils.EMPTY).asInstanceOf[String]
+    import scala.collection.JavaConverters.mapAsScalaMap
+    CaseResponse(statusCode, statusMsg, mapAsScalaMap(headers), body)
   }
 
   def evaluateOptions(): Future[Boolean] = {

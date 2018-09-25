@@ -1,12 +1,10 @@
 package asura.core.cs
 
-import asura.core.es.model.KeyValueObject
+import scala.collection.mutable
 
 case class CaseRequest(
                         method: String,
                         url: String,
-                        headers: Seq[KeyValueObject],
+                        headers: mutable.Map[String, String],
                         body: String
-                      ) {
-
-}
+                      )
