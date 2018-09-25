@@ -39,6 +39,14 @@ object JobReportData {
     }
   }
 
+  case class CaseReportItemMetrics(
+                                    val renderRequestTime: Long,
+                                    val renderAuthTime: Long,
+                                    val requestTime: Long,
+                                    val evalAssertionTime: Long,
+                                    val totalTime: Long,
+                                  )
+
   case class CaseReportItem(
                              var id: String,
                              var title: String,

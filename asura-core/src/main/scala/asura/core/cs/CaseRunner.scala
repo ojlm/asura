@@ -16,6 +16,8 @@ object CaseRunner {
   val logger = Logger("CaseRunner")
 
   def test(id: String, cs: Case, context: CaseContext = CaseContext()): Future[CaseResult] = {
+    implicit val metrics = CaseRuntimeMetrics()
+    metrics.start()
     context.eraseCurrentData()
     var options = context.options
     if (null != options) {
@@ -24,25 +26,35 @@ object CaseRunner {
       options = ContextOptions(caseEnv = cs.env)
       context.options = options
     }
+    metrics.renderRequestStart()
     context.evaluateOptions().flatMap(_ => {
       CaseParser.toHttpRequest(cs, context)
         .flatMap(toCaseRequestTuple)
         .flatMap(tuple => {
           val env = if (null != context.options) context.options.getUsedEnv() else null
           if (null != env && env.enableProxy) {
+            metrics.performRequestStart()
             HttpEngine.singleRequestWithProxy(tuple._1).flatMap(res => {
               Unmarshal(res.entity).to[String].flatMap(resBody => {
+                metrics.evalAssertionBegin()
                 HttpResponseAssert.generateCaseReport(id, cs.assert, res, resBody, tuple._2, context)
               })
             })
           } else {
+            metrics.performRequestStart()
             HttpEngine.singleRequest(tuple._1).flatMap(res => {
               Unmarshal(res.entity).to[String].flatMap(resBody => {
+                metrics.evalAssertionBegin()
                 HttpResponseAssert.generateCaseReport(id, cs.assert, res, resBody, tuple._2, context)
               })
             })
           }
         })
+    }).map(result => {
+      metrics.evalAssertionEnd()
+      metrics.theEnd()
+      result.metrics = metrics.toReportItemMetrics()
+      result
     })
   }
 
