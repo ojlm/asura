@@ -3,8 +3,13 @@ package asura.core.cs
 import java.util
 
 import asura.common.util.StringUtils
+import asura.core.concurrent.ExecutionContextManager.sysGlobal
+import asura.core.es.model.Environment
+import asura.core.es.service.EnvironmentService
 import asura.core.script.JavaScriptEngine
 import asura.core.util.{JsonPathUtils, StringTemplate}
+
+import scala.concurrent.Future
 
 object CaseContext {
 
@@ -22,6 +27,7 @@ object CaseContext {
   val KEY_STATUS = "status" // current case status
   val KEY_HEADERS = "headers" // current case headers
   val KEY_ENTITY = "entity" // current case http body
+  val KEY__ENV = "_env"
 
   //
   val TEMPLATE_PREFIX = "{{"
@@ -112,9 +118,10 @@ object CaseContext {
   * use java type system
   */
 case class CaseContext(
-                        private val ctx: util.Map[Any, Any] = new util.HashMap[Any, Any](),
-                        val options: ContextOptions = null,
+                        private val ctx: util.Map[Any, Any] = new util.concurrent.ConcurrentHashMap[Any, Any](),
+                        var options: ContextOptions = null,
                       ) {
+
 
   def rawContext = ctx
 
@@ -220,5 +227,44 @@ case class CaseContext(
 
   def renderBodyAsString(tpl: String): String = {
     CaseContext.renderBody(tpl, ctx).toString
+  }
+
+  def setOrUpdateEnv(env: Environment): CaseContext = {
+    if (null != env) {
+      var envMap = ctx.get(CaseContext.KEY__ENV).asInstanceOf[util.Map[Any, Any]]
+      if (null == envMap) {
+        envMap = new util.concurrent.ConcurrentHashMap[Any, Any]()
+        ctx.put(CaseContext.KEY__ENV, envMap)
+      }
+      if (null != env.custom && env.custom.nonEmpty) {
+        env.custom.filter(_.enabled).foreach(kv => {
+          envMap.put(kv.key, kv.value)
+        })
+      }
+    }
+    this
+  }
+
+  def evaluateOptions(): Future[Boolean] = {
+    if (null != options) {
+      if (null != options.initCtx && !options.initCtx.isEmpty) {
+        ctx.putAll(options.initCtx)
+      }
+      val usedEnvId = options.getUsedEnvId()
+      if (null != options.getUsedEnv(usedEnvId)) {
+        setOrUpdateEnv(options.getUsedEnv())
+        Future.successful(true)
+      } else if (StringUtils.isNotEmpty(usedEnvId)) {
+        EnvironmentService.getEnvById(usedEnvId).map(env => {
+          options.setUsedEnv(usedEnvId, env)
+          setOrUpdateEnv(env)
+          true
+        })
+      } else {
+        Future.successful(true)
+      }
+    } else {
+      Future.successful(true)
+    }
   }
 }
