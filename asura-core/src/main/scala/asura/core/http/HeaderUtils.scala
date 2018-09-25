@@ -5,7 +5,7 @@ import akka.http.scaladsl.model.headers.{Cookie, RawHeader}
 import akka.http.scaladsl.model.{ErrorInfo, HttpHeader}
 import asura.common.util.StringUtils
 import asura.core.cs.CaseContext
-import asura.core.es.model.{Case, Environment}
+import asura.core.es.model.Case
 import asura.core.{CoreConfig, ErrorMessages}
 import com.typesafe.scalalogging.Logger
 
@@ -16,9 +16,10 @@ object HeaderUtils {
 
   val logger = Logger("HeaderUtils")
 
-  def toHeaders(cs: Case, context: CaseContext, env: Environment = null): immutable.Seq[HttpHeader] = {
+  def toHeaders(cs: Case, context: CaseContext): immutable.Seq[HttpHeader] = {
     val headers = ArrayBuffer[HttpHeader]()
     val request = cs.request
+    val env = if (null != context.options) context.options.getUsedEnv() else null
     if (null != request) {
       val headerSeq = request.header
       if (null != headerSeq) {
@@ -39,12 +40,8 @@ object HeaderUtils {
         }
       }
     }
-    if (Option(cs.useProxy).isDefined && cs.useProxy) {
-      val ns = if (null != env) {
-        env.namespace
-      } else {
-        cs.namespace
-      }
+    if (null != env && env.enableProxy) {
+      val ns = env.namespace
       if (StringUtils.isNotEmpty(ns)) {
         val dst = StringBuilder.newBuilder
         dst.append("/").append(cs.namespace).append("/").append(cs.group).append("/").append(cs.project)

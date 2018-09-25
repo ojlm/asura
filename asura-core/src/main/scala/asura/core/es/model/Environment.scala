@@ -8,19 +8,6 @@ import scala.collection.mutable
 
 /**
   * there should be only one `Environment` in a whole job/scenario/case runtime
-  *
-  * @param summary
-  * @param description
-  * @param group
-  * @param project
-  * @param protocol
-  * @param host
-  * @param port
-  * @param auth
-  * @param namespace for proxy usage
-  * @param custom
-  * @param creator
-  * @param createdAt
   */
 case class Environment(
                         val summary: String,
@@ -33,7 +20,7 @@ case class Environment(
                         val host: String,
                         @deprecated
                         val port: Int,
-                        val auth: Authorization,
+                        val auth: Seq[Authorization],
                         val namespace: String = null,
                         val enableProxy: Boolean = false,
                         val custom: Seq[KeyValueObject] = Nil,
@@ -75,7 +62,7 @@ object Environment extends IndexSetting {
       BasicField(name = FieldKeys.FIELD_PORT, `type` = "integer"),
       KeywordField(name = FieldKeys.FIELD_NAMESPACE),
       BasicField(name = FieldKeys.FIELD_ENABLE_PROXY, `type` = "boolean"),
-      ObjectField(name = FieldKeys.FIELD_AUTH, fields = Seq(
+      NestedField(name = FieldKeys.FIELD_AUTH, fields = Seq(
         KeywordField(name = FieldKeys.FIELD_TYPE),
         ObjectField(name = FieldKeys.FIELD_DATA, dynamic = Some("false")),
       )),

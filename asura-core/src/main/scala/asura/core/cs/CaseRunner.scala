@@ -2,11 +2,10 @@ package asura.core.cs
 
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import asura.common.util.StringUtils
-import asura.core.CoreConfig._
+import asura.core.CoreConfig.materializer
+import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.assertion.engine.HttpResponseAssert
 import asura.core.es.model.{Case, KeyValueObject}
-import asura.core.es.service.EnvironmentService
 import asura.core.http.{HttpContentTypes, HttpEngine}
 import com.typesafe.scalalogging.Logger
 
@@ -18,12 +17,19 @@ object CaseRunner {
 
   def test(id: String, cs: Case, context: CaseContext = CaseContext()): Future[CaseResult] = {
     context.eraseCurrentData()
-    if (StringUtils.isNotEmpty(cs.env)) {
-      EnvironmentService.getEnvById(cs.env)
-        .flatMap(env => CaseParser.toHttpRequest(cs, context, env))
+    var options = context.options
+    if (null != options) {
+      options.caseEnv = cs.env
+    } else {
+      options = ContextOptions(caseEnv = cs.env)
+      context.options = options
+    }
+    context.evaluateOptions().flatMap(_ => {
+      CaseParser.toHttpRequest(cs, context)
         .flatMap(toCaseRequestTuple)
         .flatMap(tuple => {
-          if (Option(cs.useProxy).isDefined && cs.useProxy) {
+          val env = if (null != context.options) context.options.getUsedEnv() else null
+          if (null != env && env.enableProxy) {
             HttpEngine.singleRequestWithProxy(tuple._1).flatMap(res => {
               Unmarshal(res.entity).to[String].flatMap(resBody => {
                 HttpResponseAssert.generateCaseReport(id, cs.assert, res, resBody, tuple._2, context)
@@ -37,17 +43,7 @@ object CaseRunner {
             })
           }
         })
-    } else {
-      CaseParser.toHttpRequest(cs, context)
-        .flatMap(toCaseRequestTuple)
-        .flatMap(tuple => {
-          HttpEngine.singleRequest(tuple._1).flatMap(res => {
-            Unmarshal(res.entity).to[String].flatMap(resBody => {
-              HttpResponseAssert.generateCaseReport(id, cs.assert, res, resBody, tuple._2, context)
-            })
-          })
-        })
-    }
+    })
   }
 
   def toCaseRequestTuple(req: HttpRequest): Future[(HttpRequest, CaseRequest)] = {

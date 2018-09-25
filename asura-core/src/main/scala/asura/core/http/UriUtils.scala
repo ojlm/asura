@@ -13,7 +13,7 @@ object UriUtils {
 
   val UTF8 = StandardCharsets.UTF_8.name()
 
-  def toUri(cs: Case, context: CaseContext, env: Environment = null): Uri = {
+  def toUri(cs: Case, context: CaseContext): Uri = {
     Uri.from(
       scheme = cs.request.protocol,
       host = cs.request.host,
