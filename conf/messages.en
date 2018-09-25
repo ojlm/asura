@@ -20,3 +20,4 @@ error_InvalidCronExpression=Invalid cron expression
 error_EmptyGroup=group can not be empty
 error_EmptyProject=project can not be empty
 error_EmptySummary=summary can not be empty
+error_NullKeyOrValue=key or value can not be null

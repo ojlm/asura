@@ -35,6 +35,7 @@ object ErrorMessages extends Enumeration {
   val error_EmptyScheduler = Val("Empty scheduler")
   val error_InvalidToken = Val("Invalid token")
   val error_EmptyJobCaseScenarioCount = Val("Empty case and scenario count in job")
+  val error_NullKeyOrValue = Val("Null key or value")
 
   def error_NoSchedulerDefined(scheduler: String) = Val(scheduler)
 
