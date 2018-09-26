@@ -1,6 +1,5 @@
 package asura.core.cs.assertion
 
-
 import asura.core.cs.assertion.engine.AssertResult
 
 import scala.concurrent.Future
