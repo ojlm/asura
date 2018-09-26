@@ -84,8 +84,8 @@ object ScenarioRunner {
           if (!isScenarioFailed) {
             if (null != prevResult) { // not first
               if (prevResult.statis.isSuccessful) {
-                if (null != prevResult.id) {
-                  val cs = caseIdMap(prevResult.id)
+                if (null != prevResult.caseId) {
+                  val cs = caseIdMap(prevResult.caseId)
                   if (null != log) log(s"scenario(${summary}): ${cs.summary} result is ok.")
                   caseReportItems += CaseReportItem.parse(cs.summary, prevResult)
                 }
@@ -109,7 +109,7 @@ object ScenarioRunner {
                 if (null != log) log(s"scenario(${summary}): ${cs.summary} result is failed.")
                 isScenarioFailed = true
                 scenarioReportItem.markFail()
-                caseReportItems += CaseReportItem.parse(caseIdMap(prevResult.id).summary, prevResult)
+                caseReportItems += CaseReportItem.parse(caseIdMap(prevResult.caseId).summary, prevResult)
                 Future.successful(null)
               }
             } else {
@@ -124,12 +124,12 @@ object ScenarioRunner {
       // last case result
       if (null != lastCaseResult) {
         if (lastCaseResult.statis.isSuccessful) {
-          if (null != lastCaseResult.id) {
-            if (null != log) log(s"scenario(${summary}): ${caseIdMap(lastCaseResult.id).summary} result is ok.")
-            caseReportItems += CaseReportItem.parse(caseIdMap(lastCaseResult.id).summary, lastCaseResult)
+          if (null != lastCaseResult.caseId) {
+            if (null != log) log(s"scenario(${summary}): ${caseIdMap(lastCaseResult.caseId).summary} result is ok.")
+            caseReportItems += CaseReportItem.parse(caseIdMap(lastCaseResult.caseId).summary, lastCaseResult)
           }
         } else {
-          caseReportItems += CaseReportItem.parse(caseIdMap(lastCaseResult.id).summary, lastCaseResult)
+          caseReportItems += CaseReportItem.parse(caseIdMap(lastCaseResult.caseId).summary, lastCaseResult)
           scenarioReportItem.markFail()
         }
       }

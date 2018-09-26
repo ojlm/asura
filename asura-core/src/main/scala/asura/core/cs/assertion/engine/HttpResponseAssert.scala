@@ -15,7 +15,7 @@ object HttpResponseAssert {
 
   /** use java type system because of json path library */
   def generateCaseReport(
-                          id: String,
+                          caseId: String,
                           assert: Map[String, Any],
                           response: HttpResponse,
                           entity: String,
@@ -44,6 +44,6 @@ object HttpResponseAssert {
           caseContext.setCurrentEntity(entity)
       }
     }
-    CaseResult.eval(id, response, assert, caseContext, request)
+    CaseResult.eval(caseId, response, assert, caseContext, request)
   }
 }

@@ -56,7 +56,7 @@ object JobReportData {
     /** data need not to be stored in database */
     def freeData(): Unit = {
       if (null != result) {
-        result.id = null
+        result.caseId = null
         result.assert = null
         result.context = null
         result.request = null
@@ -67,7 +67,7 @@ object JobReportData {
 
   object CaseReportItem {
     def parse(title: String, result: CaseResult, msg: String = null): CaseReportItem = {
-      val item = CaseReportItem(id = result.id, title = title, result = result)
+      val item = CaseReportItem(id = result.caseId, title = title, result = result)
       item.status = if (result.statis.isSuccessful) ReportItemStatus.STATUS_SUCCESS else ReportItemStatus.STATUS_FAIL
       item.msg = if (null != msg) msg else item.status
       item
