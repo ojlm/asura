@@ -1,6 +1,7 @@
 package asura.core.es.model
 
 import asura.core.cs.CaseResult
+import asura.core.cs.assertion.engine.Statistic
 import asura.core.es.model.JobReportData.{CaseReportItem, ScenarioReportItem}
 
 
@@ -47,33 +48,31 @@ object JobReportData {
                                     val totalTime: Long,
                                   )
 
+  /**
+    * @param id    caseId
+    * @param title summary
+    */
   case class CaseReportItem(
                              var id: String,
                              var title: String,
-                             var result: CaseResult = null
-                           ) extends BasicReportItem {
-
-    /** data need not to be stored in database */
-    def freeData(): Unit = {
-      if (null != result) {
-        result.caseId = null
-        result.assert = null
-        result.context = null
-        result.request = null
-        result.result = null
-      }
-    }
-  }
+                             var statis: Statistic,
+                             var metrics: CaseReportItemMetrics,
+                           ) extends BasicReportItem
 
   object CaseReportItem {
     def parse(title: String, result: CaseResult, msg: String = null): CaseReportItem = {
-      val item = CaseReportItem(id = result.caseId, title = title, result = result)
+      val item = CaseReportItem(id = result.caseId, title = title, statis = result.statis, metrics = result.metrics)
       item.status = if (result.statis.isSuccessful) ReportItemStatus.STATUS_SUCCESS else ReportItemStatus.STATUS_FAIL
       item.msg = if (null != msg) msg else item.status
       item
     }
   }
 
+  /**
+    * @param id    scenarioId
+    * @param title summary
+    * @param cases CaseReportItem array
+    */
   case class ScenarioReportItem(
                                  var id: String,
                                  var title: String,

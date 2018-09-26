@@ -83,6 +83,8 @@ object JobExecDesc {
     val report = JobReport(
       scheduler = job.scheduler,
       group = job.group,
+      project = job.project,
+      jobId = jobId,
       jobName = job.summary,
       `type` = `type`,
       classAlias = job.classAlias,
@@ -112,6 +114,8 @@ object JobExecDesc {
     val report = JobReport(
       scheduler = jobMeta.getScheduler(),
       group = jobMeta.group,
+      project = jobMeta.project,
+      jobId = jobId,
       jobName = jobMeta.summary,
       `type` = `type`,
       classAlias = jobMeta.getJobAlias(),
