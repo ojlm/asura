@@ -20,7 +20,7 @@ case class ContextOptions(
   private var cachedEnvironments: util.concurrent.ConcurrentMap[String, Environment] = null
 
   def getUsedEnv(id: String = getUsedEnvId()): Environment = {
-    if (null != cachedEnvironments) {
+    if (null != cachedEnvironments && null != id) {
       cachedEnvironments.get(id)
     } else {
       null

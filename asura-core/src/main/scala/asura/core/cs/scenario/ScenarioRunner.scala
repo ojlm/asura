@@ -1,9 +1,10 @@
 package asura.core.cs.scenario
 
+import asura.common.actor.{ActorEvent, ItemActorEvent}
 import asura.common.util.{LogUtils, XtermUtils}
 import asura.core.cs.{CaseContext, CaseResult, CaseRunner, ContextOptions}
 import asura.core.es.model.JobReportData.{CaseReportItem, ScenarioReportItem}
-import asura.core.es.model.{Case, Scenario}
+import asura.core.es.model.{Case, Scenario, ScenarioStep}
 import asura.core.es.service.{CaseService, ScenarioService}
 import com.typesafe.scalalogging.Logger
 
@@ -28,7 +29,7 @@ object ScenarioRunner {
         val caseIds = ArrayBuffer[String]()
         list.foreach(tuple => {
           val (scenarioId, scenario) = tuple
-          val scenarioCaseIds = scenario.cases.map(_.id)
+          val scenarioCaseIds = scenario.steps.filter(ScenarioStep.TYPE_CASE == _.`type`).map(_.id)
           scenarioIdMap += (scenarioId -> scenario)
           caseIds ++= scenarioCaseIds
           scenarioIdCaseIdMap(scenarioId) = scenarioCaseIds
@@ -67,6 +68,7 @@ object ScenarioRunner {
             cases: Seq[(String, Case)],
             log: String => Unit = null,
             options: ContextOptions = null,
+            logResult: ActorEvent => Unit = null,
           )(implicit executionContext: ExecutionContext): Future[ScenarioReportItem] = {
     if (null != log) log(s"scenario(${summary}): fetch ${cases.length} cases.")
     val scenarioReportItem = ScenarioReportItem(scenarioId, summary)
@@ -83,10 +85,12 @@ object ScenarioRunner {
         currResult <- {
           if (!isScenarioFailed) {
             if (null != prevResult) { // not first
-              if (prevResult.statis.isSuccessful) {
+              if (null != logResult) logResult(ItemActorEvent(prevResult))
+              val statis = prevResult.statis
+              if (statis.isSuccessful) {
                 if (null != prevResult.caseId) {
                   val cs = caseIdMap(prevResult.caseId)
-                  if (null != log) log(s"scenario(${summary}): ${cs.summary} result is ok.")
+                  if (null != log) log(s"scenario(${summary}): ${cs.summary} ${XtermUtils.greenWrap("pass")}.")
                   caseReportItems += CaseReportItem.parse(cs.summary, prevResult)
                 }
                 caseContext.setPrevCurrentData(CaseContext.extractCaseSelfContext(prevResult))
@@ -106,7 +110,7 @@ object ScenarioRunner {
                     null
                 }
               } else {
-                if (null != log) log(s"scenario(${summary}): ${cs.summary} result is failed.")
+                if (null != log) log(s"scenario(${summary}): ${cs.summary} ${XtermUtils.redWrap("fail")}.")
                 isScenarioFailed = true
                 scenarioReportItem.markFail()
                 caseReportItems += CaseReportItem.parse(caseIdMap(prevResult.caseId).summary, prevResult)
@@ -123,12 +127,14 @@ object ScenarioRunner {
     }).map(lastCaseResult => {
       // last case result
       if (null != lastCaseResult) {
+        if (null != logResult) logResult(ItemActorEvent(lastCaseResult))
         if (lastCaseResult.statis.isSuccessful) {
           if (null != lastCaseResult.caseId) {
-            if (null != log) log(s"scenario(${summary}): ${caseIdMap(lastCaseResult.caseId).summary} result is ok.")
+            if (null != log) log(s"scenario(${summary}): ${caseIdMap(lastCaseResult.caseId).summary} ${XtermUtils.greenWrap("pass")}.")
             caseReportItems += CaseReportItem.parse(caseIdMap(lastCaseResult.caseId).summary, lastCaseResult)
           }
         } else {
+          if (null != log) log(s"scenario(${summary}): ${caseIdMap(lastCaseResult.caseId).summary} ${XtermUtils.redWrap("fail")}.")
           caseReportItems += CaseReportItem.parse(caseIdMap(lastCaseResult.caseId).summary, lastCaseResult)
           scenarioReportItem.markFail()
         }

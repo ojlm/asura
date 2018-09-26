@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import asura.core.actor.flow.WebSocketMessageHandler
 import asura.core.job.actor.JobTestActor.JobTestMessage
+import asura.core.job.actor.ScenarioTestActor.ScenarioTestMessage
 import asura.core.job.actor.{JobManualActor, JobTestActor, ScenarioTestActor}
 import javax.inject.{Inject, Singleton}
 import org.pac4j.http.client.direct.HeaderClient
@@ -32,7 +33,7 @@ class WsApi @Inject()(
       } else {
         Right {
           val testActor = system.actorOf(ScenarioTestActor.props(profile.getId))
-          WebSocketMessageHandler.stringToActorEventFlow(testActor, classOf[JobTestMessage])
+          WebSocketMessageHandler.stringToActorEventFlow(testActor, classOf[ScenarioTestMessage])
         }
       }
     }
