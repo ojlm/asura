@@ -37,7 +37,7 @@ object JobReport extends IndexSetting {
       KeywordField(name = FieldKeys.FIELD_GROUP),
       KeywordField(name = FieldKeys.FIELD_PROJECT),
       KeywordField(name = FieldKeys.FIELD_JOB_ID),
-      KeywordField(name = FieldKeys.FIELD_JOB_NAME),
+      TextField(name = FieldKeys.FIELD_JOB_NAME, copyTo = Seq(FieldKeys.FIELD__TEXT), analysis = EsConfig.IK_ANALYZER),
       KeywordField(name = FieldKeys.FIELD_TYPE),
       KeywordField(name = FieldKeys.FIELD_CLASS_ALIAS),
       BasicField(name = FieldKeys.FIELD_START_AT, `type` = "date", format = Some(EsConfig.DateFormat)),
