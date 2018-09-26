@@ -3,11 +3,12 @@ package asura.core.job.actor
 import akka.actor.{ActorRef, PoisonPill, Props, Status}
 import akka.pattern.pipe
 import asura.common.actor._
-import asura.common.util.StringUtils
+import asura.common.util.{LogUtils, StringUtils}
+import asura.core.ErrorMessages
 import asura.core.actor.messages.SenderMessage
 import asura.core.cs.scenario.ScenarioRunner
-import asura.core.es.model.Case
 import asura.core.es.model.JobReportData.ScenarioReportItem
+import asura.core.es.model.{Case, ScenarioStep}
 import asura.core.es.service.CaseService
 import asura.core.job.actor.ScenarioTestActor.ScenarioTestMessage
 
@@ -23,28 +24,41 @@ class ScenarioTestActor(user: String, out: ActorRef) extends BaseActor {
       context.become(handleRequest(sender))
   }
 
-  def handleRequest(webActor: ActorRef): Receive = {
-    case ScenarioTestMessage(summary, caseIds) =>
-      CaseService.getCasesByIdsAsMap(caseIds).map(caseIdMap => {
-        val cases = ArrayBuffer[(String, Case)]()
-        caseIds.foreach(id => {
-          val value = caseIdMap.get(id)
-          if (value.nonEmpty) {
-            cases.append((id, value.get))
-          }
+  def handleRequest(wsActor: ActorRef): Receive = {
+    case ScenarioTestMessage(summary, steps) =>
+      val caseIds = steps.filter(ScenarioStep.TYPE_CASE == _.`type`).map(_.id)
+      if (null != steps && steps.nonEmpty) {
+        CaseService.getCasesByIdsAsMap(caseIds).map(caseIdMap => {
+          val cases = ArrayBuffer[(String, Case)]()
+          caseIds.foreach(id => {
+            val value = caseIdMap.get(id)
+            if (value.nonEmpty) {
+              cases.append((id, value.get))
+            }
+          })
+          ScenarioRunner.test(StringUtils.EMPTY, summary, cases, logMsg => {
+            wsActor ! NotifyActorEvent(logMsg)
+          }, null, logEvent => {
+            wsActor ! logEvent
+          }).pipeTo(self)
         })
-        ScenarioRunner.test(StringUtils.EMPTY, summary, cases, logMsg => {
-          webActor ! NotifyActorEvent(logMsg)
-        }).pipeTo(self)
-      })
+      } else {
+        wsActor ! ErrorActorEvent(ErrorMessages.error_EmptyCase.errMsg)
+        wsActor ! PoisonPill
+      }
     case report: ScenarioReportItem =>
-      webActor ! ItemActorEvent(report)
-      webActor ! PoisonPill
+      wsActor ! OverActorEvent(report)
+      wsActor ! PoisonPill
     case eventMessage: ActorEvent =>
-      webActor ! eventMessage
+      wsActor ! eventMessage
     case Status.Failure(t) =>
-      webActor ! ErrorActorEvent(t.getMessage)
-      webActor ! PoisonPill
+      val logErrMsg = LogUtils.stackTraceToString(t)
+      log.warning(logErrMsg)
+      wsActor ! ErrorActorEvent(logErrMsg)
+      wsActor ! PoisonPill
+    case _ =>
+      wsActor ! ErrorActorEvent(ErrorMessages.error_UnknownMessageType.errMsg)
+      wsActor ! PoisonPill
   }
 
   override def postStop(): Unit = {
@@ -56,6 +70,6 @@ object ScenarioTestActor {
 
   def props(user: String, out: ActorRef = null) = Props(new ScenarioTestActor(user, out))
 
-  case class ScenarioTestMessage(summary: String, cases: Seq[String])
+  case class ScenarioTestMessage(summary: String, steps: Seq[ScenarioStep])
 
 }

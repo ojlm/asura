@@ -24,7 +24,7 @@ object InitActorEvent {
 }
 
 object OverActorEvent {
-  def apply(): ActorEvent = new ActorEvent(`type` = ActorEvent.TYPE_OVER)
+  def apply(data: Any): ActorEvent = new ActorEvent(`type` = ActorEvent.TYPE_OVER, data = data)
 }
 
 object ListActorEvent {
