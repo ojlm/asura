@@ -1,5 +1,8 @@
 package asura.core.es.model
 
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
 import asura.core.cs.CaseResult
 import asura.core.cs.assertion.engine.Statistic
 import asura.core.es.model.JobReportData.{CaseReportItem, ScenarioReportItem}
@@ -9,7 +12,7 @@ import asura.core.es.model.JobReportData.{CaseReportItem, ScenarioReportItem}
   * Be careful to modify this class's schema, it should be compatible with data structure in ES.
   */
 case class JobReportData(
-                          var dayIndexSuffix: String = null,
+                          var dayIndexSuffix: String = LocalDateTime.now().format(DateTimeFormatter.ofPattern(JobReportDataItem.INDEX_DATE_TIME_PATTERN)),
                           var cases: Seq[CaseReportItem] = Nil,
                           var scenarios: Seq[ScenarioReportItem] = Nil,
                           var ext: Map[String, Any] = Map.empty
@@ -57,12 +60,11 @@ object JobReportData {
                              var id: String,
                              var title: String,
                              var statis: Statistic,
-                             var metrics: CaseReportItemMetrics,
                            ) extends BasicReportItem
 
   object CaseReportItem {
     def parse(title: String, result: CaseResult, msg: String = null): CaseReportItem = {
-      val item = CaseReportItem(id = result.caseId, title = title, statis = result.statis, metrics = result.metrics)
+      val item = CaseReportItem(id = result.caseId, title = title, statis = result.statis)
       item.status = if (result.statis.isSuccessful) ReportItemStatus.STATUS_SUCCESS else ReportItemStatus.STATUS_FAIL
       item.msg = if (null != msg) msg else item.status
       item

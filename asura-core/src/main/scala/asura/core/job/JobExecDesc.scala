@@ -3,9 +3,15 @@ package asura.core.job
 import java.io.{BufferedWriter, File, FileWriter, PrintWriter}
 import java.text.SimpleDateFormat
 
-import asura.common.util.DateUtils
+import akka.actor.{ActorRef, PoisonPill}
+import asura.common.util.{DateUtils, StringUtils}
+import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.ContextOptions
-import asura.core.es.model.{Job, JobData, JobReport}
+import asura.core.es.model.{BaseIndex, Job, JobData, JobReport}
+import asura.core.es.service.JobReportService
+import asura.core.job.actor.JobReportDataItemSaveActor
+
+import scala.concurrent.Future
 
 /** job meta data and status container during execution */
 case class JobExecDesc(
@@ -14,6 +20,8 @@ case class JobExecDesc(
                         val report: JobReport,
                         val startNano: Long,
                         val configWorkDir: String,
+                        val reportId: String,
+                        val reportItemSaveActor: ActorRef,
                         val options: ContextOptions = null
                       ) {
 
@@ -22,6 +30,7 @@ case class JobExecDesc(
   private var currentJobFolder: String = null
 
   def prepareEnd(): JobExecDesc = {
+    if (null != reportItemSaveActor) reportItemSaveActor ! PoisonPill
     this.report.endAt = DateUtils.nowDateTime
     this.report.elapse = ((System.nanoTime() - this.startNano) / 1000000).toInt
     if (null != stdLogWriter) {
@@ -79,7 +88,7 @@ object JobExecDesc {
   val STATUS_WARN = "warn"
   val STATUS_ABORTED = "aborted"
 
-  def from(jobId: String, job: Job, `type`: String, options: ContextOptions): JobExecDesc = {
+  def from(jobId: String, job: Job, `type`: String, options: ContextOptions, creator: String): Future[JobExecDesc] = {
     val report = JobReport(
       scheduler = job.scheduler,
       group = job.group,
@@ -90,17 +99,27 @@ object JobExecDesc {
       classAlias = job.classAlias,
       startAt = DateUtils.nowDateTime
     )
-    JobExecDesc(
-      jobId = jobId,
-      job = job,
-      report = report,
-      startNano = System.nanoTime(),
-      configWorkDir = JobCenter.jobWorkDir,
-      options = options
-    )
+    if (StringUtils.isNotEmpty(creator)) {
+      report.fillCommonFields(creator)
+    } else {
+      report.fillCommonFields(BaseIndex.CREATOR_QUARTZ)
+    }
+    JobReportService.index(report).map(res => {
+      val actor = asura.core.CoreConfig.system.actorOf(JobReportDataItemSaveActor.props(report.data.dayIndexSuffix))
+      JobExecDesc(
+        jobId = jobId,
+        job = job,
+        report = report,
+        startNano = System.nanoTime(),
+        configWorkDir = JobCenter.jobWorkDir,
+        reportId = res.id,
+        reportItemSaveActor = actor,
+        options = options
+      )
+    })
   }
 
-  def from(jobId: String, jobMeta: JobMeta, jobData: JobData, `type`: String, options: ContextOptions): JobExecDesc = {
+  def from(jobId: String, jobMeta: JobMeta, jobData: JobData, `type`: String, options: ContextOptions, creator: String): Future[JobExecDesc] = {
     val job = Job(
       summary = jobMeta.summary,
       description = jobMeta.description,
@@ -121,13 +140,23 @@ object JobExecDesc {
       classAlias = jobMeta.getJobAlias(),
       startAt = DateUtils.nowDateTime
     )
-    JobExecDesc(
-      jobId = jobId,
-      job = job,
-      report = report,
-      startNano = System.nanoTime(),
-      configWorkDir = JobCenter.jobWorkDir,
-      options = options
-    )
+    if (StringUtils.isNotEmpty(creator)) {
+      report.fillCommonFields(creator)
+    } else {
+      report.fillCommonFields(BaseIndex.CREATOR_QUARTZ)
+    }
+    JobReportService.index(report).map(res => {
+      val actor = asura.core.CoreConfig.system.actorOf(JobReportDataItemSaveActor.props(report.data.dayIndexSuffix))
+      JobExecDesc(
+        jobId = jobId,
+        job = job,
+        report = report,
+        startNano = System.nanoTime(),
+        configWorkDir = JobCenter.jobWorkDir,
+        reportId = res.id,
+        reportItemSaveActor = actor,
+        options = options
+      )
+    })
   }
 }

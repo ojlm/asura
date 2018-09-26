@@ -33,7 +33,7 @@ abstract class AbstractJob extends Job {
     val jobKey = context.getJobDetail.getKey
     val jobId = jobKey.getName
     val job = JobService.geJobById(jobId).await
-    JobExecDesc.from(jobId, job, JobReport.TYPE_QUARTZ, null)
+    JobExecDesc.from(jobId, job, JobReport.TYPE_QUARTZ, null, BaseIndex.CREATOR_QUARTZ).await
   }
 
   private def afterRun(jobExecDesc: JobExecDesc): Unit = {
@@ -44,11 +44,10 @@ abstract class AbstractJob extends Job {
   private def saveAndNotifyJobResult(execDesc: JobExecDesc): Unit = {
     val job = execDesc.job
     val report = execDesc.report
-    report.fillCommonFields(BaseIndex.CREATOR_QUARTZ)
     SchedulerActor.statusMonitor ! JobFinished(job.scheduler, job.group, job.summary, execDesc.report)
     try {
-      val reportDoc = JobReportService.index(report).await
-      ReportNotifyService.notifySubscribers(execDesc, reportDoc.id).await
+      JobReportService.indexReport(execDesc.reportId, report).await
+      ReportNotifyService.notifySubscribers(execDesc, execDesc.reportId).await
     } catch {
       case t: Throwable =>
         logger.warn(LogUtils.stackTraceToString(t))
