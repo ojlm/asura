@@ -9,6 +9,7 @@ import asura.core.es.model.JobReportData.{CaseReportItem, ScenarioReportItem}
   * Be careful to modify this class's schema, it should be compatible with data structure in ES.
   */
 case class JobReportData(
+                          var dayIndexSuffix: String = null,
                           var cases: Seq[CaseReportItem] = Nil,
                           var scenarios: Seq[ScenarioReportItem] = Nil,
                           var ext: Map[String, Any] = Map.empty

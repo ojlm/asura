@@ -76,5 +76,3 @@ object JobTestActor {
   case class JobTestMessage(jobMeta: JobMeta, jobData: JobData)
 
 }
-
-
