@@ -5,8 +5,6 @@ import asura.core.es.EsConfig
 import asura.core.job.JobExecDesc
 import com.sksamuel.elastic4s.mappings._
 
-import scala.collection.mutable
-
 case class JobReport(
                       val scheduler: String,
                       val group: String,
@@ -27,12 +25,6 @@ case class JobReport(
                       var creator: String = null,
                       var createdAt: String = null,
                     ) extends BaseIndex {
-
-  override def toUpdateMap: Map[String, Any] = {
-    val m = mutable.Map[String, Any]()
-    checkCommFieldsToUpdate(m)
-    m.toMap
-  }
 }
 
 object JobReport extends IndexSetting {

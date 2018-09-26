@@ -56,14 +56,13 @@ object JobReportService extends CommonService {
     }
   }
 
-
-  def updateReport(id: String, jobReport: JobReport): Future[UpdateDocResponse] = {
+  def indexReport(id: String, jobReport: JobReport): Future[IndexDocResponse] = {
     if (null == jobReport && jobReport.toUpdateMap.nonEmpty) {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
       EsClient.esClient.execute {
-        update(id).in(JobReport.Index / EsConfig.DefaultType).doc(jobReport.toUpdateMap)
-      }.map(toUpdateDocResponse(_))
+        indexInto(JobReport.Index / EsConfig.DefaultType).doc(jobReport).id(id)
+      }.map(toIndexDocResponse(_))
     }
   }
 

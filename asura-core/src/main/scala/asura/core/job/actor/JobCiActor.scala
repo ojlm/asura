@@ -24,48 +24,55 @@ class JobCiActor(id: String, out: ActorRef, options: ContextOptions) extends Bas
       self ! id
   }
 
-  def handleRequest(webActor: ActorRef): Receive = {
+  def handleRequest(wsActor: ActorRef): Receive = {
     case job: Job =>
       val jobImplOpt = JobCenter.classAliasJobMap.get(job.classAlias)
       if (jobImplOpt.isEmpty) {
-        webActor ! s"Can't find job implementation of ${job.classAlias}"
-        webActor ! JobExecDesc.STATUS_FAIL
-        webActor ! PoisonPill
+        wsActor ! s"Can't find job implementation of ${job.classAlias}"
+        wsActor ! JobExecDesc.STATUS_FAIL
+        wsActor ! PoisonPill
       } else {
         val jobImpl = jobImplOpt.get
         val (isOk, errMsg) = jobImpl.checkJobData(job.jobData)
         if (isOk) {
-          jobImpl.doTestAsync(JobExecDesc.from(id, job, JobReport.TYPE_CI, options), logMsg => {
-            webActor ! logMsg
-          }).pipeTo(self)
+          JobExecDesc.from(id, job, JobReport.TYPE_CI, options, BaseIndex.CREATOR_CI).map(jobExecDesc => {
+            jobImpl.doTestAsync(jobExecDesc, logMsg => {
+              wsActor ! logMsg
+            }).pipeTo(self)
+          }).recover {
+            case t: Throwable =>
+              self ! Status.Failure(t)
+          }
         } else {
-          webActor ! errMsg
-          webActor ! PoisonPill
+          wsActor ! errMsg
+          wsActor ! PoisonPill
         }
       }
     case jobId: String =>
       if (StringUtils.isNotEmpty(jobId)) {
         JobService.geJobById(jobId).pipeTo(self)
       } else {
-        webActor ! s"jobId is empty."
-        webActor ! PoisonPill
+        wsActor ! s"jobId is empty."
+        wsActor ! PoisonPill
       }
     case execDesc: JobExecDesc =>
       execDesc.prepareEnd()
       val report = execDesc.report
-      report.fillCommonFields(BaseIndex.CREATOR_CI)
-      JobReportService.index(report).map { res =>
-        val reportUrl = s"view report: ${CoreConfig.reportBaseUrl}/${res.id}"
-        webActor ! reportUrl
-        webActor ! execDesc.report.result
-        webActor ! PoisonPill
+      JobReportService.indexReport(execDesc.reportId, report).map { _ =>
+        val reportUrl = s"view report: ${CoreConfig.reportBaseUrl}/${execDesc.reportId}"
+        wsActor ! reportUrl
+        wsActor ! execDesc.report.result
+        wsActor ! PoisonPill
+      }.recover {
+        case t: Throwable =>
+          self ! Status.Failure(t)
       }
     case Status.Failure(t) =>
       val stackTrace = LogUtils.stackTraceToString(t)
       log.warning(stackTrace)
-      webActor ! stackTrace
-      webActor ! JobExecDesc.STATUS_FAIL
-      webActor ! PoisonPill
+      wsActor ! stackTrace
+      wsActor ! JobExecDesc.STATUS_FAIL
+      wsActor ! PoisonPill
   }
 
   override def postStop(): Unit = {

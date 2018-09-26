@@ -81,6 +81,7 @@ object FieldKeys {
   val FIELD_REPORT_ID = "reportId"
   val FIELD_SCENARIO_ID = "scenarioId"
   val FIELD_CASE_ID = "caseId"
+  val FIELD_METRICS = "metrics"
 
   val FIELD_NESTED_REQUEST_URLPATH = "request.urlPath"
   val FIELD_NESTED_REQUEST_METHOD = "request.method"
