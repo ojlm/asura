@@ -10,6 +10,8 @@ import scala.collection.mutable
 case class JobReport(
                       val scheduler: String,
                       val group: String,
+                      val project: String,
+                      val jobId: String,
                       val jobName: String,
                       val `type`: String,
                       val classAlias: String,
@@ -41,6 +43,8 @@ object JobReport extends IndexSetting {
     fields = BaseIndex.fieldDefinitions ++ Seq(
       KeywordField(name = FieldKeys.FIELD_SCHEDULER),
       KeywordField(name = FieldKeys.FIELD_GROUP),
+      KeywordField(name = FieldKeys.FIELD_PROJECT),
+      KeywordField(name = FieldKeys.FIELD_JOB_ID),
       KeywordField(name = FieldKeys.FIELD_JOB_NAME),
       KeywordField(name = FieldKeys.FIELD_TYPE),
       KeywordField(name = FieldKeys.FIELD_CLASS_ALIAS),

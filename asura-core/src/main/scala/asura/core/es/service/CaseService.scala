@@ -149,7 +149,7 @@ object CaseService extends CommonService {
         }
       })
     } else {
-      ErrorMessages.error_EmptyId.toFutureFail
+      Future.successful(Map.empty)
     }
   }
 

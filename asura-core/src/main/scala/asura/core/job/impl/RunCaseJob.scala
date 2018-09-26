@@ -72,12 +72,9 @@ object RunCaseJob extends JobBase {
         val reportItems = scenarioReport.cases
         report.data.cases = reportItems
         reportItems.foreach(reportItem => {
-          val result = reportItem.result
-          if (null != result) {
-            val statis = result.statis
-            if (!statis.isSuccessful) {
-              report.result = JobExecDesc.STATUS_FAIL
-            }
+          val statis = reportItem.statis
+          if (!statis.isSuccessful) {
+            report.result = JobExecDesc.STATUS_FAIL
           } else {
             report.result = JobExecDesc.STATUS_WARN
           }
