@@ -22,7 +22,7 @@ class JobTestActor(user: String, out: ActorRef) extends BaseActor {
   }
 
   def handleRequest(wsActor: ActorRef): Receive = {
-    case JobTestMessage(jobMeta, jobData) =>
+    case JobTestMessage(jobId, jobMeta, jobData) =>
       val jobOpt = JobCenter.classAliasJobMap.get(jobMeta.getJobAlias())
       if (jobOpt.isEmpty) {
         wsActor ! ErrorActorEvent(s"Can't find job implementation of ${jobMeta.getJobAlias()}")
@@ -31,7 +31,7 @@ class JobTestActor(user: String, out: ActorRef) extends BaseActor {
         val job = jobOpt.get
         val (isOk, errMsg) = job.checkJobData(jobData)
         if (isOk) {
-          JobExecDesc.from(null, jobMeta, jobData, JobReport.TYPE_TEST, null, user).map(jobExecDesc => {
+          JobExecDesc.from(jobId, jobMeta, jobData, JobReport.TYPE_TEST, null, user).map(jobExecDesc => {
             job.doTestAsync(jobExecDesc, logMsg => {
               wsActor ! NotifyActorEvent(logMsg)
             }).pipeTo(self)
@@ -74,6 +74,6 @@ object JobTestActor {
 
   def props(user: String, out: ActorRef = null) = Props(new JobTestActor(user, out))
 
-  case class JobTestMessage(jobMeta: JobMeta, jobData: JobData)
+  case class JobTestMessage(jobId: String, jobMeta: JobMeta, jobData: JobData)
 
 }
