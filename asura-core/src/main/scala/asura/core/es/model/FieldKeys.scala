@@ -14,6 +14,7 @@ object FieldKeys {
   val FIELD_SCHEMA = "schema"
   val FIELD_API = "api"
   val FIELD_REQUEST = "request"
+  val FIELD_RESPONSE = "response"
   val FIELD_ASSERT = "assert"
   val FIELD_MAP = "map"
   val FIELD_SRC_HOST = "srcHost"
@@ -77,7 +78,9 @@ object FieldKeys {
   val FIELD_JOB_ID = "jobId"
   val FIELD_SUBSCRIBER = "subscriber"
   val FIELD_STEPS = "steps"
-
+  val FIELD_REPORT_ID = "reportId"
+  val FIELD_SCENARIO_ID = "scenarioId"
+  val FIELD_CASE_ID = "caseId"
 
   val FIELD_NESTED_REQUEST_URLPATH = "request.urlPath"
   val FIELD_NESTED_REQUEST_METHOD = "request.method"
