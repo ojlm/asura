@@ -9,7 +9,7 @@ import asura.core.es.model.JobReportData.CaseReportItemMetrics
 import scala.concurrent.Future
 
 case class CaseResult(
-                       var id: String,
+                       var caseId: String,
                        var assert: Map[String, Any],
                        var context: java.util.Map[Any, Any],
                        var request: CaseRequest,
@@ -21,9 +21,9 @@ case class CaseResult(
 
 object CaseResult {
 
-  def failResult(id: String, cs: Case): CaseResult = {
+  def failResult(caseId: String, cs: Case): CaseResult = {
     val result = CaseResult(
-      id = id,
+      caseId = caseId,
       assert = cs.assert,
       context = null,
       request = null,
@@ -34,7 +34,7 @@ object CaseResult {
   }
 
   def eval(
-            id: String,
+            caseId: String,
             response: HttpResponse,
             assert: Map[String, Any],
             context: CaseContext,
@@ -43,7 +43,7 @@ object CaseResult {
     val statistic = Statistic()
     AssertionContext.eval(assert, context.rawContext, statistic).map { assertResult =>
       CaseResult(
-        id = id,
+        caseId = caseId,
         assert = assert,
         context = context.rawContext,
         request = request,

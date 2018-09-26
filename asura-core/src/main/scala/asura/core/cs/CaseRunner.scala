@@ -15,7 +15,7 @@ object CaseRunner {
 
   val logger = Logger("CaseRunner")
 
-  def test(id: String, cs: Case, context: CaseContext = CaseContext()): Future[CaseResult] = {
+  def test(caseId: String, cs: Case, context: CaseContext = CaseContext()): Future[CaseResult] = {
     implicit val metrics = CaseRuntimeMetrics()
     metrics.start()
     context.eraseCurrentData()
@@ -37,7 +37,7 @@ object CaseRunner {
             HttpEngine.singleRequestWithProxy(tuple._1).flatMap(res => {
               Unmarshal(res.entity).to[String].flatMap(resBody => {
                 metrics.evalAssertionBegin()
-                HttpResponseAssert.generateCaseReport(id, cs.assert, res, resBody, tuple._2, context)
+                HttpResponseAssert.generateCaseReport(caseId, cs.assert, res, resBody, tuple._2, context)
               })
             })
           } else {
@@ -45,7 +45,7 @@ object CaseRunner {
             HttpEngine.singleRequest(tuple._1).flatMap(res => {
               Unmarshal(res.entity).to[String].flatMap(resBody => {
                 metrics.evalAssertionBegin()
-                HttpResponseAssert.generateCaseReport(id, cs.assert, res, resBody, tuple._2, context)
+                HttpResponseAssert.generateCaseReport(caseId, cs.assert, res, resBody, tuple._2, context)
               })
             })
           }
