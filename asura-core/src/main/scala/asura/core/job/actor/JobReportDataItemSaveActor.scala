@@ -1,7 +1,8 @@
 package asura.core.job.actor
 
-import akka.actor.Props
+import akka.actor.{Props, Status}
 import asura.common.actor.BaseActor
+import asura.common.util.LogUtils
 import asura.core.es.model.JobReportDataItem
 import asura.core.es.service.JobReportDataService
 import asura.core.job.actor.JobReportDataItemSaveActor.{Flush, SaveReportDataItemMessage}
@@ -19,11 +20,13 @@ class JobReportDataItemSaveActor(dayIndexSuffix: String) extends BaseActor {
       if (messages.length >= 10) {
         insert()
       }
-      context.system.scheduler.scheduleOnce(1 seconds) {
+      context.system.scheduler.scheduleOnce(2 seconds) {
         self ! Flush
       }(context.system.dispatcher)
     case Flush =>
       insert()
+    case Status.Failure(t) =>
+      log.warning(LogUtils.stackTraceToString(t))
   }
 
   override def preStart(): Unit = {
