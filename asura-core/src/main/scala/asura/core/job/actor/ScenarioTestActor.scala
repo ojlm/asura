@@ -3,7 +3,7 @@ package asura.core.job.actor
 import akka.actor.{ActorRef, PoisonPill, Props, Status}
 import akka.pattern.pipe
 import asura.common.actor._
-import asura.common.util.{LogUtils, StringUtils}
+import asura.common.util.LogUtils
 import asura.core.ErrorMessages
 import asura.core.actor.messages.SenderMessage
 import asura.core.cs.scenario.ScenarioRunner
@@ -36,7 +36,7 @@ class ScenarioTestActor(user: String, out: ActorRef) extends BaseActor {
               cases.append((id, value.get))
             }
           })
-          ScenarioRunner.test(StringUtils.EMPTY, summary, cases, logMsg => {
+          ScenarioRunner.test("ScenarioTestActor", summary, cases, logMsg => {
             wsActor ! NotifyActorEvent(logMsg)
           }, null, logEvent => {
             wsActor ! logEvent

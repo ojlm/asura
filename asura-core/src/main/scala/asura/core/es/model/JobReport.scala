@@ -25,6 +25,10 @@ case class JobReport(
                       var creator: String = null,
                       var createdAt: String = null,
                     ) extends BaseIndex {
+
+  def isSuccessful(): Boolean = {
+    JobExecDesc.STATUS_SUCCESS == result
+  }
 }
 
 object JobReport extends IndexSetting {

@@ -64,19 +64,17 @@ object RunCaseJob extends JobBase {
     val jobData = execDesc.job.jobData
     val cases = jobData.cs
     if (null != cases && !cases.isEmpty) {
-      if (null != log) log("start fetch cases...")
       CaseService.getCasesByIds(cases.map(_.id), false).flatMap(cases => {
-        if (null != log) log(s"fetch ${cases.length} cases.")
         ScenarioRunner.test(null, "job cases", cases, log, execDesc.options)
       }).map(scenarioReport => {
         val reportItems = scenarioReport.cases
         report.data.cases = reportItems
         reportItems.foreach(reportItem => {
           val statis = reportItem.statis
-          if (!statis.isSuccessful) {
-            report.result = JobExecDesc.STATUS_FAIL
+          if (statis.isSuccessful) {
+            report.result = JobExecDesc.STATUS_SUCCESS
           } else {
-            report.result = JobExecDesc.STATUS_WARN
+            report.result = JobExecDesc.STATUS_FAIL
           }
         })
         execDesc
