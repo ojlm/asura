@@ -85,8 +85,6 @@ object JobExecDesc {
 
   val STATUS_SUCCESS = "success"
   val STATUS_FAIL = "fail"
-  val STATUS_WARN = "warn"
-  val STATUS_ABORTED = "aborted"
 
   def from(jobId: String, job: Job, `type`: String, options: ContextOptions, creator: String): Future[JobExecDesc] = {
     val report = JobReport(

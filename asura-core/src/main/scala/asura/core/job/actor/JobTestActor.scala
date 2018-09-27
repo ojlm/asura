@@ -3,7 +3,7 @@ package asura.core.job.actor
 import akka.actor.{ActorRef, PoisonPill, Props, Status}
 import akka.pattern.pipe
 import asura.common.actor._
-import asura.common.util.LogUtils
+import asura.common.util.{LogUtils, XtermUtils}
 import asura.core.CoreConfig
 import asura.core.actor.messages.SenderMessage
 import asura.core.es.model.{JobData, JobReport}
@@ -48,6 +48,11 @@ class JobTestActor(user: String, out: ActorRef) extends BaseActor {
       execDesc.prepareEnd()
       val report = execDesc.report
       JobReportService.indexReport(execDesc.reportId, report).map { res =>
+        if (report.isSuccessful()) {
+          wsActor ! NotifyActorEvent(s"job(${report.jobName}): ${XtermUtils.greenWrap(report.result)}")
+        } else {
+          wsActor ! NotifyActorEvent(s"job(${report.jobName}): ${XtermUtils.redWrap(report.result)}")
+        }
         val reportUrl = s"view report: ${CoreConfig.reportBaseUrl}/${res.id}"
         wsActor ! NotifyActorEvent(reportUrl)
         wsActor ! OverActorEvent(report)

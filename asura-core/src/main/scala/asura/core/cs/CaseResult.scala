@@ -3,7 +3,6 @@ package asura.core.cs
 import akka.http.scaladsl.model.HttpResponse
 import asura.core.concurrent.ExecutionContextManager.cachedExecutor
 import asura.core.cs.assertion.engine.{AssertionContext, Statistic}
-import asura.core.es.model.Case
 import asura.core.es.model.JobReportData.CaseReportItemMetrics
 
 import scala.concurrent.Future
@@ -21,10 +20,10 @@ case class CaseResult(
 
 object CaseResult {
 
-  def failResult(caseId: String, cs: Case): CaseResult = {
+  def failResult(caseId: String): CaseResult = {
     val result = CaseResult(
       caseId = caseId,
-      assert = cs.assert,
+      assert = null,
       context = null,
       request = null,
       response = null

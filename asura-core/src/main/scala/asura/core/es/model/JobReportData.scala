@@ -3,6 +3,7 @@ package asura.core.es.model
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
+import asura.common.util.StringUtils
 import asura.core.cs.CaseResult
 import asura.core.cs.assertion.engine.Statistic
 import asura.core.es.model.JobReportData.{CaseReportItem, ScenarioReportItem}
@@ -21,16 +22,17 @@ case class JobReportData(
 object JobReportData {
 
   object ReportItemStatus {
-    val STATUS_SUCCESS = "success"
-    val STATUS_WARN = "warn"
+
+    val STATUS_PASS = "pass"
     val STATUS_FAIL = "fail"
+    val STATUS_SKIPPED = "skipped" // item skipped
   }
 
   trait BasicReportItem {
     var id: String
     var title: String
-    var status: String = ReportItemStatus.STATUS_SUCCESS
-    var msg: String = ReportItemStatus.STATUS_SUCCESS
+    var status: String = ReportItemStatus.STATUS_PASS
+    var msg: String = ReportItemStatus.STATUS_PASS
 
     def markFail(msg: String = ReportItemStatus.STATUS_FAIL): BasicReportItem = {
       this.title = msg
@@ -40,7 +42,7 @@ object JobReportData {
     }
 
     def isSuccessful(): Boolean = {
-      status == ReportItemStatus.STATUS_SUCCESS
+      status == ReportItemStatus.STATUS_PASS
     }
   }
 
@@ -63,9 +65,14 @@ object JobReportData {
                            ) extends BasicReportItem
 
   object CaseReportItem {
-    def parse(title: String, result: CaseResult, msg: String = null): CaseReportItem = {
+
+    def parse(title: String, result: CaseResult, status: String = null, msg: String = null): CaseReportItem = {
       val item = CaseReportItem(id = result.caseId, title = title, statis = result.statis)
-      item.status = if (result.statis.isSuccessful) ReportItemStatus.STATUS_SUCCESS else ReportItemStatus.STATUS_FAIL
+      if (StringUtils.isNotEmpty(status)) {
+        item.status = status
+      } else {
+        item.status = if (result.statis.isSuccessful) ReportItemStatus.STATUS_PASS else ReportItemStatus.STATUS_FAIL
+      }
       item.msg = if (null != msg) msg else item.status
       item
     }
