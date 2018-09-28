@@ -5,7 +5,7 @@ import asura.app.api.auth.{LdapAuthenticator, SimpleTestUsernamePasswordAuthenti
 import com.google.inject.{AbstractModule, Provides}
 import org.pac4j.core.client.Clients
 import org.pac4j.core.config.Config
-import org.pac4j.http.client.direct.{DirectFormClient, HeaderClient}
+import org.pac4j.http.client.direct.{DirectBasicAuthClient, DirectFormClient, HeaderClient}
 import org.pac4j.jwt.config.signature.SecretSignatureConfiguration
 import org.pac4j.jwt.credentials.authenticator.JwtAuthenticator
 import org.pac4j.play.LogoutController
@@ -37,6 +37,15 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
   }
 
   @Provides
+  def directBasicAuthClient: DirectBasicAuthClient = {
+    if (configuration.getOptional[Boolean]("asura.ldap.enabled").getOrElse(false)) {
+      new DirectBasicAuthClient(LdapAuthenticator(configuration))
+    } else {
+      new DirectBasicAuthClient(new SimpleTestUsernamePasswordAuthenticator(configuration))
+    }
+  }
+
+  @Provides
   def headerClient: HeaderClient = {
     val jwtAuthenticator = new JwtAuthenticator()
     jwtAuthenticator.addSignatureConfiguration(new SecretSignatureConfiguration(configuration.get[String]("asura.jwt.secret")))
@@ -44,8 +53,8 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
   }
 
   @Provides
-  def provideConfig(directFormClient: DirectFormClient, headerClient: HeaderClient): Config = {
-    val clients = new Clients(directFormClient, headerClient)
+  def provideConfig(directFormClient: DirectFormClient, headerClient: HeaderClient, directBasicAuthClient: DirectBasicAuthClient): Config = {
+    val clients = new Clients(directFormClient, headerClient, directBasicAuthClient)
     val config = new Config(clients)
     config.setHttpActionAdapter(new SecurityHttpActionAdapter())
     // config.addAuthorizer("login", new LoginAuthorizer())
