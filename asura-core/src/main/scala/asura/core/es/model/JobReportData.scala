@@ -32,11 +32,11 @@ object JobReportData {
     var id: String
     var title: String
     var status: String = ReportItemStatus.STATUS_PASS
-    var msg: String = ReportItemStatus.STATUS_PASS
+    // not empty when error occur
+    var msg: String = StringUtils.EMPTY
 
-    def markFail(msg: String = ReportItemStatus.STATUS_FAIL): BasicReportItem = {
+    def markFail(): BasicReportItem = {
       this.status = ReportItemStatus.STATUS_FAIL
-      this.msg = msg
       this
     }
 
@@ -60,19 +60,19 @@ object JobReportData {
   case class CaseReportItem(
                              var id: String,
                              var title: String,
+                             var itemId: String,
                              var statis: Statistic,
                            ) extends BasicReportItem
 
   object CaseReportItem {
 
-    def parse(title: String, result: CaseResult, status: String = null, msg: String = null): CaseReportItem = {
-      val item = CaseReportItem(id = result.caseId, title = title, statis = result.statis)
+    def parse(title: String, result: CaseResult, itemId: String = null, status: String = null, msg: String = null): CaseReportItem = {
+      val item = CaseReportItem(id = result.caseId, title = title, itemId, statis = result.statis)
       if (StringUtils.isNotEmpty(status)) {
         item.status = status
       } else {
         item.status = if (result.statis.isSuccessful) ReportItemStatus.STATUS_PASS else ReportItemStatus.STATUS_FAIL
       }
-      item.msg = if (null != msg) msg else item.status
       item
     }
   }

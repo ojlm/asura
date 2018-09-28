@@ -3,7 +3,7 @@ package asura.core.job.impl
 import asura.common.model.{ApiMsg, BoolErrorRes}
 import asura.common.util.FutureUtils.RichFuture
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.cs.scenario.ScenarioRunner
+import asura.core.cs.scenario.{ItemStoreDataHelper, ScenarioRunner}
 import asura.core.es.model.JobData
 import asura.core.es.service.CaseService
 import asura.core.job._
@@ -45,15 +45,16 @@ object RunCaseJob extends JobBase {
     val scenarios = execDesc.job.jobData.scenario
     if (null != scenarios && !scenarios.isEmpty) {
       val report = execDesc.report
-      ScenarioRunner.testScenarios(scenarios.map(_.id), log).map(reportItems => {
-        report.data.scenarios = reportItems
-        reportItems.foreach(item => {
-          if (!item.isSuccessful()) {
-            report.result = JobExecDesc.STATUS_FAIL
-          }
+      ScenarioRunner.testScenarios(scenarios.map(_.id), log)(execDesc.reportId, execDesc.reportItemSaveActor, execDesc.jobId)
+        .map(reportItems => {
+          report.data.scenarios = reportItems
+          reportItems.foreach(item => {
+            if (!item.isSuccessful()) {
+              report.result = JobExecDesc.STATUS_FAIL
+            }
+          })
+          execDesc
         })
-        execDesc
-      })
     } else {
       Future.successful(execDesc)
     }
@@ -65,7 +66,8 @@ object RunCaseJob extends JobBase {
     val cases = jobData.cs
     if (null != cases && !cases.isEmpty) {
       CaseService.getCasesByIds(cases.map(_.id), false).flatMap(cases => {
-        ScenarioRunner.test(null, "job cases", cases, log, execDesc.options)
+        val storeDataHelper = ItemStoreDataHelper(execDesc.reportId, "c", execDesc.reportItemSaveActor, execDesc.jobId)
+        ScenarioRunner.test(null, "job cases", cases, log, execDesc.options)(storeDataHelper)
       }).map(scenarioReport => {
         val reportItems = scenarioReport.cases
         report.data.cases = reportItems

@@ -39,7 +39,7 @@ class JobReportDataItemSaveActor(dayIndexSuffix: String) extends BaseActor {
 
   private def insert(): Unit = {
     if (messages.length > 0) {
-      log.info(s"${messages.length} items is saving...")
+      log.debug(s"${messages.length} items is saving...")
       JobReportDataService.index(messages, dayIndexSuffix)
       messages.clear()
     }

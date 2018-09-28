@@ -39,6 +39,7 @@ object EsClient {
       logger.info(s"check es index ${index.Index}")
       isAllOk = IndexService.initCheck(index)
     }
+    isAllOk = IndexService.checkTemplate()
     isAllOk
   }
 }
