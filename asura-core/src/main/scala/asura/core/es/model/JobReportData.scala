@@ -35,9 +35,8 @@ object JobReportData {
     var msg: String = ReportItemStatus.STATUS_PASS
 
     def markFail(msg: String = ReportItemStatus.STATUS_FAIL): BasicReportItem = {
-      this.title = msg
       this.status = ReportItemStatus.STATUS_FAIL
-      this.msg = ReportItemStatus.STATUS_FAIL
+      this.msg = msg
       this
     }
 
