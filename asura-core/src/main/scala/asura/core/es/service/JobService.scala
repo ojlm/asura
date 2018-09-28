@@ -19,6 +19,15 @@ import scala.concurrent.Future
 
 object JobService extends CommonService {
 
+  val queryIncludeFields = Seq(
+    FieldKeys.FIELD_SUMMARY,
+    FieldKeys.FIELD_DESCRIPTION,
+    FieldKeys.FIELD_CREATOR,
+    FieldKeys.FIELD_CREATED_AT,
+    FieldKeys.FIELD_GROUP,
+    FieldKeys.FIELD_PROJECT,
+  )
+
   def index(job: Job): Future[IndexDocResponse] = {
     if (null == job) {
       ErrorMessages.error_EmptyRequestBody.toFutureFail
@@ -33,7 +42,6 @@ object JobService extends CommonService {
       }
     }
   }
-
 
   def deleteDoc(id: String): Future[DeleteDocResponse] = {
     if (StringUtils.isEmpty(id)) {
@@ -142,6 +150,7 @@ object JobService extends CommonService {
         .from(query.pageFrom)
         .size(query.pageSize)
         .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
+        .sourceInclude(queryIncludeFields)
     }
   }
 }
