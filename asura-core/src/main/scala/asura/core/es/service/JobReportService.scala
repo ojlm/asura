@@ -67,10 +67,14 @@ object JobReportService extends CommonService {
     }
   }
 
+  // reindex report with job data
   def indexReport(id: String, jobReport: JobReport): Future[IndexDocResponse] = {
-    if (null == jobReport && jobReport.toUpdateMap.nonEmpty) {
+    if (null == jobReport) {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
+      if (null == jobReport.statis && null != jobReport.data) {
+        jobReport.statis = JobReportDataStatistic(jobReport.data)
+      }
       EsClient.esClient.execute {
         indexInto(JobReport.Index / EsConfig.DefaultType).doc(jobReport).id(id)
       }.map(toIndexDocResponse(_))

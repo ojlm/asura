@@ -93,6 +93,7 @@ object JobExecDesc {
       project = job.project,
       jobId = jobId,
       jobName = job.summary,
+      description = job.description,
       `type` = `type`,
       classAlias = job.classAlias,
       startAt = DateUtils.nowDateTime
@@ -134,6 +135,7 @@ object JobExecDesc {
       project = jobMeta.project,
       jobId = jobId,
       jobName = jobMeta.summary,
+      description = job.description,
       `type` = `type`,
       classAlias = jobMeta.getJobAlias(),
       startAt = DateUtils.nowDateTime
