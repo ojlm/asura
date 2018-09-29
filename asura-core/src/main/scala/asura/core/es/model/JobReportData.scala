@@ -7,6 +7,7 @@ import asura.common.util.StringUtils
 import asura.core.cs.CaseResult
 import asura.core.cs.assertion.engine.Statistic
 import asura.core.es.model.JobReportData.{CaseReportItem, ScenarioReportItem}
+import com.fasterxml.jackson.annotation.JsonIgnore
 
 
 /**
@@ -40,8 +41,19 @@ object JobReportData {
       this
     }
 
+    @JsonIgnore
     def isSuccessful(): Boolean = {
       status == ReportItemStatus.STATUS_PASS
+    }
+
+    @JsonIgnore
+    def isSkipped(): Boolean = {
+      status == ReportItemStatus.STATUS_SKIPPED
+    }
+
+    @JsonIgnore
+    def isFailed(): Boolean = {
+      status == ReportItemStatus.STATUS_FAIL
     }
   }
 
