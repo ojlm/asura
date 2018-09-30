@@ -25,7 +25,7 @@ object JobReportDataService extends CommonService {
     }
   }
 
-  def getById(id: String, day: String) = {
+  def getById(day: String, id: String) = {
     if (StringUtils.isEmpty(id)) {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {

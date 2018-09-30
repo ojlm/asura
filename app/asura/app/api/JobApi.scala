@@ -7,7 +7,7 @@ import asura.app.api.BaseApi.OkApiRes
 import asura.common.model.{ApiRes, ApiResError}
 import asura.common.util.StringUtils
 import asura.core.cs.model.{QueryJob, QueryJobReport}
-import asura.core.es.service.{JobReportService, JobService}
+import asura.core.es.service.{JobReportDataService, JobReportService, JobService}
 import asura.core.job.actor._
 import asura.core.job.{JobCenter, JobUtils, SchedulerManager}
 import javax.inject.{Inject, Singleton}
@@ -82,6 +82,10 @@ class JobApi @Inject()(implicit exec: ExecutionContext, val controllerComponents
 
   def report(id: String) = Action(parse.byteString).async { implicit req =>
     JobReportService.getById(id).toOkResultByEsOneDoc(id)
+  }
+
+  def reportItem(day: String, id: String) = Action(parse.byteString).async { implicit req =>
+    JobReportDataService.getById(day, id).toOkResultByEsOneDoc(id)
   }
 
   def cron() = Action(parse.tolerantText) { implicit req =>

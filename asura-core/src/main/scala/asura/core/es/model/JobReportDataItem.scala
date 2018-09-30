@@ -12,7 +12,9 @@ case class JobReportDataItem(
                               val jobId: String,
                               var metrics: CaseReportItemMetrics,
                               val request: CaseRequest,
-                              val response: CaseResponse
+                              val response: CaseResponse,
+                              var assertions: Map[String, Any],
+                              var assertionsResult: java.util.Map[_, _]
                             ) {
 
 }
@@ -31,6 +33,8 @@ object JobReportDataItem extends IndexSetting {
       ObjectField(name = FieldKeys.FIELD_METRICS, dynamic = Some("false")),
       ObjectField(name = FieldKeys.FIELD_REQUEST, dynamic = Some("false")),
       ObjectField(name = FieldKeys.FIELD_RESPONSE, dynamic = Some("false")),
+      ObjectField(name = FieldKeys.FIELD_ASSERTIONS, dynamic = Some("false")),
+      ObjectField(name = FieldKeys.FIELD_ASSERTIONS_RESULT, dynamic = Some("false")),
     )
   )
 }
