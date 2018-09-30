@@ -88,6 +88,10 @@ class JobApi @Inject()(implicit exec: ExecutionContext, val controllerComponents
     JobReportDataService.getById(day, id).toOkResultByEsOneDoc(id)
   }
 
+  def reportTrend(id: String, days: Option[Int]) = Action(parse.byteString).async { implicit req =>
+    JobReportService.trend(id, days.getOrElse(30)).toOkResultByEsList()
+  }
+
   def cron() = Action(parse.tolerantText) { implicit req =>
     val cron = req.body
     if (StringUtils.isNotEmpty(cron) && CronExpression.isValidExpression(cron)) {

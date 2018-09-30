@@ -98,4 +98,14 @@ object JobReportService extends CommonService {
         .sourceInclude(queryIncludeFields)
     }
   }
+
+  def trend(jobId: String, size: Int) = {
+    EsClient.esClient.execute {
+      search(JobReport.Index)
+        .query(boolQuery().must(termQuery(FieldKeys.FIELD_JOB_ID, jobId)))
+        .size(size)
+        .sortByFieldDesc(FieldKeys.FIELD_END_AT)
+        .sourceInclude(FieldKeys.FIELD_ELAPSE, FieldKeys.FIELD_STATIS, FieldKeys.FIELD_END_AT)
+    }
+  }
 }
