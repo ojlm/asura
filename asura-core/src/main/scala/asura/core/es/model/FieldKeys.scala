@@ -96,6 +96,8 @@ object FieldKeys {
   val FIELD_Ok_RATE = "okRate"
   val FIELD_ASSERTION_PASSED = "assertionPassed"
   val FIELD_ASSERTION_FAILED = "assertionFailed"
+  val FIELD_ASSERTIONS = "assertions"
+  val FIELD_ASSERTIONS_RESULT = "assertionsResult"
 
   val FIELD_NESTED_REQUEST_URLPATH = "request.urlPath"
   val FIELD_NESTED_REQUEST_METHOD = "request.method"

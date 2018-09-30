@@ -128,7 +128,9 @@ object ScenarioRunner {
                     jobId = dataStoreHelper.jobId,
                     metrics = caseResult.metrics,
                     request = caseResult.request,
-                    response = caseResult.response
+                    response = caseResult.response,
+                    assertions = caseResult.assert,
+                    assertionsResult = caseResult.result
                   )
                   dataStoreHelper.actorRef ! SaveReportDataItemMessage(itemDataId, dataItem)
                   caseIndex = caseIndex + 1
