@@ -4,10 +4,11 @@ import asura.common.model.{ApiMsg, BoolErrorRes}
 import asura.common.util.FutureUtils.RichFuture
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.scenario.{ItemStoreDataHelper, ScenarioRunner}
-import asura.core.es.model.JobData
+import asura.core.es.model.{Case, JobData}
 import asura.core.es.service.CaseService
 import asura.core.job._
 
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
 object RunCaseJob extends JobBase {
@@ -65,7 +66,15 @@ object RunCaseJob extends JobBase {
     val jobData = execDesc.job.jobData
     val cases = jobData.cs
     if (null != cases && !cases.isEmpty) {
-      CaseService.getCasesByIds(cases.map(_.id), false).flatMap(cases => {
+      val caseIds = cases.map(_.id)
+      CaseService.getCasesByIdsAsMap(caseIds, false).flatMap(caseIdMap => {
+        val cases = ArrayBuffer[(String, Case)]()
+        caseIds.foreach(id => {
+          val value = caseIdMap.get(id)
+          if (value.nonEmpty) {
+            cases.append((id, value.get))
+          }
+        })
         val storeDataHelper = ItemStoreDataHelper(execDesc.reportId, "c", execDesc.reportItemSaveActor, execDesc.jobId)
         ScenarioRunner.test(null, "job cases", cases, log, execDesc.options)(storeDataHelper)
       }).map(scenarioReport => {

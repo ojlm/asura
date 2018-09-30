@@ -133,10 +133,10 @@ object CaseService extends CommonService {
     }
   }
 
-  def getCasesByIdsAsMap(ids: Seq[String])(implicit executor: ExecutionContext): Future[Map[String, Case]] = {
+  def getCasesByIdsAsMap(ids: Seq[String], filterFields: Boolean = false)(implicit executor: ExecutionContext): Future[Map[String, Case]] = {
     if (null != ids && ids.nonEmpty) {
       val map = mutable.HashMap[String, Case]()
-      getByIds(ids).map(res => {
+      getByIds(ids, filterFields).map(res => {
         if (res.isSuccess) {
           if (res.result.isEmpty) {
             throw ErrorMessages.error_IdsNotFound(ids).toException
