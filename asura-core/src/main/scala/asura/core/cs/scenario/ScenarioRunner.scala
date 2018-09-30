@@ -54,8 +54,8 @@ object ScenarioRunner {
           scenarioIdCaseMap(scenarioId) = cases
         })
         var index = 0
-        val jobReportItemsFutures = scenarioIdCaseMap.map(tuple => {
-          val (scenarioId, cases) = tuple
+        val jobReportItemsFutures = scenarioIds.map(scenarioId => {
+          val cases = scenarioIdCaseMap(scenarioId)
           val scenario = scenarioIdMap(scenarioId)
           val dataStoreHelper = if (null != reportId && null != storeActor) {
             ItemStoreDataHelper(reportId, s"s${index.toString}", storeActor, jobId)
@@ -87,6 +87,7 @@ object ScenarioRunner {
     if (null != log) log(s"scenario(${summary}): fetch ${caseTuples.length} cases.")
     val scenarioReportItem = ScenarioReportItem(scenarioId, summary)
     val caseReportItems = ArrayBuffer[CaseReportItem]()
+    scenarioReportItem.cases = caseReportItems
     // for `foldLeft` type inference
     val nullCaseReportItem: CaseReportItem = null
     // it will be true only in a real scenario
@@ -170,7 +171,6 @@ object ScenarioRunner {
     }).map(lastReportItem => {
       // last report item
       caseReportItems += lastReportItem
-      scenarioReportItem.cases = caseReportItems
       if (StringUtils.isNotEmpty(scenarioId)) {
         // not in real scenario
         if (null != log) log(s"scenario(${summary}): ${
