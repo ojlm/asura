@@ -98,6 +98,9 @@ object FieldKeys {
   val FIELD_ASSERTION_FAILED = "assertionFailed"
   val FIELD_ASSERTIONS = "assertions"
   val FIELD_ASSERTIONS_RESULT = "assertionsResult"
+  val FIELD_USER = "user"
+  val FIELD_TIMESTAMP = "timestamp"
+  val FIELD_TARGET_ID = "targetId"
 
   val FIELD_NESTED_REQUEST_URLPATH = "request.urlPath"
   val FIELD_NESTED_REQUEST_METHOD = "request.method"
