@@ -5,6 +5,8 @@ import asura.core.es.EsConfig
 import com.sksamuel.elastic4s.mappings.{BasicField, KeywordField, MappingDefinition, ObjectField}
 
 case class Activity(
+                     val group: String,
+                     val project: String,
                      val user: String,
                      val `type`: String,
                      val targetId: String = StringUtils.EMPTY,
@@ -20,6 +22,8 @@ object Activity extends IndexSetting {
   val mappings: MappingDefinition = MappingDefinition(
     `type` = EsConfig.DefaultType,
     fields = Seq(
+      KeywordField(name = FieldKeys.FIELD_GROUP),
+      KeywordField(name = FieldKeys.FIELD_PROJECT),
       KeywordField(name = FieldKeys.FIELD_USER),
       KeywordField(name = FieldKeys.FIELD_TYPE),
       KeywordField(name = FieldKeys.FIELD_TARGET_ID),
@@ -27,6 +31,11 @@ object Activity extends IndexSetting {
       ObjectField(name = FieldKeys.FIELD_DATA, dynamic = Some("false")),
     )
   )
+
+  // types
+  val TYPE_NEW_USER = "new-user"
+
+
 }
 
 
