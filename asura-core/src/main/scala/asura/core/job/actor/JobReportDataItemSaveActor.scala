@@ -3,9 +3,10 @@ package asura.core.job.actor
 import akka.actor.{Props, Status}
 import asura.common.actor.BaseActor
 import asura.common.util.LogUtils
+import asura.core.actor.messages.Flush
 import asura.core.es.model.JobReportDataItem
 import asura.core.es.service.JobReportDataService
-import asura.core.job.actor.JobReportDataItemSaveActor.{Flush, SaveReportDataItemMessage}
+import asura.core.job.actor.JobReportDataItemSaveActor.SaveReportDataItemMessage
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration._
@@ -49,8 +50,6 @@ class JobReportDataItemSaveActor(dayIndexSuffix: String) extends BaseActor {
 object JobReportDataItemSaveActor {
 
   def props(dayIndexSuffix: String) = Props(new JobReportDataItemSaveActor(dayIndexSuffix))
-
-  case class Flush()
 
   case class SaveReportDataItemMessage(id: String, dataItem: JobReportDataItem)
 
