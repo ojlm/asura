@@ -1,11 +1,15 @@
 package asura.app.api
 
+import akka.actor.ActorSystem
 import asura.app.api.BaseApi.OkApiRes
+import asura.app.api.model.TestCase
 import asura.common.model.ApiRes
+import asura.common.util.StringUtils
 import asura.core.cs.CaseRunner
 import asura.core.cs.assertion.Assertions
 import asura.core.cs.model.QueryCase
-import asura.core.es.model.Case
+import asura.core.es.actor.ActivitySaveActor
+import asura.core.es.model.{Activity, Case}
 import asura.core.es.service.CaseService
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
@@ -13,8 +17,12 @@ import org.pac4j.play.scala.SecurityComponents
 import scala.concurrent.ExecutionContext
 
 @Singleton
-class CaseApi @Inject()(implicit exec: ExecutionContext, val controllerComponents: SecurityComponents)
-  extends BaseApi {
+class CaseApi @Inject()(implicit system: ActorSystem,
+                        val exec: ExecutionContext,
+                        val controllerComponents: SecurityComponents
+                       ) extends BaseApi {
+
+  val activityActor = system.actorOf(ActivitySaveActor.props())
 
   def getById(id: String) = Action.async { implicit req =>
     CaseService.getById(id).toOkResultByEsOneDoc(id)
@@ -26,12 +34,18 @@ class CaseApi @Inject()(implicit exec: ExecutionContext, val controllerComponent
 
   def put() = Action(parse.byteString).async { implicit req =>
     val cs = req.bodyAs(classOf[Case])
-    cs.fillCommonFields(getProfileId())
-    CaseService.index(cs).toOkResult
+    val user = getProfileId()
+    cs.fillCommonFields(user)
+    CaseService.index(cs).map(res => {
+      activityActor ! Activity(cs.group, cs.project, user, Activity.TYPE_UPDATE_CASE, res.id)
+      toActionResultFromAny(res)
+    })
   }
 
   def update(id: String) = Action(parse.byteString).async { implicit req =>
     val cs = req.bodyAs(classOf[Case])
+    val user = getProfileId()
+    activityActor ! Activity(cs.group, cs.project, user, Activity.TYPE_UPDATE_CASE, id)
     CaseService.updateCs(id, cs).toOkResult
   }
 
@@ -41,8 +55,11 @@ class CaseApi @Inject()(implicit exec: ExecutionContext, val controllerComponent
   }
 
   def test() = Action(parse.byteString).async { implicit req =>
-    val cs = req.bodyAs(classOf[Case])
-    CaseRunner.test("test", cs).toOkResult
+    val testCase = req.bodyAs(classOf[TestCase])
+    val cs = testCase.cs
+    val user = getProfileId()
+    activityActor ! Activity(cs.group, cs.project, user, Activity.TYPE_TEST_CASE, StringUtils.notEmptyElse(testCase.id, StringUtils.EMPTY))
+    CaseRunner.test(testCase.id, cs).toOkResult
   }
 
   def getAllAssertions() = Action {

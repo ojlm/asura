@@ -2,11 +2,14 @@ package asura.app.api
 
 import java.util.Date
 
+import akka.actor.ActorSystem
 import asura.app.AppErrorMessages
 import asura.app.api.BaseApi.OkApiRes
 import asura.common.model.{ApiRes, ApiResError}
 import asura.common.util.StringUtils
 import asura.core.cs.model.{QueryJob, QueryJobReport}
+import asura.core.es.actor.ActivitySaveActor
+import asura.core.es.model.Activity
 import asura.core.es.service.{JobReportDataService, JobReportService, JobService}
 import asura.core.job.actor._
 import asura.core.job.{JobCenter, JobUtils, SchedulerManager}
@@ -18,8 +21,13 @@ import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class JobApi @Inject()(implicit exec: ExecutionContext, val controllerComponents: SecurityComponents)
-  extends BaseApi {
+class JobApi @Inject()(
+                        implicit system: ActorSystem,
+                        val exec: ExecutionContext,
+                        val controllerComponents: SecurityComponents
+                      ) extends BaseApi {
+
+  val activityActor = system.actorOf(ActivitySaveActor.props())
 
   def types() = Action {
     val jobTypes = JobCenter.supportedJobs.values.map(value => Map(
@@ -38,7 +46,11 @@ class JobApi @Inject()(implicit exec: ExecutionContext, val controllerComponents
     val triggerMeta = job.triggerMeta
     val error = JobUtils.validateJobAndTrigger(jobMeta, triggerMeta, jobData)
     if (null == error) {
-      SchedulerManager.scheduleJob(jobMeta, triggerMeta, jobData, getProfileId()).toOkResult
+      val user = getProfileId()
+      SchedulerManager.scheduleJob(jobMeta, triggerMeta, jobData, user).map(res => {
+        activityActor ! Activity(jobMeta.group, jobMeta.project, user, Activity.TYPE_NEW_JOB, res.id)
+        toActionResultFromAny(res)
+      })
     } else {
       Future.successful(OkApiRes(ApiResError(getI18nMessage(error.name, error.errMsg))))
     }

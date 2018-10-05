@@ -1,12 +1,14 @@
 package asura.app.api
 
+import akka.actor.ActorSystem
 import asura.app.AppErrorMessages
 import asura.app.api.BaseApi.OkApiRes
 import asura.app.api.model.UserProfile
 import asura.common.model.{ApiRes, ApiResError}
 import asura.common.util.StringUtils
 import asura.core.ErrorMessages
-import asura.core.es.model.{BaseIndex, UserProfile => EsUserProfile}
+import asura.core.es.actor.ActivitySaveActor
+import asura.core.es.model.{Activity, BaseIndex, UserProfile => EsUserProfile}
 import asura.core.es.service.UserProfileService
 import javax.inject.{Inject, Singleton}
 import org.pac4j.core.profile.{CommonProfile, ProfileManager}
@@ -19,10 +21,13 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class UserApi @Inject()(
-                         implicit exec: ExecutionContext,
+                         implicit val system: ActorSystem,
+                         val exec: ExecutionContext,
                          val sessionStore: PlaySessionStore,
                          val controllerComponents: SecurityComponents
                        ) extends BaseApi {
+
+  val activityActor = system.actorOf(ActivitySaveActor.props())
 
   def login() = Action.async { implicit request =>
     val webContext = new PlayWebContext(request, sessionStore)
@@ -63,6 +68,7 @@ class UserApi @Inject()(
                 )
                 esUserProfile.fillCommonFields(BaseIndex.CREATOR_LDAP)
                 UserProfileService.index(esUserProfile).map(indexResponse => {
+                  activityActor ! Activity(StringUtils.EMPTY, StringUtils.EMPTY, username, Activity.TYPE_NEW_USER, username)
                   if (StringUtils.isNotEmpty(indexResponse.id)) {
                     OkApiRes(ApiRes(data = apiUserProfile))
                   } else {

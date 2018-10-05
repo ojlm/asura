@@ -2,7 +2,10 @@ package asura.app.api
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
+import asura.common.util.StringUtils
 import asura.core.actor.flow.WebSocketMessageHandler
+import asura.core.es.actor.ActivitySaveActor
+import asura.core.es.model.Activity
 import asura.core.job.actor.JobTestActor.JobTestMessage
 import asura.core.job.actor.ScenarioTestActor.ScenarioTestMessage
 import asura.core.job.actor.{JobManualActor, JobTestActor, ScenarioTestActor}
@@ -23,44 +26,51 @@ class WsApi @Inject()(
                        val client: HeaderClient,
                      ) extends BaseApi {
 
+  val activityActor = system.actorOf(ActivitySaveActor.props())
   val auth: JwtAuthenticator = client.getAuthenticator().asInstanceOf[JwtAuthenticator]
 
-  def testScenario() = WebSocket.acceptOrResult[String, String] { implicit req =>
+  def testScenario(group: String, project: String, id: Option[String]) = WebSocket.acceptOrResult[String, String] { implicit req =>
     Future.successful {
       val profile = getWsProfile(auth)
       if (null == profile) {
         Left(Forbidden)
       } else {
         Right {
-          val testActor = system.actorOf(ScenarioTestActor.props(profile.getId))
+          val user = profile.getId
+          activityActor ! Activity(group, project, user, Activity.TYPE_TEST_SCENARIO, id.getOrElse(StringUtils.EMPTY))
+          val testActor = system.actorOf(ScenarioTestActor.props(user))
           WebSocketMessageHandler.stringToActorEventFlow(testActor, classOf[ScenarioTestMessage])
         }
       }
     }
   }
 
-  def testJob() = WebSocket.acceptOrResult[String, String] { implicit req =>
+  def testJob(group: String, project: String, id: Option[String]) = WebSocket.acceptOrResult[String, String] { implicit req =>
     Future.successful {
       val profile = getWsProfile(auth)
       if (null == profile) {
         Left(Forbidden)
       } else {
         Right {
-          val testActor = system.actorOf(JobTestActor.props(profile.getId))
+          val user = profile.getId
+          activityActor ! Activity(group, project, user, Activity.TYPE_TEST_JOB, id.getOrElse(StringUtils.EMPTY))
+          val testActor = system.actorOf(JobTestActor.props(user))
           WebSocketMessageHandler.stringToActorEventFlow(testActor, classOf[JobTestMessage])
         }
       }
     }
   }
 
-  def manualTestJob(jobId: String) = WebSocket.acceptOrResult[String, String] { implicit req =>
+  def manualTestJob(group: String, project: String, jobId: String) = WebSocket.acceptOrResult[String, String] { implicit req =>
     Future.successful {
       val profile = getWsProfile(auth)
       if (null == profile) {
         Left(Forbidden)
       } else {
         Right {
-          val testActor = system.actorOf(JobManualActor.props(profile.getId, jobId))
+          val user = profile.getId
+          activityActor ! Activity(group, project, user, Activity.TYPE_TEST_JOB, jobId)
+          val testActor = system.actorOf(JobManualActor.props(jobId, user))
           WebSocketMessageHandler.stringToActorEventFlow(testActor)
         }
       }
