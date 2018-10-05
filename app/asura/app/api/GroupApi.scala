@@ -1,7 +1,10 @@
 package asura.app.api
 
+import akka.actor.ActorSystem
+import asura.common.util.StringUtils
 import asura.core.cs.model.QueryGroup
-import asura.core.es.model.Group
+import asura.core.es.actor.ActivitySaveActor
+import asura.core.es.model.{Activity, Group}
 import asura.core.es.service.GroupService
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
@@ -9,8 +12,13 @@ import org.pac4j.play.scala.SecurityComponents
 import scala.concurrent.ExecutionContext
 
 @Singleton
-class GroupApi @Inject()(implicit exec: ExecutionContext, val controllerComponents: SecurityComponents)
-  extends BaseApi {
+class GroupApi @Inject()(
+                          implicit system: ActorSystem,
+                          exec: ExecutionContext,
+                          val controllerComponents: SecurityComponents,
+                        ) extends BaseApi {
+
+  val activityActor = system.actorOf(ActivitySaveActor.props())
 
   def getById(id: String) = Action.async { implicit req =>
     GroupService.getById(id).toOkResultByEsOneDoc(id)
@@ -18,8 +26,12 @@ class GroupApi @Inject()(implicit exec: ExecutionContext, val controllerComponen
 
   def put() = Action(parse.byteString).async { implicit req =>
     val group = req.bodyAs(classOf[Group])
-    group.fillCommonFields(getProfileId())
-    GroupService.index(group).toOkResult
+    val user = getProfileId()
+    group.fillCommonFields(user)
+    GroupService.index(group).map(res => {
+      activityActor ! Activity(group.id, StringUtils.EMPTY, user, Activity.TYPE_NEW_GROUP, group.id)
+      toActionResultFromAny(res)
+    })
   }
 
   def query() = Action(parse.byteString).async { implicit req =>
