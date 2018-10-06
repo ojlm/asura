@@ -35,6 +35,7 @@ object CaseService extends CommonService {
   def index(cs: Case): Future[IndexDocResponse] = {
     val error = CaseValidator.check(cs)
     if (null == error) {
+      cs.calcGeneratorCount()
       EsClient.esClient.execute {
         indexInto(Case.Index / EsConfig.DefaultType).doc(cs).refresh(RefreshPolicy.WAIT_UNTIL)
       }.map(toIndexDocResponse(_))
@@ -50,7 +51,10 @@ object CaseService extends CommonService {
     } else {
       EsClient.esClient.execute {
         bulk(
-          css.map(cs => indexInto(Case.Index / EsConfig.DefaultType).doc(cs))
+          css.map(cs => {
+            cs.calcGeneratorCount()
+            indexInto(Case.Index / EsConfig.DefaultType).doc(cs)
+          })
         )
       }.map(toBulkDocResponse(_))
     }
@@ -98,6 +102,7 @@ object CaseService extends CommonService {
     } else {
       val error = CaseValidator.check(cs)
       if (null == error) {
+        cs.calcGeneratorCount()
         EsClient.esClient.execute {
           val (src, params) = cs.toUpdateScriptParams
           update(id).in(Case.Index / EsConfig.DefaultType).script {

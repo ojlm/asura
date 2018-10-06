@@ -101,6 +101,10 @@ object FieldKeys {
   val FIELD_USER = "user"
   val FIELD_TIMESTAMP = "timestamp"
   val FIELD_TARGET_ID = "targetId"
+  val FIELD_GENERATOR = "generator"
+  val FIELD_COUNT = "count"
+  val FIELD_LIST = "list"
+  val FIELD_SCRIPT = "script"
 
   val FIELD_NESTED_REQUEST_URLPATH = "request.urlPath"
   val FIELD_NESTED_REQUEST_METHOD = "request.method"
