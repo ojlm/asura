@@ -25,6 +25,7 @@ case class Case(
                  @deprecated("如果 env 不是自认为使用env")
                  val useEnv: Boolean = false,
                  val labels: Seq[LabelRef] = Nil,
+                 val generator: CaseGenerator = CaseGenerator(),
                  var creator: String = null,
                  var createdAt: String = null,
                ) extends BaseIndex {
@@ -49,7 +50,17 @@ case class Case(
       m += (FieldKeys.FIELD_ASSERT -> assert)
       addScriptUpdateItem(sb, FieldKeys.FIELD_ASSERT)
     }
+    if (null != generator) {
+      m += (FieldKeys.FIELD_GENERATOR -> JacksonSupport.mapper.convertValue(generator, classOf[java.util.Map[String, Any]]))
+      addScriptUpdateItem(sb, FieldKeys.FIELD_GENERATOR)
+    }
     (sb.toString, m.toMap)
+  }
+
+  def calcGeneratorCount(): Unit = {
+    if (null != generator) {
+      generator.count = if (StringUtils.isNotEmpty(generator.script)) generator.list.size + 1 else generator.list.size
+    }
   }
 }
 
@@ -105,6 +116,11 @@ object Case extends IndexSetting {
           )),
         )),
       ObjectField(name = FieldKeys.FIELD_ASSERT, dynamic = Some("false")),
+      ObjectField(name = FieldKeys.FIELD_GENERATOR, fields = Seq(
+        TextField(name = FieldKeys.FIELD_SCRIPT, index = Option("false")),
+        NestedField(name = FieldKeys.FIELD_LIST, dynamic = Some("false")),
+        BasicField(name = FieldKeys.FIELD_COUNT, `type` = "integer"),
+      )),
     )
   )
 }
