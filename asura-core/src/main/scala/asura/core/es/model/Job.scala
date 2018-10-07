@@ -1,5 +1,6 @@
 package asura.core.es.model
 
+import asura.common.util.StringUtils
 import asura.core.es.EsConfig
 import com.sksamuel.elastic4s.mappings._
 
@@ -14,6 +15,7 @@ case class Job(
                 val classAlias: String,
                 val trigger: Seq[JobTrigger],
                 val jobData: JobData,
+                val env: String = StringUtils.EMPTY,
                 var creator: String = null,
                 var createdAt: String = null) extends BaseIndex {
 
@@ -25,6 +27,9 @@ case class Job(
     }
     if (null != jobData) {
       m += (FieldKeys.FIELD_JOB_DATA -> jobData)
+    }
+    if (null != env) {
+      m += (FieldKeys.FIELD_ENV -> env)
     }
     m.toMap
   }
@@ -62,6 +67,7 @@ object Job extends IndexSetting {
         )),
         ObjectField(name = FieldKeys.FIELD_EXT, dynamic = Option("false")),
       )),
+      KeywordField(name = FieldKeys.FIELD_ENV),
     )
   )
 }

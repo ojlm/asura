@@ -200,7 +200,8 @@ object SchedulerManager {
         repeatCount = if (Option(triggerMeta.repeatCount).isDefined) triggerMeta.repeatCount else 0,
         interval = if (Option(triggerMeta.interval).isDefined) triggerMeta.interval else 0
       )),
-      jobData = jobData
+      jobData = jobData,
+      env = StringUtils.notEmptyElse(jobMeta.env, StringUtils.EMPTY),
     )
   }
 

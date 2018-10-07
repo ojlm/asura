@@ -1,5 +1,6 @@
 package asura.core.es.model
 
+import asura.common.util.StringUtils
 import asura.core.es.EsConfig
 import com.sksamuel.elastic4s.mappings._
 
@@ -13,6 +14,7 @@ case class Scenario(
                      @deprecated("use steps, will remove this fields")
                      val cases: Seq[DocRef],
                      val steps: Seq[ScenarioStep],
+                     val env: String = StringUtils.EMPTY,
                      val labels: Seq[LabelRef] = Nil,
                      var creator: String = null,
                      var createdAt: String = null,
@@ -26,6 +28,9 @@ case class Scenario(
     }
     if (null != labels) {
       m += (FieldKeys.FIELD_LABELS -> labels)
+    }
+    if (null != env) {
+      m += (FieldKeys.FIELD_ENV -> env)
     }
     m.toMap
   }
@@ -46,6 +51,7 @@ object Scenario extends IndexSetting {
         KeywordField(name = FieldKeys.FIELD_NAME),
         ObjectField(name = FieldKeys.FIELD_DATA, dynamic = Some("false")),
       )),
+      KeywordField(name = FieldKeys.FIELD_ENV),
     )
   )
 }
