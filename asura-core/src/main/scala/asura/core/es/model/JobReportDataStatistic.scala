@@ -40,8 +40,8 @@ object JobReportDataStatistic {
       } else {
         scenarioKO = scenarioKO + 1
       }
-      scenarioCaseCount = scenarioCaseCount + s.cases.length
-      s.cases.foreach(c => {
+      scenarioCaseCount = scenarioCaseCount + s.steps.length
+      s.steps.foreach(c => {
         if (c.isSuccessful()) {
           scenarioCaseOK = scenarioCaseOK + 1
         } else if (c.isFailed()) {

@@ -92,12 +92,12 @@ object JobReportData {
   /**
     * @param id    scenarioId
     * @param title summary
-    * @param cases CaseReportItem array
+    * @param steps CaseReportItem array
     */
   case class ScenarioReportItem(
                                  var id: String,
                                  var title: String,
-                                 var cases: Seq[CaseReportItem] = Nil
+                                 var steps: Seq[CaseReportItem] = Nil
                                ) extends BasicReportItem
 
 }

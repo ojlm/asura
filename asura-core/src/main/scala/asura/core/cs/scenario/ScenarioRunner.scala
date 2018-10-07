@@ -87,7 +87,7 @@ object ScenarioRunner {
     if (null != log) log(s"scenario(${summary}): fetch ${caseTuples.length} cases.")
     val scenarioReportItem = ScenarioReportItem(scenarioId, summary)
     val caseReportItems = ArrayBuffer[CaseReportItem]()
-    scenarioReportItem.cases = caseReportItems
+    scenarioReportItem.steps = caseReportItems
     // for `foldLeft` type inference
     val nullCaseReportItem: CaseReportItem = null
     // it will be true only in a real scenario

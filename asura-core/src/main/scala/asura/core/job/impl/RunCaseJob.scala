@@ -80,7 +80,7 @@ object RunCaseJob extends JobBase {
         val storeDataHelper = ItemStoreDataHelper(execDesc.reportId, "c", execDesc.reportItemSaveActor, execDesc.jobId)
         ScenarioRunner.test(null, "job cases", cases, log, execDesc.options)(storeDataHelper)
       }).map(scenarioReport => {
-        val reportItems = scenarioReport.cases
+        val reportItems = scenarioReport.steps
         report.data.cases = reportItems
         reportItems.foreach(reportItem => {
           val statis = reportItem.statis
