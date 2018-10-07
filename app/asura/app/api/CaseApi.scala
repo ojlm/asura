@@ -5,12 +5,13 @@ import asura.app.api.BaseApi.OkApiRes
 import asura.app.api.model.TestCase
 import asura.common.model.ApiRes
 import asura.common.util.StringUtils
-import asura.core.cs.CaseRunner
 import asura.core.cs.assertion.Assertions
 import asura.core.cs.model.QueryCase
+import asura.core.cs.{CaseContext, CaseRunner}
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, Case}
 import asura.core.es.service.CaseService
+import asura.core.util.{JacksonSupport, JsonPathUtils}
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 
@@ -59,7 +60,15 @@ class CaseApi @Inject()(implicit system: ActorSystem,
     val cs = testCase.cs
     val user = getProfileId()
     activityActor ! Activity(cs.group, cs.project, user, Activity.TYPE_TEST_CASE, StringUtils.notEmptyElse(testCase.id, StringUtils.EMPTY))
-    CaseRunner.test(testCase.id, cs).toOkResult
+    val options = testCase.options
+    val initCtx = if (null != options && null != options.initCtx) {
+      // make sure use java types, ugly (;
+      JsonPathUtils.parse(JacksonSupport.stringify(options.initCtx)).asInstanceOf[java.util.Map[Any, Any]]
+    } else {
+      null
+    }
+    options.initCtx = initCtx
+    CaseRunner.test(testCase.id, cs, CaseContext(options = options)).toOkResult
   }
 
   def getAllAssertions() = Action {
