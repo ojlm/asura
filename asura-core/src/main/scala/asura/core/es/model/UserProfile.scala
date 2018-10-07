@@ -25,6 +25,9 @@ case class UserProfile(
     if (null != avatar) {
       m += (FieldKeys.FIELD_AVATAR -> avatar)
     }
+    if (null != nickname) {
+      m += (FieldKeys.FIELD_NICKNAME -> nickname)
+    }
     m.toMap
   }
 }
@@ -39,7 +42,7 @@ object UserProfile extends IndexSetting {
     fields = BaseIndex.fieldDefinitions ++ Seq(
       KeywordField(name = FieldKeys.FIELD_USERNAME),
       KeywordField(name = FieldKeys.FIELD_NICKNAME),
-      KeywordField(name = FieldKeys.FIELD_EMAIL, index = Option("false")),
+      KeywordField(name = FieldKeys.FIELD_EMAIL),
       KeywordField(name = FieldKeys.FIELD_AVATAR, index = Option("false"))
     )
   )
