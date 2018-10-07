@@ -2,6 +2,7 @@ package asura.core.job.impl
 
 import asura.common.model.{ApiMsg, BoolErrorRes}
 import asura.common.util.FutureUtils.RichFuture
+import asura.common.util.StringUtils
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.scenario.{ItemStoreDataHelper, ScenarioRunner}
 import asura.core.es.model.{Case, JobData}
@@ -16,6 +17,7 @@ object RunCaseJob extends JobBase {
   override val meta = JobMeta(
     group = "",
     project = "",
+    env = StringUtils.EMPTY,
     summary = "job for running case",
     description = "job for running case~~",
     classAlias = "RunCaseJob"
