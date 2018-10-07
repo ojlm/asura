@@ -81,15 +81,12 @@ object CaseService extends CommonService {
   private def getByIds(ids: Seq[String], filterFields: Boolean = false) = {
     if (null != ids) {
       EsClient.esClient.execute {
-        val clause = search(Case.Index)
+        search(Case.Index)
           .query(idsQuery(ids))
           .from(0)
           .size(ids.length)
           .sortByFieldDesc(FieldKeys.FIELD_CREATED_AT)
-        if (!filterFields) {
-          clause.sourceInclude(queryFields)
-        }
-        clause
+          .sourceInclude(if (filterFields) queryFields else Nil)
       }
     } else {
       ErrorMessages.error_EmptyId.toFutureFail
@@ -159,11 +156,11 @@ object CaseService extends CommonService {
   }
 
   /**
-    * return Map("total" -> total , "list" -> list)
+    * return Map("total" -> total , "list" -> list), used by api action
     */
   def queryCase(query: QueryCase): Future[Map[String, Any]] = {
     if (null != query.ids && query.ids.nonEmpty) {
-      getByIds(query.ids).map(res => {
+      getByIds(query.ids, true).map(res => {
         if (res.isSuccess) {
           val idMap = scala.collection.mutable.HashMap[String, Any]()
           res.result.hits.hits.foreach(hit => {
