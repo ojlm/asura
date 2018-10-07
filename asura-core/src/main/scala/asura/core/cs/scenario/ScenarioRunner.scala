@@ -17,7 +17,7 @@ import scala.concurrent.Future
 
 object ScenarioRunner {
 
-  case class ReportItemEvent(status: String, errMsg: String, result: CaseResult)
+  case class ReportItemEvent(index: Int, status: String, errMsg: String, result: CaseResult)
 
   val logger = Logger("ScenarioRunner")
 
@@ -65,7 +65,7 @@ object ScenarioRunner {
           index = index + 1
           test(scenarioId, scenario.summary, cases, log, options)(dataStoreHelper)
         })
-        Future.sequence(jobReportItemsFutures.toSeq)
+        Future.sequence(jobReportItemsFutures)
       })
     } else {
       Future.successful(Nil)
@@ -102,6 +102,7 @@ object ScenarioRunner {
         currReportItem <- {
           if (null != prevReportItem) { // not the initial value of `foldLeft`
             caseReportItems += prevReportItem
+            caseIndex = caseIndex + 1
           }
           ///////////////////////////////
           // generate case report item //
@@ -111,7 +112,7 @@ object ScenarioRunner {
             val item = CaseReportItem(id, cs.summary, null, Statistic())
             item.status = ReportItemStatus.STATUS_SKIPPED
             if (null != log) log(s"scenario(${summary}): ${cs.summary} ${XtermUtils.yellowWrap(ReportItemStatus.STATUS_SKIPPED)}.")
-            if (null != logResult) logResult(ItemActorEvent(ReportItemEvent(item.status, null, null)))
+            if (null != logResult) logResult(ItemActorEvent(ReportItemEvent(caseIndex, item.status, null, null)))
             Future.successful(item)
           } else {
             // execute next test case
@@ -133,7 +134,6 @@ object ScenarioRunner {
                     assertionsResult = caseResult.result
                   )
                   dataStoreHelper.actorRef ! SaveReportDataItemMessage(itemDataId, dataItem)
-                  caseIndex = caseIndex + 1
                 }
                 val statis = caseResult.statis
                 val item = if (statis.isSuccessful) {
@@ -150,7 +150,7 @@ object ScenarioRunner {
                   // fail because of assertions not pass
                   CaseReportItem.parse(cs.summary, caseResult, itemDataId)
                 }
-                if (null != logResult) logResult(ItemActorEvent(ReportItemEvent(item.status, null, caseResult)))
+                if (null != logResult) logResult(ItemActorEvent(ReportItemEvent(caseIndex, item.status, null, caseResult)))
                 item
               }
               .recover {
@@ -163,7 +163,7 @@ object ScenarioRunner {
                     log(s"scenario(${summary}): ${cs.summary} error : ${errorStack}.")
                   }
                   val item = CaseReportItem.parse(cs.summary, CaseResult.failResult(id), msg = errorStack)
-                  if (null != logResult) logResult(ItemActorEvent(ReportItemEvent(item.status, errorStack, null)))
+                  if (null != logResult) logResult(ItemActorEvent(ReportItemEvent(caseIndex, item.status, errorStack, null)))
                   item
                 }
               }
