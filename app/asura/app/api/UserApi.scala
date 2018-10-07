@@ -84,4 +84,13 @@ class UserApi @Inject()(
       }
     }
   }
+
+  def get() = Action(parse.byteString).async { implicit req =>
+    UserProfileService.getProfileById(getProfileId()).toOkResult
+  }
+
+  def update() = Action(parse.byteString).async { implicit req =>
+    val userProfile = req.bodyAs(classOf[EsUserProfile])
+    UserProfileService.updateProfile(userProfile).toOkResult
+  }
 }
