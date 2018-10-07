@@ -169,7 +169,7 @@ object CaseService extends CommonService {
           res.result.hits.hits.foreach(hit => {
             idMap += (hit.id -> (hit.sourceAsMap + (FieldKeys.FIELD__ID -> hit.id)))
           })
-          Map("total" -> res.result.hits.total, "list" -> query.ids.map(id => idMap(id)))
+          Map("total" -> res.result.hits.total, "list" -> query.ids.filter(idMap.contains(_)).map(idMap(_)))
         } else {
           throw ErrorMessages.error_EsRequestFail(res).toException
         }
