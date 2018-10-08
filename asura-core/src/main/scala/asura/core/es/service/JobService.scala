@@ -112,7 +112,7 @@ object JobService extends CommonService {
     }
   }
 
-  def validate(job: Job): ErrorMessages.Val = {
+  def validate(job: Job): ErrorMessages.ErrorMessage = {
     if (StringUtils.isEmpty(job.summary)) {
       ErrorMessages.error_EmptyJobName
     } else if (StringUtils.isEmpty(job.classAlias)) {

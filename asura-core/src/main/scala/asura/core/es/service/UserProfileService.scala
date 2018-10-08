@@ -48,7 +48,7 @@ object UserProfileService extends CommonService {
     }
   }
 
-  def validate(profile: UserProfile): ErrorMessages.Val = {
+  def validate(profile: UserProfile): ErrorMessages.ErrorMessage = {
     if (StringUtils.isEmpty(profile.username)) {
       ErrorMessages.error_EmptyUsername
     } else {

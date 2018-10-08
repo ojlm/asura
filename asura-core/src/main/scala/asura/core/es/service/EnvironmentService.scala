@@ -3,6 +3,7 @@ package asura.core.es.service
 import asura.common.exceptions.RequestFailException
 import asura.common.util.StringUtils
 import asura.core.ErrorMessages
+import asura.core.auth.AuthManager
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.model.QueryEnv
 import asura.core.es.model.{DeleteDocResponse, Environment, FieldKeys, IndexDocResponse}
@@ -69,7 +70,7 @@ object EnvironmentService extends CommonService {
     }
   }
 
-  def validate(env: Environment): ErrorMessages.Val = {
+  def validate(env: Environment): ErrorMessages.ErrorMessage = {
     if (StringUtils.isEmpty(env.summary)) {
       ErrorMessages.error_EmptySummary
     } else if (StringUtils.isEmpty(env.group)) {
@@ -78,7 +79,7 @@ object EnvironmentService extends CommonService {
       ErrorMessages.error_EmptyProject
     } else {
       val custom = env.custom
-      if (null != custom && custom.nonEmpty) {
+      val error = if (null != custom && custom.nonEmpty) {
         if (custom.forall(kv => StringUtils.isNotEmpty(kv.key) && StringUtils.isNotEmpty(kv.value))) {
           null
         } else {
@@ -87,6 +88,37 @@ object EnvironmentService extends CommonService {
       } else {
         null
       }
+      if (null == error) {
+        validateEnvAuth(env)
+      } else {
+        error
+      }
+    }
+  }
+
+  private def validateEnvAuth(env: Environment): ErrorMessages.ErrorMessage = {
+    if (null != env.auth && env.auth.nonEmpty) {
+      val errMsgs = ArrayBuffer[String]()
+      val ret = env.auth.forall(auth => {
+        val validateOpt = AuthManager(auth.`type`)
+        if (validateOpt.nonEmpty) {
+          val (isOk, errMsg) = validateOpt.get.validate(auth)
+          if (!isOk) {
+            errMsgs += errMsg
+          }
+          isOk
+        } else {
+          errMsgs += s"no ${auth.`type`} registered."
+          false
+        }
+      })
+      if (!ret) {
+        ErrorMessages.error_Msgs(errMsgs)
+      } else {
+        null
+      }
+    } else {
+      null
     }
   }
 

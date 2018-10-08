@@ -100,7 +100,7 @@ object ScenarioService extends CommonService {
     }
   }
 
-  def check(s: Scenario): ErrorMessages.Val = {
+  def check(s: Scenario): ErrorMessages.ErrorMessage = {
     if (null == s) {
       ErrorMessages.error_EmptyScenario
     } else if (StringUtils.isEmpty(s.summary)) {

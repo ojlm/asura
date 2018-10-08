@@ -6,7 +6,7 @@ import asura.core.es.model.JobData
 
 object JobUtils {
 
-  def validateJobAndTrigger(jobMeta: JobMeta, triggerMeta: TriggerMeta, jobData: JobData): ErrorMessages.Val = {
+  def validateJobAndTrigger(jobMeta: JobMeta, triggerMeta: TriggerMeta, jobData: JobData): ErrorMessages.ErrorMessage = {
     if (null == jobMeta || null == triggerMeta || null == jobData) {
       ErrorMessages.error_EmptyRequestBody
     } else if ((null == jobData.cs && null == jobData.scenario) ||

@@ -15,7 +15,7 @@ case class JobMeta(
                     classAlias: String // the field can be null, use method instead
                   ) {
 
-  def toJobDetail(docId: String): (ErrorMessages.Val, JobDetail) = {
+  def toJobDetail(docId: String): (ErrorMessages.ErrorMessage, JobDetail) = {
     val clazz = JobCenter.supportedJobClasses.get(getJobAlias())
     if (clazz.isEmpty) {
       (ErrorMessages.error_NoJobDefined(getJobAlias()), null)
