@@ -23,3 +23,4 @@ error_EmptySummary=summary can not be empty
 error_NullKeyOrValue=key or value can not be null
 error_EmptyId=id can not be empty
 error_EmptyUsername=username can not be empty
+error_Msgs={0}

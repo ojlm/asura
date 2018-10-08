@@ -2,7 +2,9 @@ package asura.app.hook
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
+import asura.app.api.auth.BasicAuth
 import asura.core.CoreConfig
+import asura.core.auth.AuthManager
 import asura.core.es.EsClient
 import asura.core.job.JobCenter
 import asura.core.job.actor.SchedulerActor
@@ -56,6 +58,9 @@ class ApplicationStart @Inject()(
     dispatcher = system.dispatcher,
     materializer = materializer
   )
+
+  // add auth
+  AuthManager.register(BasicAuth)
 
   // add stop hook
   lifecycle.addStopHook { () =>

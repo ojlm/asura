@@ -10,6 +10,7 @@ trait AuthorizeAndValidate {
 
   val `type`: String
   val description: String
+  val template: String = "{}"
 
   def authorize(request: HttpRequest, auth: Authorization): Future[HttpRequest]
 
