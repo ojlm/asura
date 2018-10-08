@@ -193,7 +193,7 @@ object ApiService extends CommonService {
     }
   }
 
-  def validate(api: RestApi): ErrorMessages.Val = {
+  def validate(api: RestApi): ErrorMessages.ErrorMessage = {
     if (StringUtils.isEmpty(api.path)) {
       ErrorMessages.error_EmptyPath
     } else if (StringUtils.isEmpty(api.method)) {
@@ -207,10 +207,10 @@ object ApiService extends CommonService {
     }
   }
 
-  def validate(apis: Seq[RestApi]): ErrorMessages.Val = {
+  def validate(apis: Seq[RestApi]): ErrorMessages.ErrorMessage = {
     var isOk = true
     val apiSet = mutable.Set[RestApi]()
-    var errMsg: ErrorMessages.Val = null
+    var errMsg: ErrorMessages.ErrorMessage = null
     for (i <- 0 until apis.length if isOk) {
       val api = apis(i)
       if (apiSet.contains(api)) {

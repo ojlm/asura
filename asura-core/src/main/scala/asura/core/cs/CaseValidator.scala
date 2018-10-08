@@ -6,7 +6,7 @@ import asura.core.es.model.Case
 
 object CaseValidator {
 
-  def check(c: Case, ns: String): ErrorMessages.Val = {
+  def check(c: Case, ns: String): ErrorMessages.ErrorMessage = {
     if (!StringUtils.isEmpty(ns)) {
       ErrorMessages.error_EmptyNamespace
     } else {
@@ -14,7 +14,7 @@ object CaseValidator {
     }
   }
 
-  def check(c: Case): ErrorMessages.Val = {
+  def check(c: Case): ErrorMessages.ErrorMessage = {
     if (null == c) {
       ErrorMessages.error_EmptyCase
     } else if (StringUtils.isEmpty(c.summary)) {
@@ -43,8 +43,8 @@ object CaseValidator {
     }
   }
 
-  def check(cs: Seq[Case]): ErrorMessages.Val = {
-    var error: ErrorMessages.Val = null
+  def check(cs: Seq[Case]): ErrorMessages.ErrorMessage = {
+    var error: ErrorMessages.ErrorMessage = null
     var hasError = false
     for (c <- cs if !hasError) {
       error = check(c)
