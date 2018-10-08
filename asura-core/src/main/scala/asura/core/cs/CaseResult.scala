@@ -1,6 +1,7 @@
 package asura.core.cs
 
 import akka.http.scaladsl.model.HttpResponse
+import asura.common.util.StringUtils
 import asura.core.concurrent.ExecutionContextManager.cachedExecutor
 import asura.core.cs.assertion.engine.{AssertionContext, Statistic}
 import asura.core.es.model.JobReportData.CaseReportItemMetrics
@@ -15,7 +16,8 @@ case class CaseResult(
                        var response: CaseResponse,
                        var metrics: CaseReportItemMetrics = null,
                        var statis: Statistic = Statistic(),
-                       var result: java.util.Map[_, _] = java.util.Collections.EMPTY_MAP
+                       var result: java.util.Map[_, _] = java.util.Collections.EMPTY_MAP,
+                       var generator: String = StringUtils.EMPTY, // generator type
                      )
 
 object CaseResult {

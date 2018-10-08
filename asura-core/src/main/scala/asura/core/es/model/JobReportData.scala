@@ -74,6 +74,7 @@ object JobReportData {
                              var title: String,
                              var itemId: String,
                              var statis: Statistic,
+                             var generator: String = StringUtils.EMPTY, // specify generator type
                            ) extends BasicReportItem
 
   object CaseReportItem {
@@ -85,6 +86,7 @@ object JobReportData {
       } else {
         item.status = if (result.statis.isSuccessful) ReportItemStatus.STATUS_PASS else ReportItemStatus.STATUS_FAIL
       }
+      if (StringUtils.isNotEmpty(result.generator)) item.generator = result.generator
       item
     }
   }
