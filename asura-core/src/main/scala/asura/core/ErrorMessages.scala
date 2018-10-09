@@ -29,12 +29,15 @@ object ErrorMessages {
   val error_EmptyScenario = ErrorMessage("Empty scenario")("error_EmptyScenario")
   val error_EmptyJobName = ErrorMessage("Empty job name")("error_EmptyJobName")
   val error_EmptyJobType = ErrorMessage("Empty job type")("error_EmptyJobType")
+  val error_EmptyJobId = ErrorMessage("Empty job id")("error_EmptyJobId")
   val error_EmptyScheduler = ErrorMessage("Empty scheduler")("error_EmptyScheduler")
   val error_InvalidToken = ErrorMessage("Invalid token")("error_InvalidToken")
   val error_EmptyJobCaseScenarioCount = ErrorMessage("Empty case and scenario count in job")("error_EmptyJobCaseScenarioCount")
   val error_NullKeyOrValue = ErrorMessage("Null key or value")("error_NullKeyOrValue")
   val error_UnknownMessageType = ErrorMessage("Unknown message type")("error_UnknownMessageType")
   val error_EmptyUsername = ErrorMessage("Empty username")("error_EmptyUsername")
+  val error_EmptySubscriber = ErrorMessage("Empty subscriber")("error_EmptySubscriber")
+  val error_EmptyNotifyType = ErrorMessage("Empty notify type")("error_EmptyNotifyType")
 
   def error_EsRequestFail(response: Response[_]) = ErrorMessage(response.error.reason)("error_EsRequestFail")
 

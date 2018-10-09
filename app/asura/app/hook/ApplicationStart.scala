@@ -3,11 +3,13 @@ package asura.app.hook
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import asura.app.api.auth.BasicAuth
+import asura.app.notify.MailNotifier
 import asura.core.CoreConfig
 import asura.core.auth.AuthManager
 import asura.core.es.EsClient
 import asura.core.job.JobCenter
 import asura.core.job.actor.SchedulerActor
+import asura.core.notify.JobNotifyManager
 import asura.namerd.NamerdConfig
 import javax.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
@@ -61,6 +63,9 @@ class ApplicationStart @Inject()(
 
   // add auth
   AuthManager.register(BasicAuth)
+
+  // add notify
+  JobNotifyManager.register(MailNotifier(mailerClient))
 
   // add stop hook
   lifecycle.addStopHook { () =>

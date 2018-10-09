@@ -6,34 +6,43 @@ import com.sksamuel.elastic4s.mappings._
 
 import scala.collection.mutable
 
-case class ReportNotify(
-                         val summary: String = null,
-                         val description: String = null,
-                         val group: String,
-                         val project: String,
-                         val jobId: String,
-                         val subscriber: String,
-                         val `type`: String,
-                         val data: Map[String, Any] = null,
-                         val trigger: String = ReportNotify.TRIGGER_ALL,
-                         val enabled: Boolean = true,
-                         var creator: String = null,
-                         var createdAt: String = null,
-                       ) extends BaseIndex {
+case class JobNotify(
+                      val summary: String = null,
+                      val description: String = null,
+                      val group: String,
+                      val project: String,
+                      val jobId: String,
+                      val subscriber: String,
+                      val `type`: String,
+                      val data: Map[String, Any] = Map.empty,
+                      var trigger: String = JobNotify.TRIGGER_ALL,
+                      var enabled: Boolean = true,
+                      var creator: String = null,
+                      var createdAt: String = null,
+                    ) extends BaseIndex {
 
   override def toUpdateMap: Map[String, Any] = {
     val m = mutable.Map[String, Any]()
+    if (null != `type`) {
+      m += (FieldKeys.FIELD_TYPE -> `type`)
+    }
+    if (null != subscriber) {
+      m += (FieldKeys.FIELD_SUBSCRIBER -> subscriber)
+    }
     if (Option(enabled).isDefined) {
       m += (FieldKeys.FIELD_ENABLED -> enabled)
     }
     if (StringUtils.isNotEmpty(trigger)) {
       m += (FieldKeys.FIELD_TRIGGER -> trigger)
     }
+    if (null != data) {
+      m += (FieldKeys.FIELD_DATA -> data)
+    }
     m.toMap
   }
 }
 
-object ReportNotify extends IndexSetting {
+object JobNotify extends IndexSetting {
 
   val TRIGGER_ALL = "all"
   val TRIGGER_FAIL = "fail"

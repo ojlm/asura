@@ -24,3 +24,6 @@ error_NullKeyOrValue=key or value can not be null
 error_EmptyId=id can not be empty
 error_EmptyUsername=username can not be empty
 error_Msgs={0}
+error_EmptyJobId=empty job id
+error_EmptySubscriber=empty subscriber account
+error_EmptyNotifyType=empty notify type

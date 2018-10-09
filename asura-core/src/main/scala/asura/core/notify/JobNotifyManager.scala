@@ -1,6 +1,6 @@
 package asura.core.notify
 
-import scala.collection.JavaConverters.collectionAsScalaIterable
+import scala.collection.mutable.ArrayBuffer
 
 object JobNotifyManager {
 
@@ -14,5 +14,12 @@ object JobNotifyManager {
     Option(manager.get(`type`))
   }
 
-  def all(): Iterable[JobNotifyFunction] = collectionAsScalaIterable[JobNotifyFunction](manager.values())
+  def all(): Seq[JobNotifyItem] = {
+    val notifiers = ArrayBuffer[JobNotifyItem]()
+    manager.values().stream().forEach(func => notifiers += JobNotifyItem(func.`type`, func.description))
+    notifiers
+  }
+
+  case class JobNotifyItem(`type`: String, description: String)
+
 }
