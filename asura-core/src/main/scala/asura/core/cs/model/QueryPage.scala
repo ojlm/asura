@@ -2,8 +2,8 @@ package asura.core.cs.model
 
 trait QueryPage {
 
-  val from = 0
-  val size = 10
+  var from = 0
+  var size = 10
 
   def pageFrom = {
     if (Option(from).isDefined && from >= 0) {

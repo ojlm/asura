@@ -3,7 +3,7 @@ package asura.core.job
 import asura.common.util.FutureUtils.RichFuture
 import asura.common.util.LogUtils
 import asura.core.es.model.{BaseIndex, JobReport}
-import asura.core.es.service.{JobReportService, JobService, ReportNotifyService}
+import asura.core.es.service.{JobReportService, JobService, JobNotifyService}
 import asura.core.job.actor.{JobFinished, JobRunning, SchedulerActor}
 import com.typesafe.scalalogging.Logger
 import org.quartz.{Job, JobExecutionContext}
@@ -47,7 +47,7 @@ abstract class AbstractJob extends Job {
     SchedulerActor.statusMonitor ! JobFinished(job.scheduler, job.group, job.summary, execDesc.report)
     try {
       JobReportService.indexReport(execDesc.reportId, report).await
-      ReportNotifyService.notifySubscribers(execDesc, execDesc.reportId).await
+      JobNotifyService.notifySubscribers(execDesc).await
     } catch {
       case t: Throwable =>
         logger.warn(LogUtils.stackTraceToString(t))

@@ -34,7 +34,7 @@ object EsClient {
     var isAllOk = true
     val indices: Seq[IndexSetting] = Seq(
       Case, RestApi, Job, Project, Environment,
-      Group, JobReport, ReportNotify, Scenario, UserProfile,
+      Group, JobReport, JobNotify, Scenario, UserProfile,
       Activity,
     )
     for (index <- indices if isAllOk) {

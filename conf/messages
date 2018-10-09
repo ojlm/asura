@@ -24,3 +24,6 @@ error_NullKeyOrValue=键和值不能为空
 error_EmptyId=ID不能为空
 error_EmptyUsername=用户名不能为空
 error_Msgs={0}
+error_EmptyJobId=任务ID不能空
+error_EmptySubscriber=订阅账户不能为空
+error_EmptyNotifyType=通知类型不能为空
