@@ -1,5 +1,6 @@
 package asura.core.es.model
 
+import asura.common.util.StringUtils
 import asura.core.cs.{CaseRequest, CaseResponse}
 import asura.core.es.EsConfig
 import asura.core.es.model.JobReportData.CaseReportItemMetrics
@@ -14,7 +15,8 @@ case class JobReportDataItem(
                               val request: CaseRequest,
                               val response: CaseResponse,
                               var assertions: Map[String, Any],
-                              var assertionsResult: java.util.Map[_, _]
+                              var assertionsResult: java.util.Map[_, _],
+                              var generator: String = StringUtils.EMPTY, // specify generator type
                             ) {
 
 }
@@ -35,6 +37,7 @@ object JobReportDataItem extends IndexSetting {
       ObjectField(name = FieldKeys.FIELD_RESPONSE, dynamic = Some("false")),
       ObjectField(name = FieldKeys.FIELD_ASSERTIONS, dynamic = Some("false")),
       ObjectField(name = FieldKeys.FIELD_ASSERTIONS_RESULT, dynamic = Some("false")),
+      KeywordField(name = FieldKeys.FIELD_GENERATOR),
     )
   )
 }

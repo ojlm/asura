@@ -131,7 +131,8 @@ object ScenarioRunner {
                     request = caseResult.request,
                     response = caseResult.response,
                     assertions = caseResult.assert,
-                    assertionsResult = caseResult.result
+                    assertionsResult = caseResult.result,
+                    generator = StringUtils.notEmptyElse(caseResult.generator, StringUtils.EMPTY)
                   )
                   dataStoreHelper.actorRef ! SaveReportDataItemMessage(itemDataId, dataItem)
                 }
