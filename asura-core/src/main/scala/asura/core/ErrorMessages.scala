@@ -61,6 +61,8 @@ object ErrorMessages {
 
   def error_Msgs(msgs: Seq[String]) = ErrorMessage(msgs.mkString(","))("error_Msgs")
 
+  def error_IllegalCharacter(msg: String) = ErrorMessage(msg)("error_IllegalCharacter")
+
   case class ErrorMessage(val errMsg: String, val t: Throwable = null)(_name: String) {
 
     def toException: ErrorMessageException = {

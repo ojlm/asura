@@ -1,2 +1,2 @@
-GET        /dtabs/http        asura.app.api.LinkerdApi.getHttp()
-PUT        /dtabs/http        asura.app.api.LinkerdApi.putHttp()
+GET        /v1/dtabs/http/:group/:project        asura.app.api.LinkerdApi.getHttp(group, project)
+PUT        /v1/dtabs/http/:group/:project        asura.app.api.LinkerdApi.putHttp(group, project)
