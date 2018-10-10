@@ -44,7 +44,7 @@ object HeaderUtils {
       val ns = env.namespace
       if (StringUtils.isNotEmpty(ns)) {
         val dst = StringBuilder.newBuilder
-        dst.append("/").append(cs.namespace).append("/").append(cs.group).append("/").append(cs.project)
+        dst.append("/").append(cs.group).append("/").append(cs.project).append("/").append(ns)
         headers += RawHeader(CoreConfig.proxyIdentifier, dst.toString)
       } else {
         ErrorMessages.error_EmptyNamespace.toFutureFail
