@@ -3,11 +3,11 @@ package asura.core.job
 import java.util.Properties
 import java.util.concurrent.ConcurrentHashMap
 
-import asura.common.util.{DateUtils, StringUtils}
+import asura.common.util.{DateUtils, LogUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.cachedExecutor
-import asura.core.es.model.{IndexDocResponse, Job, JobData, JobTrigger}
-import asura.core.es.service.JobService
+import asura.core.es.model._
+import asura.core.es.service.{JobNotifyService, JobService}
 import asura.core.job.actor.{JobActionValidator, _}
 import com.typesafe.scalalogging.Logger
 import org.quartz.impl.StdSchedulerFactory
@@ -46,7 +46,7 @@ object SchedulerManager {
     Option(schedulers.get(name))
   }
 
-  def scheduleJob(jobMeta: JobMeta, triggerMeta: TriggerMeta, jobData: JobData, creator: String): Future[IndexDocResponse] = {
+  def scheduleJob(jobMeta: JobMeta, triggerMeta: TriggerMeta, jobData: JobData, notifies: Seq[JobNotify], creator: String): Future[IndexDocResponse] = {
     val schedulerOpt = getScheduler(jobMeta.getScheduler())
     if (schedulerOpt.nonEmpty) {
       val scheduler = schedulerOpt.get
@@ -73,6 +73,20 @@ object SchedulerManager {
         } else {
           throw error.toException
         }
+      }).flatMap(indexDocRes => {
+        if (null != notifies) {
+          notifies.foreach(n => {
+            n.fillCommonFields(creator)
+            n.jobId = indexDocRes.id
+          })
+        }
+        JobNotifyService.index(notifies)
+          .map(_ => indexDocRes)
+          .recover {
+            case t: Throwable =>
+              logger.error(LogUtils.stackTraceToString(t))
+              indexDocRes
+          }
       })
     } else {
       ErrorMessages.error_NoSchedulerDefined(jobMeta.getScheduler()).toFutureFail

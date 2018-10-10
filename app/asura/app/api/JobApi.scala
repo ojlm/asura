@@ -7,10 +7,11 @@ import asura.app.AppErrorMessages
 import asura.app.api.BaseApi.OkApiRes
 import asura.common.model.{ApiRes, ApiResError}
 import asura.common.util.StringUtils
+import asura.core.ErrorMessages.ErrorMessage
 import asura.core.cs.model.{QueryJob, QueryJobReport}
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.Activity
-import asura.core.es.service.{JobReportDataService, JobReportService, JobService}
+import asura.core.es.service.{JobNotifyService, JobReportDataService, JobReportService, JobService}
 import asura.core.job.actor._
 import asura.core.job.{JobCenter, JobUtils, SchedulerManager}
 import javax.inject.{Inject, Singleton}
@@ -44,15 +45,26 @@ class JobApi @Inject()(
     val jobMeta = job.jobMeta
     val jobData = job.jobData
     val triggerMeta = job.triggerMeta
-    val error = JobUtils.validateJobAndTrigger(jobMeta, triggerMeta, jobData)
-    if (null == error) {
-      val user = getProfileId()
-      SchedulerManager.scheduleJob(jobMeta, triggerMeta, jobData, user).map(res => {
-        activityActor ! Activity(jobMeta.group, jobMeta.project, user, Activity.TYPE_NEW_JOB, res.id)
-        toActionResultFromAny(res)
-      })
+    val notifies = job.notifies
+    var notifyError: ErrorMessage = null
+    if (null != notifies) {
+      for (i <- 0 until notifies.length if null == notifyError) {
+        notifyError = JobNotifyService.validate(notifies(i), false)
+      }
+    }
+    if (null == notifyError) {
+      val error = JobUtils.validateJobAndTrigger(jobMeta, triggerMeta, jobData)
+      if (null == error) {
+        val user = getProfileId()
+        SchedulerManager.scheduleJob(jobMeta, triggerMeta, jobData, notifies, user).map(res => {
+          activityActor ! Activity(jobMeta.group, jobMeta.project, user, Activity.TYPE_NEW_JOB, res.id)
+          toActionResultFromAny(res)
+        })
+      } else {
+        Future.successful(OkApiRes(ApiResError(getI18nMessage(error.name, error.errMsg))))
+      }
     } else {
-      Future.successful(OkApiRes(ApiResError(getI18nMessage(error.name, error.errMsg))))
+      Future.successful(OkApiRes(ApiResError(getI18nMessage(notifyError.name, notifyError.errMsg))))
     }
   }
 

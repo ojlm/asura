@@ -7,6 +7,5 @@ case class QueryJobNotify(
                            subscriber: String = null,
                            `type`: String = null,
                            trigger: String = null,
-                           enabled: Boolean = true,
                          ) extends QueryPage
 
