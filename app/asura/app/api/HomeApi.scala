@@ -2,7 +2,6 @@ package asura.app.api
 
 import asura.app.api.BaseApi.OkApiRes
 import asura.common.model.ApiRes
-import asura.common.util.StringUtils
 import asura.core.cs.model.QueryHome
 import asura.core.es.model._
 import asura.core.es.service.HomeService
@@ -33,8 +32,10 @@ class HomeApi @Inject()(implicit exec: ExecutionContext, val controllerComponent
       case Project.Index => "project"
       case RestApi.Index => "rest"
       case Case.Index => "case"
+      case Environment.Index => "env"
+      case Scenario.Index => "scenario"
       case Job.Index => "job"
-      case _ => StringUtils.EMPTY
+      case _ => index
     }
   }
 }
