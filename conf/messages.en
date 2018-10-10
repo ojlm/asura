@@ -27,3 +27,4 @@ error_Msgs={0}
 error_EmptyJobId=empty job id
 error_EmptySubscriber=empty subscriber account
 error_EmptyNotifyType=empty notify type
+error_IllegalCharacter=Illegal characters: {0}
