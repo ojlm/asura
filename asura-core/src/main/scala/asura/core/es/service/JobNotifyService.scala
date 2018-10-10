@@ -36,14 +36,14 @@ object JobNotifyService extends CommonService {
   def index(notifies: Seq[JobNotify]): Future[BulkDocResponse] = {
     var errorMsg: ErrorMessages.ErrorMessage = null
     val ret = notifies.forall(item => {
-      errorMsg = validate(item)
+      errorMsg = validate(item, false)
       errorMsg == null
     })
     if (ret) {
       EsClient.esClient.execute {
         bulk {
           notifies.map(notify => indexInto(JobNotify.Index / EsConfig.DefaultType).doc(notify))
-        }
+        }.waitForRefresh()
       }.map(toBulkDocResponse(_))
     } else {
       errorMsg.toFutureFail
@@ -79,11 +79,6 @@ object JobNotifyService extends CommonService {
     if (StringUtils.isNotEmpty(query.subscriber)) esQueries += wildcardQuery(FieldKeys.FIELD_SUBSCRIBER, query.subscriber + "*")
     if (StringUtils.isNotEmpty(query.`type`)) esQueries += termQuery(FieldKeys.FIELD_TYPE, query.`type`)
     if (StringUtils.isNotEmpty(query.trigger)) esQueries += termQuery(FieldKeys.FIELD_TRIGGER, query.trigger)
-    if (Option(query.enabled).isDefined) {
-      esQueries += termQuery(FieldKeys.FIELD_ENABLED, query.enabled)
-    } else {
-      esQueries += termQuery(FieldKeys.FIELD_ENABLED, true)
-    }
     EsClient.esClient.execute {
       search(JobNotify.Index)
         .query(boolQuery().must(esQueries))
@@ -142,14 +137,14 @@ object JobNotifyService extends CommonService {
     })
   }
 
-  def validate(notify: JobNotify): ErrorMessages.ErrorMessage = {
+  def validate(notify: JobNotify, checkJobId: Boolean = true): ErrorMessages.ErrorMessage = {
     if (StringUtils.isEmpty(notify.trigger)) {
       notify.trigger = JobNotify.TRIGGER_ALL
     }
     if (Option(notify.enabled).isEmpty) {
       notify.enabled = true
     }
-    if (StringUtils.isEmpty(notify.jobId)) {
+    if (checkJobId && StringUtils.isEmpty(notify.jobId)) {
       ErrorMessages.error_EmptyJobId
     } else if (StringUtils.isEmpty(notify.group)) {
       ErrorMessages.error_EmptyGroup

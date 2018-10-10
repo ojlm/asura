@@ -11,7 +11,7 @@ case class JobNotify(
                       val description: String = null,
                       val group: String,
                       val project: String,
-                      val jobId: String,
+                      var jobId: String,
                       val subscriber: String,
                       val `type`: String,
                       val data: Map[String, Any] = Map.empty,
