@@ -38,6 +38,7 @@ object ErrorMessages {
   val error_EmptyUsername = ErrorMessage("Empty username")("error_EmptyUsername")
   val error_EmptySubscriber = ErrorMessage("Empty subscriber")("error_EmptySubscriber")
   val error_EmptyNotifyType = ErrorMessage("Empty notify type")("error_EmptyNotifyType")
+  val error_proxyDisabled = ErrorMessage("Proxy is disabled")("error_proxyDisabled")
 
   def error_EsRequestFail(response: Response[_]) = ErrorMessage(response.error.reason)("error_EsRequestFail")
 
