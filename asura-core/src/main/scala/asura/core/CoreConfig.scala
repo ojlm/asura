@@ -41,7 +41,6 @@ object CoreConfig {
     dispatcher = config.dispatcher
     materializer = config.materializer
     // RedisClient.init(config.redisServers)
-    EsClient.init(config.useLocalEsNode, config.esUrl, config.localEsDataDir)
     CoreConfig.proxyHost = config.proxyHost
     CoreConfig.httpProxyPort = config.httpProxyPort
     CoreConfig.httpsProxyPort = config.httpsProxyPort
@@ -51,5 +50,6 @@ object CoreConfig {
     if (config.esIndexPrefix.nonEmpty) {
       EsConfig.IndexPrefix = config.esIndexPrefix.get
     }
+    EsClient.init(config.useLocalEsNode, config.esUrl, config.localEsDataDir)
   }
 }
