@@ -30,7 +30,7 @@ class HomeApi @Inject()(implicit exec: ExecutionContext, val controllerComponent
     index match {
       case Group.Index => "group"
       case Project.Index => "project"
-      case RestApi.Index => "rest"
+      case RestApi.Index => "api"
       case Case.Index => "case"
       case Environment.Index => "env"
       case Scenario.Index => "scenario"
