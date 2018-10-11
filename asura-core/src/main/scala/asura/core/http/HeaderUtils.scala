@@ -41,13 +41,17 @@ object HeaderUtils {
       }
     }
     if (null != env && env.enableProxy) {
-      val ns = env.namespace
-      if (StringUtils.isNotEmpty(ns)) {
-        val dst = StringBuilder.newBuilder
-        dst.append("/").append(cs.group).append("/").append(cs.project).append("/").append(ns)
-        headers += RawHeader(CoreConfig.proxyIdentifier, dst.toString)
+      if (CoreConfig.enableProxy) {
+        val ns = env.namespace
+        if (StringUtils.isNotEmpty(ns)) {
+          val dst = StringBuilder.newBuilder
+          dst.append("/").append(cs.group).append("/").append(cs.project).append("/").append(ns)
+          headers += RawHeader(CoreConfig.proxyIdentifier, dst.toString)
+        } else {
+          ErrorMessages.error_EmptyNamespace.toFutureFail
+        }
       } else {
-        ErrorMessages.error_EmptyNamespace.toFutureFail
+        ErrorMessages.error_proxyDisabled.toFutureFail
       }
     }
     headers.toList

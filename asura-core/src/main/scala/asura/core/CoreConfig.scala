@@ -17,7 +17,7 @@ case class CoreConfig(
                        val proxyIdentifier: String,
                        val useLocalEsNode: Boolean = true,
                        val localEsDataDir: String = StringUtils.EMPTY,
-                       val enableLinkerd: Boolean = false,
+                       val enableProxy: Boolean = false,
                        val proxyHost: String = StringUtils.EMPTY, /* for https transparent proxy */
                        val httpProxyPort: Int = 0,
                        val httpsProxyPort: Int = 0,
@@ -34,6 +34,7 @@ object CoreConfig {
   var httpsProxyPort: Int = 0
   var proxyIdentifier: String = _
   var reportBaseUrl: String = StringUtils.EMPTY
+  var enableProxy = false
 
   def init(config: CoreConfig): Unit = {
     system = config.system
@@ -46,6 +47,7 @@ object CoreConfig {
     CoreConfig.httpsProxyPort = config.httpsProxyPort
     CoreConfig.proxyIdentifier = config.proxyIdentifier
     CoreConfig.reportBaseUrl = config.reportBaseUrl
+    CoreConfig.enableProxy = config.enableProxy
     if (config.esIndexPrefix.nonEmpty) {
       EsConfig.IndexPrefix = config.esIndexPrefix.get
     }
