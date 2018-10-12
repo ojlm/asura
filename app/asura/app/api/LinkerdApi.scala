@@ -6,6 +6,7 @@ import asura.app.api.model.Dtabs.DtabItem
 import asura.common.model.{ApiRes, ApiResError}
 import asura.core.ErrorMessages
 import asura.core.ErrorMessages.ErrorMessage
+import asura.core.http.HttpEngine
 import asura.namerd.DtabEntry
 import asura.namerd.api.v1.NamerdV1Api
 import javax.inject.{Inject, Singleton}
@@ -20,18 +21,17 @@ import scala.concurrent.{ExecutionContext, Future}
   */
 @Singleton
 class LinkerdApi @Inject()(
-                            implicit exec: ExecutionContext,
+                            implicit val exec: ExecutionContext,
                             val controllerComponents: SecurityComponents,
-                            config: Configuration
+                            config: Configuration,
                           ) extends BaseApi {
 
   val srcPrefix = "/svc/"
   val dstPrefix = "/$/inet/"
-  implicit val httpEngine = asura.core.http.HttpEngine.http
 
   def getHttp(group: String, project: String) = Action.async { implicit req =>
     if (config.getOptional[Boolean]("asura.linkerd.enabled").getOrElse(false)) {
-      NamerdV1Api.getNamespaceDtabs(config.get[String]("asura.linkerd.httpNs")).map(dtabs => {
+      NamerdV1Api.getNamespaceDtabs(config.get[String]("asura.linkerd.httpNs"))(HttpEngine.http).map(dtabs => {
         val items = ArrayBuffer[DtabItem]()
         dtabs.foreach(entry => {
           val pStrs = entry.prefix.split("/")
@@ -69,7 +69,7 @@ class LinkerdApi @Inject()(
           )
         }
         if (null == error) {
-          NamerdV1Api.updateNamespaceDtabs(config.get[String]("asura.linkerd.httpNs"), entries).toOkResult
+          NamerdV1Api.updateNamespaceDtabs(config.get[String]("asura.linkerd.httpNs"), entries)(HttpEngine.http).toOkResult
         } else {
           error.toFutureFail
         }
