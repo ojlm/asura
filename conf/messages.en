@@ -29,3 +29,4 @@ error_EmptySubscriber=empty subscriber account
 error_EmptyNotifyType=empty notify type
 error_IllegalCharacter=Illegal characters: {0}
 error_proxyDisabled=Proxy is not enabled
+error_NotAllowedContactAdministrator=Not allowed，call: {0}

@@ -35,7 +35,7 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
     } else {
       new DirectFormClient(new SimpleTestUsernamePasswordAuthenticator(configuration))
     }
-    client.addAuthorizationGenerator(new RoleAdminAuthGenerator(configuration.get[String]("asura.admin")))
+    // client.addAuthorizationGenerator(new RoleAdminAuthGenerator(configuration.get[Seq[String]]("asura.admin")))
     client
   }
 
@@ -46,7 +46,7 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
     } else {
       new DirectBasicAuthClient(new SimpleTestUsernamePasswordAuthenticator(configuration))
     }
-    client.addAuthorizationGenerator(new RoleAdminAuthGenerator(configuration.get[String]("asura.admin")))
+    // client.addAuthorizationGenerator(new RoleAdminAuthGenerator(configuration.get[Seq[String]]("asura.admin")))
     client
   }
 
@@ -55,7 +55,7 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
     val jwtAuthenticator = new JwtAuthenticator()
     jwtAuthenticator.addSignatureConfiguration(new SecretSignatureConfiguration(configuration.get[String]("asura.jwt.secret")))
     val client = new HeaderClient("Authorization", "Bearer ", jwtAuthenticator)
-    client.addAuthorizationGenerator(new RoleAdminAuthGenerator(configuration.get[String]("asura.admin")))
+    // client.addAuthorizationGenerator(new RoleAdminAuthGenerator(configuration.get[Seq[String]]("asura.admin")))
     client
   }
 
@@ -64,7 +64,7 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
     val clients = new Clients(directFormClient, headerClient, directBasicAuthClient)
     val config = new Config(clients)
     config.setHttpActionAdapter(new SecurityHttpActionAdapter())
-    config.addAuthorizer(Authorizer.ADMIN, new RequireAnyRoleAuthorizer(Role.ADMIN))
+    // config.addAuthorizer(Authorizer.ADMIN, new RequireAnyRoleAuthorizer(Role.ADMIN))
     config
   }
 }
