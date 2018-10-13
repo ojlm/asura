@@ -1,0 +1,16 @@
+language: scala
+jdk:
+  - oraclejdk8
+sbt_args: -Xmx2048M
+script:
+  - sbt stage
+  - find $HOME/.sbt -name "*.lock" | xargs rm
+  - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm
+
+sudo: false
+
+# Cache settings
+cache:
+  directories:
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt/launchers
