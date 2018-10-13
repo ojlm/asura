@@ -6,6 +6,7 @@ import asura.common.actor._
 import asura.common.util.LogUtils
 import asura.core.ErrorMessages
 import asura.core.actor.messages.SenderMessage
+import asura.core.cs.ContextOptions
 import asura.core.cs.scenario.ScenarioRunner
 import asura.core.es.model.JobReportData.ScenarioReportItem
 import asura.core.es.model.{Case, ScenarioStep}
@@ -25,7 +26,7 @@ class ScenarioTestActor(user: String, out: ActorRef) extends BaseActor {
   }
 
   def handleRequest(wsActor: ActorRef): Receive = {
-    case ScenarioTestMessage(summary, steps) =>
+    case ScenarioTestMessage(summary, steps, options) =>
       val caseIds = steps.filter(ScenarioStep.TYPE_CASE == _.`type`).map(_.id)
       if (null != steps && steps.nonEmpty) {
         CaseService.getCasesByIdsAsMap(caseIds).map(caseIdMap => {
@@ -38,7 +39,7 @@ class ScenarioTestActor(user: String, out: ActorRef) extends BaseActor {
           })
           ScenarioRunner.test("ScenarioTestActor", summary, cases, logMsg => {
             wsActor ! NotifyActorEvent(logMsg)
-          }, null, logEvent => {
+          }, options, logEvent => {
             wsActor ! logEvent
           }).pipeTo(self)
         })
@@ -70,6 +71,6 @@ object ScenarioTestActor {
 
   def props(user: String, out: ActorRef = null) = Props(new ScenarioTestActor(user, out))
 
-  case class ScenarioTestMessage(summary: String, steps: Seq[ScenarioStep])
+  case class ScenarioTestMessage(summary: String, steps: Seq[ScenarioStep], options: ContextOptions)
 
 }

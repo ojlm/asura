@@ -6,6 +6,7 @@ import asura.common.actor._
 import asura.common.util.{LogUtils, XtermUtils}
 import asura.core.CoreConfig
 import asura.core.actor.messages.SenderMessage
+import asura.core.cs.ContextOptions
 import asura.core.es.model.{JobData, JobReport}
 import asura.core.es.service.JobReportService
 import asura.core.job.actor.JobTestActor.JobTestMessage
@@ -31,7 +32,7 @@ class JobTestActor(user: String, out: ActorRef) extends BaseActor {
         val job = jobOpt.get
         val (isOk, errMsg) = job.checkJobData(jobData)
         if (isOk) {
-          JobExecDesc.from(jobId, jobMeta, jobData, JobReport.TYPE_TEST, null, user).map(jobExecDesc => {
+          JobExecDesc.from(jobId, jobMeta, jobData, JobReport.TYPE_TEST, ContextOptions(jobEnv = jobMeta.env), user).map(jobExecDesc => {
             job.doTestAsync(jobExecDesc, logMsg => {
               wsActor ! NotifyActorEvent(logMsg)
             }).pipeTo(self)

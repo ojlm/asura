@@ -164,6 +164,7 @@ object ScenarioRunner {
                     log(s"scenario(${summary}): ${cs.summary} error : ${errorStack}.")
                   }
                   val item = CaseReportItem.parse(cs.summary, CaseResult.failResult(id), msg = errorStack)
+                  scenarioReportItem.markFail()
                   if (null != logResult) logResult(ItemActorEvent(ReportItemEvent(caseIndex, item.status, errorStack, null)))
                   item
                 }
