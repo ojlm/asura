@@ -2,8 +2,9 @@ package asura.core.job
 
 import asura.common.util.FutureUtils.RichFuture
 import asura.common.util.LogUtils
+import asura.core.cs.ContextOptions
 import asura.core.es.model.{BaseIndex, JobReport}
-import asura.core.es.service.{JobReportService, JobService, JobNotifyService}
+import asura.core.es.service.{JobNotifyService, JobReportService, JobService}
 import asura.core.job.actor.{JobFinished, JobRunning, SchedulerActor}
 import com.typesafe.scalalogging.Logger
 import org.quartz.{Job, JobExecutionContext}
@@ -33,7 +34,7 @@ abstract class AbstractJob extends Job {
     val jobKey = context.getJobDetail.getKey
     val jobId = jobKey.getName
     val job = JobService.geJobById(jobId).await
-    JobExecDesc.from(jobId, job, JobReport.TYPE_QUARTZ, null, BaseIndex.CREATOR_QUARTZ).await
+    JobExecDesc.from(jobId, job, JobReport.TYPE_QUARTZ, ContextOptions(jobEnv = job.env), BaseIndex.CREATOR_QUARTZ).await
   }
 
   private def afterRun(jobExecDesc: JobExecDesc): Unit = {

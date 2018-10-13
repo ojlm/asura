@@ -48,7 +48,7 @@ object RunCaseJob extends JobBase {
     val scenarios = execDesc.job.jobData.scenario
     if (null != scenarios && !scenarios.isEmpty) {
       val report = execDesc.report
-      ScenarioRunner.testScenarios(scenarios.map(_.id), log)(execDesc.reportId, execDesc.reportItemSaveActor, execDesc.jobId)
+      ScenarioRunner.testScenarios(scenarios.map(_.id), log, execDesc.options)(execDesc.reportId, execDesc.reportItemSaveActor, execDesc.jobId)
         .map(reportItems => {
           report.data.scenarios = reportItems
           reportItems.foreach(item => {

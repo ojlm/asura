@@ -127,7 +127,8 @@ object JobExecDesc {
       scheduler = jobMeta.getScheduler(),
       classAlias = jobMeta.getJobAlias(),
       trigger = Nil,
-      jobData = jobData
+      jobData = jobData,
+      env = StringUtils.notEmptyElse(jobMeta.env, StringUtils.EMPTY),
     )
     val report = JobReport(
       scheduler = jobMeta.getScheduler(),
