@@ -222,7 +222,8 @@ object SchedulerManager {
   private def commonActionValidate(action: JobActionValidator)(func: Scheduler => Future[Boolean]): Future[Boolean] = {
     val error = action.validate()
     if (null == error) {
-      val schedulerOpt = getScheduler(action.scheduler)
+      val scheduler = StringUtils.notEmptyElse(action.scheduler, SchedulerManager.DEFAULT_SCHEDULER)
+      val schedulerOpt = getScheduler(scheduler)
       if (schedulerOpt.nonEmpty) {
         func(schedulerOpt.get)
       } else {

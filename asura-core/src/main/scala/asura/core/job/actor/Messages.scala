@@ -31,9 +31,7 @@ trait JobActionValidator {
   val id: String
 
   def validate(): ErrorMessages.ErrorMessage = {
-    if (StringUtils.isEmpty(scheduler)) {
-      ErrorMessages.error_EmptyScheduler
-    } else if (StringUtils.isEmpty(group)) {
+    if (StringUtils.isEmpty(group)) {
       ErrorMessages.error_EmptyGroup
     } else if (StringUtils.isEmpty(project)) {
       ErrorMessages.error_EmptyProject

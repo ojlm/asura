@@ -30,3 +30,4 @@ error_EmptyNotifyType=通知类型不能为空
 error_IllegalCharacter=非法字符: {0}
 error_proxyDisabled=代理功能未启用
 error_NotAllowedContactAdministrator=您不能执行这个操作，请联系 "{0}" 帮你完成
+error_EmptyScheduler=空的调度器
