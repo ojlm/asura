@@ -43,7 +43,7 @@ case class Case(
       addScriptUpdateItem(sb, FieldKeys.FIELD_REQUEST)
     }
     if (null != labels) {
-      m += (FieldKeys.FIELD_LABELS -> labels)
+      m += (FieldKeys.FIELD_LABELS -> JacksonSupport.mapper.convertValue(labels, classOf[java.util.List[Map[String, Any]]]))
       addScriptUpdateItem(sb, FieldKeys.FIELD_LABELS)
     }
     if (null != assert) {
