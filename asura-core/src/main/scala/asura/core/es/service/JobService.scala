@@ -26,6 +26,7 @@ object JobService extends CommonService {
     FieldKeys.FIELD_CREATED_AT,
     FieldKeys.FIELD_GROUP,
     FieldKeys.FIELD_PROJECT,
+    FieldKeys.FIELD_TRIGGER,
   )
 
   def index(job: Job): Future[IndexDocResponse] = {
@@ -143,6 +144,8 @@ object JobService extends CommonService {
   def queryJob(query: QueryJob) = {
     val esQueries = ArrayBuffer[Query]()
     if (StringUtils.isNotEmpty(query.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, query.group)
+    if (StringUtils.isNotEmpty(query.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, query.project)
+    if (StringUtils.isNotEmpty(query.triggerType)) esQueries += nestedQuery(FieldKeys.FIELD_TRIGGER, termQuery(FieldKeys.FIELD_NESTED_TRIGGER_TRIGGER_TYPE, query.triggerType))
     if (StringUtils.isNotEmpty(query.text)) esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
     EsClient.esClient.execute {
       search(Job.Index)

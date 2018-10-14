@@ -108,6 +108,7 @@ object FieldKeys {
 
   val FIELD_NESTED_REQUEST_URLPATH = "request.urlPath"
   val FIELD_NESTED_REQUEST_METHOD = "request.method"
+  val FIELD_NESTED_TRIGGER_TRIGGER_TYPE = "trigger.triggerType"
 
   /** copied from [[FIELD_SUMMARY]] and [[FIELD_DESCRIPTION]] */
   val FIELD__TEXT = "_text"
