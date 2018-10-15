@@ -5,6 +5,7 @@ import java.util.Date
 import akka.actor.ActorSystem
 import asura.app.AppErrorMessages
 import asura.app.api.BaseApi.OkApiRes
+import asura.app.api.model.QueryJobState
 import asura.common.model.{ApiRes, ApiResError}
 import asura.common.util.StringUtils
 import asura.core.ErrorMessages.ErrorMessage
@@ -16,7 +17,7 @@ import asura.core.job.actor._
 import asura.core.job.{JobCenter, JobUtils, SchedulerManager}
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
-import org.quartz.CronExpression
+import org.quartz.{CronExpression, TriggerKey}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
@@ -129,6 +130,16 @@ class JobApi @Inject()(
       OkApiRes(ApiRes(data = dates))
     } else {
       OkApiRes(ApiRes(msg = getI18nMessage(AppErrorMessages.error_InvalidCronExpression)))
+    }
+  }
+
+  def getJobState() = Action(parse.byteString).async { implicit req =>
+    val query = req.bodyAs(classOf[QueryJobState])
+    if (null != query.items && query.items.nonEmpty) {
+      val keys = query.items.map(item => TriggerKey.triggerKey(item.jobId, JobUtils.generateQuartzGroup(item.group, item.project)))
+      SchedulerManager.getTriggerState(SchedulerManager.DEFAULT_SCHEDULER, keys).toOkResult
+    } else {
+      Future.successful(OkApiRes(ApiRes(data = Map.empty)))
     }
   }
 }
