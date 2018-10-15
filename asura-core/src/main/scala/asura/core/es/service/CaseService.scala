@@ -5,7 +5,7 @@ import asura.common.util.StringUtils
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.CaseValidator
-import asura.core.cs.model.{QueryCase, QueryHistory}
+import asura.core.cs.model.{QueryCase, SearchAfterCase}
 import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig, EsResponse}
 import asura.core.util.JacksonSupport
@@ -193,23 +193,33 @@ object CaseService extends CommonService {
     }
   }
 
-  def queryHistory(query: QueryHistory) = {
+  def searchAfter(query: SearchAfterCase) = {
     val esQueries = ArrayBuffer[Query]()
     if (StringUtils.isNotEmpty(query.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, query.group)
     if (StringUtils.isNotEmpty(query.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, query.project)
+    if (StringUtils.isNotEmpty(query.creator)) esQueries += termQuery(FieldKeys.FIELD_CREATOR, query.creator)
+    if (StringUtils.isNotEmpty(query.text)) esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
     EsClient.esClient.execute {
-      val clause = search(Case.Index)
+      search(Case.Index)
         .query(boolQuery().must(esQueries))
+        .size(query.pageSize)
+        .searchAfter(query.toSearchAfterSort)
         .sortBy(FieldSort(FieldKeys.FIELD_CREATED_AT).desc(), FieldSort(FieldKeys.FIELD__ID).desc())
-      if (StringUtils.isNotEmpty(query.id) && StringUtils.isNotEmpty(query.createdAt)) {
-        clause.searchAfter(Seq(query.createdAt, query.id))
-      }
-      clause
-    }.map { res =>
+        .sourceInclude(queryFields)
+    }.flatMap { res =>
       if (res.isSuccess) {
-        EsResponse.toApiData(res.result)
+        val hits = res.result.hits
+        val userIds = mutable.HashSet[String]()
+        val dataMap = Map("total" -> hits.total, "list" -> hits.hits.map(hit => {
+          val sourceMap = hit.sourceAsMap
+          userIds += sourceMap.getOrElse(FieldKeys.FIELD_CREATOR, StringUtils.EMPTY).asInstanceOf[String]
+          sourceMap + (FieldKeys.FIELD__ID -> hit.id) + (FieldKeys.FIELD__SORT -> hit.sort)
+        }))
+        UserProfileService.getByIds(userIds).map(users => {
+          dataMap + ("users" -> users)
+        })
       } else {
-        throw ErrorMessages.error_EsRequestFail(res).toException
+        ErrorMessages.error_EsRequestFail(res).toFutureFail
       }
     }
   }
