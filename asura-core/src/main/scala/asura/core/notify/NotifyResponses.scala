@@ -1,8 +1,8 @@
 package asura.core.notify
 
 case class NotifyResponses(
-                            success: Seq[NotifyResponse],
-                            failure: Seq[NotifyResponse]
+                            success: Seq[NotifyResponse] = Nil,
+                            failure: Seq[NotifyResponse] = Nil
                           ) {
 
   def isSuccessful(): Boolean = {
@@ -16,7 +16,11 @@ case class NotifyResponses(
 
 object NotifyResponses {
   def apply(responses: Seq[NotifyResponse]): NotifyResponses = {
-    val map = responses.filter(null != _).groupBy(_.isOk)
-    NotifyResponses(map.getOrElse(true, Nil), map.getOrElse(false, Nil))
+    if (responses.nonEmpty) {
+      val map = responses.filter(null != _).groupBy(_.isOk)
+      NotifyResponses(map.getOrElse(true, Nil), map.getOrElse(false, Nil))
+    } else {
+      NotifyResponses()
+    }
   }
 }

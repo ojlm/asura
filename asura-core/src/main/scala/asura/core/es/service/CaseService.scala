@@ -213,7 +213,7 @@ object CaseService extends CommonService {
         val dataMap = Map("total" -> hits.total, "list" -> hits.hits.map(hit => {
           val sourceMap = hit.sourceAsMap
           userIds += sourceMap.getOrElse(FieldKeys.FIELD_CREATOR, StringUtils.EMPTY).asInstanceOf[String]
-          sourceMap + (FieldKeys.FIELD__ID -> hit.id) + (FieldKeys.FIELD__SORT -> hit.sort)
+          sourceMap + (FieldKeys.FIELD__ID -> hit.id) + (FieldKeys.FIELD__SORT -> hit.sort.getOrElse(Nil))
         }))
         UserProfileService.getByIds(userIds).map(users => {
           dataMap + ("users" -> users)

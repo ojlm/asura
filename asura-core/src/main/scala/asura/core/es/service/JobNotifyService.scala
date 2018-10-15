@@ -1,6 +1,6 @@
 package asura.core.es.service
 
-import asura.common.util.StringUtils
+import asura.common.util.{LogUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.model.QueryJobNotify
@@ -13,6 +13,7 @@ import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
 import com.sksamuel.elastic4s.searches.queries.Query
+import com.sksamuel.elastic4s.searches.sort.FieldSort
 import com.typesafe.scalalogging.Logger
 
 import scala.collection.mutable.ArrayBuffer
@@ -84,20 +85,32 @@ object JobNotifyService extends CommonService {
         .query(boolQuery().must(esQueries))
         .from(query.pageFrom)
         .size(query.pageSize)
-        .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
+        .searchAfter(if (null != query.sort) query.sort else Nil)
+        .sortBy(FieldSort(FieldKeys.FIELD_CREATED_AT).asc(), FieldSort(FieldKeys.FIELD__ID).desc())
         .sourceExclude(FieldKeys.FIELD_CREATOR, FieldKeys.FIELD_CREATED_AT, FieldKeys.FIELD_SUMMARY, FieldKeys.FIELD_DESCRIPTION)
     }
   }
 
-  def getAllJobSubscribers(jobId: String): Future[Seq[JobNotify]] = {
+  def getJobSubscribers(jobId: String, size: Int, sort: Seq[Any] = Nil): Future[(Long, Seq[Any], Seq[JobNotify])] = {
     val query = QueryJobNotify(jobId = jobId)
-    query.size = Integer.MAX_VALUE
+    query.size = size
+    query.sort = sort
     querySubscribers(query).map { res =>
       if (res.isSuccess) {
         if (res.result.isEmpty) {
-          Nil
+          (0L, Nil, Nil)
         } else {
-          res.result.hits.hits.map(hit => JacksonSupport.parse(hit.sourceAsString, classOf[JobNotify]))
+          var sort: Seq[Any] = Nil
+          val hits = res.result.hits.hits
+          val total = res.result.totalHits
+          val docs = for (i <- 0 until hits.length) yield {
+            val hit = hits(i)
+            if (i == hits.length - 1) {
+              sort = hit.sort.getOrElse(Nil)
+            }
+            JacksonSupport.parse(hit.sourceAsString, classOf[JobNotify])
+          }
+          (total, sort, docs)
         }
       } else {
         throw ErrorMessages.error_EsRequestFail(res).toException
@@ -106,34 +119,71 @@ object JobNotifyService extends CommonService {
   }
 
   def notifySubscribers(execDesc: JobExecDesc): Future[NotifyResponses] = {
-    val report = execDesc.report
-    JobNotifyService.getAllJobSubscribers(execDesc.jobId).flatMap(subscribers => {
-      val responses = subscribers.map(subscriber => {
-        val func = JobNotifyManager.get(subscriber.`type`)
-        if (func.nonEmpty) {
-          report.result match {
-            case JobExecDesc.STATUS_SUCCESS =>
-              if (JobNotify.TRIGGER_ALL.equals(subscriber.trigger) || JobNotify.TRIGGER_SUCCESS.equals(subscriber.trigger)) {
-                func.get.notify(execDesc, subscriber).recover {
-                  case t: Throwable => NotifyResponse(false, subscriber.subscriber, ErrorMessages.error_Throwable(t))
-                }
-              } else {
-                Future.successful(null)
-              }
-            case _ =>
-              if (JobNotify.TRIGGER_ALL.equals(subscriber.trigger) || JobNotify.TRIGGER_FAIL.equals(subscriber.trigger)) {
-                func.get.notify(execDesc, subscriber).recover {
-                  case t: Throwable => NotifyResponse(false, subscriber.subscriber, ErrorMessages.error_Throwable(t))
-                }
-              } else {
-                Future.successful(null)
-              }
-          }
-        } else {
-          Future.successful(NotifyResponse(false, subscriber.subscriber, ErrorMessages.error_NoNotifyImplementation(subscriber.`type`)))
+    val responses = ArrayBuffer[NotifyResponse]()
+    var leftLoop = 0
+    var afterSort: Seq[Any] = Nil
+    var initResponse: Future[Seq[NotifyResponse]] = Future.successful(Nil)
+    JobNotifyService.getJobSubscribers(execDesc.jobId, EsConfig.MaxCount).map(sortAndSubscribers => {
+      val (total, sort, subscribers) = sortAndSubscribers
+      if (subscribers.nonEmpty) {
+        initResponse = Future.sequence(sendNotifications(execDesc, subscribers))
+        if (total > EsConfig.MaxCount) {
+          afterSort = sort
+          leftLoop = Math.ceil((total - EsConfig.MaxCount).toDouble / EsConfig.MaxCount.toDouble).toInt
         }
+      }
+    })
+    if (leftLoop > 0) {
+      1.to(leftLoop).foldLeft(initResponse)((seqFutureResponse, _) => {
+        for {
+          prevResponse <- seqFutureResponse
+          sortAndSubscribers <- JobNotifyService.getJobSubscribers(execDesc.jobId, EsConfig.MaxCount, afterSort)
+          currSeqResponses <- {
+            if (prevResponse.nonEmpty) responses ++= prevResponse
+            val (_, sort, subscribers) = sortAndSubscribers
+            afterSort = sort
+            Future.sequence(sendNotifications(execDesc, subscribers)).recover {
+              case t: Throwable =>
+                logger.error(LogUtils.stackTraceToString(t))
+                Nil
+            }
+          }
+        } yield currSeqResponses
+      }).map(lastSeqFutureResponse => {
+        responses ++= lastSeqFutureResponse
+        NotifyResponses(responses)
       })
-      Future.sequence(responses).map(responses => NotifyResponses(responses))
+    } else {
+      initResponse.map(NotifyResponses(_))
+    }
+  }
+
+  def sendNotifications(execDesc: JobExecDesc, notifies: Seq[JobNotify]) = {
+    val report = execDesc.report
+    notifies.map(subscriber => {
+      val func = JobNotifyManager.get(subscriber.`type`)
+      if (func.nonEmpty) {
+        report.result match {
+          case JobExecDesc.STATUS_SUCCESS =>
+            if (JobNotify.TRIGGER_ALL.equals(subscriber.trigger) || JobNotify.TRIGGER_SUCCESS.equals(subscriber.trigger)) {
+              func.get.notify(execDesc, subscriber).recover {
+                case t: Throwable => NotifyResponse(false, subscriber.subscriber, ErrorMessages.error_Throwable(t))
+              }
+            } else {
+              Future.successful(null)
+            }
+          case _ =>
+            if (JobNotify.TRIGGER_ALL.equals(subscriber.trigger) || JobNotify.TRIGGER_FAIL.equals(subscriber.trigger)) {
+              func.get.notify(execDesc, subscriber).recover {
+                case t: Throwable => NotifyResponse(false, subscriber.subscriber, ErrorMessages.error_Throwable(t))
+              }
+            } else {
+              Future.successful(null)
+            }
+        }
+      } else {
+        Future.successful(NotifyResponse(false, subscriber.subscriber, ErrorMessages.error_NoNotifyImplementation(subscriber.`type`)))
+      }
     })
   }
 
