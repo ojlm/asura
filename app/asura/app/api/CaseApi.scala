@@ -6,7 +6,7 @@ import asura.app.api.model.TestCase
 import asura.common.model.ApiRes
 import asura.common.util.StringUtils
 import asura.core.cs.assertion.Assertions
-import asura.core.cs.model.QueryCase
+import asura.core.cs.model.{QueryCase, SearchAfterCase}
 import asura.core.cs.{CaseContext, CaseRunner}
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, Case}
@@ -73,5 +73,13 @@ class CaseApi @Inject()(implicit system: ActorSystem,
 
   def getAllAssertions() = Action {
     OkApiRes(ApiRes(data = Assertions.getAll()))
+  }
+
+  def searchAfter() = Action(parse.byteString).async { implicit req =>
+    val query = req.bodyAs(classOf[SearchAfterCase])
+    if (query.onlyMe) {
+      query.creator = getProfileId()
+    }
+    CaseService.searchAfter(query).toOkResult
   }
 }

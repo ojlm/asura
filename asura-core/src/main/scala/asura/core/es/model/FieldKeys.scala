@@ -113,4 +113,5 @@ object FieldKeys {
   /** copied from [[FIELD_SUMMARY]] and [[FIELD_DESCRIPTION]] */
   val FIELD__TEXT = "_text"
   val FIELD__ID = "_id"
+  val FIELD__SORT = "_sort"
 }

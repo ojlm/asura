@@ -4,11 +4,12 @@ import asura.common.util.{JsonUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.model.{DeleteDocResponse, IndexDocResponse, UpdateDocResponse, UserProfile}
-import asura.core.es.{EsClient, EsConfig}
+import asura.core.es.{EsClient, EsConfig, EsResponse}
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
 
+import scala.collection.Iterable
 import scala.concurrent.Future
 
 object UserProfileService extends CommonService {
@@ -69,6 +70,18 @@ object UserProfileService extends CommonService {
           null
         }
       }))
+    }
+  }
+
+  def getByIds(ids: Iterable[String]) = {
+    if (null != ids && ids.nonEmpty) {
+      EsClient.esClient.execute {
+        search(UserProfile.Index).query(idsQuery(ids)).size(ids.size).sourceExclude(defaultExcludeFields)
+      }.map(res => {
+        if (res.isSuccess) EsResponse.toIdMap(res.result) else Map.empty
+      })
+    } else {
+      Future.successful(Map.empty)
     }
   }
 }
