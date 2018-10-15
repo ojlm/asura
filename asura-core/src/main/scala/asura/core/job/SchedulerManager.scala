@@ -14,6 +14,7 @@ import org.quartz.impl.StdSchedulerFactory
 import org.quartz.impl.triggers.{CronTriggerImpl, SimpleTriggerImpl}
 import org.quartz.{JobKey, Scheduler, TriggerKey}
 
+import scala.collection.mutable
 import scala.concurrent.Future
 
 object SchedulerManager {
@@ -142,6 +143,25 @@ object SchedulerManager {
           case t: Throwable => throw ErrorMessages.error_Throwable(t).toException
         }
       }
+    }
+  }
+
+  def getTriggerState(schedulerName: String, keys: Seq[TriggerKey]): Future[Map[String, String]] = {
+    val schedulerOpt = getScheduler(StringUtils.notEmptyElse(schedulerName, DEFAULT_SCHEDULER))
+    if (schedulerOpt.nonEmpty) {
+      Future {
+        val map = mutable.HashMap[String, String]()
+        val scheduler = schedulerOpt.get
+        keys.foreach(k => {
+          val state = scheduler.getTriggerState(k)
+          if (null != state) {
+            map += (k.getName -> state.name())
+          }
+        })
+        map.toMap
+      }
+    } else {
+      ErrorMessages.error_NoSchedulerDefined(schedulerName).toFutureFail
     }
   }
 
