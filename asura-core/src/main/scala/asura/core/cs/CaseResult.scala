@@ -40,6 +40,7 @@ object CaseResult {
             assert: Map[String, Any],
             context: CaseContext,
             request: CaseRequest,
+            caseResponse: CaseResponse,
           ): Future[CaseResult] = {
     val statistic = Statistic()
     AssertionContext.eval(assert, context.rawContext, statistic).map { assertResult =>
@@ -48,7 +49,7 @@ object CaseResult {
         assert = assert,
         context = context.rawContext,
         request = request,
-        response = context.getCaseResponse(response.status.reason()),
+        response = caseResponse,
         statis = statistic,
         result = assertResult
       )

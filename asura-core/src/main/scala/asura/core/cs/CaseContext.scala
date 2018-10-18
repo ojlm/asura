@@ -248,14 +248,6 @@ case class CaseContext(
     this
   }
 
-  def getCaseResponse(statusMsg: String): CaseResponse = {
-    val statusCode = ctx.getOrDefault(CaseContext.KEY_STATUS, 0).asInstanceOf[Int]
-    val headers = ctx.get(CaseContext.KEY_HEADERS).asInstanceOf[util.HashMap[String, String]]
-    val body = ctx.getOrDefault(CaseContext.KEY_ENTITY, StringUtils.EMPTY).asInstanceOf[String]
-    import scala.collection.JavaConverters.mapAsScalaMap
-    CaseResponse(statusCode, statusMsg, mapAsScalaMap(headers), body)
-  }
-
   def evaluateOptions(): Future[Boolean] = {
     if (null != options) {
       if (null != options.initCtx && !options.initCtx.isEmpty) {
