@@ -15,6 +15,7 @@ object HomeService extends CommonService {
   val includeFields = Seq(
     FieldKeys.FIELD_GROUP,
     FieldKeys.FIELD_PROJECT,
+    FieldKeys.FIELD_ID,
     FieldKeys.FIELD_AVATAR,
     FieldKeys.FIELD_SUMMARY,
     FieldKeys.FIELD_DESCRIPTION,
