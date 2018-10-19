@@ -5,7 +5,7 @@ import asura.common.util.StringUtils
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.CaseValidator
-import asura.core.cs.model.{QueryCase, SearchAfterCase}
+import asura.core.cs.model.{AggsCase, AggsItem, QueryCase, SearchAfterCase}
 import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig, EsResponse}
 import asura.core.util.JacksonSupport
@@ -222,5 +222,32 @@ object CaseService extends CommonService {
         ErrorMessages.error_EsRequestFail(res).toFutureFail
       }
     }
+  }
+
+  // note this is not always accurate
+  def aroundAggs(aggs: AggsCase): Future[Seq[AggsItem]] = {
+    val esQueries = ArrayBuffer[Query]()
+    if (StringUtils.isNotEmpty(aggs.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, aggs.group)
+    if (StringUtils.isNotEmpty(aggs.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, aggs.project)
+    if (StringUtils.isNotEmpty(aggs.creator)) esQueries += termQuery(FieldKeys.FIELD_CREATOR, aggs.creator)
+    val aggField = aggs.aggField()
+    EsClient.esClient.execute {
+      search(Case.Index)
+        .query(boolQuery().must(esQueries))
+        .size(0)
+        .aggregations(termsAgg(aggsTermName, aggField).size(aggs.pageSize()))
+    }.map(res => {
+      val buckets = res.result
+        .aggregationsAsMap.getOrElse(aggsTermName, Map.empty)
+        .asInstanceOf[Map[String, Any]]
+        .getOrElse("buckets", Nil)
+      buckets.asInstanceOf[Seq[Map[String, Any]]].map(bucket => {
+        AggsItem(
+          `type` = aggField,
+          id = bucket.getOrElse("key", "").asInstanceOf[String],
+          count = bucket.getOrElse("doc_count", 0).asInstanceOf[Int]
+        )
+      })
+    })
   }
 }
