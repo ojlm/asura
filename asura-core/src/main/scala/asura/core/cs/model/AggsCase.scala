@@ -13,9 +13,9 @@ case class AggsCase(
   def pageSize(): Int = if (Option(size).isDefined && size > 0) size else 10
 
   def aggField(): String = {
-    if (StringUtils.isNotEmpty(creator)) {
+    if (StringUtils.isNotEmpty(project)) {
       FieldKeys.FIELD_CREATOR
-    } else if (StringUtils.isNotEmpty(project)) {
+    } else if (StringUtils.isNotEmpty(group)) {
       FieldKeys.FIELD_PROJECT
     } else {
       FieldKeys.FIELD_GROUP
