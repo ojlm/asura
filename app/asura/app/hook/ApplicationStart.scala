@@ -47,7 +47,7 @@ class ApplicationStart @Inject()(
     localEsDataDir = configuration.getOptional[String]("asura.es.localEsDataDir").getOrElse("./data"),
     esIndexPrefix = configuration.getOptional[String]("asura.es.indexPrefix"),
     esUrl = configuration.get[String]("asura.es.url"),
-    enableProxy = configuration.getOptional[Boolean]("asura.linkerd.enableLinkerd").getOrElse(false),
+    enableProxy = configuration.getOptional[Boolean]("asura.linkerd.enabled").getOrElse(false),
     proxyHost = configuration.getOptional[String]("asura.linkerd.proxyHost").getOrElse(""),
     httpProxyPort = configuration.getOptional[Int]("asura.linkerd.httpProxyPort").getOrElse(4140),
     httpsProxyPort = configuration.getOptional[Int]("asura.linkerd.httpsProxyPort").getOrElse(4143),

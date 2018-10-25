@@ -48,10 +48,10 @@ object HeaderUtils {
           dst.append("/").append(cs.group).append("/").append(cs.project).append("/").append(ns)
           headers += RawHeader(CoreConfig.proxyIdentifier, dst.toString)
         } else {
-          ErrorMessages.error_EmptyNamespace.toFutureFail
+          throw ErrorMessages.error_EmptyNamespace.toException
         }
       } else {
-        ErrorMessages.error_proxyDisabled.toFutureFail
+        throw ErrorMessages.error_proxyDisabled.toException
       }
     }
     headers.toList
