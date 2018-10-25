@@ -105,6 +105,7 @@ object FieldKeys {
   val FIELD_COUNT = "count"
   val FIELD_LIST = "list"
   val FIELD_SCRIPT = "script"
+  val FIELD_HEADERS = "headers"
 
   val FIELD_OBJECT_REQUEST_URLPATH = "request.urlPath"
   val FIELD_OBJECT_REQUEST_METHOD = "request.method"

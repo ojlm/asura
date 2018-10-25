@@ -24,6 +24,7 @@ case class Environment(
                         val namespace: String = null,
                         val enableProxy: Boolean = false,
                         val custom: Seq[KeyValueObject] = Nil,
+                        val headers: Seq[KeyValueObject] = Nil,
                         var creator: String = null,
                         var createdAt: String = null,
                       ) extends BaseIndex {
@@ -42,6 +43,9 @@ case class Environment(
     }
     if (null != custom) {
       m += (FieldKeys.FIELD_CUSTOM -> custom)
+    }
+    if (null != headers) {
+      m += (FieldKeys.FIELD_HEADERS -> headers)
     }
     m.toMap
   }
@@ -67,6 +71,11 @@ object Environment extends IndexSetting {
         ObjectField(name = FieldKeys.FIELD_DATA, dynamic = Some("false")),
       )),
       NestedField(name = FieldKeys.FIELD_CUSTOM, fields = Seq(
+        KeywordField(name = FieldKeys.FIELD_KEY),
+        KeywordField(name = FieldKeys.FIELD_VALUE),
+        BasicField(name = FieldKeys.FIELD_ENABLED, `type` = "boolean"),
+      )),
+      NestedField(name = FieldKeys.FIELD_HEADERS, fields = Seq(
         KeywordField(name = FieldKeys.FIELD_KEY),
         KeywordField(name = FieldKeys.FIELD_VALUE),
         BasicField(name = FieldKeys.FIELD_ENABLED, `type` = "boolean"),
