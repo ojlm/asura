@@ -31,3 +31,4 @@ error_IllegalCharacter=Illegal characters: {0}
 error_proxyDisabled=Proxy is not enabled
 error_NotAllowedContactAdministrator=Not allowed，call: {0}
 error_EmptyScheduler=Empty scheduler
+error_CantDeleteCase=There are relative scenarios or jobs, you can not delete this case

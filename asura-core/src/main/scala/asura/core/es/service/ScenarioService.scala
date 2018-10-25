@@ -10,7 +10,7 @@ import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl.{bulk, delete, indexInto, _}
-import com.sksamuel.elastic4s.searches.queries.Query
+import com.sksamuel.elastic4s.searches.queries.{NestedQuery, Query}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
@@ -111,6 +111,18 @@ object ScenarioService extends CommonService {
       ErrorMessages.error_EmptyGroup
     } else {
       null
+    }
+  }
+
+  def containCase(caseIds: Seq[String]) = {
+    val query = NestedQuery(FieldKeys.FIELD_STEPS, boolQuery().must(
+      termsQuery(FieldKeys.FIELD_NESTED_STEPS_ID, caseIds),
+      termQuery(FieldKeys.FIELD_NESTED_STEPS_TYPE, ScenarioStep.TYPE_CASE)
+    ))
+    EsClient.esClient.execute {
+      search(Scenario.Index).query(query)
+        .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
+        .sourceInclude(defaultIncludeFields)
     }
   }
 }
