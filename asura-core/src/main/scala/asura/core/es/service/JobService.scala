@@ -158,9 +158,9 @@ object JobService extends CommonService {
   }
 
   def containCase(caseIds: Seq[String]) = {
-    val query = NestedQuery(s"${FieldKeys.FIELD_CS}.${FieldKeys.FIELD_CS}", boolQuery().must(
-      termsQuery(FieldKeys.FIELD_NESTED_CS_ID, caseIds)
-    ))
+    val query = NestedQuery(FieldKeys.FIELD_NESTED_JOB_DATA_CS,
+      boolQuery().must(termsQuery(FieldKeys.FIELD_NESTED_JOB_DATA_CS_ID, caseIds))
+    )
     EsClient.esClient.execute {
       search(Job.Index).query(query)
         .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
