@@ -106,10 +106,13 @@ object FieldKeys {
   val FIELD_LIST = "list"
   val FIELD_SCRIPT = "script"
 
-  val FIELD_NESTED_REQUEST_URLPATH = "request.urlPath"
-  val FIELD_NESTED_REQUEST_METHOD = "request.method"
+  val FIELD_OBJECT_REQUEST_URLPATH = "request.urlPath"
+  val FIELD_OBJECT_REQUEST_METHOD = "request.method"
   val FIELD_NESTED_TRIGGER_TRIGGER_TYPE = "trigger.triggerType"
   val FIELD_NESTED_LABELS_NAME = "labels.name"
+  val FIELD_NESTED_STEPS_ID = "steps.id"
+  val FIELD_NESTED_STEPS_TYPE = "steps.type"
+  val FIELD_NESTED_CS_ID = "cs.id"
 
   /** copied from [[FIELD_SUMMARY]] and [[FIELD_DESCRIPTION]] */
   val FIELD__TEXT = "_text"

@@ -1,21 +1,24 @@
 package asura.app.api
 
 import akka.actor.ActorSystem
+import asura.app.AppErrorMessages
 import asura.app.api.BaseApi.OkApiRes
 import asura.app.api.model.TestCase
-import asura.common.model.ApiRes
+import asura.common.model.{ApiRes, ApiResError}
 import asura.common.util.StringUtils
+import asura.core.ErrorMessages
 import asura.core.cs.assertion.Assertions
 import asura.core.cs.model.{AggsCase, QueryCase, SearchAfterCase}
 import asura.core.cs.{CaseContext, CaseRunner}
+import asura.core.es.EsResponse
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, Case}
-import asura.core.es.service.CaseService
+import asura.core.es.service.{CaseService, JobService, ScenarioService}
 import asura.core.util.{JacksonSupport, JsonPathUtils}
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class CaseApi @Inject()(implicit system: ActorSystem,
@@ -29,8 +32,32 @@ class CaseApi @Inject()(implicit system: ActorSystem,
     CaseService.getById(id).toOkResultByEsOneDoc(id)
   }
 
-  def delete(id: String) = Action.async { implicit req =>
-    CaseService.deleteDoc(id).toOkResult
+  def delete(id: String, preview: Option[Boolean]) = Action.async { implicit req =>
+    val caseIds = Seq(id)
+    val res = for {
+      s <- ScenarioService.containCase(caseIds)
+      j <- JobService.containCase(caseIds)
+    } yield (s, j)
+    res.flatMap(resTuple => {
+      val (scenarioRes, jobRes) = resTuple
+      if (scenarioRes.isSuccess && jobRes.isSuccess) {
+        if (preview.nonEmpty && preview.get) {
+          Future.successful(toActionResultFromAny(Map(
+            "scenario" -> EsResponse.toApiData(scenarioRes.result),
+            "job" -> EsResponse.toApiData(jobRes.result)
+          )))
+        } else {
+          if (scenarioRes.result.isEmpty && jobRes.result.isEmpty) {
+            CaseService.deleteDoc(id).toOkResult
+          } else {
+            Future.successful(toActionResultFromAny(OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_CantDeleteCase)))))
+          }
+        }
+      } else {
+        val errorRes = if (!scenarioRes.isSuccess) scenarioRes else jobRes
+        ErrorMessages.error_EsRequestFail(errorRes).toFutureFail
+      }
+    })
   }
 
   def put() = Action(parse.byteString).async { implicit req =>

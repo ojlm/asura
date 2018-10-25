@@ -12,7 +12,7 @@ import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
-import com.sksamuel.elastic4s.searches.queries.Query
+import com.sksamuel.elastic4s.searches.queries.{NestedQuery, Query}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
@@ -154,6 +154,17 @@ object JobService extends CommonService {
         .size(query.pageSize)
         .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
         .sourceInclude(queryIncludeFields)
+    }
+  }
+
+  def containCase(caseIds: Seq[String]) = {
+    val query = NestedQuery(s"${FieldKeys.FIELD_CS}.${FieldKeys.FIELD_CS}", boolQuery().must(
+      termsQuery(FieldKeys.FIELD_NESTED_CS_ID, caseIds)
+    ))
+    EsClient.esClient.execute {
+      search(Job.Index).query(query)
+        .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
+        .sourceInclude(defaultIncludeFields)
     }
   }
 }

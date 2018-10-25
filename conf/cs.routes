@@ -1,5 +1,5 @@
 GET           /:id                  asura.app.api.CaseApi.getById(id)
-DELETE        /:id                  asura.app.api.CaseApi.delete(id)
+DELETE        /:id                  asura.app.api.CaseApi.delete(id, preview: Option[Boolean])
 POST          /update/:id           asura.app.api.CaseApi.update(id)
 PUT           /                     asura.app.api.CaseApi.put()
 POST          /query                asura.app.api.CaseApi.query()

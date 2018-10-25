@@ -19,7 +19,7 @@ object HomeService extends CommonService {
     FieldKeys.FIELD_AVATAR,
     FieldKeys.FIELD_SUMMARY,
     FieldKeys.FIELD_DESCRIPTION,
-    FieldKeys.FIELD_NESTED_REQUEST_URLPATH
+    FieldKeys.FIELD_OBJECT_REQUEST_URLPATH
   )
 
   def queryDoc(query: QueryHome) = {

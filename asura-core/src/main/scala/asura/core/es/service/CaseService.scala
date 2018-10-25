@@ -29,8 +29,8 @@ object CaseService extends CommonService {
     FieldKeys.FIELD_GROUP,
     FieldKeys.FIELD_PROJECT,
     FieldKeys.FIELD_LABELS,
-    FieldKeys.FIELD_NESTED_REQUEST_URLPATH,
-    FieldKeys.FIELD_NESTED_REQUEST_METHOD,
+    FieldKeys.FIELD_OBJECT_REQUEST_URLPATH,
+    FieldKeys.FIELD_OBJECT_REQUEST_METHOD,
   )
 
   def index(cs: Case): Future[IndexDocResponse] = {
@@ -177,8 +177,8 @@ object CaseService extends CommonService {
       if (StringUtils.isNotEmpty(query.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, query.group)
       if (StringUtils.isNotEmpty(query.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, query.project)
       if (StringUtils.isNotEmpty(query.text)) esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
-      if (StringUtils.isNotEmpty(query.path)) esQueries += wildcardQuery(FieldKeys.FIELD_NESTED_REQUEST_URLPATH, s"${query.path}*")
-      if (StringUtils.isNotEmpty(query.method)) esQueries += nestedQuery(FieldKeys.FIELD_REQUEST, termQuery(FieldKeys.FIELD_NESTED_REQUEST_METHOD, query.method))
+      if (StringUtils.isNotEmpty(query.path)) esQueries += wildcardQuery(FieldKeys.FIELD_OBJECT_REQUEST_URLPATH, s"${query.path}*")
+      if (StringUtils.isNotEmpty(query.method)) esQueries += termQuery(FieldKeys.FIELD_OBJECT_REQUEST_METHOD, query.method)
       if (StringUtils.isNotEmpty(query.label)) esQueries += nestedQuery(FieldKeys.FIELD_LABELS, termQuery(FieldKeys.FIELD_NESTED_LABELS_NAME, query.label))
       EsClient.esClient.execute {
         search(Case.Index).query(boolQuery().must(esQueries))

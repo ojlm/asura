@@ -7,4 +7,5 @@ object AppErrorMessages {
   val error_FailToCreateUser = "error_FailToCreateUser"
   val error_InvalidCronExpression = "error_InvalidCronExpression"
   val error_NotAllowedContactAdministrator = "error_NotAllowedContactAdministrator"
+  val error_CantDeleteCase = "error_CantDeleteCase"
 }
