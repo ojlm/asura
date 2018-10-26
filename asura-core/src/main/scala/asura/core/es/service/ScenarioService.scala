@@ -125,4 +125,13 @@ object ScenarioService extends CommonService {
         .sourceInclude(defaultIncludeFields)
     }
   }
+
+  def containEnv(ids: Seq[String]) = {
+    val query = boolQuery().must(termsQuery(FieldKeys.FIELD_ENV, ids))
+    EsClient.esClient.execute {
+      search(Scenario.Index).query(query)
+        .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
+        .sourceInclude(defaultIncludeFields)
+    }
+  }
 }

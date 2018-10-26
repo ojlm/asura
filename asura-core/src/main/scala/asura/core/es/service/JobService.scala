@@ -157,6 +157,15 @@ object JobService extends CommonService {
     }
   }
 
+  def containEnv(ids: Seq[String]) = {
+    val query = boolQuery().must(termsQuery(FieldKeys.FIELD_ENV, ids))
+    EsClient.esClient.execute {
+      search(Job.Index).query(query)
+        .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
+        .sourceInclude(defaultIncludeFields)
+    }
+  }
+
   def containCase(caseIds: Seq[String]) = {
     val query = NestedQuery(FieldKeys.FIELD_NESTED_JOB_DATA_CS,
       boolQuery().must(termsQuery(FieldKeys.FIELD_NESTED_JOB_DATA_CS_ID, caseIds))
