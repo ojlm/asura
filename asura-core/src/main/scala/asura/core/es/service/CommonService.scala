@@ -13,7 +13,10 @@ import com.sksamuel.elastic4s.http.update.UpdateResponse
 trait CommonService {
 
   val aggsTermName = "aggs"
-  val defaultIncludeFields = Seq(FieldKeys.FIELD_SUMMARY, FieldKeys.FIELD_DESCRIPTION)
+  val defaultIncludeFields = Seq(
+    FieldKeys.FIELD_SUMMARY, FieldKeys.FIELD_DESCRIPTION,
+    FieldKeys.FIELD_GROUP, FieldKeys.FIELD_PROJECT
+  )
   val defaultExcludeFields = Seq(FieldKeys.FIELD_CREATOR, FieldKeys.FIELD_CREATED_AT)
 
   def toIndexDocResponse(response: Response[IndexResponse]): IndexDocResponse = {
