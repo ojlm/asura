@@ -115,6 +115,8 @@ object FieldKeys {
   val FIELD_NESTED_STEPS_TYPE = "steps.type"
   val FIELD_NESTED_JOB_DATA_CS = "jobData.cs"
   val FIELD_NESTED_JOB_DATA_CS_ID = "jobData.cs.id"
+  val FIELD_NESTED_JOB_DATA_SCENARIO = "jobData.scenario"
+  val FIELD_NESTED_JOB_DATA_SCENARIO_ID = "jobData.scenario.id"
 
   /** copied from [[FIELD_SUMMARY]] and [[FIELD_DESCRIPTION]] */
   val FIELD__TEXT = "_text"

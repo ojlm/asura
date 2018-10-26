@@ -167,4 +167,15 @@ object JobService extends CommonService {
         .sourceInclude(defaultIncludeFields)
     }
   }
+
+  def containScenario(ids: Seq[String]) = {
+    val query = NestedQuery(FieldKeys.FIELD_NESTED_JOB_DATA_SCENARIO,
+      boolQuery().must(termsQuery(FieldKeys.FIELD_NESTED_JOB_DATA_SCENARIO_ID, ids))
+    )
+    EsClient.esClient.execute {
+      search(Job.Index).query(query)
+        .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
+        .sourceInclude(defaultIncludeFields)
+    }
+  }
 }
