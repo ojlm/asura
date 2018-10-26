@@ -1,15 +1,18 @@
 package asura.app.api
 
+import asura.app.AppErrorMessages
 import asura.app.api.BaseApi.OkApiRes
-import asura.common.model.ApiRes
+import asura.common.model.{ApiRes, ApiResError}
+import asura.core.ErrorMessages
 import asura.core.auth.AuthManager
 import asura.core.cs.model.QueryEnv
+import asura.core.es.EsResponse
 import asura.core.es.model.Environment
-import asura.core.es.service.EnvironmentService
+import asura.core.es.service.{CaseService, EnvironmentService, JobService, ScenarioService}
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class EnvApi @Inject()(implicit exec: ExecutionContext, val controllerComponents: SecurityComponents)
@@ -38,5 +41,35 @@ class EnvApi @Inject()(implicit exec: ExecutionContext, val controllerComponents
 
   def getAllAuth() = Action {
     OkApiRes(ApiRes(data = AuthManager.getAll()))
+  }
+
+  def delete(id: String, preview: Option[Boolean]) = Action.async { implicit req =>
+    val ids = Seq(id)
+    val res = for {
+      c <- CaseService.containEnv(ids)
+      s <- ScenarioService.containEnv(ids)
+      j <- JobService.containEnv(ids)
+    } yield (c, s, j)
+    res.flatMap(resTriple => {
+      val (caseRes, scenarioRes, jobRes) = resTriple
+      if (caseRes.isSuccess && scenarioRes.isSuccess && jobRes.isSuccess) {
+        if (preview.nonEmpty && preview.get) {
+          Future.successful(toActionResultFromAny(Map(
+            "case" -> EsResponse.toApiData(caseRes.result),
+            "scenario" -> EsResponse.toApiData(scenarioRes.result),
+            "job" -> EsResponse.toApiData(jobRes.result)
+          )))
+        } else {
+          if (caseRes.result.isEmpty && scenarioRes.result.isEmpty && jobRes.result.isEmpty) {
+            EnvironmentService.deleteDoc(id).toOkResult
+          } else {
+            Future.successful(OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_CantDeleteEnv))))
+          }
+        }
+      } else {
+        val errorRes = if (!scenarioRes.isSuccess) scenarioRes else jobRes
+        ErrorMessages.error_EsRequestFail(errorRes).toFutureFail
+      }
+    })
   }
 }

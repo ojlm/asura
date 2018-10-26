@@ -253,4 +253,13 @@ object CaseService extends CommonService {
       })
     })
   }
+
+  def containEnv(ids: Seq[String]) = {
+    val query = boolQuery().must(termsQuery(FieldKeys.FIELD_ENV, ids))
+    EsClient.esClient.execute {
+      search(Case.Index).query(query)
+        .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
+        .sourceInclude(defaultIncludeFields)
+    }
+  }
 }
