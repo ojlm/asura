@@ -1,14 +1,19 @@
 package asura.app.api
 
 import akka.actor.ActorSystem
+import asura.app.AppErrorMessages
+import asura.app.api.BaseApi.OkApiRes
+import asura.common.model.ApiResError
+import asura.core.ErrorMessages
 import asura.core.cs.model.QueryScenario
+import asura.core.es.EsResponse
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, Scenario}
-import asura.core.es.service.ScenarioService
+import asura.core.es.service.{JobService, ScenarioService}
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ScenarioApi @Inject()(
@@ -23,8 +28,24 @@ class ScenarioApi @Inject()(
     ScenarioService.getById(id).toOkResultByEsOneDoc(id)
   }
 
-  def delete(id: String) = Action.async { implicit req =>
-    ScenarioService.deleteDoc(id).toOkResult
+  def delete(id: String, preview: Option[Boolean]) = Action.async { implicit req =>
+    JobService.containScenario(Seq(id)).flatMap(res => {
+      if (res.isSuccess) {
+        if (preview.nonEmpty && preview.get) {
+          Future.successful(toActionResultFromAny(Map(
+            "job" -> EsResponse.toApiData(res.result)
+          )))
+        } else {
+          if (res.result.isEmpty) {
+            ScenarioService.deleteDoc(id).toOkResult
+          } else {
+            Future.successful(OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_CantDeleteScenario))))
+          }
+        }
+      } else {
+        ErrorMessages.error_EsRequestFail(res).toFutureFail
+      }
+    })
   }
 
   def put() = Action(parse.byteString).async { implicit req =>

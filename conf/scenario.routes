@@ -1,5 +1,5 @@
-GET           /:id               asura.app.api.ScenarioApi.getById(id: String)
-DELETE        /:id               asura.app.api.ScenarioApi.delete(id: String)
+GET           /:id               asura.app.api.ScenarioApi.getById(id)
+DELETE        /:id               asura.app.api.ScenarioApi.delete(id, preview: Option[Boolean])
 PUT           /                  asura.app.api.ScenarioApi.put()
 POST          /query             asura.app.api.ScenarioApi.query()
-POST          /update/:id        asura.app.api.ScenarioApi.update(id: String)
+POST          /update/:id        asura.app.api.ScenarioApi.update(id)
