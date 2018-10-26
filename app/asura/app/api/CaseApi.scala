@@ -50,7 +50,7 @@ class CaseApi @Inject()(implicit system: ActorSystem,
           if (scenarioRes.result.isEmpty && jobRes.result.isEmpty) {
             CaseService.deleteDoc(id).toOkResult
           } else {
-            Future.successful(toActionResultFromAny(OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_CantDeleteCase)))))
+            Future.successful(OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_CantDeleteCase))))
           }
         }
       } else {
