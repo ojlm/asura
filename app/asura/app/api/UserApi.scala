@@ -16,6 +16,7 @@ import org.pac4j.ldap.profile.LdapProfile
 import org.pac4j.play.PlayWebContext
 import org.pac4j.play.scala.SecurityComponents
 import org.pac4j.play.store.PlaySessionStore
+import play.api.Configuration
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -23,10 +24,12 @@ import scala.concurrent.{ExecutionContext, Future}
 class UserApi @Inject()(
                          implicit val system: ActorSystem,
                          val exec: ExecutionContext,
+                         val configuration: Configuration,
                          val sessionStore: PlaySessionStore,
                          val controllerComponents: SecurityComponents
                        ) extends BaseApi {
 
+  val administrators = configuration.getOptional[Seq[String]]("asura.admin").getOrElse(Nil).toSet
   val activityActor = system.actorOf(ActivitySaveActor.props())
 
   def login() = Action.async { implicit request =>
@@ -47,7 +50,8 @@ class UserApi @Inject()(
         val apiUserProfile = UserProfile(
           token = token.toString,
           username = username,
-          email = emailStr
+          email = emailStr,
+          isSysAdmin = administrators.contains(username)
         )
         UserProfileService.getProfileById(username)
           .flatMap(profile => {
