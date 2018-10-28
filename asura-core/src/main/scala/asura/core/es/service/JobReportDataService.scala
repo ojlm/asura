@@ -7,7 +7,9 @@ import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.job.actor.JobReportDataItemSaveActor.SaveReportDataItemMessage
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.sksamuel.elastic4s.http.ElasticDsl._
+import com.sksamuel.elastic4s.http.{ElasticRequest, Handler}
 
 import scala.concurrent.Future
 
@@ -35,4 +37,30 @@ object JobReportDataService extends CommonService {
     }
   }
 
+  case class CustomCatIndices(pattern: String)
+
+  case class CustomCatIndicesResponse(
+                                       health: String,
+                                       status: String,
+                                       index: String,
+                                       uuid: String,
+                                       pri: String,
+                                       rep: String,
+                                       @JsonProperty("docs.count") count: String,
+                                       @JsonProperty("docs.deleted") deleted: String,
+                                       @JsonProperty("store.size") storeSize: String,
+                                       @JsonProperty("pri.store.size") priStoreSize: String
+                                     )
+
+  implicit object CustomCatIndexesHandler extends Handler[CustomCatIndices, Seq[CustomCatIndicesResponse]] {
+    override def build(request: CustomCatIndices): ElasticRequest = {
+      ElasticRequest("GET", s"/_cat/indices/${request.pattern}?v&format=json&s=index:desc")
+    }
+  }
+
+  def getIndices() = {
+    EsClient.esClient.execute {
+      CustomCatIndices(s"${JobReportDataItem.Index}-*")
+    }
+  }
 }

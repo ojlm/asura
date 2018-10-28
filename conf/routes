@@ -32,3 +32,4 @@ POST        /api/home                            asura.app.api.HomeApi.query()
 ->          /api/linkerd                         linkerd.Routes
 ->          /api/ws                              ws.Routes
 ->          /api/scenario                        scenario.Routes
+->          /api/sys                             system.Routes
