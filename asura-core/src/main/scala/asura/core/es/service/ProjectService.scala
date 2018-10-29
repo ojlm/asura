@@ -6,7 +6,7 @@ import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.CommonValidator
 import asura.core.cs.model.QueryProject
-import asura.core.es.model.{FieldKeys, IndexDocResponse, Project, UpdateDocResponse}
+import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
@@ -43,13 +43,18 @@ object ProjectService extends CommonService {
     }
   }
 
-  def deleteDoc(id: String) = {
-    if (StringUtils.isEmpty(id)) {
+  def deleteProject(group: String, project: String) = {
+    if (StringUtils.isEmpty(group) && StringUtils.isNotEmpty(project)) {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
-      EsClient.esClient.execute {
-        delete(id).from(Project.Index).refresh(RefreshPolicy.WAIT_UNTIL)
-      }
+      IndexService.deleteByGroupOrProject(Seq(
+        Case.Index, RestApi.Index, Job.Index, Environment.Index,
+        JobReport.Index, JobNotify.Index, Scenario.Index, Activity.Index
+      ), group, project).flatMap(idxRes => {
+        EsClient.esClient.execute {
+          delete(Project.generateDocId(group, project)).from(Project.Index).refresh(RefreshPolicy.WAIT_UNTIL)
+        }.map(_ => idxRes)
+      })
     }
   }
 

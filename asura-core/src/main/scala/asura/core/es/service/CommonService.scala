@@ -5,7 +5,7 @@ import asura.core.es.model._
 import asura.core.exceptions.OperateDocFailException
 import com.sksamuel.elastic4s.http.Response
 import com.sksamuel.elastic4s.http.bulk.BulkResponse
-import com.sksamuel.elastic4s.http.delete.DeleteResponse
+import com.sksamuel.elastic4s.http.delete.{DeleteByQueryResponse, DeleteResponse}
 import com.sksamuel.elastic4s.http.index.IndexResponse
 import com.sksamuel.elastic4s.http.index.admin.DeleteIndexResponse
 import com.sksamuel.elastic4s.http.search.SearchResponse
@@ -76,6 +76,15 @@ trait CommonService {
   def toDeleteIndexResponse(response: Response[DeleteIndexResponse]): DeleteIndexResponse = {
     if (response.isSuccess) {
       response.result
+    } else {
+      throw new OperateDocFailException(response.error.reason)
+    }
+  }
+
+  def toDeleteByQueryResponse(response: Response[DeleteByQueryResponse]): DeleteByQueryRes = {
+    if (response.isSuccess) {
+      val result = response.result
+      DeleteByQueryRes(result.total, result.deleted, result.batches)
     } else {
       throw new OperateDocFailException(response.error.reason)
     }
