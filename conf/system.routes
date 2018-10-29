@@ -1,1 +1,2 @@
-GET        /job-report-indices        asura.app.api.SystemApi.getJobReportIndices()
+GET           /job-report-indices               asura.app.api.SystemApi.getJobReportIndices()
+DELETE        /job-report-indices/:index        asura.app.api.SystemApi.deleteJobReportIndex(index)

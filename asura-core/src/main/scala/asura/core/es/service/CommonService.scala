@@ -7,6 +7,7 @@ import com.sksamuel.elastic4s.http.Response
 import com.sksamuel.elastic4s.http.bulk.BulkResponse
 import com.sksamuel.elastic4s.http.delete.DeleteResponse
 import com.sksamuel.elastic4s.http.index.IndexResponse
+import com.sksamuel.elastic4s.http.index.admin.DeleteIndexResponse
 import com.sksamuel.elastic4s.http.search.SearchResponse
 import com.sksamuel.elastic4s.http.update.UpdateResponse
 
@@ -67,6 +68,14 @@ trait CommonService {
   def toUpdateDocResponse(response: Response[UpdateResponse]): UpdateDocResponse = {
     if (response.isSuccess) {
       UpdateDocResponse(id = response.result.id, result = response.result.result)
+    } else {
+      throw new OperateDocFailException(response.error.reason)
+    }
+  }
+
+  def toDeleteIndexResponse(response: Response[DeleteIndexResponse]): DeleteIndexResponse = {
+    if (response.isSuccess) {
+      response.result
     } else {
       throw new OperateDocFailException(response.error.reason)
     }
