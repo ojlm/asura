@@ -1,10 +1,16 @@
 package asura.core.es.service
 
+import asura.common.util.StringUtils
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.es.EsClient
-import asura.core.es.model.{IndexSetting, JobReportDataItem}
+import asura.core.es.model.{FieldKeys, IndexSetting, JobReportDataItem}
+import asura.core.es.{EsClient, EsConfig}
+import com.sksamuel.elastic4s.delete.DeleteByQueryRequest
 import com.sksamuel.elastic4s.http.ElasticDsl._
+import com.sksamuel.elastic4s.searches.queries.Query
+import com.sksamuel.elastic4s.{IndexesAndTypes, RefreshPolicy}
 import com.typesafe.scalalogging.Logger
+
+import scala.collection.mutable.ArrayBuffer
 
 object IndexService extends CommonService {
 
@@ -66,5 +72,17 @@ object IndexService extends CommonService {
     EsClient.esClient.execute {
       deleteIndex(indices)
     }.map(toDeleteIndexResponse(_))
+  }
+
+  def deleteByGroupOrProject(indices: Seq[String], group: String, project: String) = {
+    val esQueries = ArrayBuffer[Query]()
+    if (StringUtils.isNotEmpty(group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, group)
+    if (StringUtils.isNotEmpty(project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, project)
+    EsClient.esClient.execute {
+      DeleteByQueryRequest(
+        IndexesAndTypes(indices, indices.map(_ => EsConfig.DefaultType)),
+        boolQuery().must(esQueries)
+      ).refresh(RefreshPolicy.WAIT_UNTIL)
+    }.map(toDeleteByQueryResponse(_))
   }
 }

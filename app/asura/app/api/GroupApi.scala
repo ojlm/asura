@@ -12,6 +12,7 @@ import asura.core.es.service.GroupService
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 import play.api.Configuration
+import play.api.mvc.{RequestHeader, Result}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -30,18 +31,21 @@ class GroupApi @Inject()(
     GroupService.getById(id).toOkResultByEsOneDoc(id)
   }
 
+  def delete(id: String) = Action.async { implicit req =>
+    checkPrivilege { user =>
+      activityActor ! Activity(id, StringUtils.EMPTY, user, Activity.TYPE_DELETE_GROUP, id)
+      GroupService.deleteGroup(id).toOkResult
+    }
+  }
+
   def put() = Action(parse.byteString).async { implicit req =>
-    val user = getProfileId()
-    val isAllowed = if (administrators.nonEmpty) administrators.contains(user) else true
-    if (isAllowed) {
+    checkPrivilege { user =>
       val group = req.bodyAs(classOf[Group])
       group.fillCommonFields(user)
       GroupService.index(group).map(res => {
         activityActor ! Activity(group.id, StringUtils.EMPTY, user, Activity.TYPE_NEW_GROUP, group.id)
         toActionResultFromAny(res)
       })
-    } else {
-      Future.successful(OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_NotAllowedContactAdministrator, administrators.mkString(",")))))
     }
   }
 
@@ -53,5 +57,15 @@ class GroupApi @Inject()(
   def update() = Action(parse.byteString).async { implicit req =>
     val group = req.bodyAs(classOf[Group])
     GroupService.updateGroup(group).toOkResult
+  }
+
+  private def checkPrivilege(func: String => Future[Result])(implicit request: RequestHeader): Future[Result] = {
+    val user = getProfileId()
+    val isAllowed = if (administrators.nonEmpty) administrators.contains(user) else true
+    if (isAllowed) {
+      func(user)
+    } else {
+      Future.successful(OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_NotAllowedContactAdministrator, administrators.mkString(",")))))
+    }
   }
 }
