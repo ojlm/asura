@@ -6,7 +6,7 @@ import asura.core.es.model.{IndexSetting, JobReportDataItem}
 import com.sksamuel.elastic4s.http.ElasticDsl._
 import com.typesafe.scalalogging.Logger
 
-object IndexService {
+object IndexService extends CommonService {
 
   val logger = Logger("IndexService")
 
@@ -60,5 +60,11 @@ object IndexService {
     } else {
       true
     }
+  }
+
+  def delIndex(indices: Seq[String]) = {
+    EsClient.esClient.execute {
+      deleteIndex(indices)
+    }.map(toDeleteIndexResponse(_))
   }
 }
