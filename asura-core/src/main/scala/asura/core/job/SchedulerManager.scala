@@ -19,8 +19,8 @@ import scala.concurrent.Future
 
 object SchedulerManager {
 
-  /** use the first scheduler as the default one */
-  var DEFAULT_SCHEDULER: String = null
+  val DEFAULT_SCHEDULER = "default"
+  val SYSTEM_SCHEDULER = "system"
   val logger = Logger("SchedulerManager")
   val schedulers = new ConcurrentHashMap[String, Scheduler]()
 
@@ -29,9 +29,6 @@ object SchedulerManager {
       props.foreach(prop => {
         val scheduler = new StdSchedulerFactory(prop).getScheduler
         val name = scheduler.getSchedulerName
-        if (null == DEFAULT_SCHEDULER) {
-          DEFAULT_SCHEDULER = name
-        }
         schedulers.put(name, scheduler)
         scheduler.getListenerManager.addSchedulerListener(NamedSchedulerListener(name))
         scheduler.start()
