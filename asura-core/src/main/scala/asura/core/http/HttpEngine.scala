@@ -1,8 +1,10 @@
 package asura.core.http
 
-import akka.http.scaladsl.Http
+import java.security.cert.X509Certificate
+
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
 import akka.http.scaladsl.unmarshalling.Unmarshal
+import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import asura.common.model.{ApiMsg, BoolErrorRes, BoolErrorTypeRes}
 import asura.common.util.LogUtils
 import asura.core.CoreConfig
@@ -10,6 +12,8 @@ import asura.core.CoreConfig._
 import asura.core.protocols.Protocols
 import asura.core.util.JacksonSupport
 import com.typesafe.scalalogging.Logger
+import com.typesafe.sslconfig.akka.AkkaSSLConfig
+import javax.net.ssl.{KeyManager, SSLContext, X509TrustManager}
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
@@ -51,7 +55,30 @@ object HttpEngine {
     http.singleRequest(proxyRequest)
   }
 
-  def singleRequest(request: HttpRequest): Future[HttpResponse] = http.singleRequest(request)
+  val badSslConfig: AkkaSSLConfig = AkkaSSLConfig().mapSettings(s =>
+    s.withLoose(
+      s.loose
+        .withAcceptAnyCertificate(true)
+        .withDisableHostnameVerification(true)
+    )
+  )
+  val ctx = http.createClientHttpsContext(badSslConfig)
+
+  def singleRequest(request: HttpRequest): Future[HttpResponse] = {
+    if (Protocols.HTTPS.equals(request.uri.scheme)) {
+      val httpsCtx = new HttpsConnectionContext(
+        trustfulSslContext,
+        ctx.sslConfig,
+        ctx.enabledCipherSuites,
+        ctx.enabledProtocols,
+        ctx.clientAuth,
+        ctx.sslParameters
+      )
+      http.singleRequest(request, httpsCtx)
+    } else {
+      http.singleRequest(request)
+    }
+  }
 
   def singleRequestStr(request: HttpRequest): Future[String] = {
     http.singleRequest(request).flatMap(res =>
@@ -94,5 +121,19 @@ object HttpEngine {
         logger.error(LogUtils.stackTraceToString(t))
         (false, t.getMessage, null)
     }
+  }
+
+  private val trustfulSslContext: SSLContext = {
+
+    object NoCheckX509TrustManager extends X509TrustManager {
+      override def checkClientTrusted(chain: Array[X509Certificate], authType: String) = ()
+
+      override def checkServerTrusted(chain: Array[X509Certificate], authType: String) = ()
+
+      override def getAcceptedIssuers = Array[X509Certificate]()
+    }
+    val context = SSLContext.getInstance("TLS")
+    context.init(Array[KeyManager](), Array(NoCheckX509TrustManager), null)
+    context
   }
 }
