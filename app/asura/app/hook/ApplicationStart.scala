@@ -33,10 +33,11 @@ class ApplicationStart @Inject()(
   if (configuration.getOptional[Boolean]("asura.job.enabled").getOrElse(false)) {
     logger.info("init job modules")
     JobCenter.init(configuration.get[String]("asura.job.workDir"), configuration.get[String]("asura.reportBaseUrl"))
-    val quartzDefault = config.getConfig("asura.job.quartz").withFallback(config.getConfig("asura.job.default"))
-    val quartzSystem = config.getConfig("asura.job.quartz").withFallback(config.getConfig("asura.job.system"))
+    val defaultSchedulerConfig = config.getConfig("asura.job.default")
+    val systemSchedulerConfig = config.getConfig("asura.job.system")
+    val quartzCommon = config.getConfig("asura.job.quartz")
     import asura.common.config.PropertiesConversions.toProperties
-    system.actorOf(SchedulerActor.props(quartzDefault, quartzSystem), "JobScheduler")
+    system.actorOf(SchedulerActor.props(toProperties(quartzCommon, defaultSchedulerConfig), toProperties(quartzCommon, systemSchedulerConfig)), "JobScheduler")
   }
 
   private val materializer = ActorMaterializer()(system)
