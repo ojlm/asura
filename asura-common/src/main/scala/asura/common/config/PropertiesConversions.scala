@@ -6,10 +6,12 @@ import com.typesafe.config.Config
 
 object PropertiesConversions {
 
-  implicit def toProperties(config: Config): Properties = {
+  def toProperties(configs: Config*): Properties = {
     val properties = new Properties()
-    config.entrySet().forEach(entry => {
-      properties.put(entry.getKey, config.getString(entry.getKey))
+    configs.foreach(config => {
+      config.entrySet().forEach(entry => {
+        properties.put(entry.getKey, config.getString(entry.getKey))
+      })
     })
     properties
   }
