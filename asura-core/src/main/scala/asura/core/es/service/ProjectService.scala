@@ -52,7 +52,7 @@ object ProjectService extends CommonService {
         JobReport.Index, JobNotify.Index, Scenario.Index, Activity.Index
       ), group, project).flatMap(idxRes => {
         EsClient.esClient.execute {
-          delete(Project.generateDocId(group, project)).from(Project.Index).refresh(RefreshPolicy.WAIT_UNTIL)
+          delete(Project.generateDocId(group, project)).from(Project.Index / EsConfig.DefaultType).refresh(RefreshPolicy.WAIT_UNTIL)
         }.map(_ => idxRes)
       })
     }

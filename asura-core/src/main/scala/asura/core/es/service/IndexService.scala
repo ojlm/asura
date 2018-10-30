@@ -4,10 +4,10 @@ import asura.common.util.StringUtils
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.model.{FieldKeys, IndexSetting, JobReportDataItem}
 import asura.core.es.{EsClient, EsConfig}
+import com.sksamuel.elastic4s.IndexesAndTypes
 import com.sksamuel.elastic4s.delete.DeleteByQueryRequest
 import com.sksamuel.elastic4s.http.ElasticDsl._
 import com.sksamuel.elastic4s.searches.queries.Query
-import com.sksamuel.elastic4s.{IndexesAndTypes, RefreshPolicy}
 import com.typesafe.scalalogging.Logger
 
 import scala.collection.mutable.ArrayBuffer
@@ -80,9 +80,9 @@ object IndexService extends CommonService {
     if (StringUtils.isNotEmpty(project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, project)
     EsClient.esClient.execute {
       DeleteByQueryRequest(
-        IndexesAndTypes(indices, indices.map(_ => EsConfig.DefaultType)),
+        IndexesAndTypes(indices, Seq(EsConfig.DefaultType)),
         boolQuery().must(esQueries)
-      ).refresh(RefreshPolicy.WAIT_UNTIL)
+      ).refreshImmediately
     }.map(toDeleteByQueryResponse(_))
   }
 }
