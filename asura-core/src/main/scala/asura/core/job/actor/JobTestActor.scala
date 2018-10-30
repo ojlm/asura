@@ -54,7 +54,7 @@ class JobTestActor(user: String, out: ActorRef) extends BaseActor {
         } else {
           wsActor ! NotifyActorEvent(s"job(${report.jobName}): ${XtermUtils.redWrap(report.result)}")
         }
-        val reportUrl = s"view report: ${CoreConfig.reportBaseUrl}/${res.id}"
+        val reportUrl = s"view report: ${CoreConfig.reportBaseUrl}/${report.group}/${report.project}/${res.id}"
         wsActor ! NotifyActorEvent(reportUrl)
         wsActor ! OverActorEvent(report)
         wsActor ! PoisonPill
