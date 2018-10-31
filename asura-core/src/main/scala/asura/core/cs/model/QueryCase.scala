@@ -8,4 +8,5 @@ case class QueryCase(
                       text: String,
                       ids: Seq[String],
                       label: String,
+                      hasCreators: Boolean = false,
                     ) extends QueryPage

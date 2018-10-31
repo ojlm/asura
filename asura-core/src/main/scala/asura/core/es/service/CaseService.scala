@@ -12,6 +12,8 @@ import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl.{bulk, delete, indexInto, _}
+import com.sksamuel.elastic4s.http.Response
+import com.sksamuel.elastic4s.http.search.SearchResponse
 import com.sksamuel.elastic4s.searches.queries.Query
 import com.sksamuel.elastic4s.searches.sort.FieldSort
 
@@ -161,13 +163,28 @@ object CaseService extends CommonService {
     */
   def queryCase(query: QueryCase): Future[Map[String, Any]] = {
     if (null != query.ids && query.ids.nonEmpty) {
-      getByIds(query.ids, true).map(res => {
+      getByIds(query.ids, true).flatMap(res => {
         if (res.isSuccess) {
           val idMap = scala.collection.mutable.HashMap[String, Any]()
+          val userIds = mutable.HashSet[String]()
           res.result.hits.hits.foreach(hit => {
-            idMap += (hit.id -> (hit.sourceAsMap + (FieldKeys.FIELD__ID -> hit.id)))
+            val sourceMap = hit.sourceAsMap
+            userIds += sourceMap.getOrElse(FieldKeys.FIELD_CREATOR, StringUtils.EMPTY).asInstanceOf[String]
+            idMap += (hit.id -> (sourceMap + (FieldKeys.FIELD__ID -> hit.id)))
           })
-          Map("total" -> res.result.hits.total, "list" -> query.ids.filter(idMap.contains(_)).map(idMap(_)))
+          if (userIds.nonEmpty && query.hasCreators) {
+            UserProfileService.getByIds(userIds).map(profiles => {
+              Map(
+                "total" -> res.result.hits.total,
+                "list" -> query.ids.filter(idMap.contains(_)).map(idMap(_)),
+                "creators" -> profiles
+              )
+            })
+          } else {
+            Future.successful {
+              Map("total" -> res.result.hits.total, "list" -> query.ids.filter(idMap.contains(_)).map(idMap(_)))
+            }
+          }
         } else {
           throw ErrorMessages.error_EsRequestFail(res).toException
         }
@@ -186,11 +203,15 @@ object CaseService extends CommonService {
           .size(query.pageSize)
           .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
           .sourceInclude(queryFields)
-      }.map(res => {
+      }.flatMap(res => {
         if (res.isSuccess) {
-          EsResponse.toApiData(res.result)
+          if (query.hasCreators) {
+            fetchWithCreatorProfiles(res)
+          } else {
+            Future.successful(EsResponse.toApiData(res.result, true))
+          }
         } else {
-          throw ErrorMessages.error_EsRequestFail(res).toException
+          ErrorMessages.error_EsRequestFail(res).toFutureFail
         }
       })
     }
@@ -211,16 +232,7 @@ object CaseService extends CommonService {
         .sourceInclude(queryFields)
     }.flatMap { res =>
       if (res.isSuccess) {
-        val hits = res.result.hits
-        val userIds = mutable.HashSet[String]()
-        val dataMap = Map("total" -> hits.total, "list" -> hits.hits.map(hit => {
-          val sourceMap = hit.sourceAsMap
-          userIds += sourceMap.getOrElse(FieldKeys.FIELD_CREATOR, StringUtils.EMPTY).asInstanceOf[String]
-          sourceMap + (FieldKeys.FIELD__ID -> hit.id) + (FieldKeys.FIELD__SORT -> hit.sort.getOrElse(Nil))
-        }))
-        UserProfileService.getByIds(userIds).map(users => {
-          dataMap + ("users" -> users)
-        })
+        fetchWithCreatorProfiles(res)
       } else {
         ErrorMessages.error_EsRequestFail(res).toFutureFail
       }
@@ -261,5 +273,18 @@ object CaseService extends CommonService {
         .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
         .sourceInclude(defaultIncludeFields)
     }
+  }
+
+  private def fetchWithCreatorProfiles(res: Response[SearchResponse]): Future[Map[String, Any]] = {
+    val hits = res.result.hits
+    val userIds = mutable.HashSet[String]()
+    val dataMap = Map("total" -> hits.total, "list" -> hits.hits.map(hit => {
+      val sourceMap = hit.sourceAsMap
+      userIds += sourceMap.getOrElse(FieldKeys.FIELD_CREATOR, StringUtils.EMPTY).asInstanceOf[String]
+      sourceMap + (FieldKeys.FIELD__ID -> hit.id) + (FieldKeys.FIELD__SORT -> hit.sort.getOrElse(Nil))
+    }))
+    UserProfileService.getByIds(userIds).map(users => {
+      dataMap + ("creators" -> users)
+    })
   }
 }
