@@ -21,27 +21,31 @@ object And extends Assertion {
     )
     expect match {
       case assertions: Seq[_] =>
-        val assertionResults = assertions.map(assertion => {
-          val subStatis = Statistic()
-          val assertionMap = assertion.asInstanceOf[Map[String, Any]]
-          val contextMap = actual.asInstanceOf[Object]
-          AssertionContext.eval(assertionMap, contextMap, subStatis).map((subStatis, _))
-        })
-        Future.sequence(assertionResults).map(subStatisResults => {
-          val subResults = ArrayBuffer[java.util.Map[String, Any]]()
-          result.subResult = subResults
-          subStatisResults.foreach(subStatisResult => {
-            val (subStatis, subResult) = subStatisResult
-            subResults += subResult
-            result.pass(subStatis.passed)
-            result.fail(subStatis.failed)
-            if (!subStatis.isSuccessful) {
-              result.isSuccessful = false
-              result.msg = AssertResult.MSG_FAILED
-            }
+        if (assertions.nonEmpty) {
+          val assertionResults = assertions.map(assertion => {
+            val subStatis = Statistic()
+            val assertionMap = assertion.asInstanceOf[Map[String, Any]]
+            val contextMap = actual.asInstanceOf[Object]
+            AssertionContext.eval(assertionMap, contextMap, subStatis).map((subStatis, _))
           })
-          result
-        })
+          Future.sequence(assertionResults).map(subStatisResults => {
+            val subResults = ArrayBuffer[java.util.Map[String, Any]]()
+            result.subResult = subResults
+            subStatisResults.foreach(subStatisResult => {
+              val (subStatis, subResult) = subStatisResult
+              subResults += subResult
+              result.pass(subStatis.passed)
+              result.fail(subStatis.failed)
+              if (!subStatis.isSuccessful) {
+                result.isSuccessful = false
+                result.msg = AssertResult.MSG_FAILED
+              }
+            })
+            result
+          })
+        } else {
+          Future.successful(null)
+        }
       case _ =>
         Future.successful(FailAssertResult(1, AssertResult.msgIncomparableTargetType(expect)))
     }

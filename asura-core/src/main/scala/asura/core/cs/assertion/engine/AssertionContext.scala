@@ -35,8 +35,10 @@ object AssertionContext {
             val assertion = Assertions.get(k)
             if (assertion.nonEmpty) {
               assertion.get.assert(context, v).map(assertionResult => {
-                statis.countAndSetState(assertionResult)
-                result.put(k, assertionResult.toReport)
+                if (null != assertionResult) {
+                  statis.countAndSetState(assertionResult)
+                  result.put(k, assertionResult.toReport)
+                }
                 result
               })
             } else {
