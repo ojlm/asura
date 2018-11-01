@@ -11,7 +11,7 @@ import asura.core.es.{EsClient, EsConfig, EsResponse}
 import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
-import com.sksamuel.elastic4s.http.ElasticDsl.{bulk, delete, indexInto, _}
+import com.sksamuel.elastic4s.http.ElasticDsl.{bulk, delete, indexInto, nestedQuery, _}
 import com.sksamuel.elastic4s.http.Response
 import com.sksamuel.elastic4s.http.search.SearchResponse
 import com.sksamuel.elastic4s.searches.queries.Query
@@ -195,13 +195,13 @@ object CaseService extends CommonService {
       if (StringUtils.isNotEmpty(query.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, query.project)
       if (StringUtils.isNotEmpty(query.text)) esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
       if (StringUtils.isNotEmpty(query.path)) esQueries += wildcardQuery(FieldKeys.FIELD_OBJECT_REQUEST_URLPATH, s"${query.path}*")
-      if (StringUtils.isNotEmpty(query.method)) esQueries += termQuery(FieldKeys.FIELD_OBJECT_REQUEST_METHOD, query.method)
-      if (StringUtils.isNotEmpty(query.label)) esQueries += nestedQuery(FieldKeys.FIELD_LABELS, termQuery(FieldKeys.FIELD_NESTED_LABELS_NAME, query.label))
+      if (null != query.methods && query.methods.nonEmpty) esQueries += termsQuery(FieldKeys.FIELD_OBJECT_REQUEST_METHOD, query.methods)
+      if (null != query.labels && query.labels.nonEmpty) esQueries += nestedQuery(FieldKeys.FIELD_LABELS, termsQuery(FieldKeys.FIELD_NESTED_LABELS_NAME, query.labels))
       EsClient.esClient.execute {
         search(Case.Index).query(boolQuery().must(esQueries))
           .from(query.pageFrom)
           .size(query.pageSize)
-          .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
+          .sortByFieldDesc(FieldKeys.FIELD_CREATED_AT)
           .sourceInclude(queryFields)
       }.flatMap(res => {
         if (res.isSuccess) {
@@ -261,6 +261,40 @@ object CaseService extends CommonService {
           `type` = aggField,
           id = bucket.getOrElse("key", "").asInstanceOf[String],
           count = bucket.getOrElse("doc_count", 0).asInstanceOf[Int]
+        )
+      })
+    })
+  }
+
+  def aggsLabels(labelPrefix: String): Future[Seq[AggsItem]] = {
+    val query = if (StringUtils.isNotEmpty(labelPrefix)) {
+      nestedQuery(
+        FieldKeys.FIELD_LABELS,
+        wildcardQuery(FieldKeys.FIELD_NESTED_LABELS_NAME, s"${labelPrefix}*")
+      )
+    } else {
+      matchAllQuery()
+    }
+    EsClient.esClient.execute {
+      search(Case.Index)
+        .query(query)
+        .size(0)
+        .aggregations(
+          nestedAggregation(FieldKeys.FIELD_LABELS, FieldKeys.FIELD_LABELS)
+            .subAggregations(termsAgg(FieldKeys.FIELD_LABELS, FieldKeys.FIELD_NESTED_LABELS_NAME))
+        )
+    }.map(res => {
+      val buckets = res.result
+        .aggregationsAsMap.getOrElse(FieldKeys.FIELD_LABELS, Map.empty).asInstanceOf[Map[String, Any]]
+        .getOrElse(FieldKeys.FIELD_LABELS, Map.empty).asInstanceOf[Map[String, Any]]
+        .getOrElse("buckets", Nil)
+      buckets.asInstanceOf[Seq[Map[String, Any]]].map(bucket => {
+        AggsItem(
+          `type` = null,
+          id = bucket.getOrElse("key", "").asInstanceOf[String],
+          count = bucket.getOrElse("doc_count", 0).asInstanceOf[Int],
+          summary = null,
+          description = null
         )
       })
     })

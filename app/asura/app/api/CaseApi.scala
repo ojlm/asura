@@ -134,4 +134,8 @@ class CaseApi @Inject()(implicit system: ActorSystem,
     val aggs = req.bodyAs(classOf[AggsCase])
     CaseService.aroundAggs(aggs).toOkResult
   }
+
+  def aggsLabels(label: String) = Action(parse.byteString).async { implicit req =>
+    CaseService.aggsLabels(label).toOkResult
+  }
 }
