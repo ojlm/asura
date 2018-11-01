@@ -18,6 +18,7 @@ lazy val root = Project("asura", file("."))
   .enablePlugins(PlayScala, SwaggerPlugin)
   .dependsOn(core, web, namerd)
   .settings(commonSettings: _*)
+  .settings(releaseSettings: _*)
   .settings(publishArtifact in Compile := true)
 
 libraryDependencies ++= Seq(
@@ -48,18 +49,74 @@ def asuraProjects(id: String) = Project(id, file(id))
 
 lazy val common = asuraProjects("asura-common")
   .settings(libraryDependencies ++= commonDependencies)
+  .settings(publishSettings: _*)
 
 lazy val core = asuraProjects("asura-core")
   .settings(libraryDependencies ++= coreDependencies)
+  .settings(publishSettings: _*)
   .dependsOn(common % "compile->compile;test->test")
 
 lazy val pcap = asuraProjects("asura-pcap")
   .settings(libraryDependencies ++= pcapDependencies)
+  .settings(publishSettings: _*)
 
 lazy val web = asuraProjects("asura-web")
   .settings(libraryDependencies ++= webDependencies)
+  .settings(publishSettings: _*)
   .dependsOn(common % "compile->compile;test->test")
 
 lazy val namerd = asuraProjects("asura-namerd")
   .settings(libraryDependencies ++= namerdDependencies)
+  .settings(publishSettings: _*)
   .dependsOn(common % "compile->compile;test->test")
+
+// release
+val username = "asura-pro"
+val repo = "indigo-api"
+
+import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
+
+lazy val releaseSettings = Seq(
+  releaseProcess := Seq[ReleaseStep](
+    checkSnapshotDependencies,
+    inquireVersions,
+    //runClean,
+    // runTest,
+    setReleaseVersion,
+    commitReleaseVersion,
+    tagRelease,
+    releaseStepCommand("publishSigned"),
+    setNextVersion,
+    commitNextVersion,
+    releaseStepCommand("sonatypeReleaseAll"),
+    //pushChanges
+  )
+)
+lazy val publishSettings = Seq(
+  homepage := Some(url(s"https://github.com/$username/$repo")),
+  licenses += "MIT" -> url(s"https://github.com/$username/$repo/blob/master/LICENSE"),
+  scmInfo := Some(ScmInfo(url(s"https://github.com/$username/$repo"), s"git@github.com:$username/$repo.git")),
+  apiURL := Some(url(s"https://$username.github.io/$repo/latest/api/")),
+  releaseCrossBuild := true,
+  releasePublishArtifactsAction := PgpKeys.publishSigned.value,
+  developers := List(
+    Developer(
+      id = username,
+      name = "zhengshaodong",
+      email = "ngxcorpio@gmail.com",
+      url = new URL(s"http://github.com/${username}")
+    )
+  ),
+  useGpg := true,
+  usePgpKeyHex("200BB242B4BE47DD"),
+  publishMavenStyle := true,
+  publishArtifact in Test := false,
+  publishTo := Some(if (isSnapshot.value) Opts.resolver.sonatypeSnapshots else Opts.resolver.sonatypeStaging),
+  credentials ++= (for {
+    username <- sys.env.get("SONATYPE_USERNAME")
+    password <- sys.env.get("SONATYPE_PASSWORD")
+  } yield Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)).toSeq,
+  // Following 2 lines need to get around https://github.com/sbt/sbt/issues/4275
+  publishConfiguration := publishConfiguration.value.withOverwrite(true),
+  publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true)
+)
