@@ -5,6 +5,9 @@
 这个是 [Indigo](https://github.com/asura-pro/indigo) 这个项目的后端部分
 
 [![Build Status](https://travis-ci.org/asura-pro/indigo-api.svg?branch=master)](https://travis-ci.org/asura-pro/indigo-api)
+![GitHub release](https://img.shields.io/github/release/asura-pro/indigo-api.svg)
+![Maven Central](https://img.shields.io/maven-metadata/v/http/central.maven.org/maven2/cc/akkaha/asura-core_2.12/maven-metadata.xml.svg)
+![GitHub](https://img.shields.io/github/license/asura-pro/indigo-api.svg)
 
 ### 特性(WIP)
 - 底层基于 [Akka](https://github.com/akka/akka) 框架，提供了高并发，分布式，消息驱动这些应用特性和 [Actor](https://en.wikipedia.org/wiki/Actor_model) 抽象模型。Actor 模型在简化系统设计，代码解耦，简化实现和解决一些并发问题上对本项目帮助很大
