@@ -1,6 +1,7 @@
 package asura.core.cs.asserts
 
 import asura.common.ScalaTestBaseSpec
+import asura.common.util.FutureUtils.RichFuture
 import asura.core.cs.assertion.engine.{AssertionContext, Statistic}
 import asura.core.util.{JacksonSupport, JsonPathUtils}
 
@@ -31,14 +32,9 @@ class AssertSpec extends ScalaTestBaseSpec {
         |}
       """.stripMargin
     val ctx = JsonPathUtils.parse(ctxJson)
-    println(ctx)
     val assert = JacksonSupport.parse(assertJson, classOf[Map[String, Any]])
-    println(assert)
     val statis = Statistic()
-    val result = AssertionContext(assert, ctx, statis).result
-    println("\nresult ===>")
-    println(result)
-    println(s"\nstatis(${statis.total}, success: ${statis.isSuccessful}) ===>")
-    println(statis)
+    AssertionContext.eval(assert, ctx, statis).await
+    assertResult(true)(statis.isSuccessful)
   }
 }

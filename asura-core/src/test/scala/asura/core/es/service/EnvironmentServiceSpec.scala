@@ -7,18 +7,14 @@ import com.sksamuel.elastic4s.http.ElasticDsl._
 
 class EnvironmentServiceSpec extends ScalaTestBaseSpec with EsClientConfig {
 
-  test("delete-index") {
-    EsClient.esClient.execute {
-      deleteIndex(Environment.Index)
-    }.await match {
-      case Right(res) =>
-        println(res)
-      case _ =>
-    }
-  }
-
-  test("create-index") {
-    val isOk = IndexService.initCheck(Environment)
-    assertResult(true)(isOk)
-  }
+  //  test("delete-index") {
+  //    EsClient.esClient.execute {
+  //      deleteIndex(Environment.Index)
+  //    }.await
+  //  }
+  //
+  //  test("create-index") {
+  //    val isOk = IndexService.initCheck(Environment)
+  //    assertResult(true)(isOk)
+  //  }
 }

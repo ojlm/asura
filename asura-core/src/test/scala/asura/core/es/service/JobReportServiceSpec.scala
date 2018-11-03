@@ -7,18 +7,14 @@ import com.sksamuel.elastic4s.http.ElasticDsl._
 
 class JobReportServiceSpec extends ScalaTestBaseSpec with EsClientConfig {
 
-  test("delete-index") {
-    EsClient.esClient.execute {
-      deleteIndex(JobReport.Index)
-    }.await match {
-      case Right(res) =>
-        println(res)
-      case _ =>
-    }
-  }
-
-  test("create-index") {
-    val isOk = IndexService.initCheck(JobReport)
-    assertResult(true)(isOk)
-  }
+  //  test("delete-index") {
+  //    EsClient.esClient.execute {
+  //      deleteIndex(JobReport.Index)
+  //    }.await
+  //  }
+  //
+  //  test("create-index") {
+  //    val isOk = IndexService.initCheck(JobReport)
+  //    assertResult(true)(isOk)
+  //  }
 }

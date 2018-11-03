@@ -11,6 +11,6 @@ class OpenApiSpec extends ScalaTestBaseSpec {
     val swagger = new SwaggerParser().read("http://petstore.swagger.io/v2/swagger.json")
     val parameters = swagger.getPath("/pet").getPost.getParameters
     val body = parameters.get(0).asInstanceOf[BodyParameter]
-    println(JacksonSupport.stringify(body.getSchema.getReference))
+    assertResult(raw""""#/definitions/Pet"""")(JacksonSupport.stringify(body.getSchema.getReference))
   }
 }

@@ -18,7 +18,6 @@ class TypeSpec extends ScalaTestBaseSpec {
       """.stripMargin
     val m = JsonPathUtils.parse(json).asInstanceOf[java.util.Map[String, Object]]
     val r = Type(m.get("a"), m.get("type"))
-    println(r)
     assertResult(false)(r.isSuccessful)
   }
 
@@ -32,7 +31,6 @@ class TypeSpec extends ScalaTestBaseSpec {
       """.stripMargin
     val m = JsonPathUtils.parse(json).asInstanceOf[java.util.Map[String, Object]]
     val r = Type(m.get("a"), m.get("type"))
-    println(r)
     assertResult(true)(r.isSuccessful)
   }
 
@@ -46,7 +44,6 @@ class TypeSpec extends ScalaTestBaseSpec {
       """.stripMargin
     val m = JsonPathUtils.parse(json).asInstanceOf[java.util.Map[String, Object]]
     val r = Type(m.get("a"), m.get("type"))
-    println(r)
     assertResult(false)(r.isSuccessful)
   }
 
@@ -60,7 +57,6 @@ class TypeSpec extends ScalaTestBaseSpec {
       """.stripMargin
     val m = JsonPathUtils.parse(json).asInstanceOf[java.util.Map[String, Object]]
     val r = Type(m.get("a"), m.get("type"))
-    println(r)
     assertResult(true)(r.isSuccessful)
   }
 }

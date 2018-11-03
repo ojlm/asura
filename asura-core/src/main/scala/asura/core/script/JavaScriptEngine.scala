@@ -17,7 +17,7 @@ object JavaScriptEngine {
   private val logger = Logger("JavaScriptEngine")
   // use separate execution context
   // private val engineExecutionContext = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
-  private val sem = new ScriptEngineManager()
+  private val sem = new ScriptEngineManager(getClass.getClassLoader)
   val engine: NashornScriptEngine = sem.getEngineByName("javascript").asInstanceOf[NashornScriptEngine]
 
   private val baseLibs: CompiledScript = {

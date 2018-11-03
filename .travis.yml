@@ -3,13 +3,13 @@ jdk:
   - oraclejdk8
 sbt_args: -Xmx2048M
 script:
-  - sbt stage
+  - sbt clean coverage test coverageReport
   - find $HOME/.sbt -name "*.lock" | xargs rm
   - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm
-
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
 sudo: false
-
-# Cache settings
+# cache settings
 cache:
   directories:
     - $HOME/.ivy2/cache
