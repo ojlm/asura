@@ -14,12 +14,18 @@ swaggerDomainNameSpaces := Seq("asura.app.api.model", "asura.core.es.model")
 swaggerV3 := true
 
 // Root
-lazy val root = Project("asura", file("."))
+lazy val root = Project("asura-app", file("."))
   .enablePlugins(PlayScala, SwaggerPlugin)
-  .dependsOn(core, web, namerd)
   .settings(commonSettings: _*)
   .settings(releaseSettings: _*)
   .settings(publishArtifact in Compile := true)
+  .dependsOn(
+    common % "compile->compile;test->test",
+    core % "compile->compile;test->test",
+    web % "compile->compile;test->test",
+    namerd % "compile->compile;test->test",
+  ).aggregate(common, core, web, namerd)
+
 
 libraryDependencies ++= Seq(
   guice,
@@ -120,3 +126,5 @@ lazy val publishSettings = Seq(
   publishConfiguration := publishConfiguration.value.withOverwrite(true),
   publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true)
 )
+
+coverageEnabled := true

@@ -3,6 +3,7 @@ package asura.core.cs
 import java.util
 
 import asura.common.ScalaTestBaseSpec
+import asura.common.util.JsonUtils
 
 class CaseContextSpec extends ScalaTestBaseSpec {
 
@@ -26,14 +27,7 @@ class CaseContextSpec extends ScalaTestBaseSpec {
   test("random function") {
     val tpl = "{{random(5)}}"
     val value = CaseContext.render(tpl, context).asInstanceOf[String]
-    println(value)
     assertResult(5)(value.length)
-  }
-
-  test("uuid function") {
-    val tpl = "{{uuid()}}"
-    val value = CaseContext.render(tpl, context).asInstanceOf[String]
-    println(value)
   }
 
   test("prev cycle reference") {
@@ -58,7 +52,10 @@ class CaseContextSpec extends ScalaTestBaseSpec {
         |  "uuid" : "{{uuid()}}"
         |}
       """.stripMargin
-    val result = CaseContext.renderBody(tpl, context)
-    println(result)
+    val str = CaseContext.renderBody(tpl, context)
+    val map = JsonUtils.parse(str, classOf[Map[String, Any]])
+    assertResult(map.get("a").get)("a")
+    assertResult(map.get("b").get)(5)
+    assertResult(map.get("random").get.asInstanceOf[String].length)(7)
   }
 }

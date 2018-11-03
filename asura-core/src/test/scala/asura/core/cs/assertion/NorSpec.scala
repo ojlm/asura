@@ -1,6 +1,7 @@
 package asura.core.cs.assertion
 
 import asura.common.ScalaTestBaseSpec
+import asura.common.util.FutureUtils.RichFuture
 import asura.core.util.{JacksonSupport, JsonPathUtils}
 
 class NorSpec extends ScalaTestBaseSpec {
@@ -18,11 +19,10 @@ class NorSpec extends ScalaTestBaseSpec {
       """
         |[
         |  { "$.a" : { "$eq" : 2} },
-        |  { "$.b" : { "$eq" : 2} }
+        |  { "$.b" : { "$eq" : 1} }
         |]
       """.stripMargin
-    val r = Nor(ctx, JacksonSupport.parse(asserts, classOf[List[Any]]))
-    println(r)
+    val r = Nor(ctx, JacksonSupport.parse(asserts, classOf[List[Any]])).await
     assertResult(true)(r.isSuccessful)
   }
 
@@ -42,8 +42,7 @@ class NorSpec extends ScalaTestBaseSpec {
         |  { "$.b" : { "$eq" : 2} }
         |]
       """.stripMargin
-    val r = Nor(ctx, JacksonSupport.parse(asserts, classOf[List[Any]]))
-    println(r)
+    val r = Nor(ctx, JacksonSupport.parse(asserts, classOf[List[Any]])).await
     assertResult(false)(r.isSuccessful)
   }
 }

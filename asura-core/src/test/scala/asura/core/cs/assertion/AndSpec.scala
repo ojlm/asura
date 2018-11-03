@@ -1,6 +1,7 @@
 package asura.core.cs.assertion
 
 import asura.common.ScalaTestBaseSpec
+import asura.common.util.FutureUtils.RichFuture
 import asura.core.util.{JacksonSupport, JsonPathUtils}
 
 class AndSpec extends ScalaTestBaseSpec {
@@ -21,8 +22,7 @@ class AndSpec extends ScalaTestBaseSpec {
         |  { "$.b" : { "$eq" : 2} }
         |]
       """.stripMargin
-    val r = And(ctx, JacksonSupport.parse(asserts, classOf[List[Any]]))
-    println(r)
+    val r = And(ctx, JacksonSupport.parse(asserts, classOf[List[Any]])).await
     assertResult(false)(r.isSuccessful)
   }
 }

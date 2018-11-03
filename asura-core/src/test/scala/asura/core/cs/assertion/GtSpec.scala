@@ -9,7 +9,6 @@ class GtSpec extends ScalaTestBaseSpec {
     val json = "{}"
     val m = JsonPathUtils.parse(json).asInstanceOf[java.util.Map[String, Object]]
     val r = Gt(m.get("a"), m.get("b"))
-    println(r)
     assertResult(false)(r.isSuccessful)
   }
 
@@ -23,7 +22,6 @@ class GtSpec extends ScalaTestBaseSpec {
       """.stripMargin
     val m = JsonPathUtils.parse(json).asInstanceOf[java.util.Map[String, Object]]
     val r = Gt(m.get("a"), m.get("b"))
-    println(r)
     assertResult(true)(r.isSuccessful)
   }
 
@@ -37,7 +35,6 @@ class GtSpec extends ScalaTestBaseSpec {
       """.stripMargin
     val m = JsonPathUtils.parse(json).asInstanceOf[java.util.Map[String, Object]]
     val r = Gt(m.get("a"), m.get("b"))
-    println(r)
     assertResult(false)(r.isSuccessful)
   }
 
@@ -51,7 +48,6 @@ class GtSpec extends ScalaTestBaseSpec {
       """.stripMargin
     val m = JsonPathUtils.parse(json).asInstanceOf[java.util.Map[String, Object]]
     val r = Gt(m.get("a"), m.get("b"))
-    println(r)
     assertResult(false)(r.isSuccessful)
   }
 
@@ -65,7 +61,6 @@ class GtSpec extends ScalaTestBaseSpec {
       """.stripMargin
     val m = JsonPathUtils.parse(json).asInstanceOf[java.util.Map[String, Object]]
     val r = Gt(m.get("a"), m.get("b"))
-    println(r)
     assertResult(false)(r.isSuccessful)
   }
 
@@ -79,7 +74,6 @@ class GtSpec extends ScalaTestBaseSpec {
       """.stripMargin
     val m = JsonPathUtils.parse(json).asInstanceOf[java.util.Map[String, Object]]
     val r = Gt(m.get("a"), m.get("b"))
-    println(r)
     assertResult(false)(r.isSuccessful)
   }
 }

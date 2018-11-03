@@ -2,18 +2,12 @@ package asura.core.script
 
 import asura.common.ScalaTestBaseSpec
 import asura.core.script.builtin.StringGenerator
-import javax.script.{ScriptEngineManager, SimpleBindings}
+import javax.script.SimpleBindings
 import jdk.nashorn.api.scripting.NashornScriptEngine
 
 class JavaScriptEngineSpec extends ScalaTestBaseSpec {
 
-  val sem = new ScriptEngineManager()
-  val engine: NashornScriptEngine = sem.getEngineByName("javascript").asInstanceOf[NashornScriptEngine]
-
-  test("hello coco") {
-    val name = "coco"
-    engine.eval(s"print('hello $name')")
-  }
+  val engine: NashornScriptEngine = JavaScriptEngine.engine
 
   test("return int") {
     val value: Int = engine.eval("1 + 3").asInstanceOf[Int]
@@ -62,21 +56,21 @@ class JavaScriptEngineSpec extends ScalaTestBaseSpec {
       """.stripMargin
     engine.eval(script)
     val fun1Result = engine.invokeFunction("fun1", "coco")
-    println(fun1Result)
+    logger.info(fun1Result.toString)
     engine.invokeFunction("fun2", this)
   }
 
   test("call java function") {
     val script = StringGenerator.random
     engine.eval(script)
-    println(engine.eval("random(5)"))
+    logger.info(engine.eval("random(5)").toString)
   }
 
   test("compiled script") {
     val compiledScript = engine.compile("Math.random().toString()")
     val value = compiledScript.eval()
     compiledScript.eval()
-    println(value)
+    logger.info(value.toString)
   }
 
   test("binding") {
@@ -85,6 +79,6 @@ class JavaScriptEngineSpec extends ScalaTestBaseSpec {
     val bindings = new SimpleBindings()
     bindings.put("attributes", attributes)
     engine.eval("print(attributes.a);attributes.a = 'b';", bindings)
-    println(attributes)
+    logger.info(attributes.toString)
   }
 }

@@ -8,18 +8,14 @@ import com.sksamuel.elastic4s.http.ElasticDsl._
 
 class ProjectServiceSpec extends ScalaTestBaseSpec with EsClientConfig {
 
-  test("delete-index") {
-    EsClient.esClient.execute {
-      deleteIndex(Project.Index)
-    }.await match {
-      case Right(res) =>
-        println(res)
-      case _ =>
-    }
-  }
-
-  test("create-index") {
-    val isOk = IndexService.initCheck(Project)
-    assertResult(true)(isOk)
-  }
+  //  test("delete-index") {
+  //    EsClient.esClient.execute {
+  //      deleteIndex(Project.Index)
+  //    }.await
+  //  }
+  //
+  //  test("create-index") {
+  //    val isOk = IndexService.initCheck(Project)
+  //    assertResult(true)(isOk)
+  //  }
 }

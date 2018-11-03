@@ -1,6 +1,7 @@
 package asura.core.cs.assertion
 
 import asura.common.ScalaTestBaseSpec
+import asura.common.util.FutureUtils.RichFuture
 import asura.core.util.{JacksonSupport, JsonPathUtils}
 
 class NotSpec extends ScalaTestBaseSpec {
@@ -22,8 +23,7 @@ class NotSpec extends ScalaTestBaseSpec {
         |}
       """.stripMargin
     val assert = JacksonSupport.parse(assertJson, classOf[Map[String, Any]])
-    val r = Not(ctx, assert)
-    println(r)
+    val r = Not(ctx, assert).await
     assertResult(true)(r.isSuccessful)
   }
 
@@ -44,8 +44,7 @@ class NotSpec extends ScalaTestBaseSpec {
         |}
       """.stripMargin
     val assert = JacksonSupport.parse(assertJson, classOf[Map[String, Any]])
-    val r = Not(ctx, assert)
-    println(r)
+    val r = Not(ctx, assert).await
     assertResult(false)(r.isSuccessful)
   }
 }

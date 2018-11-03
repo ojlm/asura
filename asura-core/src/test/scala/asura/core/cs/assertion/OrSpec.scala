@@ -1,6 +1,7 @@
 package asura.core.cs.assertion
 
 import asura.common.ScalaTestBaseSpec
+import asura.common.util.FutureUtils.RichFuture
 import asura.core.util.{JacksonSupport, JsonPathUtils}
 
 class OrSpec extends ScalaTestBaseSpec {
@@ -21,8 +22,7 @@ class OrSpec extends ScalaTestBaseSpec {
         |  { "$.b" : { "$eq" : 2} }
         |]
       """.stripMargin
-    val r = Or(ctx, JacksonSupport.parse(asserts, classOf[List[Any]]))
-    println(r)
+    val r = Or(ctx, JacksonSupport.parse(asserts, classOf[List[Any]])).await
     assertResult(true)(r.isSuccessful)
     assertResult(1)(r.passed)
     assertResult(1)(r.failed)
