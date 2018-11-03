@@ -9,8 +9,6 @@ case class Request(
                     val rawUrl: String,
                     val urlPath: String, // same with the path from api
                     val port: Int,
-                    @deprecated("use auth in env instead")
-                    val auth: Authorization,
                     var method: String,
                     var path: Seq[KeyValueObject],
                     var query: Seq[KeyValueObject],

@@ -15,8 +15,6 @@ case class RestApi(
                     val method: String,
                     val group: String,
                     val project: String,
-                    @deprecated("moved to environment")
-                    val service: String = null,
                     var id: String = null,
                     var deprecated: Boolean = false,
                     var version: String = StringUtils.EMPTY,
@@ -51,9 +49,6 @@ case class RestApi(
     }
     if (null != schema) {
       m += (FieldKeys.FIELD_SCHEMA -> schema)
-    }
-    if (null != service) {
-      m += (FieldKeys.FIELD_SERVICE -> service)
     }
     m.toMap
   }
