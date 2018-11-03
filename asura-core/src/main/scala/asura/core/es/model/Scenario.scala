@@ -11,8 +11,6 @@ case class Scenario(
                      val description: String,
                      val group: String,
                      val project: String,
-                     @deprecated("use steps, will remove this fields")
-                     val cases: Seq[DocRef],
                      val steps: Seq[ScenarioStep],
                      val env: String = StringUtils.EMPTY,
                      val labels: Seq[LabelRef] = Nil,

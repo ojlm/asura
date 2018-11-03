@@ -17,13 +17,7 @@ case class Case(
                  val project: String,
                  val request: Request,
                  val assert: Map[String, Any],
-                 @deprecated("use env")
-                 val namespace: String = null,
-                 @deprecated("use env")
-                 val useProxy: Boolean = false,
                  val env: String = StringUtils.EMPTY,
-                 @deprecated("如果 env 不是自认为使用env")
-                 val useEnv: Boolean = false,
                  val labels: Seq[LabelRef] = Nil,
                  val generator: CaseGenerator = CaseGenerator(),
                  var creator: String = null,

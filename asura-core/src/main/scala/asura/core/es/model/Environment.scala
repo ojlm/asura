@@ -14,12 +14,6 @@ case class Environment(
                         val description: String,
                         val group: String,
                         val project: String,
-                        @deprecated
-                        val protocol: String,
-                        @deprecated
-                        val host: String,
-                        @deprecated
-                        val port: Int,
                         val auth: Seq[Authorization],
                         val namespace: String = null,
                         val enableProxy: Boolean = false,
