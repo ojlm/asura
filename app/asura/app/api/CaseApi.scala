@@ -8,7 +8,7 @@ import asura.common.model.{ApiRes, ApiResError}
 import asura.common.util.StringUtils
 import asura.core.ErrorMessages
 import asura.core.cs.assertion.Assertions
-import asura.core.cs.model.{AggsCase, QueryCase, SearchAfterCase}
+import asura.core.cs.model.{AggsCase, BatchOperation, QueryCase, SearchAfterCase}
 import asura.core.cs.{CaseContext, CaseRunner}
 import asura.core.es.EsResponse
 import asura.core.es.actor.ActivitySaveActor
@@ -137,5 +137,10 @@ class CaseApi @Inject()(implicit system: ActorSystem,
 
   def aggsLabels(label: String) = Action(parse.byteString).async { implicit req =>
     CaseService.aggsLabels(label).toOkResult
+  }
+
+  def batch() = Action(parse.byteString).async { implicit req =>
+    val ops = req.bodyAs(classOf[BatchOperation])
+    CaseService.batchUpdate(ops).toOkResult
   }
 }

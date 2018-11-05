@@ -5,7 +5,7 @@ import asura.common.util.StringUtils
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.CaseValidator
-import asura.core.cs.model.{AggsCase, AggsItem, QueryCase, SearchAfterCase}
+import asura.core.cs.model._
 import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig, EsResponse}
 import asura.core.util.JacksonSupport
@@ -306,6 +306,19 @@ object CaseService extends CommonService {
       search(Case.Index).query(query)
         .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
         .sourceInclude(defaultIncludeFields)
+    }
+  }
+
+  def batchUpdate(batch: BatchOperation): Future[BulkDocResponse] = {
+    if (null != batch.labels && batch.labels.nonEmpty) {
+      EsClient.esClient.execute(bulk {
+        batch.labels.filter(item => null != item.labels).map(item => {
+          val labels = item.labels.map(label => Map(FieldKeys.FIELD_NAME -> label.name))
+          update(item.id).in(Case.Index / EsConfig.DefaultType).doc(Map(FieldKeys.FIELD_LABELS -> labels))
+        })
+      }.refresh(RefreshPolicy.WAIT_UNTIL)).map(toBulkDocResponse(_))
+    } else {
+      ErrorMessages.error_EmptyRequestBody.toFutureFail
     }
   }
 
