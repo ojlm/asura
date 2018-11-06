@@ -10,7 +10,7 @@ object JobUtils {
     if (null == jobMeta || null == triggerMeta || null == jobData) {
       ErrorMessages.error_EmptyRequestBody
     } else if ((null == jobData.cs && null == jobData.scenario) ||
-      (null != jobData.cs && jobData.cs.isEmpty && null != jobData.scenario && jobData.scenario.isEmpty)) {
+      (null != jobData.cs && jobData.cs.isEmpty && null != jobData.scenario && jobData.scenario.isEmpty && null == jobData.ext)) {
       ErrorMessages.error_EmptyJobCaseScenarioCount
     } else if (StringUtils.isEmpty(jobMeta.summary)) {
       ErrorMessages.error_EmptyJobName
