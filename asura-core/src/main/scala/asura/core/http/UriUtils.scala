@@ -1,12 +1,12 @@
 package asura.core.http
 
-import java.net.URLEncoder
+import java.net.{URLDecoder, URLEncoder}
 import java.nio.charset.StandardCharsets
 
 import akka.http.scaladsl.model.Uri
 import asura.common.exceptions.InvalidStatusException
 import asura.core.cs.CaseContext
-import asura.core.es.model.{Case, Environment}
+import asura.core.es.model.Case
 import asura.core.util.StringTemplate
 
 object UriUtils {
@@ -18,7 +18,7 @@ object UriUtils {
       scheme = cs.request.protocol,
       host = cs.request.host,
       port = cs.request.port,
-      path = renderPath(cs.request.urlPath, cs, context),
+      path = renderPath(URLDecoder.decode(cs.request.urlPath, StandardCharsets.UTF_8.name()), cs, context),
       queryString = buildQueryString(cs, context)
     )
   }
