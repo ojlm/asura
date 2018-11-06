@@ -1,15 +1,21 @@
 package asura.core.es.model
 
-/**
-  * job data structure
-  *
-  * @param cs       case id  list
-  * @param scenario scenario id list
-  * @param ext      external data for extension
-  */
+import asura.core.es.model.JobData.JobDataExt
+
 case class JobData(
                     cs: Seq[DocRef] = Nil,
                     scenario: Seq[DocRef] = Nil,
-                    ext: Map[String, Any] = Map.empty,
+                    ext: JobDataExt = null,
                   ) {
+}
+
+object JobData {
+
+  case class JobDataExt(
+                         path: String = null,
+                         methods: Seq[String] = null,
+                         text: String = null,
+                         labels: Seq[String] = null,
+                       )
+
 }
