@@ -65,9 +65,9 @@ object UriUtils {
       if (null != params && params.nonEmpty) {
         val sb = StringBuilder.newBuilder
         for (param <- params if param.enabled) {
-          sb.append(param.key)
+          sb.append(URLEncoder.encode(param.key, StandardCharsets.UTF_8.name()))
             .append("=")
-            .append(context.renderSingleMacroAsString(param.value))
+            .append(URLEncoder.encode(context.renderSingleMacroAsString(param.value), StandardCharsets.UTF_8.name()))
             .append("&")
         }
         if (sb.nonEmpty) {
