@@ -35,3 +35,4 @@ error_NoSchedulerDefined=Undefined scheduler: {0}
 error_CantDeleteCase=There are relative scenarios or jobs, you can not delete this case
 error_CantDeleteScenario=There are relative jobs, you can not delete this scenario
 error_CantDeleteEnv=There are relative cases, scenarios or jobs, you can not delete this environment
+error_JobValidate=invalid job data: {0}
