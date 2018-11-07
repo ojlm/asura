@@ -55,7 +55,7 @@ class ScenarioTestActor(user: String, out: ActorRef) extends BaseActor {
     case Status.Failure(t) =>
       val logErrMsg = LogUtils.stackTraceToString(t)
       log.warning(logErrMsg)
-      wsActor ! ErrorActorEvent(logErrMsg)
+      wsActor ! ErrorActorEvent(t.getMessage)
       wsActor ! PoisonPill
     case _ =>
       wsActor ! ErrorActorEvent(ErrorMessages.error_UnknownMessageType.errMsg)

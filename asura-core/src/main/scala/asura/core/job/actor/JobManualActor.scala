@@ -67,7 +67,7 @@ class JobManualActor(jobId: String, user: String, out: ActorRef) extends BaseAct
     case Status.Failure(t) =>
       val stackTrace = LogUtils.stackTraceToString(t)
       log.warning(stackTrace)
-      wsActor ! stackTrace
+      wsActor ! t.getMessage
       wsActor ! JobExecDesc.STATUS_FAIL
       wsActor ! PoisonPill
   }
