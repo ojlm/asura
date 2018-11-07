@@ -3,6 +3,7 @@ package asura.core.cs.scenario
 import akka.actor.ActorRef
 import asura.common.actor.{ActorEvent, ItemActorEvent}
 import asura.common.util.{LogUtils, StringUtils, XtermUtils}
+import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.assertion.engine.Statistic
 import asura.core.cs.{CaseContext, CaseResult, CaseRunner, ContextOptions}
@@ -85,6 +86,7 @@ object ScenarioRunner {
             logResult: ActorEvent => Unit = null,
           )(implicit dataStoreHelper: ItemStoreDataHelper = null): Future[ScenarioReportItem] = {
     if (null != log) log(s"scenario(${summary}): fetch ${caseTuples.length} cases.")
+    if (caseTuples.isEmpty) throw ErrorMessages.error_EmptyJobCaseScenarioCount.toException
     val scenarioReportItem = ScenarioReportItem(scenarioId, summary)
     val caseReportItems = ArrayBuffer[CaseReportItem]()
     scenarioReportItem.steps = caseReportItems

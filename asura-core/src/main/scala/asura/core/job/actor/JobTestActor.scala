@@ -67,7 +67,7 @@ class JobTestActor(user: String, out: ActorRef) extends BaseActor {
     case Status.Failure(t) =>
       val errLog = LogUtils.stackTraceToString(t)
       log.warning(errLog)
-      wsActor ! ErrorActorEvent(errLog)
+      wsActor ! ErrorActorEvent(t.getMessage)
       wsActor ! PoisonPill
   }
 
