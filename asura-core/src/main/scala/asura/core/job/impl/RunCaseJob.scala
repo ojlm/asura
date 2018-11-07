@@ -24,8 +24,9 @@ object RunCaseJob extends JobBase {
   )
 
   override def checkJobData(jobData: JobData): BoolErrorRes = {
-    if (null == jobData ||
-      ((null == jobData.cs || jobData.cs.isEmpty) && (null == jobData.scenario || jobData.scenario.isEmpty))
+    if (null == jobData || ((null == jobData.cs || jobData.cs.isEmpty)
+      && (null == jobData.scenario || jobData.scenario.isEmpty)
+      && null == jobData.ext)
     ) {
       (false, ApiMsg.EMPTY_DATA)
     } else {
@@ -67,29 +68,41 @@ object RunCaseJob extends JobBase {
     val report = execDesc.report
     val jobData = execDesc.job.jobData
     val cases = jobData.cs
-    if (null != cases && !cases.isEmpty) {
-      val caseIds = cases.map(_.id)
-      CaseService.getCasesByIdsAsMap(caseIds, false).flatMap(caseIdMap => {
-        val cases = ArrayBuffer[(String, Case)]()
-        caseIds.foreach(id => {
-          val value = caseIdMap.get(id)
-          if (value.nonEmpty) {
-            cases.append((id, value.get))
-          }
-        })
-        val storeDataHelper = ItemStoreDataHelper(execDesc.reportId, "c", execDesc.reportItemSaveActor, execDesc.jobId)
-        ScenarioRunner.test(null, "job cases", cases, log, execDesc.options)(storeDataHelper)
-      }).map(scenarioReport => {
-        val reportItems = scenarioReport.steps
-        report.data.cases = reportItems
-        reportItems.foreach(reportItem => {
-          val statis = reportItem.statis
-          if (statis.isSuccessful) {
-            report.result = JobExecDesc.STATUS_SUCCESS
+    if (null != cases && !cases.isEmpty || null != jobData.ext) {
+      val scenarioReportFuture = if (null != cases && !cases.isEmpty) {
+        val caseIds = cases.map(_.id)
+        CaseService.getCasesByIdsAsMap(caseIds, false).flatMap(caseIdMap => {
+          val cases = ArrayBuffer[(String, Case)]()
+          caseIds.foreach(id => {
+            val value = caseIdMap.get(id)
+            if (value.nonEmpty) {
+              cases.append((id, value.get))
+            }
+          })
+          if (null != jobData.ext) {
+            CaseService.getCasesByJobDataExtAsMap(execDesc.job.group, execDesc.job.project, jobData.ext).flatMap(res => {
+              res.foreach(idCsTuple => cases.append((idCsTuple._1, idCsTuple._2)))
+              val storeDataHelper = ItemStoreDataHelper(execDesc.reportId, "c", execDesc.reportItemSaveActor, execDesc.jobId)
+              ScenarioRunner.test(null, "job cases", cases, log, execDesc.options)(storeDataHelper)
+            })
           } else {
-            report.result = JobExecDesc.STATUS_FAIL
+            val storeDataHelper = ItemStoreDataHelper(execDesc.reportId, "c", execDesc.reportItemSaveActor, execDesc.jobId)
+            ScenarioRunner.test(null, "job cases", cases, log, execDesc.options)(storeDataHelper)
           }
         })
+      } else {
+        val cases = ArrayBuffer[(String, Case)]()
+        CaseService.getCasesByJobDataExtAsMap(execDesc.job.group, execDesc.job.project, jobData.ext).flatMap(res => {
+          res.foreach(idCsTuple => cases.append((idCsTuple._1, idCsTuple._2)))
+          val storeDataHelper = ItemStoreDataHelper(execDesc.reportId, "c", execDesc.reportItemSaveActor, execDesc.jobId)
+          ScenarioRunner.test(null, "job cases", cases, log, execDesc.options)(storeDataHelper)
+        })
+      }
+      scenarioReportFuture.map(scenarioReport => {
+        report.data.cases = scenarioReport.steps
+        if (scenarioReport.isFailed()) {
+          report.result = JobExecDesc.STATUS_FAIL
+        }
         execDesc
       })
     } else {

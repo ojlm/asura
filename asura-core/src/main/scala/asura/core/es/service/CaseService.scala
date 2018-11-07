@@ -6,6 +6,7 @@ import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.CaseValidator
 import asura.core.cs.model._
+import asura.core.es.model.JobData.JobDataExt
 import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig, EsResponse}
 import asura.core.util.JacksonSupport
@@ -138,7 +139,7 @@ object CaseService extends CommonService {
     }
   }
 
-  def getCasesByIdsAsMap(ids: Seq[String], filterFields: Boolean = false)(implicit executor: ExecutionContext): Future[Map[String, Case]] = {
+  def getCasesByIdsAsMap(ids: Seq[String], filterFields: Boolean = false): Future[Map[String, Case]] = {
     if (null != ids && ids.nonEmpty) {
       val map = mutable.HashMap[String, Case]()
       getByIds(ids, filterFields).map(res => {
@@ -155,6 +156,34 @@ object CaseService extends CommonService {
       })
     } else {
       Future.successful(Map.empty)
+    }
+  }
+
+
+  def getCasesByJobDataExtAsMap(group: String, project: String, ext: JobDataExt): Future[Map[String, Case]] = {
+    if (null != ext && StringUtils.isNotEmpty(group) && StringUtils.isNotEmpty(project)) {
+      val map = mutable.HashMap[String, Case]()
+      val esQueries = ArrayBuffer[Query]()
+      if (StringUtils.isNotEmpty(group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, group)
+      if (StringUtils.isNotEmpty(project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, project)
+      if (StringUtils.isNotEmpty(ext.text)) esQueries += matchQuery(FieldKeys.FIELD__TEXT, ext.text)
+      if (StringUtils.isNotEmpty(ext.path)) esQueries += wildcardQuery(FieldKeys.FIELD_OBJECT_REQUEST_URLPATH, s"${ext.path}*")
+      if (null != ext.methods && ext.methods.nonEmpty) esQueries += termsQuery(FieldKeys.FIELD_OBJECT_REQUEST_METHOD, ext.methods)
+      if (null != ext.labels && ext.labels.nonEmpty) esQueries += nestedQuery(FieldKeys.FIELD_LABELS, termsQuery(FieldKeys.FIELD_NESTED_LABELS_NAME, ext.labels))
+      EsClient.esClient.execute {
+        search(Case.Index).query(boolQuery().must(esQueries))
+          .size(EsConfig.MaxCount)
+          .sortByFieldDesc(FieldKeys.FIELD_CREATED_AT)
+      }.map(res => {
+        if (res.isSuccess) {
+          res.result.hits.hits.foreach(hit => map += (hit.id -> JacksonSupport.parse(hit.sourceAsString, classOf[Case])))
+          map.toMap
+        } else {
+          throw ErrorMessages.error_EsRequestFail(res).toException
+        }
+      })
+    } else {
+      ErrorMessages.error_EmptyRequestBody.toFutureFail
     }
   }
 

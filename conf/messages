@@ -35,3 +35,4 @@ error_NoSchedulerDefined=没有定义的调度器: {0}
 error_CantDeleteCase=包含关联的场景和任务，无法删除这个用例
 error_CantDeleteScenario=包含关联的任务，无法删除这个场景
 error_CantDeleteEnv=包含关联的用例、场景和任务，无法删除这个环境配置
+error_JobValidate=任务验证失败：{0}
