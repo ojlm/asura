@@ -5,7 +5,6 @@
 这个是 [Indigo](https://github.com/asura-pro/indigo) 项目的后端
 
 [![Build Status](https://travis-ci.org/asura-pro/indigo-api.svg?branch=master)](https://travis-ci.org/asura-pro/indigo-api)
-[![codecov](https://codecov.io/gh/asura-pro/indigo-api/branch/master/graph/badge.svg)](https://codecov.io/gh/asura-pro/indigo-api)
 ![GitHub release](https://img.shields.io/github/release/asura-pro/indigo-api.svg)
 ![Maven Central](https://img.shields.io/maven-metadata/v/http/central.maven.org/maven2/cc/akkaha/asura-core_2.12/maven-metadata.xml.svg)
 ![GitHub](https://img.shields.io/github/license/asura-pro/indigo-api.svg)
