@@ -127,4 +127,4 @@ lazy val publishSettings = Seq(
   publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true)
 )
 
-coverageEnabled := true
+coverageEnabled := false
