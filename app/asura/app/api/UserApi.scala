@@ -6,7 +6,6 @@ import asura.app.api.BaseApi.OkApiRes
 import asura.app.api.model.UserProfile
 import asura.common.model.{ApiRes, ApiResError}
 import asura.common.util.StringUtils
-import asura.core.ErrorMessages
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, BaseIndex, UserProfile => EsUserProfile}
 import asura.core.es.service.UserProfileService
@@ -64,25 +63,26 @@ class UserApi @Inject()(
               apiUserProfile.email = profile.email
               Future.successful(OkApiRes(ApiRes(data = apiUserProfile)))
             } else {
+              // new user
+              val esUserProfile = EsUserProfile(
+                username = username,
+                email = emailStr
+              )
               if (commonProfile.isInstanceOf[LdapProfile]) {
                 // first time login by ldap
-                val esUserProfile = EsUserProfile(
-                  username = username,
-                  email = emailStr
-                )
                 esUserProfile.fillCommonFields(BaseIndex.CREATOR_LDAP)
-                UserProfileService.index(esUserProfile).map(indexResponse => {
-                  activityActor ! Activity(StringUtils.EMPTY, StringUtils.EMPTY, username, Activity.TYPE_NEW_USER, username)
-                  if (StringUtils.isNotEmpty(indexResponse.id)) {
-                    OkApiRes(ApiRes(data = apiUserProfile))
-                  } else {
-                    OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_FailToCreateUser)))
-                  }
-                })
               } else {
-                // code should not run here
-                Future.successful(OkApiRes(ApiResError(ErrorMessages.error_ServerError.name)))
+                // not by ldap
+                esUserProfile.fillCommonFields(BaseIndex.CREATOR_STANDARD)
               }
+              UserProfileService.index(esUserProfile).map(indexResponse => {
+                activityActor ! Activity(StringUtils.EMPTY, StringUtils.EMPTY, username, Activity.TYPE_NEW_USER, username)
+                if (StringUtils.isNotEmpty(indexResponse.id)) {
+                  OkApiRes(ApiRes(data = apiUserProfile))
+                } else {
+                  OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_FailToCreateUser)))
+                }
+              })
             }
           })
       }
