@@ -10,6 +10,7 @@ object Dependencies {
 
   private val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
   private val akkaStream = "com.typesafe.akka" %% "akka-stream" % akkaVersion
+  private val akkaCluster = "com.typesafe.akka" %% "akka-cluster" % akkaVersion
   private val akkaHttp = "com.typesafe.akka" %% "akka-http" % akkaHttpVersion
   private val akkaHttpXml = "com.typesafe.akka" %% "akka-http-xml" % akkaHttpVersion
   private val config = "com.typesafe" % "config" % "1.3.2"
@@ -62,6 +63,7 @@ object Dependencies {
   )
 
   val commonDependencies = Seq(akkaTestKit, config, akkaActor, jackson) ++ scalaTestDeps ++ loggingDeps
+  val clusterDependencies = Seq(akkaCluster) ++ commonDependencies
   val coreDependencies = Seq(commonsLang3, jackson, faststring, elastic4sCore, elastic4sHttp, elastic4sEmbedded, joddCore, jsonPath, swaggerParser, quartz, redisson) ++ commonDependencies ++ httpDeps ++ databaseDeps
   val pcapDependencies = Seq(pcap4jCore, pcap4jPacketFactoryStatic) ++ loggingDeps ++ scalaTestDeps
   val appDependencies = Seq(config, guava, commonsCodec) ++ loggingDeps ++ httpDeps ++ testDeps ++ pcapDependencies
