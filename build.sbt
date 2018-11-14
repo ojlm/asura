@@ -21,10 +21,11 @@ lazy val root = Project("asura-app", file("."))
   .settings(publishArtifact in Compile := true)
   .dependsOn(
     common % "compile->compile;test->test",
+    cluster % "compile->compile;test->test",
     core % "compile->compile;test->test",
     web % "compile->compile;test->test",
     namerd % "compile->compile;test->test",
-  ).aggregate(common, core, web, namerd)
+  ).aggregate(common, cluster, core, web, namerd)
 
 
 libraryDependencies ++= Seq(
@@ -55,6 +56,10 @@ def asuraProjects(id: String) = Project(id, file(id))
 
 lazy val common = asuraProjects("asura-common")
   .settings(libraryDependencies ++= commonDependencies)
+  .settings(publishSettings: _*)
+
+lazy val cluster = asuraProjects("asura-cluster")
+  .settings(libraryDependencies ++= clusterDependencies)
   .settings(publishSettings: _*)
 
 lazy val core = asuraProjects("asura-core")
