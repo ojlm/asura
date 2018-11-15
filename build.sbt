@@ -5,18 +5,17 @@ import sbt._
 
 scalacOptions in ThisBuild ++= Seq("-feature", "-deprecation", "-language:postfixOps", "-language:higherKinds", "-language:implicitConversions")
 
-// docker
-packageName in Docker := "asura"
-version in Docker := "0.0.0"
+lazy val root = Project("asura-root", file("."))
+  .dependsOn(app, gatling)
+  .aggregate(app, gatling)
 
-// swagger
-swaggerDomainNameSpaces := Seq("asura.app.api.model", "asura.core.es.model")
-swaggerV3 := true
-
-// Root
-lazy val root = Project("asura-app", file("."))
-  .enablePlugins(PlayScala, SwaggerPlugin)
+// Sub Projects
+def asuraProjects(id: String) = Project(id, file(id))
   .settings(commonSettings: _*)
+
+lazy val app = asuraProjects("asura-app")
+  .enablePlugins(PlayScala, SwaggerPlugin)
+  .settings(libraryDependencies ++= appPlayDeps)
   .settings(releaseSettings: _*)
   .settings(publishArtifact in Compile := true)
   .dependsOn(
@@ -26,30 +25,6 @@ lazy val root = Project("asura-app", file("."))
     web % "compile->compile;test->test",
     namerd % "compile->compile;test->test",
   ).aggregate(common, cluster, core, web, namerd)
-
-
-val commonPlayDeps = Seq(
-  guice,
-  ehcache,
-  ws,
-  filters,
-  "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test,
-)
-
-libraryDependencies ++= Seq(
-  "org.webjars" % "swagger-ui" % "3.17.4",
-  "org.webjars.npm" % "swagger-editor-dist" % "3.1.16",
-  "org.pac4j" %% "play-pac4j" % "6.0.0",
-  "org.pac4j" % "pac4j-http" % "3.0.1",
-  "org.pac4j" % "pac4j-ldap" % "3.0.1",
-  "org.pac4j" % "pac4j-jwt" % "3.0.1",
-  "com.typesafe.play" %% "play-mailer" % "6.0.1",
-  "com.typesafe.play" %% "play-mailer-guice" % "6.0.1",
-) ++ commonPlayDeps
-
-// Sub Projects
-def asuraProjects(id: String) = Project(id, file(id))
-  .settings(commonSettings: _*)
 
 lazy val common = asuraProjects("asura-common")
   .settings(libraryDependencies ++= commonDependencies)
