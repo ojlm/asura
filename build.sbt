@@ -28,11 +28,15 @@ lazy val root = Project("asura-app", file("."))
   ).aggregate(common, cluster, core, web, namerd)
 
 
-libraryDependencies ++= Seq(
+val commonPlayDeps = Seq(
   guice,
   ehcache,
   ws,
   filters,
+  "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test,
+)
+
+libraryDependencies ++= Seq(
   "org.webjars" % "swagger-ui" % "3.17.4",
   "org.webjars.npm" % "swagger-editor-dist" % "3.1.16",
   "org.pac4j" %% "play-pac4j" % "6.0.0",
@@ -41,14 +45,7 @@ libraryDependencies ++= Seq(
   "org.pac4j" % "pac4j-jwt" % "3.0.1",
   "com.typesafe.play" %% "play-mailer" % "6.0.1",
   "com.typesafe.play" %% "play-mailer-guice" % "6.0.1",
-  "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test,
-)
-
-// Adds additional packages into Twirl
-//TwirlKeys.templateImports += "com.example.controllers._"
-
-// Adds additional packages into conf/routes
-// play.sbt.routes.RoutesKeys.routesImport += "com.example.binders._"
+) ++ commonPlayDeps
 
 // Sub Projects
 def asuraProjects(id: String) = Project(id, file(id))
@@ -79,6 +76,12 @@ lazy val web = asuraProjects("asura-web")
 lazy val namerd = asuraProjects("asura-namerd")
   .settings(libraryDependencies ++= namerdDependencies)
   .settings(publishSettings: _*)
+  .dependsOn(common % "compile->compile;test->test")
+
+lazy val gatling = asuraProjects("asura-gatling")
+  .enablePlugins(PlayScala)
+  .settings(libraryDependencies ++= commonPlayDeps)
+  .aggregate(common)
   .dependsOn(common % "compile->compile;test->test")
 
 // release
