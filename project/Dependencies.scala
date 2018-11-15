@@ -1,3 +1,4 @@
+import play.sbt.PlayImport.{ehcache, filters, guice, ws}
 import sbt._
 
 object Dependencies {
@@ -69,4 +70,23 @@ object Dependencies {
   val appDependencies = Seq(config, guava, commonsCodec) ++ loggingDeps ++ httpDeps ++ testDeps ++ pcapDependencies
   val webDependencies = Seq(seleniumJava, jBrowserDriver, htmlunitDriver) ++ loggingDeps ++ httpDeps ++ testDeps
   val namerdDependencies = Seq(akkaStream, akkaHttp) ++ commonDependencies
+
+  val commonPlayDeps = Seq(
+    guice,
+    ehcache,
+    ws,
+    filters,
+    "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test,
+  )
+
+  val appPlayDeps = Seq(
+    "org.webjars" % "swagger-ui" % "3.17.4",
+    "org.webjars.npm" % "swagger-editor-dist" % "3.1.16",
+    "org.pac4j" %% "play-pac4j" % "6.0.0",
+    "org.pac4j" % "pac4j-http" % "3.0.1",
+    "org.pac4j" % "pac4j-ldap" % "3.0.1",
+    "org.pac4j" % "pac4j-jwt" % "3.0.1",
+    "com.typesafe.play" %% "play-mailer" % "6.0.1",
+    "com.typesafe.play" %% "play-mailer-guice" % "6.0.1",
+  ) ++ commonPlayDeps
 }
