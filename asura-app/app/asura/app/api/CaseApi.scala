@@ -13,7 +13,7 @@ import asura.core.cs.{CaseContext, CaseRunner}
 import asura.core.es.EsResponse
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, Case, FieldKeys}
-import asura.core.es.service.{CaseService, JobService, ScenarioService, UserProfileService}
+import asura.core.es.service._
 import asura.core.util.{JacksonSupport, JsonPathUtils}
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
@@ -133,6 +133,17 @@ class CaseApi @Inject()(implicit system: ActorSystem,
   def aggs() = Action(parse.byteString).async { implicit req =>
     val aggs = req.bodyAs(classOf[AggsCase])
     CaseService.aroundAggs(aggs).toOkResult
+  }
+
+  def trend(groups: Boolean = true) = Action(parse.byteString).async { implicit req =>
+    val aggs = req.bodyAs(classOf[AggsCase])
+    val res = for {
+      groups <- if (groups) GroupService.getMaxGroups() else Future.successful(Nil)
+      trends <- CaseService.trend(aggs)
+    } yield (groups, trends)
+    res.map(tuple => {
+      OkApiRes(ApiRes(data = Map("groups" -> tuple._1, "trends" -> tuple._2)))
+    })
   }
 
   def aggsLabels(label: String) = Action(parse.byteString).async { implicit req =>

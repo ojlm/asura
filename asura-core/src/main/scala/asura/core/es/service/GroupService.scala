@@ -1,5 +1,6 @@
 package asura.core.es.service
 
+import asura.common.exceptions.RequestFailException
 import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.ErrorMessages
@@ -8,6 +9,7 @@ import asura.core.cs.CommonValidator
 import asura.core.cs.model.QueryGroup
 import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig}
+import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
@@ -66,13 +68,24 @@ object GroupService extends CommonService {
     }
   }
 
-  def getAll() = {
+  def getMaxGroups(): Future[Seq[Group]] = {
     EsClient.esClient.execute {
       search(Group.Index)
         .query(matchAllQuery())
         .limit(EsConfig.MaxCount)
+        .sourceInclude(FieldKeys.FIELD_ID, FieldKeys.FIELD_SUMMARY, FieldKeys.FIELD_DESCRIPTION, FieldKeys.FIELD_AVATAR)
         .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
-    }
+    }.map(res => {
+      if (res.isSuccess) {
+        if (res.result.isEmpty) {
+          Nil
+        } else {
+          res.result.hits.hits.map(hit => JacksonSupport.parse(hit.sourceAsString, classOf[Group]))
+        }
+      } else {
+        throw RequestFailException(res.error.reason)
+      }
+    })
   }
 
   def updateGroup(group: Group): Future[UpdateDocResponse] = {
