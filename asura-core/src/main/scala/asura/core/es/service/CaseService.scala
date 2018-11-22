@@ -270,7 +270,7 @@ object CaseService extends CommonService {
   }
 
   // note this is not always accurate
-  def aroundAggs(aggs: AggsCase): Future[Seq[AggsItem]] = {
+  def aroundAggs(aggs: AggsQuery): Future[Seq[AggsItem]] = {
     val esQueries = ArrayBuffer[Query]()
     if (StringUtils.isNotEmpty(aggs.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, aggs.group)
     if (StringUtils.isNotEmpty(aggs.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, aggs.project)
@@ -330,7 +330,7 @@ object CaseService extends CommonService {
     })
   }
 
-  def trend(aggs: AggsCase): Future[Seq[AggsItem]] = {
+  def trend(aggs: AggsQuery): Future[Seq[AggsItem]] = {
     val esQueries = ArrayBuffer[Query]()
     if (StringUtils.isNotEmpty(aggs.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, aggs.group)
     if (StringUtils.isNotEmpty(aggs.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, aggs.project)

@@ -8,7 +8,7 @@ import asura.common.model.{ApiRes, ApiResError}
 import asura.common.util.StringUtils
 import asura.core.ErrorMessages
 import asura.core.cs.assertion.Assertions
-import asura.core.cs.model.{AggsCase, BatchOperation, QueryCase, SearchAfterCase}
+import asura.core.cs.model.{AggsQuery, BatchOperation, QueryCase, SearchAfterCase}
 import asura.core.cs.{CaseContext, CaseRunner}
 import asura.core.es.EsResponse
 import asura.core.es.actor.ActivitySaveActor
@@ -131,12 +131,12 @@ class CaseApi @Inject()(implicit system: ActorSystem,
   }
 
   def aggs() = Action(parse.byteString).async { implicit req =>
-    val aggs = req.bodyAs(classOf[AggsCase])
+    val aggs = req.bodyAs(classOf[AggsQuery])
     CaseService.aroundAggs(aggs).toOkResult
   }
 
   def trend(groups: Boolean = true) = Action(parse.byteString).async { implicit req =>
-    val aggs = req.bodyAs(classOf[AggsCase])
+    val aggs = req.bodyAs(classOf[AggsQuery])
     val res = for {
       groups <- if (groups) GroupService.getMaxGroups() else Future.successful(Nil)
       trends <- CaseService.trend(aggs)

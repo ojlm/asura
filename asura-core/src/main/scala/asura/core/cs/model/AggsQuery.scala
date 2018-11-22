@@ -1,19 +1,21 @@
 package asura.core.cs.model
 
 import asura.common.util.StringUtils
+import asura.core.es.EsConfig
 import asura.core.es.model.FieldKeys
 
-case class AggsCase(
-                     group: String,
-                     project: String,
-                     creator: String,
-                     interval: String = null,
-                     termsField: String = null,
-                     dateRange: String = null,
-                     size: Int = 10,
-                   ) {
+case class AggsQuery(
+                      group: String,
+                      project: String,
+                      creator: String,
+                      interval: String = null,
+                      termsField: String = null,
+                      dateRange: String = null,
+                      size: Int = 10,
+                      var types: Seq[String] = null,
+                    ) {
 
-  def pageSize(): Int = if (Option(size).isDefined && size > 0) size else 10
+  def pageSize(): Int = if (Option(size).isDefined && size > 0) size else EsConfig.MaxCount
 
   def aggInterval(): String = {
     if (StringUtils.isNotEmpty(interval)) interval else "1M"
