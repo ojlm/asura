@@ -45,12 +45,7 @@ object ActivityService extends CommonService {
   }
 
   def trend(aggs: AggsQuery): Future[Seq[AggsItem]] = {
-    val esQueries = ArrayBuffer[Query]()
-    if (StringUtils.isNotEmpty(aggs.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, aggs.group)
-    if (StringUtils.isNotEmpty(aggs.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, aggs.project)
-    if (StringUtils.isNotEmpty(aggs.creator)) esQueries += termQuery(FieldKeys.FIELD_USER, aggs.creator)
-    if (null != aggs.types && aggs.types.nonEmpty) esQueries += termsQuery(FieldKeys.FIELD_TYPE, aggs.types)
-    if (StringUtils.isNotEmpty(aggs.dateRange)) esQueries += rangeQuery(FieldKeys.FIELD_TIMESTAMP).gte(s"now-${aggs.dateRange}/d").lte(s"now/d")
+    val esQueries = buildEsQueryFromAggQuery(aggs)
     val termsField = aggs.aggTermsField()
     val dateHistogram = dateHistogramAgg(aggsTermName, FieldKeys.FIELD_TIMESTAMP)
       .interval(DateHistogramInterval.fromString(aggs.aggInterval()))
@@ -85,5 +80,39 @@ object ActivityService extends CommonService {
           })
       })
     })
+  }
+
+  def aggTerms(aggs: AggsQuery): Future[Seq[AggsItem]] = {
+    val esQueries = buildEsQueryFromAggQuery(aggs)
+    val aggField = aggs.aggField()
+    EsClient.esClient.execute {
+      search(Activity.Index)
+        .query(boolQuery().must(esQueries))
+        .size(0)
+        .aggregations(termsAgg(aggsTermName, aggField).size(aggs.pageSize()))
+    }.map(res => {
+      val buckets = res.result
+        .aggregationsAsMap.getOrElse(aggsTermName, Map.empty)
+        .asInstanceOf[Map[String, Any]]
+        .getOrElse("buckets", Nil)
+      buckets.asInstanceOf[Seq[Map[String, Any]]].map(bucket => {
+        AggsItem(
+          `type` = aggField,
+          id = bucket.getOrElse("key", "").asInstanceOf[String],
+          count = bucket.getOrElse("doc_count", 0).asInstanceOf[Int]
+        )
+      })
+    })
+  }
+
+  private def buildEsQueryFromAggQuery(aggs: AggsQuery): Seq[Query] = {
+    val esQueries = ArrayBuffer[Query]()
+    if (StringUtils.isNotEmpty(aggs.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, aggs.group)
+    if (StringUtils.isNotEmpty(aggs.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, aggs.project)
+    if (StringUtils.isNotEmpty(aggs.creator)) esQueries += termQuery(FieldKeys.FIELD_USER, aggs.creator)
+    if (StringUtils.isNotEmpty(aggs.creatorPrefix)) esQueries += wildcardQuery(FieldKeys.FIELD_USER, s"${aggs.creatorPrefix}*")
+    if (null != aggs.types && aggs.types.nonEmpty) esQueries += termsQuery(FieldKeys.FIELD_TYPE, aggs.types)
+    if (StringUtils.isNotEmpty(aggs.dateRange)) esQueries += rangeQuery(FieldKeys.FIELD_TIMESTAMP).gte(s"now-${aggs.dateRange}/d").lte(s"now/d")
+    esQueries
   }
 }
