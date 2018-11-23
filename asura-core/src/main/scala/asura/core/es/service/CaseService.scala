@@ -23,7 +23,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
 
-object CaseService extends CommonService {
+object CaseService extends CommonService with BaseAggregationService {
 
   val queryFields = Seq(
     FieldKeys.FIELD_SUMMARY,
@@ -331,46 +331,19 @@ object CaseService extends CommonService {
     })
   }
 
-  def trend(aggs: AggsQuery): Future[Seq[AggsItem]] = {
-    val esQueries = ArrayBuffer[Query]()
-    if (StringUtils.isNotEmpty(aggs.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, aggs.group)
-    if (StringUtils.isNotEmpty(aggs.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, aggs.project)
-    if (StringUtils.isNotEmpty(aggs.creator)) esQueries += termQuery(FieldKeys.FIELD_CREATOR, aggs.creator)
-    if (StringUtils.isNotEmpty(aggs.dateRange)) esQueries += rangeQuery(FieldKeys.FIELD_CREATED_AT).gte(s"now-${aggs.dateRange}/d").lte(s"now/d")
-    val termsField = aggs.aggTermsField()
+  def trend(query: AggsQuery): Future[Seq[AggsItem]] = {
+    val esQueries = buildEsQueryFromAggQuery(query, false)
+    val termsField = query.aggTermsField()
     val dateHistogram = dateHistogramAgg(aggsTermName, FieldKeys.FIELD_CREATED_AT)
-      .interval(DateHistogramInterval.fromString(aggs.aggInterval()))
+      .interval(DateHistogramInterval.fromString(query.aggInterval()))
       .format("yyyy-MM-dd")
-      .subAggregations(termsAgg(aggsTermName, termsField).size(aggs.pageSize()))
+      .subAggregations(termsAgg(aggsTermName, termsField).size(query.pageSize()))
     EsClient.esClient.execute {
       search(Case.Index)
         .query(boolQuery().must(esQueries))
         .size(0)
         .aggregations(dateHistogram)
-    }.map(res => {
-      val buckets = res.result
-        .aggregationsAsMap.getOrElse(aggsTermName, Map.empty)
-        .asInstanceOf[Map[String, Any]]
-        .getOrElse("buckets", Nil)
-      buckets.asInstanceOf[Seq[Map[String, Any]]].map(bucket => {
-        AggsItem(
-          `type` = null,
-          id = bucket.getOrElse("key_as_string", "").asInstanceOf[String],
-          count = bucket.getOrElse("doc_count", 0).asInstanceOf[Int],
-          sub = {
-            bucket.getOrElse(aggsTermName, Map.empty)
-              .asInstanceOf[Map[String, Any]]
-              .getOrElse("buckets", Nil)
-              .asInstanceOf[Seq[Map[String, Any]]].map(bucket => {
-              AggsItem(
-                `type` = termsField,
-                id = bucket.getOrElse("key", "").asInstanceOf[String],
-                count = bucket.getOrElse("doc_count", 0).asInstanceOf[Int]
-              )
-            })
-          })
-      })
-    })
+    }.map(toAggItems(_, termsField))
   }
 
   def containEnv(ids: Seq[String]) = {
