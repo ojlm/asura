@@ -27,4 +27,9 @@ class ActivityApi @Inject()(implicit system: ActorSystem,
       OkApiRes(ApiRes(data = Map("trends" -> trends)))
     })
   }
+
+  def aggTerms() = Action(parse.byteString).async { implicit req =>
+    val aggs = req.bodyAs(classOf[AggsQuery])
+    ActivityService.aggTerms(aggs).toOkResult
+  }
 }

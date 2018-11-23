@@ -1,1 +1,2 @@
 POST        /aggs/trend        asura.app.api.ActivityApi.trend()
+POST        /aggs/terms        asura.app.api.ActivityApi.aggTerms()

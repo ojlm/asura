@@ -275,6 +275,7 @@ object CaseService extends CommonService {
     if (StringUtils.isNotEmpty(aggs.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, aggs.group)
     if (StringUtils.isNotEmpty(aggs.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, aggs.project)
     if (StringUtils.isNotEmpty(aggs.creator)) esQueries += termQuery(FieldKeys.FIELD_CREATOR, aggs.creator)
+    if (StringUtils.isNotEmpty(aggs.creatorPrefix)) esQueries += wildcardQuery(FieldKeys.FIELD_CREATOR, s"${aggs.creatorPrefix}*")
     val aggField = aggs.aggField()
     EsClient.esClient.execute {
       search(Case.Index)

@@ -8,6 +8,7 @@ case class AggsQuery(
                       group: String,
                       project: String,
                       creator: String,
+                      creatorPrefix: String = null,
                       interval: String = null,
                       termsField: String = null,
                       dateRange: String = null,
@@ -26,12 +27,16 @@ case class AggsQuery(
   }
 
   def aggField(): String = {
-    if (StringUtils.isNotEmpty(project)) {
-      FieldKeys.FIELD_CREATOR
-    } else if (StringUtils.isNotEmpty(group)) {
-      FieldKeys.FIELD_PROJECT
+    if (StringUtils.isNotEmpty(termsField)) {
+      termsField
     } else {
-      FieldKeys.FIELD_GROUP
+      if (StringUtils.isNotEmpty(project)) {
+        FieldKeys.FIELD_CREATOR
+      } else if (StringUtils.isNotEmpty(group)) {
+        FieldKeys.FIELD_PROJECT
+      } else {
+        FieldKeys.FIELD_GROUP
+      }
     }
   }
 }
