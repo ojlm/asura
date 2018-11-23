@@ -9,10 +9,10 @@ import asura.app.api.model.QueryJobState
 import asura.common.model.{ApiRes, ApiResError}
 import asura.common.util.StringUtils
 import asura.core.ErrorMessages.ErrorMessage
-import asura.core.cs.model.{QueryJob, QueryJobReport}
+import asura.core.cs.model.{AggsQuery, QueryJob, QueryJobReport}
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.Activity
-import asura.core.es.service.{JobNotifyService, JobReportDataService, JobReportService, JobService}
+import asura.core.es.service._
 import asura.core.job.actor._
 import asura.core.job.{JobCenter, JobUtils, SchedulerManager}
 import javax.inject.{Inject, Singleton}
@@ -113,8 +113,18 @@ class JobApi @Inject()(
     JobReportDataService.getById(day, id).toOkResultByEsOneDoc(id)
   }
 
-  def reportTrend(id: String, days: Option[Int]) = Action(parse.byteString).async { implicit req =>
-    JobReportService.trend(id, days.getOrElse(30)).toOkResultByEsList()
+  def jobTrend(id: String, days: Option[Int]) = Action(parse.byteString).async { implicit req =>
+    JobReportService.jobTrend(id, days.getOrElse(30)).toOkResultByEsList()
+  }
+
+  def trend() = Action(parse.byteString).async { implicit req =>
+    val aggs = req.bodyAs(classOf[AggsQuery])
+    val res = for {
+      trends <- JobReportService.trend(aggs)
+    } yield trends
+    res.map(trends => {
+      OkApiRes(ApiRes(data = Map("trends" -> trends)))
+    })
   }
 
   def cron() = Action(parse.tolerantText) { implicit req =>

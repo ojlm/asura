@@ -3,18 +3,19 @@ package asura.core.es.service
 import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.cs.model.QueryJobReport
+import asura.core.cs.model.{AggsItem, AggsQuery, QueryJobReport}
 import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
+import com.sksamuel.elastic4s.searches.DateHistogramInterval
 import com.sksamuel.elastic4s.searches.queries.Query
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
-object JobReportService extends CommonService {
+object JobReportService extends CommonService with BaseAggregationService {
 
   val queryIncludeFields = Seq(
     FieldKeys.FIELD_JOB_ID,
@@ -99,7 +100,7 @@ object JobReportService extends CommonService {
     }
   }
 
-  def trend(jobId: String, size: Int) = {
+  def jobTrend(jobId: String, size: Int) = {
     EsClient.esClient.execute {
       search(JobReport.Index)
         .query(boolQuery().must(termQuery(FieldKeys.FIELD_JOB_ID, jobId)))
@@ -107,5 +108,20 @@ object JobReportService extends CommonService {
         .sortByFieldDesc(FieldKeys.FIELD_END_AT)
         .sourceInclude(FieldKeys.FIELD_ELAPSE, FieldKeys.FIELD_STATIS, FieldKeys.FIELD_END_AT)
     }
+  }
+
+  def trend(aggs: AggsQuery): Future[Seq[AggsItem]] = {
+    val esQueries = buildEsQueryFromAggQuery(aggs, false)
+    val termsField = aggs.aggTermsField()
+    val dateHistogram = dateHistogramAgg(aggsTermName, FieldKeys.FIELD_CREATED_AT)
+      .interval(DateHistogramInterval.fromString(aggs.aggInterval()))
+      .format("yyyy-MM-dd")
+      .subAggregations(termsAgg(aggsTermName, termsField).size(aggs.pageSize()))
+    EsClient.esClient.execute {
+      search(JobReport.Index)
+        .query(boolQuery().must(esQueries))
+        .size(0)
+        .aggregations(dateHistogram)
+    }.map(toAggItems(_, termsField))
   }
 }
