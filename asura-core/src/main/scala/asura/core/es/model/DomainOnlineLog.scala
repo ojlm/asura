@@ -3,15 +3,15 @@ package asura.core.es.model
 import asura.core.es.EsConfig
 import com.sksamuel.elastic4s.mappings.{KeywordField, MappingDefinition}
 
-case class DomainLog(
-                      val name: String,
-                      val count: Int,
-                      val date: String,
-                    )
+case class DomainOnlineLog(
+                            val name: String,
+                            val count: Int,
+                            val date: String,
+                          )
 
-object DomainLog extends IndexSetting {
+object DomainOnlineLog extends IndexSetting {
 
-  val Index: String = s"${EsConfig.IndexPrefix}domain-log"
+  val Index: String = s"${EsConfig.IndexPrefix}domain-online-log"
   override val shards: Int = 5
   override val replicas: Int = 0
 
