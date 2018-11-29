@@ -21,7 +21,10 @@ case class CoreConfig(
                        val proxyHost: String = StringUtils.EMPTY, /* for https transparent proxy */
                        val httpProxyPort: Int = 0,
                        val httpsProxyPort: Int = 0,
-                       val reportBaseUrl: String = StringUtils.EMPTY
+                       val reportBaseUrl: String = StringUtils.EMPTY,
+                       val onlineLogUrl: String = StringUtils.EMPTY,
+                       val onlineLogIndexPrefix: String = StringUtils.EMPTY,
+                       val onlineLogDatePattern: String = "yyyy-MM-dd",
                      )
 
 object CoreConfig {
@@ -35,6 +38,9 @@ object CoreConfig {
   var proxyIdentifier: String = _
   var reportBaseUrl: String = StringUtils.EMPTY
   var enableProxy = false
+  var onlineLogUrl = StringUtils.EMPTY
+  var onlineLogIndexPrefix = StringUtils.EMPTY
+  var onlineLogDatePattern = "yyyy-MM-dd"
 
   def init(config: CoreConfig): Unit = {
     system = config.system
@@ -51,5 +57,9 @@ object CoreConfig {
       EsConfig.IndexPrefix = config.esIndexPrefix.get
     }
     EsClient.init(config.useLocalEsNode, config.esUrl, config.localEsDataDir)
+    CoreConfig.onlineLogUrl = config.onlineLogUrl
+    CoreConfig.onlineLogIndexPrefix = config.onlineLogIndexPrefix
+    CoreConfig.onlineLogDatePattern = config.onlineLogDatePattern
+    EsClient.initOnlineLogClient(CoreConfig.onlineLogUrl)
   }
 }
