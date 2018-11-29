@@ -23,18 +23,21 @@ trait BaseAggregationService {
         `type` = null,
         id = bucket.getOrElse("key_as_string", "").asInstanceOf[String],
         count = bucket.getOrElse("doc_count", 0).asInstanceOf[Int],
-        sub = {
-          bucket.getOrElse(aggsTermName, Map.empty)
-            .asInstanceOf[Map[String, Any]]
-            .getOrElse("buckets", Nil)
-            .asInstanceOf[Seq[Map[String, Any]]].map(bucket => {
-            AggsItem(
-              `type` = termsField,
-              id = bucket.getOrElse("key", "").asInstanceOf[String],
-              count = bucket.getOrElse("doc_count", 0).asInstanceOf[Int]
-            )
+        sub =
+          if (StringUtils.isEmpty(termsField)) {
+            null
+          } else {
+            bucket.getOrElse(aggsTermName, Map.empty)
+              .asInstanceOf[Map[String, Any]]
+              .getOrElse("buckets", Nil)
+              .asInstanceOf[Seq[Map[String, Any]]].map(bucket => {
+              AggsItem(
+                `type` = termsField,
+                id = bucket.getOrElse("key", "").asInstanceOf[String],
+                count = bucket.getOrElse("doc_count", 0).asInstanceOf[Int]
+              )
+            })
           })
-        })
     })
   }
 

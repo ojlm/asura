@@ -111,4 +111,13 @@ object SystemJobs {
                                             var next: Date = null
                                           )
 
+  case class SyncDomainAndApiJobModel(
+                                       var cron: String = "0 0 3 * * ?",
+                                       var state: String = JobStates.UNCREATED,
+                                       var day: Int = 20,
+                                       var domainCount: Int = 1000,
+                                       var apiCount: Int = 2000,
+                                       var next: Date = null
+                                     )
+
 }

@@ -12,8 +12,11 @@ object EsClient {
 
   val logger = Logger("EsClient")
   private var client: ElasticClient = _
+  private var onlineLogClient: ElasticClient = _
 
   def esClient: ElasticClient = client
+
+  def esOnlineLogClient = onlineLogClient
 
   /**
     * check if index exists, if not create
@@ -43,5 +46,11 @@ object EsClient {
     }
     isAllOk = IndexService.checkTemplate()
     isAllOk
+  }
+
+  def initOnlineLogClient(url: String): Unit = {
+    if (StringUtils.isNotEmpty(url)) {
+      onlineLogClient = ElasticClient(ElasticProperties(url))
+    }
   }
 }
