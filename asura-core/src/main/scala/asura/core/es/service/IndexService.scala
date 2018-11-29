@@ -2,7 +2,7 @@ package asura.core.es.service
 
 import asura.common.util.StringUtils
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.es.model.{FieldKeys, IndexSetting, JobReportDataItem}
+import asura.core.es.model.{FieldKeys, IndexSetting, JobReportDataItem, RestApiLog}
 import asura.core.es.{EsClient, EsConfig}
 import com.sksamuel.elastic4s.IndexesAndTypes
 import com.sksamuel.elastic4s.delete.DeleteByQueryRequest
@@ -11,6 +11,7 @@ import com.sksamuel.elastic4s.searches.queries.Query
 import com.typesafe.scalalogging.Logger
 
 import scala.collection.mutable.ArrayBuffer
+import scala.concurrent.Future
 
 object IndexService extends CommonService {
 
@@ -44,28 +45,34 @@ object IndexService extends CommonService {
   }
 
   def checkTemplate(): Boolean = {
-    logger.info(s"check es template ${JobReportDataItem.Index}")
+    checkIndexTemplate(JobReportDataItem).await && checkIndexTemplate(RestApiLog).await
+  }
+
+  def checkIndexTemplate(idxSetting: IndexSetting): Future[Boolean] = {
+    logger.info(s"check es template ${idxSetting.Index}")
     val cli = EsClient.esClient
-    val hasTpl = cli.execute {
-      getIndexTemplate(JobReportDataItem.Index)
+    cli.execute {
+      getIndexTemplate(idxSetting.Index)
     }.map { res =>
       if (res.status != 404) true else false
     }.recover {
       case _ => false
-    }.await
-    if (!hasTpl) {
-      val tplIndex = cli.execute {
-        createIndexTemplate(JobReportDataItem.Index, s"${JobReportDataItem.Index}-*")
-          .settings(Map(
-            "number_of_replicas" -> JobReportDataItem.replicas,
-            "number_of_shards" -> JobReportDataItem.shards
-          ))
-          .mappings(JobReportDataItem.mappings)
-      }.await
-      if (tplIndex.result.acknowledged) true else false
-    } else {
-      true
-    }
+    }.flatMap(hasTpl => {
+      if (!hasTpl) {
+        cli.execute {
+          createIndexTemplate(idxSetting.Index, s"${idxSetting.Index}-*")
+            .settings(Map(
+              "number_of_replicas" -> idxSetting.replicas,
+              "number_of_shards" -> idxSetting.shards
+            ))
+            .mappings(idxSetting.mappings)
+        }.map(tplIndex => {
+          if (tplIndex.result.acknowledged) true else false
+        })
+      } else {
+        Future.successful(true)
+      }
+    })
   }
 
   def delIndex(indices: Seq[String]) = {
