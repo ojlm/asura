@@ -34,3 +34,4 @@ POST        /api/home                            asura.app.api.HomeApi.query()
 ->          /api/scenario                        scenario.Routes
 ->          /api/sys                             system.Routes
 ->          /api/activity                        activity.Routes
+->          /api/online                          activity.Routes
