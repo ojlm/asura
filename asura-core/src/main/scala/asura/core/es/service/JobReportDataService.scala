@@ -4,6 +4,7 @@ import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.model._
+import asura.core.es.service.CommonService.CustomCatIndices
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.job.actor.JobReportDataItemSaveActor.SaveReportDataItemMessage
 import asura.core.util.JacksonSupport.jacksonJsonIndexable

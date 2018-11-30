@@ -27,8 +27,12 @@ object DomainOnlineLogService extends CommonService {
   def syncOnlineDomain(domainCount: Int): Future[Seq[DomainOnlineLog]] = {
     var docs: Seq[DomainOnlineLog] = Nil
     OnlineRequestLogService.getOnlineDomain(domainCount).flatMap(items => {
-      docs = items.map(item => DomainOnlineLog(item.id, item.count, item.`type`))
-      index(docs).map(_ => docs)
+      if (items.nonEmpty) {
+        docs = items.map(item => DomainOnlineLog(item.id, item.count, item.`type`))
+        index(docs).map(_ => docs)
+      } else {
+        Future.successful(Nil)
+      }
     })
   }
 }
