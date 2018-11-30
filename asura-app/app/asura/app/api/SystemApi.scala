@@ -8,7 +8,8 @@ import asura.core.ErrorMessages
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.service.{IndexService, JobReportDataService}
 import asura.core.job.SystemJobs
-import asura.core.job.SystemJobs.ClearJobReportIndicesJobModel
+import asura.core.job.SystemJobs.{ClearJobReportIndicesJobModel, SyncDomainAndApiJobModel}
+import asura.core.job.impl.{ClearJobReportDataIndicesJob, SyncOnlineDomainAndRestApiJob}
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 import play.api.Configuration
@@ -56,13 +57,36 @@ class SystemApi @Inject()(
 
   def pauseClearJob() = Action(parse.byteString).async { implicit req =>
     checkPrivilege {
-      SystemJobs.pauseClearReportIndicesJob().toOkResult
+      SystemJobs.pauseSystemJob(ClearJobReportDataIndicesJob.NAME).toOkResult
     }
   }
 
   def resumeClearJob() = Action(parse.byteString).async { implicit req =>
     checkPrivilege {
-      SystemJobs.resumeClearReportIndicesJob().toOkResult
+      SystemJobs.resumeSystemJob(ClearJobReportDataIndicesJob.NAME).toOkResult
+    }
+  }
+
+  def getSyncDomainAndApiJobDetail() = Action(parse.byteString).async { implicit req =>
+    SystemJobs.getSyncDomainAndApiJob().toOkResult
+  }
+
+  def updateSyncDomainAndApiJob() = Action(parse.byteString).async { implicit req =>
+    checkPrivilege {
+      val job = req.bodyAs(classOf[SyncDomainAndApiJobModel])
+      SystemJobs.putOrUpdateSyncDomainApiJob(job).toOkResult
+    }
+  }
+
+  def pauseSyncDomainAndApiJob() = Action(parse.byteString).async { implicit req =>
+    checkPrivilege {
+      SystemJobs.pauseSystemJob(SyncOnlineDomainAndRestApiJob.NAME).toOkResult
+    }
+  }
+
+  def resumeSyncDomainAndApiJob() = Action(parse.byteString).async { implicit req =>
+    checkPrivilege {
+      SystemJobs.resumeSystemJob(SyncOnlineDomainAndRestApiJob.NAME).toOkResult
     }
   }
 

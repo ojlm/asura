@@ -4,6 +4,7 @@ import asura.common.model.ApiMsg
 import asura.common.util.FutureUtils
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.model.{BulkDocResponse, RestApiOnlineLog}
+import asura.core.es.service.CommonService.CustomCatIndices
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.http.ElasticDsl._

@@ -18,5 +18,6 @@ case class OnlineRequestLog(
 object OnlineRequestLog {
 
   val KEY_DOMAIN = "domain"
+  val KEY_URI = "uri"
   val KEY_METHOD = "verb"
 }

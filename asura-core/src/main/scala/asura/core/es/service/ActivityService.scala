@@ -56,7 +56,7 @@ object ActivityService extends CommonService with BaseAggregationService {
         .query(boolQuery().must(esQueries))
         .size(0)
         .aggregations(dateHistogram)
-    }.map(toAggItems(_, termsField))
+    }.map(toAggItems(_, null, termsField))
   }
 
   def aggTerms(aggs: AggsQuery): Future[Seq[AggsItem]] = {

@@ -13,18 +13,19 @@ import scala.collection.mutable.ArrayBuffer
 
 trait BaseAggregationService {
 
-  def toAggItems(res: Response[SearchResponse], termsField: String): Seq[AggsItem] = {
+  def toAggItems(res: Response[SearchResponse], itemType: String, subItemType: String): Seq[AggsItem] = {
     val buckets = res.result
       .aggregationsAsMap.getOrElse(aggsTermName, Map.empty)
       .asInstanceOf[Map[String, Any]]
       .getOrElse("buckets", Nil)
     buckets.asInstanceOf[Seq[Map[String, Any]]].map(bucket => {
       AggsItem(
-        `type` = null,
-        id = bucket.getOrElse("key_as_string", "").asInstanceOf[String],
+        `type` = itemType,
+        // 'key_as_string' for date field.
+        id = bucket.getOrElse("key_as_string", bucket.getOrElse("key", "")).asInstanceOf[String],
         count = bucket.getOrElse("doc_count", 0).asInstanceOf[Int],
         sub =
-          if (StringUtils.isEmpty(termsField)) {
+          if (StringUtils.isEmpty(subItemType)) {
             null
           } else {
             bucket.getOrElse(aggsTermName, Map.empty)
@@ -32,7 +33,7 @@ trait BaseAggregationService {
               .getOrElse("buckets", Nil)
               .asInstanceOf[Seq[Map[String, Any]]].map(bucket => {
               AggsItem(
-                `type` = termsField,
+                `type` = subItemType,
                 id = bucket.getOrElse("key", "").asInstanceOf[String],
                 count = bucket.getOrElse("doc_count", 0).asInstanceOf[Int]
               )

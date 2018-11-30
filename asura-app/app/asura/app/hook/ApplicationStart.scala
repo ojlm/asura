@@ -55,7 +55,10 @@ class ApplicationStart @Inject()(
     httpProxyPort = configuration.getOptional[Int]("asura.linkerd.httpProxyPort").getOrElse(4140),
     httpsProxyPort = configuration.getOptional[Int]("asura.linkerd.httpsProxyPort").getOrElse(4143),
     proxyIdentifier = configuration.getOptional[String]("asura.linkerd.headerIdentifier").getOrElse(""),
-    reportBaseUrl = configuration.getOptional[String]("asura.reportBaseUrl").getOrElse("")
+    reportBaseUrl = configuration.getOptional[String]("asura.reportBaseUrl").getOrElse(""),
+    onlineLogUrl = configuration.getOptional[String]("asura.es.onlineLogUrl").getOrElse(""),
+    onlineLogIndexPrefix = configuration.getOptional[String]("asura.es.onlineLogPrefix").getOrElse(""),
+    onlineLogDatePattern = configuration.getOptional[String]("asura.es.onlineLogDatePattern").getOrElse(""),
   ))
   NamerdConfig.init(
     url = configuration.get[String]("asura.linkerd.namerd"),

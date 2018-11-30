@@ -4,13 +4,13 @@ import asura.common.exceptions.RequestFailException
 import asura.core.es.model._
 import asura.core.exceptions.OperateDocFailException
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.sksamuel.elastic4s.http.{ElasticRequest, Handler, Response}
 import com.sksamuel.elastic4s.http.bulk.BulkResponse
 import com.sksamuel.elastic4s.http.delete.{DeleteByQueryResponse, DeleteResponse}
 import com.sksamuel.elastic4s.http.index.IndexResponse
 import com.sksamuel.elastic4s.http.index.admin.DeleteIndexResponse
 import com.sksamuel.elastic4s.http.search.SearchResponse
 import com.sksamuel.elastic4s.http.update.UpdateResponse
+import com.sksamuel.elastic4s.http.{ElasticRequest, Handler, Response}
 
 trait CommonService {
 
@@ -90,6 +90,9 @@ trait CommonService {
       throw new OperateDocFailException(response.error.reason)
     }
   }
+}
+
+object CommonService {
 
   case class CustomCatIndices(pattern: String)
 

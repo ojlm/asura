@@ -19,12 +19,12 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
   def getOnlineDomain(domainCount: Int): Future[Seq[AggsItem]] = {
     if (null != EsClient.esOnlineLogClient && StringUtils.isNotEmpty(CoreConfig.onlineLogIndexPrefix)) {
       val yesterday = LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern(CoreConfig.onlineLogDatePattern))
-      EsClient.esClient.execute {
+      EsClient.esOnlineLogClient.execute {
         search(s"${CoreConfig.onlineLogIndexPrefix}${yesterday}")
           .query(matchAllQuery())
           .size(0)
           .aggregations(termsAgg(aggsTermName, OnlineRequestLog.KEY_DOMAIN).size(domainCount))
-      }.map(toAggItems(_, null))
+      }.map(toAggItems(_, yesterday, null))
     } else {
       Future.successful(Nil)
     }
@@ -33,20 +33,20 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
   def getOnlineApi(domain: String, apiCount: Int): Future[Seq[RestApiOnlineLog]] = {
     if (null != EsClient.esOnlineLogClient && StringUtils.isNotEmpty(CoreConfig.onlineLogIndexPrefix)) {
       val yesterday = LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern(CoreConfig.onlineLogDatePattern))
-      EsClient.esClient.execute {
+      EsClient.esOnlineLogClient.execute {
         search(s"${CoreConfig.onlineLogIndexPrefix}${yesterday}")
           .query(matchAllQuery())
           .size(0)
           .aggregations(
-            termsAgg(aggsTermName, OnlineRequestLog.KEY_DOMAIN).size(apiCount)
+            termsAgg(aggsTermName, OnlineRequestLog.KEY_URI).size(apiCount)
               .subAggregations(termsAgg(aggsTermName, OnlineRequestLog.KEY_METHOD))
           )
-      }.map(toAggItems(_, OnlineRequestLog.KEY_METHOD))
+      }.map(toAggItems(_, null, OnlineRequestLog.KEY_METHOD))
         .map(items => {
           val apiLogs = ArrayBuffer[RestApiOnlineLog]()
           items.foreach(item => {
             item.sub.foreach(subItem => {
-              apiLogs += RestApiOnlineLog(domain, subItem.`type`, subItem.id, subItem.count)
+              apiLogs += RestApiOnlineLog(domain, subItem.id, item.id, subItem.count)
             })
           })
           apiLogs
