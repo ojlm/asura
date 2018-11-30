@@ -3,6 +3,7 @@ package asura.core.es.service
 import asura.common.model.ApiMsg
 import asura.common.util.FutureUtils
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
+import asura.core.cs.model.{AggsItem, AggsQuery}
 import asura.core.es.model.{BulkDocResponse, DomainOnlineLog}
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
@@ -10,7 +11,7 @@ import com.sksamuel.elastic4s.http.ElasticDsl._
 
 import scala.concurrent.Future
 
-object DomainOnlineLogService extends CommonService {
+object DomainOnlineLogService extends CommonService with BaseAggregationService {
 
   def index(items: Seq[DomainOnlineLog]): Future[BulkDocResponse] = {
     if (null == items && items.isEmpty) {
@@ -34,5 +35,16 @@ object DomainOnlineLogService extends CommonService {
         Future.successful(Nil)
       }
     })
+  }
+
+  def aggTerms(aggs: AggsQuery): Future[Seq[AggsItem]] = {
+    val esQueries = buildEsQueryFromAggQuery(aggs, false)
+    val aggField = aggs.aggField()
+    EsClient.esClient.execute {
+      search(DomainOnlineLog.Index)
+        .query(boolQuery().must(esQueries))
+        .size(0)
+        .aggregations(termsAgg(aggsTermName, aggField).size(aggs.pageSize()))
+    }.map(toAggItems(_, aggField, null))
   }
 }

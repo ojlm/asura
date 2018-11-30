@@ -67,18 +67,6 @@ object ActivityService extends CommonService with BaseAggregationService {
         .query(boolQuery().must(esQueries))
         .size(0)
         .aggregations(termsAgg(aggsTermName, aggField).size(aggs.pageSize()))
-    }.map(res => {
-      val buckets = res.result
-        .aggregationsAsMap.getOrElse(aggsTermName, Map.empty)
-        .asInstanceOf[Map[String, Any]]
-        .getOrElse("buckets", Nil)
-      buckets.asInstanceOf[Seq[Map[String, Any]]].map(bucket => {
-        AggsItem(
-          `type` = aggField,
-          id = bucket.getOrElse("key", "").asInstanceOf[String],
-          count = bucket.getOrElse("doc_count", 0).asInstanceOf[Int]
-        )
-      })
-    })
+    }.map(toAggItems(_, aggField, null))
   }
 }

@@ -1,0 +1,1 @@
+POST        /aggs/terms        asura.app.api.DomainOnlineLogApi.aggTerms()
