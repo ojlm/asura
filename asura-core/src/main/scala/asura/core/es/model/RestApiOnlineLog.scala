@@ -1,7 +1,7 @@
 package asura.core.es.model
 
 import asura.core.es.EsConfig
-import com.sksamuel.elastic4s.mappings.{KeywordField, MappingDefinition}
+import com.sksamuel.elastic4s.mappings.{BasicField, KeywordField, MappingDefinition}
 
 case class RestApiOnlineLog(
                              val domain: String,
@@ -23,7 +23,7 @@ object RestApiOnlineLog extends IndexSetting {
       KeywordField(name = FieldKeys.FIELD_DOMAIN),
       KeywordField(name = FieldKeys.FIELD_METHOD),
       KeywordField(name = FieldKeys.FIELD_URL_PATH),
-      KeywordField(name = FieldKeys.FIELD_COUNT),
+      BasicField(name = FieldKeys.FIELD_COUNT, `type` = "integer"),
     )
   )
 }

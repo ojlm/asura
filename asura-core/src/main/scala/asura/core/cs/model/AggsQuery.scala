@@ -5,9 +5,9 @@ import asura.core.es.EsConfig
 import asura.core.es.model.FieldKeys
 
 case class AggsQuery(
-                      group: String,
-                      project: String,
-                      creator: String,
+                      group: String = null,
+                      project: String = null,
+                      creator: String = null,
                       creatorPrefix: String = null,
                       interval: String = null,
                       termsField: String = null,
