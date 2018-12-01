@@ -1,1 +1,2 @@
-POST        /aggs/terms        asura.app.api.DomainOnlineLogApi.aggTerms()
+POST        /domain                   asura.app.api.DomainOnlineLogApi.query()
+POST        /domain/aggs/terms        asura.app.api.DomainOnlineLogApi.aggTerms()

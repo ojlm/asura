@@ -1,12 +1,15 @@
 package asura.app.api
 
 import akka.actor.ActorSystem
-import asura.core.cs.model.AggsQuery
+import asura.common.util.StringUtils
+import asura.core.cs.model.{AggsQuery, QueryDomain}
+import asura.core.es.EsResponse
+import asura.core.es.model.FieldKeys
 import asura.core.es.service._
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class DomainOnlineLogApi @Inject()(implicit system: ActorSystem,
@@ -17,5 +20,26 @@ class DomainOnlineLogApi @Inject()(implicit system: ActorSystem,
   def aggTerms() = Action(parse.byteString).async { implicit req =>
     val aggs = req.bodyAs(classOf[AggsQuery])
     DomainOnlineLogService.aggTerms(aggs).toOkResult
+  }
+
+  def query() = Action(parse.byteString).async { implicit req =>
+    val query = req.bodyAs(classOf[QueryDomain])
+    val res = if (StringUtils.isEmpty(query.date)) {
+      DomainOnlineLogService.aggTerms(AggsQuery(termsField = FieldKeys.FIELD_DATE)).flatMap(dateAgg => {
+        if (dateAgg.nonEmpty) {
+          query.date = dateAgg(0).id
+          DomainOnlineLogService.queryDomain(query).map(esRes => {
+            Map("dates" -> dateAgg, "domains" -> EsResponse.toApiData(esRes.result, false))
+          })
+        } else {
+          Future.successful(Map.empty)
+        }
+      })
+    } else {
+      DomainOnlineLogService.queryDomain(query).map(esRes => {
+        Map("domains" -> EsResponse.toApiData(esRes.result, false))
+      })
+    }
+    res.toOkResult
   }
 }
