@@ -1,6 +1,6 @@
 package asura.core.cs.assertion
 
-import asura.core.cs.assertion.engine.{AssertResult, FailAssertResult}
+import asura.core.cs.assertion.engine.{AssertResult, FailAssertResult, PassAssertResult}
 
 import scala.concurrent.Future
 
@@ -16,9 +16,9 @@ object IsEmpty extends Assertion {
     if (null != expect && expect.isInstanceOf[Boolean]) {
       val result = Size(actual, 0)
       if (expect.asInstanceOf[Boolean]) {
-        result
+        if (result.isSuccessful) PassAssertResult() else FailAssertResult()
       } else {
-        FailAssertResult()
+        if (result.isSuccessful) FailAssertResult() else PassAssertResult()
       }
     } else {
       FailAssertResult(msg = AssertResult.MSG_INCOMPARABLE)
