@@ -9,6 +9,7 @@ import asura.core.es.{EsClient, EsConfig}
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.http.ElasticDsl._
 import com.sksamuel.elastic4s.searches.queries.Query
+import com.sksamuel.elastic4s.searches.sort.{FieldSort, SortOrder}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
@@ -52,13 +53,21 @@ object DomainOnlineLogService extends CommonService with BaseAggregationService 
 
   def queryDomain(query: QueryDomain) = {
     val esQueries = ArrayBuffer[Query]()
+    var sortField = FieldKeys.FIELD_COUNT
+    var order: SortOrder = SortOrder.DESC
     if (StringUtils.isNotEmpty(query.date)) esQueries += termQuery(FieldKeys.FIELD_DATE, query.date)
-    if (null != query.names && query.names.nonEmpty) esQueries += termsQuery(FieldKeys.FIELD_NAME, query.names)
+    if (null != query.names && query.names.nonEmpty) {
+      esQueries += termsQuery(FieldKeys.FIELD_NAME, query.names)
+      if (query.names.length > 1) {
+        sortField = FieldKeys.FIELD_DATE
+        order = SortOrder.ASC
+      }
+    }
     EsClient.esClient.execute {
       search(DomainOnlineLog.Index).query(boolQuery().must(esQueries))
         .from(query.pageFrom)
         .size(query.pageSize)
-        .sortByFieldDesc(FieldKeys.FIELD_COUNT)
+        .sortBy(FieldSort(field = sortField, order = order))
     }
   }
 }
