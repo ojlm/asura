@@ -25,11 +25,13 @@ class DomainOnlineLogApi @Inject()(implicit system: ActorSystem,
   def query() = Action(parse.byteString).async { implicit req =>
     val query = req.bodyAs(classOf[QueryDomain])
     val res = if (StringUtils.isEmpty(query.date)) {
-      DomainOnlineLogService.aggTerms(AggsQuery(termsField = FieldKeys.FIELD_DATE)).flatMap(dateAgg => {
+      DomainOnlineLogService.aggTerms(AggsQuery(termsField = FieldKeys.FIELD_DATE, size = 30)).flatMap(dateAgg => {
         if (dateAgg.nonEmpty) {
-          query.date = dateAgg(0).id
+          // order by date
+          val ordered = dateAgg.sortWith((one, two) => one.id > two.id)
+          query.date = ordered(0).id
           DomainOnlineLogService.queryDomain(query).map(esRes => {
-            Map("dates" -> dateAgg, "domains" -> EsResponse.toApiData(esRes.result, false))
+            Map("dates" -> ordered, "domains" -> EsResponse.toApiData(esRes.result, false))
           })
         } else {
           Future.successful(Map.empty)
