@@ -9,6 +9,8 @@ case class AggsQuery(
                       project: String = null,
                       creator: String = null,
                       creatorPrefix: String = null,
+                      date: String = null,
+                      namePrefix: String = null,
                       interval: String = null,
                       termsField: String = null,
                       dateRange: String = null,
