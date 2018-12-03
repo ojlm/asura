@@ -68,6 +68,8 @@ trait BaseAggregationService {
         esQueries += rangeQuery(FieldKeys.FIELD_CREATED_AT).gte(s"now-${aggs.dateRange}/d").lte(s"now/d")
       }
     }
+    if (StringUtils.isNotEmpty(aggs.namePrefix)) esQueries += wildcardQuery(FieldKeys.FIELD_NAME, s"${aggs.namePrefix}*")
+    if (StringUtils.isNotEmpty(aggs.date)) esQueries += termQuery(FieldKeys.FIELD_DATE, aggs.date)
     esQueries
   }
 }
