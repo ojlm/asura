@@ -62,7 +62,7 @@ object HeaderUtils {
           throw ErrorMessages.error_EmptyNamespace.toException
         }
       } else {
-        throw ErrorMessages.error_proxyDisabled.toException
+        throw ErrorMessages.error_ProxyDisabled.toException
       }
     }
     headers.toList
