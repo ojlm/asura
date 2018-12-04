@@ -21,7 +21,7 @@ class SyncOnlineDomainAndRestApiJob extends Job {
     if (domainCount > 0) {
       val logs = DomainOnlineLogService.syncOnlineDomain(domainCount).await
       logs.foreach(domainCountLog => {
-        val apiLogs = OnlineRequestLogService.getOnlineApi(domainCountLog.name, apiCount).await
+        val apiLogs = OnlineRequestLogService.getOnlineApi(domainCountLog.name, domainCountLog.count, apiCount).await
         RestApiOnlineLogService.index(apiLogs, domainCountLog.date).await
       })
     }

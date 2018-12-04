@@ -7,7 +7,8 @@ case class RestApiOnlineLog(
                              val domain: String,
                              val method: String,
                              val urlPath: String,
-                             val count: Int,
+                             val count: Long,
+                             val percentage: Int, // like 44.22 but saved 4422
                            )
 
 object RestApiOnlineLog extends IndexSetting {
@@ -23,7 +24,8 @@ object RestApiOnlineLog extends IndexSetting {
       KeywordField(name = FieldKeys.FIELD_DOMAIN),
       KeywordField(name = FieldKeys.FIELD_METHOD),
       KeywordField(name = FieldKeys.FIELD_URL_PATH),
-      BasicField(name = FieldKeys.FIELD_COUNT, `type` = "integer"),
+      BasicField(name = FieldKeys.FIELD_COUNT, `type` = "long"),
+      BasicField(name = FieldKeys.FIELD_PERCENTAGE, `type` = "long"),
     )
   )
 }

@@ -23,7 +23,7 @@ trait BaseAggregationService {
         `type` = itemType,
         // 'key_as_string' for date field.
         id = bucket.getOrElse("key_as_string", bucket.getOrElse("key", "")).asInstanceOf[String],
-        count = bucket.getOrElse("doc_count", 0).asInstanceOf[Int],
+        count = bucket.getOrElse("doc_count", 0).toString.toLong,
         sub =
           if (StringUtils.isEmpty(subItemType)) {
             null
@@ -35,7 +35,7 @@ trait BaseAggregationService {
               AggsItem(
                 `type` = subItemType,
                 id = bucket.getOrElse("key", "").asInstanceOf[String],
-                count = bucket.getOrElse("doc_count", 0).asInstanceOf[Int]
+                count = bucket.getOrElse("doc_count", 0).toString.toLong
               )
             })
           })
