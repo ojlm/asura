@@ -50,7 +50,7 @@ class LinkerdApi @Inject()(
         toActionResultFromAny(items)
       })
     } else {
-      Future.successful(OkApiRes(ApiResError(getI18nMessage(ErrorMessages.error_proxyDisabled.name))))
+      Future.successful(OkApiRes(ApiResError(getI18nMessage(ErrorMessages.error_ProxyDisabled.name))))
     }
   }
 
@@ -77,7 +77,7 @@ class LinkerdApi @Inject()(
         Future.successful(OkApiRes(ApiRes()))
       }
     } else {
-      Future.successful(OkApiRes(ApiResError(getI18nMessage(ErrorMessages.error_proxyDisabled.name))))
+      Future.successful(OkApiRes(ApiResError(getI18nMessage(ErrorMessages.error_ProxyDisabled.name))))
     }
   }
 }
