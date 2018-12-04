@@ -108,6 +108,7 @@ object FieldKeys {
   val FIELD_HEADERS = "headers"
   val FIELD_DATE = "date"
   val FIELD_DOMAIN = "domain"
+  val FIELD_PERCENTAGE = "percentage"
 
   val FIELD_OBJECT_REQUEST_URLPATH = "request.urlPath"
   val FIELD_OBJECT_REQUEST_METHOD = "request.method"

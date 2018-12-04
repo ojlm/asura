@@ -8,7 +8,7 @@ import asura.core.CoreConfig
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.model.AggsItem
 import asura.core.es.EsClient
-import asura.core.es.model.{OnlineRequestLog, RestApiOnlineLog}
+import asura.core.es.model.{FieldKeys, OnlineRequestLog, RestApiOnlineLog}
 import com.sksamuel.elastic4s.http.ElasticDsl._
 
 import scala.collection.mutable.ArrayBuffer
@@ -30,12 +30,12 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
     }
   }
 
-  def getOnlineApi(domain: String, apiCount: Int): Future[Seq[RestApiOnlineLog]] = {
+  def getOnlineApi(domain: String, domainTotal: Long, apiCount: Int): Future[Seq[RestApiOnlineLog]] = {
     if (null != EsClient.esOnlineLogClient && StringUtils.isNotEmpty(CoreConfig.onlineLogIndexPrefix)) {
       val yesterday = LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern(CoreConfig.onlineLogDatePattern))
       EsClient.esOnlineLogClient.execute {
         search(s"${CoreConfig.onlineLogIndexPrefix}${yesterday}")
-          .query(matchAllQuery())
+          .query(termQuery(FieldKeys.FIELD_DOMAIN, domain))
           .size(0)
           .aggregations(
             termsAgg(aggsTermName, OnlineRequestLog.KEY_URI).size(apiCount)
@@ -46,7 +46,8 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
           val apiLogs = ArrayBuffer[RestApiOnlineLog]()
           items.foreach(item => {
             item.sub.foreach(subItem => {
-              apiLogs += RestApiOnlineLog(domain, subItem.id, item.id, subItem.count)
+              val percentage = Math.round(((subItem.count * 10000L).toDouble / domainTotal.toDouble)).toInt
+              apiLogs += RestApiOnlineLog(domain, subItem.id, item.id, subItem.count, percentage)
             })
           })
           apiLogs

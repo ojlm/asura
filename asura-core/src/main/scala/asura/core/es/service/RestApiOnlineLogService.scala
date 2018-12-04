@@ -41,8 +41,8 @@ object RestApiOnlineLogService extends CommonService {
       ErrorMessages.error_EmptyDate.toFutureFail
     } else {
       val esQueries = ArrayBuffer[Query]()
-      if (StringUtils.isNotEmpty(query.domain)) esQueries += termsQuery(FieldKeys.FIELD_DOMAIN, query.domain)
-      if (StringUtils.isNotEmpty(query.method)) esQueries += termsQuery(FieldKeys.FIELD_METHOD, query.method)
+      if (StringUtils.isNotEmpty(query.domain)) esQueries += termQuery(FieldKeys.FIELD_DOMAIN, query.domain)
+      if (StringUtils.isNotEmpty(query.method)) esQueries += termQuery(FieldKeys.FIELD_METHOD, query.method)
       if (StringUtils.isNotEmpty(query.urlPath)) esQueries += wildcardQuery(FieldKeys.FIELD_URL_PATH, s"${query.urlPath}*")
       EsClient.esClient.execute {
         search(s"${RestApiOnlineLog.Index}-${query.date}").query(boolQuery().must(esQueries))
