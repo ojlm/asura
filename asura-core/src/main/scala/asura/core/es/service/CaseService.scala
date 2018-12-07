@@ -271,30 +271,14 @@ object CaseService extends CommonService with BaseAggregationService {
 
   // note this is not always accurate
   def aroundAggs(aggs: AggsQuery): Future[Seq[AggsItem]] = {
-    val esQueries = ArrayBuffer[Query]()
-    if (StringUtils.isNotEmpty(aggs.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, aggs.group)
-    if (StringUtils.isNotEmpty(aggs.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, aggs.project)
-    if (StringUtils.isNotEmpty(aggs.creator)) esQueries += termQuery(FieldKeys.FIELD_CREATOR, aggs.creator)
-    if (StringUtils.isNotEmpty(aggs.creatorPrefix)) esQueries += wildcardQuery(FieldKeys.FIELD_CREATOR, s"${aggs.creatorPrefix}*")
+    val esQueries = buildEsQueryFromAggQuery(aggs, false)
     val aggField = aggs.aggField()
     EsClient.esClient.execute {
       search(Case.Index)
         .query(boolQuery().must(esQueries))
         .size(0)
         .aggregations(termsAgg(aggsTermName, aggField).size(aggs.pageSize()))
-    }.map(res => {
-      val buckets = res.result
-        .aggregationsAsMap.getOrElse(aggsTermName, Map.empty)
-        .asInstanceOf[Map[String, Any]]
-        .getOrElse("buckets", Nil)
-      buckets.asInstanceOf[Seq[Map[String, Any]]].map(bucket => {
-        AggsItem(
-          `type` = aggField,
-          id = bucket.getOrElse("key", "").asInstanceOf[String],
-          count = bucket.getOrElse("doc_count", 0).asInstanceOf[Int]
-        )
-      })
-    })
+    }.map(toAggItems(_, aggField, null))
   }
 
   def aggsLabels(labelPrefix: String): Future[Seq[AggsItem]] = {
