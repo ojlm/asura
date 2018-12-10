@@ -72,19 +72,21 @@ object SchedulerManager {
           throw error.toException
         }
       }).flatMap(indexDocRes => {
-        if (null != notifies) {
+        if (null != notifies && notifies.nonEmpty) {
           notifies.foreach(n => {
             n.fillCommonFields(creator)
             n.jobId = indexDocRes.id
           })
+          JobNotifyService.index(notifies)
+            .map(_ => indexDocRes)
+            .recover {
+              case t: Throwable =>
+                logger.error(LogUtils.stackTraceToString(t))
+                indexDocRes
+            }
+        } else {
+          Future.successful(indexDocRes)
         }
-        JobNotifyService.index(notifies)
-          .map(_ => indexDocRes)
-          .recover {
-            case t: Throwable =>
-              logger.error(LogUtils.stackTraceToString(t))
-              indexDocRes
-          }
       })
     } else {
       ErrorMessages.error_NoSchedulerDefined(jobMeta.getScheduler()).toFutureFail
