@@ -87,6 +87,7 @@ object JobReportData {
         item.status = if (result.statis.isSuccessful) ReportItemStatus.STATUS_PASS else ReportItemStatus.STATUS_FAIL
       }
       if (StringUtils.isNotEmpty(result.generator)) item.generator = result.generator
+      if (null != msg) item.msg = msg
       item
     }
   }
