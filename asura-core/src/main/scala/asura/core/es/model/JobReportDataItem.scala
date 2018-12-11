@@ -25,6 +25,8 @@ object JobReportDataItem extends IndexSetting {
 
   val INDEX_DATE_TIME_PATTERN = "yyyy.MM.dd"
   val Index: String = s"${EsConfig.IndexPrefix}job-report-item"
+  override val shards: Int = 5
+  override val replicas: Int = 0
   val mappings: MappingDefinition = MappingDefinition(
     `type` = EsConfig.DefaultType,
     fields = Seq(
