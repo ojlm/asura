@@ -45,7 +45,15 @@ object HttpResponseAssert {
       }
     }
     import scala.collection.JavaConverters.mapAsScalaMap
-    val caseResponse = CaseResponse(response.status.intValue(), response.status.reason(), mapAsScalaMap(headers), entity)
+    val caseResponse = CaseResponse(
+      response.status.intValue(),
+      response.status.reason(),
+      mapAsScalaMap(headers), {
+        val mediaType = response.entity.getContentType().mediaType
+        s"${mediaType.mainType}/${mediaType.subType}"
+      },
+      entity
+    )
     CaseResult.eval(caseId, response, assert, caseContext, caseRequest, caseResponse)
   }
 }
