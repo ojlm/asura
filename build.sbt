@@ -24,7 +24,12 @@ lazy val app = asuraProjects("asura-app")
     core % "compile->compile;test->test",
     web % "compile->compile;test->test",
     namerd % "compile->compile;test->test",
-  ).aggregate(common, cluster, core, web, namerd)
+    example % "compile->compile;test->test",
+  ).aggregate(common, cluster, core, web, namerd, example)
+
+lazy val example = asuraProjects("asura-example")
+  .settings(libraryDependencies ++= Seq(guice))
+  .dependsOn(core)
 
 lazy val common = asuraProjects("asura-common")
   .settings(libraryDependencies ++= commonDependencies)
