@@ -32,7 +32,7 @@ object DomainOnlineLogService extends CommonService with BaseAggregationService 
     var docs: Seq[DomainOnlineLog] = Nil
     OnlineRequestLogService.getOnlineDomain(domainCount).flatMap(items => {
       if (items.nonEmpty) {
-        docs = items.map(item => DomainOnlineLog(item.id, item.count, item.`type`))
+        docs = items.map(item => DomainOnlineLog(item.id, item.count, 0, item.`type`))
         index(docs).map(_ => docs)
       } else {
         Future.successful(Nil)

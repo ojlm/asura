@@ -1,7 +1,8 @@
 package asura.core.es.model
 
 import asura.core.es.EsConfig
-import com.sksamuel.elastic4s.mappings.{BasicField, KeywordField, MappingDefinition}
+import asura.core.es.model.RestApiOnlineLog.GroupProject
+import com.sksamuel.elastic4s.mappings.{BasicField, KeywordField, MappingDefinition, NestedField}
 
 case class RestApiOnlineLog(
                              val domain: String,
@@ -9,6 +10,7 @@ case class RestApiOnlineLog(
                              val urlPath: String,
                              val count: Long,
                              val percentage: Int, // like 44.22 but saved 4422
+                             var belongs: Seq[GroupProject] = Nil,
                            )
 
 object RestApiOnlineLog extends IndexSetting {
@@ -26,6 +28,13 @@ object RestApiOnlineLog extends IndexSetting {
       KeywordField(name = FieldKeys.FIELD_URL_PATH),
       BasicField(name = FieldKeys.FIELD_COUNT, `type` = "long"),
       BasicField(name = FieldKeys.FIELD_PERCENTAGE, `type` = "long"),
+      NestedField(name = FieldKeys.FIELD_BELONGS, fields = Seq(
+        KeywordField(name = FieldKeys.FIELD_GROUP),
+        KeywordField(name = FieldKeys.FIELD_PROJECT),
+      )),
     )
   )
+
+  case class GroupProject(group: String, project: String)
+
 }
