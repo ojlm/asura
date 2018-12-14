@@ -8,6 +8,7 @@ import asura.core.cs.CommonValidator
 import asura.core.cs.model.QueryProject
 import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig}
+import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
@@ -137,5 +138,25 @@ object ProjectService extends CommonService {
         .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
         .sourceInclude(defaultIncludeFields :+ FieldKeys.FIELD_GROUP :+ FieldKeys.FIELD_ID :+ FieldKeys.FIELD_AVATAR)
     }
+  }
+
+  // returns max 1000 doc
+  def getProjectsByDomain(domain: String): Future[Seq[Project]] = {
+    EsClient.esClient.execute {
+      search(Project.Index).query(nestedQuery(FieldKeys.FIELD_DOMAINS, termQuery(FieldKeys.FIELD_NESTED_DOMAINS_NAME, domain)))
+        .size(EsConfig.MaxCount)
+        .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
+        .sourceInclude(FieldKeys.FIELD_GROUP, FieldKeys.FIELD_ID)
+    }.map(res => {
+      if (res.isSuccess) {
+        if (res.result.isEmpty) {
+          Nil
+        } else {
+          res.result.hits.hits.map(hit => JacksonSupport.parse(hit.sourceAsString, classOf[Project]))
+        }
+      } else {
+        throw ErrorMessages.error_EsRequestFail(res).toException
+      }
+    })
   }
 }
