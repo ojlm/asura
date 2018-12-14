@@ -16,8 +16,6 @@ case class Project(
                     val openapi: String = null,
                     val avatar: String = null,
                     val domains: Seq[LabelRef] = Nil, // online domain, should only one
-                    val inclusions: Seq[FieldPattern] = Nil, // online api include pattern
-                    val exclusions: Seq[FieldPattern] = Nil, // online api exclude pattern
                     var creator: String = null,
                     var createdAt: String = null,
                   ) extends BaseIndex {
@@ -33,12 +31,6 @@ case class Project(
     }
     if (null != domains) {
       m += (FieldKeys.FIELD_DOMAINS -> JacksonSupport.mapper.convertValue(domains, classOf[java.util.List[Map[String, Any]]]))
-    }
-    if (null != inclusions) {
-      m += (FieldKeys.FIELD_INCLUSIONS -> JacksonSupport.mapper.convertValue(inclusions, classOf[java.util.List[Map[String, Any]]]))
-    }
-    if (null != exclusions) {
-      m += (FieldKeys.FIELD_EXCLUSIONS -> JacksonSupport.mapper.convertValue(exclusions, classOf[java.util.List[Map[String, Any]]]))
     }
     m.toMap
   }
@@ -60,16 +52,6 @@ object Project extends IndexSetting {
       KeywordField(name = FieldKeys.FIELD_AVATAR, index = Option("false")),
       NestedField(name = FieldKeys.FIELD_DOMAINS, fields = Seq(
         KeywordField(name = FieldKeys.FIELD_NAME),
-      )),
-      NestedField(name = FieldKeys.FIELD_INCLUSIONS, fields = Seq(
-        KeywordField(name = FieldKeys.FIELD_FIELD),
-        KeywordField(name = FieldKeys.FIELD_VALUE),
-        KeywordField(name = FieldKeys.FIELD_TYPE),
-      )),
-      NestedField(name = FieldKeys.FIELD_EXCLUSIONS, fields = Seq(
-        KeywordField(name = FieldKeys.FIELD_FIELD),
-        KeywordField(name = FieldKeys.FIELD_VALUE),
-        KeywordField(name = FieldKeys.FIELD_TYPE),
       )),
     )
   )
