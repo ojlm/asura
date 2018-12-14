@@ -116,6 +116,7 @@ object FieldKeys {
   val FIELD_BELONGS = "belongs"
   val FIELD_COVERAGE = "coverage"
   val FIELD_COVERED = "covered"
+  val FIELD_MAX_API_COUNT = "maxApiCount"
 
   val FIELD_OBJECT_REQUEST_URLPATH = "request.urlPath"
   val FIELD_OBJECT_REQUEST_METHOD = "request.method"
