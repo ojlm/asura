@@ -16,15 +16,14 @@ import scala.concurrent.Future
 
 object OnlineRequestLogService extends CommonService with BaseAggregationService {
 
-  def getOnlineDomain(domainCount: Int): Future[Seq[AggsItem]] = {
+  def getOnlineDomain(domainCount: Int, date: String): Future[Seq[AggsItem]] = {
     if (null != EsClient.esOnlineLogClient && StringUtils.isNotEmpty(CoreConfig.onlineLogIndexPrefix)) {
-      val yesterday = LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern(CoreConfig.onlineLogDatePattern))
       EsClient.esOnlineLogClient.execute {
-        search(s"${CoreConfig.onlineLogIndexPrefix}${yesterday}")
+        search(s"${CoreConfig.onlineLogIndexPrefix}${date}")
           .query(matchAllQuery())
           .size(0)
           .aggregations(termsAgg(aggsTermName, OnlineRequestLog.KEY_DOMAIN).size(domainCount))
-      }.map(toAggItems(_, yesterday, null))
+      }.map(toAggItems(_, date, null))
     } else {
       Future.successful(Nil)
     }

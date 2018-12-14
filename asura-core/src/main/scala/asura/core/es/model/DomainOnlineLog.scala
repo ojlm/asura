@@ -6,7 +6,7 @@ import com.sksamuel.elastic4s.mappings.{BasicField, KeywordField, MappingDefinit
 case class DomainOnlineLog(
                             val name: String,
                             val count: Long,
-                            val coverage: Long,
+                            var coverage: Int,
                             val date: String,
                           ) {
 
@@ -24,7 +24,7 @@ object DomainOnlineLog extends IndexSetting {
     fields = Seq(
       KeywordField(name = FieldKeys.FIELD_NAME),
       BasicField(name = FieldKeys.FIELD_COUNT, `type` = "long"),
-      BasicField(name = FieldKeys.FIELD_COVERAGE, `type` = "long"),
+      BasicField(name = FieldKeys.FIELD_COVERAGE, `type` = "integer"),
       KeywordField(name = FieldKeys.FIELD_DATE),
     )
   )

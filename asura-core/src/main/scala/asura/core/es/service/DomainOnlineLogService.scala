@@ -28,14 +28,12 @@ object DomainOnlineLogService extends CommonService with BaseAggregationService 
     }
   }
 
-  def syncOnlineDomain(domainCount: Int): Future[Seq[DomainOnlineLog]] = {
-    var docs: Seq[DomainOnlineLog] = Nil
-    OnlineRequestLogService.getOnlineDomain(domainCount).flatMap(items => {
+  def getOnlineDomain(domainCount: Int, date: String): Future[Seq[DomainOnlineLog]] = {
+    OnlineRequestLogService.getOnlineDomain(domainCount, date).map(items => {
       if (items.nonEmpty) {
-        docs = items.map(item => DomainOnlineLog(item.id, item.count, 0, item.`type`))
-        index(docs).map(_ => docs)
+        items.map(item => DomainOnlineLog(item.id, item.count, 0, item.`type`))
       } else {
-        Future.successful(Nil)
+        Nil
       }
     })
   }

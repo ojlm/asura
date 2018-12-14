@@ -364,4 +364,28 @@ object CaseService extends CommonService with BaseAggregationService {
       dataMap + ("creators" -> users)
     })
   }
+
+  // return api set of specified project, key: {method}{urlPath} value: count
+  def getApiSet(project: Project, apisQuery: Seq[Query], aggSize: Int): Future[mutable.HashMap[String, Long]] = {
+    val apiSet = mutable.HashMap[String, Long]()
+    EsClient.esClient.execute {
+      search(Case.Index)
+        .query(boolQuery().must(
+          termQuery(FieldKeys.FIELD_GROUP, project.group),
+          termQuery(FieldKeys.FIELD_PROJECT, project.id),
+          boolQuery().should(apisQuery)
+        ))
+        .size(0)
+        .aggregations(
+          termsAgg(aggsTermName, FieldKeys.FIELD_OBJECT_REQUEST_URLPATH).size(aggSize)
+            .subAggregations(termsAgg(aggsTermName, FieldKeys.FIELD_OBJECT_REQUEST_METHOD))
+        )
+    }.map(toAggItems(_, null, FieldKeys.FIELD_METHOD))
+      .map(items => {
+        items.foreach(apiItem => {
+          apiItem.sub.foreach(methodItem => apiSet += (s"${methodItem.id}${apiItem.id}" -> apiItem.count))
+        })
+        apiSet
+      })
+  }
 }

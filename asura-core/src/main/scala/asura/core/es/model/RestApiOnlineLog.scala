@@ -27,14 +27,16 @@ object RestApiOnlineLog extends IndexSetting {
       KeywordField(name = FieldKeys.FIELD_METHOD),
       KeywordField(name = FieldKeys.FIELD_URL_PATH),
       BasicField(name = FieldKeys.FIELD_COUNT, `type` = "long"),
-      BasicField(name = FieldKeys.FIELD_PERCENTAGE, `type` = "long"),
+      BasicField(name = FieldKeys.FIELD_PERCENTAGE, `type` = "integer"),
       NestedField(name = FieldKeys.FIELD_BELONGS, fields = Seq(
         KeywordField(name = FieldKeys.FIELD_GROUP),
         KeywordField(name = FieldKeys.FIELD_PROJECT),
+        BasicField(name = FieldKeys.FIELD_COVERED, `type` = "boolean"),
+        BasicField(name = FieldKeys.FIELD_COUNT, `type` = "long"),
       )),
     )
   )
 
-  case class GroupProject(group: String, project: String)
+  case class GroupProject(group: String, project: String, var covered: Boolean = false, var count: Long = 0)
 
 }

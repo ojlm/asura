@@ -115,6 +115,7 @@ object FieldKeys {
   val FIELD_FIELD = "field"
   val FIELD_BELONGS = "belongs"
   val FIELD_COVERAGE = "coverage"
+  val FIELD_COVERED = "covered"
 
   val FIELD_OBJECT_REQUEST_URLPATH = "request.urlPath"
   val FIELD_OBJECT_REQUEST_METHOD = "request.method"
@@ -126,6 +127,7 @@ object FieldKeys {
   val FIELD_NESTED_JOB_DATA_CS_ID = "jobData.cs.id"
   val FIELD_NESTED_JOB_DATA_SCENARIO = "jobData.scenario"
   val FIELD_NESTED_JOB_DATA_SCENARIO_ID = "jobData.scenario.id"
+  val FIELD_NESTED_DOMAINS_NAME = "domains.name"
 
   /** copied from [[FIELD_SUMMARY]] and [[FIELD_DESCRIPTION]] */
   val FIELD__TEXT = "_text"

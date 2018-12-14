@@ -3,13 +3,13 @@ package asura.core.es.model
 import asura.core.es.EsConfig
 import com.sksamuel.elastic4s.mappings.{BasicField, KeywordField, MappingDefinition}
 
-class ProjectApiCoverage(
-                          val group: String,
-                          val project: String,
-                          val domain: String,
-                          val date: String,
-                          val coverage: Long,
-                        ) {
+case class ProjectApiCoverage(
+                               val group: String,
+                               val project: String,
+                               val domain: String,
+                               val date: String,
+                               val coverage: Int,
+                             ) {
 
   def generateDocId() = s"${group}_${project}_${domain}_${date}"
 }
@@ -27,7 +27,7 @@ object ProjectApiCoverage extends IndexSetting {
       KeywordField(name = FieldKeys.FIELD_PROJECT),
       KeywordField(name = FieldKeys.FIELD_DOMAIN),
       KeywordField(name = FieldKeys.FIELD_DATE),
-      BasicField(name = FieldKeys.FIELD_COVERAGE, `type` = "long"),
+      BasicField(name = FieldKeys.FIELD_COVERAGE, `type` = "integer"),
     )
   )
 }
