@@ -50,11 +50,13 @@ object DomainOnlineConfig extends IndexSetting {
       NestedField(name = FieldKeys.FIELD_INCLUSIONS, fields = Seq(
         KeywordField(name = FieldKeys.FIELD_FIELD),
         KeywordField(name = FieldKeys.FIELD_VALUE),
+        KeywordField(name = FieldKeys.FIELD_ALIAS),
         KeywordField(name = FieldKeys.FIELD_TYPE),
       )),
       NestedField(name = FieldKeys.FIELD_EXCLUSIONS, fields = Seq(
         KeywordField(name = FieldKeys.FIELD_FIELD),
         KeywordField(name = FieldKeys.FIELD_VALUE),
+        KeywordField(name = FieldKeys.FIELD_ALIAS),
         KeywordField(name = FieldKeys.FIELD_TYPE),
       )),
     )
