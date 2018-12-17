@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import asura.common.util.StringUtils
 import asura.core.cs.model.{AggsQuery, QueryDomain, QueryOnlineApi}
 import asura.core.es.EsResponse
-import asura.core.es.model.FieldKeys
+import asura.core.es.model.{DomainOnlineConfig, FieldKeys}
 import asura.core.es.service._
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
@@ -68,5 +68,15 @@ class OnlineLogApi @Inject()(implicit system: ActorSystem,
       })
     }
     res.toOkResult
+  }
+
+  def putDomainConfig() = Action(parse.byteString).async { implicit req =>
+    val doc = req.bodyAs(classOf[DomainOnlineConfig])
+    doc.fillCommonFields(getProfileId())
+    DomainOnlineConfigService.index(doc).toOkResult
+  }
+
+  def getDomainConfig(name: String) = Action.async { implicit req =>
+    DomainOnlineConfigService.getConfig(name).toOkResult
   }
 }

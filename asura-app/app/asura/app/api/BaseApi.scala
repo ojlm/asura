@@ -84,7 +84,7 @@ trait BaseApi extends Security[CommonProfile] {
 
   implicit class EsSingleResponseToOkResult(f: Future[Response[SearchResponse]])
                                            (implicit ec: ExecutionContext, implicit val request: RequestHeader) {
-    def toOkResultByEsOneDoc(id: String) = f.map(toActionResultWithSingleDataFromEs(_, id))
+    def toOkResultByEsOneDoc(id: String, hasId: Boolean = true) = f.map(toActionResultWithSingleDataFromEs(_, id, hasId))
   }
 
   def getI18nMessage(key: String, args: Any*)(implicit request: RequestHeader): String = {
