@@ -6,3 +6,10 @@ case class FieldPattern(
                          alias: String,
                          `type`: String,
                        )
+
+object FieldPattern {
+
+  val TYPE_TERM = "term"
+  val TYPE_WILDCARD = "wildcard"
+  val TYPE_REGEX = "regex"
+}

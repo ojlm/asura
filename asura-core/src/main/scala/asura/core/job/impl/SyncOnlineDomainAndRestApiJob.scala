@@ -25,7 +25,7 @@ class SyncOnlineDomainAndRestApiJob extends Job {
     val detail = context.getJobDetail
     val dayCount = detail.getJobDataMap.getInt(KEY_DAY)
     val domainCount = detail.getJobDataMap.getInt(KEY_DOMAIN_COUNT)
-    val apiCount = detail.getJobDataMap.getInt(KEY_API_COUNT)
+    val jobApiCount = detail.getJobDataMap.getInt(KEY_API_COUNT)
     if (domainCount > 0) {
       val projectCoverageLogs = ArrayBuffer[ProjectApiCoverage]()
       val yesterday = LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern(CoreConfig.onlineLogDatePattern))
@@ -33,7 +33,7 @@ class SyncOnlineDomainAndRestApiJob extends Job {
       val domainLogs = DomainOnlineLogService.getOnlineDomain(domainCount, yesterday).await
       domainLogs.foreach(domainCountLog => {
         // get all apis of each domain
-        val apiLogs = OnlineRequestLogService.getOnlineApi(domainCountLog.name, domainCountLog.count, apiCount).await
+        val apiLogs = OnlineRequestLogService.getOnlineApi(domainCountLog.name, domainCountLog.count, jobApiCount).await
         if (apiLogs.nonEmpty) {
           // get all projects of each domain
           val projects = ProjectService.getProjectsByDomain(domainCountLog.name).await
@@ -53,7 +53,7 @@ class SyncOnlineDomainAndRestApiJob extends Job {
             val domainApiSet = mutable.HashMap[String, Long]()
             projects.foreach(project => {
               // get all apis of each project
-              val projectApiSet = CaseService.getApiSet(project, apisShouldQuery, apiLogs.size).await
+              val projectApiSet = CaseService.getApiSet(project, apisShouldQuery, apiMap.size).await
               projectApiSet.foreach(projectApiItem => {
                 domainApiSet += projectApiItem
                 apiMap.get(projectApiItem._1).foreach(apiLog => {
@@ -70,10 +70,10 @@ class SyncOnlineDomainAndRestApiJob extends Job {
                 project = project.id,
                 domain = domainCountLog.name,
                 date = yesterday,
-                coverage = Math.round((projectApiSet.size * 10000L).toDouble / apiLogs.size.toDouble).toInt
+                coverage = Math.round((projectApiSet.size * 10000L).toDouble / apiMap.size.toDouble).toInt
               )
             })
-            domainCountLog.coverage = Math.round((domainApiSet.size * 10000L).toDouble / apiLogs.size.toDouble).toInt
+            domainCountLog.coverage = Math.round((domainApiSet.size * 10000L).toDouble / apiMap.size.toDouble).toInt
           }
           RestApiOnlineLogService.index(apiLogs, domainCountLog.date).await
         }
