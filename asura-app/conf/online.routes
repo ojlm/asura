@@ -1,3 +1,5 @@
-POST        /domain                   asura.app.api.OnlineLogApi.queryDomain()
-POST        /domain/aggs/terms        asura.app.api.OnlineLogApi.aggTerms()
-POST        /api                      asura.app.api.OnlineLogApi.queryApi(hasDomain: Option[Boolean])
+POST        /domain                     asura.app.api.OnlineLogApi.queryDomain()
+PUT         /domain/config              asura.app.api.OnlineLogApi.putDomainConfig()
+GET         /domain/config/:name        asura.app.api.OnlineLogApi.getDomainConfig(name)
+POST        /domain/aggs/terms          asura.app.api.OnlineLogApi.aggTerms()
+POST        /api                        asura.app.api.OnlineLogApi.queryApi(hasDomain: Option[Boolean])
