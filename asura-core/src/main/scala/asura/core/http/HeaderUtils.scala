@@ -40,18 +40,18 @@ object HeaderUtils {
         }
       }
     }
-    if (null != env && env.enableProxy) {
-      if (null != env.headers && env.headers.nonEmpty) {
-        for (h <- env.headers if h.enabled) {
-          HttpHeader.parse(h.key, context.renderSingleMacroAsString(h.value)) match {
-            case Ok(header: HttpHeader, errors: List[ErrorInfo]) =>
-              if (errors.nonEmpty) logger.warn(errors.mkString(","))
-              headers += header
-            case Error(error: ErrorInfo) =>
-              logger.warn(error.detail)
-          }
+    if (null != env && null != env.headers && env.headers.nonEmpty) {
+      for (h <- env.headers if h.enabled) {
+        HttpHeader.parse(h.key, context.renderSingleMacroAsString(h.value)) match {
+          case Ok(header: HttpHeader, errors: List[ErrorInfo]) =>
+            if (errors.nonEmpty) logger.warn(errors.mkString(","))
+            headers += header
+          case Error(error: ErrorInfo) =>
+            logger.warn(error.detail)
         }
       }
+    }
+    if (null != env && env.enableProxy) {
       if (CoreConfig.enableProxy) {
         val ns = env.namespace
         if (StringUtils.isNotEmpty(ns)) {
