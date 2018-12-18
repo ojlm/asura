@@ -79,7 +79,7 @@ object CaseRunner {
 
   // Base64 encode if not text
   private def byteStringToString(byteString: ByteString, contentType: ContentType): String = {
-    if (contentType.mediaType.binary) {
+    if (contentType.mediaType.isImage || contentType.mediaType.isVideo) {
       new String(Base64.getEncoder.encode(byteString.toByteBuffer.array()))
     } else {
       byteString.decodeString(StandardCharsets.UTF_8)
