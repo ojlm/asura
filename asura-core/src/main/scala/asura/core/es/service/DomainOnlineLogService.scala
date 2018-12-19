@@ -56,7 +56,7 @@ object DomainOnlineLogService extends CommonService with BaseAggregationService 
     if (StringUtils.isNotEmpty(query.date)) esQueries += termQuery(FieldKeys.FIELD_DATE, query.date)
     if (null != query.names && query.names.nonEmpty) {
       esQueries += termsQuery(FieldKeys.FIELD_NAME, query.names)
-      if (query.names.length > 1) {
+      if (query.names.length == 1) {
         sortField = FieldKeys.FIELD_DATE
         order = SortOrder.ASC
       }
