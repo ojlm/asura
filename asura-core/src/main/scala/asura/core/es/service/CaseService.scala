@@ -365,6 +365,7 @@ object CaseService extends CommonService with BaseAggregationService {
     })
   }
 
+  // assume the api is less equal than online api
   // return api set of specified project, key: {method}{urlPath} value: count
   def getApiSet(project: Project, apisQuery: Seq[Query], aggSize: Int): Future[mutable.HashMap[String, Long]] = {
     val apiSet = mutable.HashMap[String, Long]()
@@ -373,7 +374,7 @@ object CaseService extends CommonService with BaseAggregationService {
         .query(boolQuery().must(
           termQuery(FieldKeys.FIELD_GROUP, project.group),
           termQuery(FieldKeys.FIELD_PROJECT, project.id),
-          boolQuery().should(apisQuery)
+          // boolQuery().should(apisQuery)
         ))
         .size(0)
         .aggregations(

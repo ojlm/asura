@@ -8,7 +8,6 @@ import asura.core.CoreConfig
 import asura.core.es.model.RestApiOnlineLog.GroupProject
 import asura.core.es.model._
 import asura.core.es.service._
-import com.sksamuel.elastic4s.http.ElasticDsl._
 import com.sksamuel.elastic4s.searches.queries.Query
 import com.typesafe.scalalogging.Logger
 import org.quartz.{Job, JobExecutionContext}
@@ -40,27 +39,31 @@ class SyncOnlineDomainAndRestApiJob extends Job {
           logger.debug(s"online api count of ${domainCountLog.name}: ${apiLogs.size}")
           if (apiLogs.nonEmpty) {
             // get all projects of each domain
-            val projects = ProjectService.getProjectsByDomain(domainCountLog.name).await
+            val projects = getProjectsOfDomain(domainCountLog.name)
             if (projects.nonEmpty) {
               // key: {method}{urlPath}
               val apiMap = mutable.HashMap[String, RestApiOnlineLog]()
-              val apisShouldQuery = ArrayBuffer[Query]()
+              // val apisShouldQuery = ArrayBuffer[Query]()
               apiLogs.foreach(apiLog => {
                 // every log should have a copy of (group, project, covered)
                 apiLog.belongs = projects.map(p => GroupProject(p.group, p.id))
                 apiMap += (s"${apiLog.method}${apiLog.urlPath}" -> apiLog)
-                apisShouldQuery += boolQuery().must(
-                  termQuery(FieldKeys.FIELD_OBJECT_REQUEST_METHOD, apiLog.method),
-                  termQuery(FieldKeys.FIELD_OBJECT_REQUEST_URLPATH, apiLog.urlPath)
-                )
+                // apisShouldQuery += boolQuery().must(
+                //   termQuery(FieldKeys.FIELD_OBJECT_REQUEST_METHOD, apiLog.method),
+                //   termQuery(FieldKeys.FIELD_OBJECT_REQUEST_URLPATH, apiLog.urlPath)
+                // )
               })
+              val onlineApiCount = apiMap.size
               val domainApiSet = mutable.HashMap[String, Long]()
               projects.foreach(project => {
                 // get all apis of each project
-                val projectApiSet = CaseService.getApiSet(project, apisShouldQuery, apiMap.size).await
+                var projectApiOnlineCount = 0
+                val projectApiSet = getProjectApiSet(project, Nil, apiMap.size)
                 projectApiSet.foreach(projectApiItem => {
-                  domainApiSet += projectApiItem
+                  // only if the api is also online
                   apiMap.get(projectApiItem._1).foreach(apiLog => {
+                    domainApiSet += projectApiItem
+                    projectApiOnlineCount = projectApiOnlineCount + 1
                     apiLog.belongs
                       .filter(belong => belong.group == project.group && belong.project == project.id)
                       .foreach(belong => {
@@ -74,10 +77,20 @@ class SyncOnlineDomainAndRestApiJob extends Job {
                   project = project.id,
                   domain = domainCountLog.name,
                   date = yesterday,
-                  coverage = Math.round((projectApiSet.size * 10000L).toDouble / apiMap.size.toDouble).toInt
+                  coverage = {
+                    if (onlineApiCount > 0)
+                      Math.round((projectApiOnlineCount * 10000L).toDouble / onlineApiCount.toDouble).toInt
+                    else
+                      0
+                  }
                 )
               })
-              domainCountLog.coverage = Math.round((domainApiSet.size * 10000L).toDouble / apiMap.size.toDouble).toInt
+              domainCountLog.coverage = {
+                if (onlineApiCount > 0)
+                  Math.round((domainApiSet.size * 10000L).toDouble / onlineApiCount.toDouble).toInt
+                else
+                  0
+              }
             }
             RestApiOnlineLogService.index(apiLogs, domainCountLog.date).await
           }
@@ -90,6 +103,28 @@ class SyncOnlineDomainAndRestApiJob extends Job {
       }
     } catch {
       case t: Throwable => logger.error(LogUtils.stackTraceToString(t))
+    }
+  }
+
+  private def getProjectApiSet(project: Project, apisQuery: Seq[Query], aggSize: Int): Map[String, Long] = {
+    import asura.common.util.FutureUtils.RichFuture
+    try {
+      CaseService.getApiSet(project, Nil, aggSize).await.toMap
+    } catch {
+      case t: Throwable =>
+        logger.error(LogUtils.stackTraceToString(t))
+        Map.empty
+    }
+  }
+
+  private def getProjectsOfDomain(domain: String): Seq[Project] = {
+    import asura.common.util.FutureUtils.RichFuture
+    try {
+      ProjectService.getProjectsByDomain(domain).await
+    } catch {
+      case t: Throwable =>
+        logger.error(LogUtils.stackTraceToString(t))
+        Nil
     }
   }
 
