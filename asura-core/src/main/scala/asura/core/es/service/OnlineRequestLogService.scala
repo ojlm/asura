@@ -36,7 +36,6 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
       DomainOnlineConfigService.getConfig(domain).flatMap(config => {
         val inclusionPathItemMap = mutable.HashMap[String, FieldPattern]()
         var inMustQueries = ArrayBuffer[Query]()
-        inMustQueries += termQuery(FieldKeys.FIELD_DOMAIN, domain)
         var notQueries: Seq[Query] = Nil
         var aggSize = apiCount
         if (null != config) {
@@ -44,6 +43,7 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
             aggSize = config.maxApiCount
           }
           if (null != config.inclusions && config.inclusions.nonEmpty) {
+            inMustQueries += termQuery(FieldKeys.FIELD_DOMAIN, domain)
             config.inclusions.foreach(item => {
               inMustQueries += fieldPatternToQuery(item)
               inclusionPathItemMap += (item.value -> item)
@@ -56,7 +56,11 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
         val yesterday = LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern(CoreConfig.onlineLogDatePattern))
         val tuple = for {
           exclusion <- aggsItems(boolQuery().must(termQuery(FieldKeys.FIELD_DOMAIN, domain)).not(notQueries), yesterday, aggSize)
-          inclusion <- aggsItems(boolQuery().must(inMustQueries), yesterday, aggSize)
+          inclusion <- if (inMustQueries.nonEmpty) {
+            aggsItems(boolQuery().must(inMustQueries), yesterday, aggSize)
+          } else {
+            Future.successful(Nil)
+          }
         } yield (exclusion, inclusion)
         tuple.map(t => {
           val apiLogs = ArrayBuffer[RestApiOnlineLog]()
