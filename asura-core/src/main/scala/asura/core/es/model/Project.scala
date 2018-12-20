@@ -1,6 +1,5 @@
 package asura.core.es.model
 
-import asura.common.util.StringUtils
 import asura.core.es.EsConfig
 import asura.core.util.JacksonSupport
 import com.sksamuel.elastic4s.mappings.{KeywordField, MappingDefinition, NestedField}
@@ -23,7 +22,7 @@ case class Project(
   override def toUpdateMap: Map[String, Any] = {
     val m = mutable.Map[String, Any]()
     checkCommFieldsToUpdate(m)
-    if (StringUtils.isNotEmpty(avatar)) {
+    if (null != avatar) {
       m += (FieldKeys.FIELD_AVATAR -> avatar)
     }
     if (null != openapi) {
