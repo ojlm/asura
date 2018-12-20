@@ -28,7 +28,7 @@ case class Case(
     val sb = StringBuilder.newBuilder
     val m = mutable.Map[String, Any]()
     checkCommFieldsToUpdate(m, sb)
-    if (StringUtils.isNotEmpty(env)) {
+    if (null != env) {
       m += (FieldKeys.FIELD_ENV -> env)
       addScriptUpdateItem(sb, FieldKeys.FIELD_ENV)
     }
