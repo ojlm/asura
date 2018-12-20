@@ -36,4 +36,6 @@ object ClearJobReportDataIndicesJob {
   val NAME = "ClearJobReportIndicesJob"
   val KEY_CRON = "cron"
   val KEY_DAY = "day"
+
+  val DEFAULT_DAY = 20
 }

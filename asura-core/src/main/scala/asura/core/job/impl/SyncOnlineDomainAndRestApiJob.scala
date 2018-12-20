@@ -150,4 +150,8 @@ object SyncOnlineDomainAndRestApiJob {
   val KEY_DAY = "day"
   val KEY_DOMAIN_COUNT = "domainCount"
   val KEY_API_COUNT = "apiCount"
+
+  val DEFAULT_DAY = 20
+  val DEFAULT_DOMAIN_COUNT = 1000
+  val DEFAULT_API_COUNT = 2000
 }
