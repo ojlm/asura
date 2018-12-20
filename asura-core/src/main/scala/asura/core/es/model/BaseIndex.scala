@@ -14,11 +14,11 @@ trait BaseIndex {
   var createdAt: String
 
   def checkCommFieldsToUpdate(m: mutable.Map[String, Any], sb: StringBuilder = null): Unit = {
-    if (StringUtils.isNotEmpty(summary)) {
+    if (null != summary) {
       m += (FieldKeys.FIELD_SUMMARY -> summary)
       if (null != sb) addScriptUpdateItem(sb, FieldKeys.FIELD_SUMMARY)
     }
-    if (StringUtils.isNotEmpty(description)) {
+    if (null != description) {
       m += (FieldKeys.FIELD_DESCRIPTION -> description)
       if (null != sb) addScriptUpdateItem(sb, FieldKeys.FIELD_DESCRIPTION)
     }
