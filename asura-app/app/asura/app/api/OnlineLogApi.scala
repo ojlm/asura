@@ -1,11 +1,13 @@
 package asura.app.api
 
 import akka.actor.ActorSystem
+import asura.app.api.model.PreviewOnlineApi
 import asura.common.util.StringUtils
 import asura.core.cs.model.{AggsQuery, QueryDomain, QueryOnlineApi}
 import asura.core.es.EsResponse
 import asura.core.es.model.{DomainOnlineConfig, FieldKeys}
 import asura.core.es.service._
+import asura.core.job.impl.SyncOnlineDomainAndRestApiJob
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 
@@ -74,6 +76,11 @@ class OnlineLogApi @Inject()(implicit system: ActorSystem,
     val doc = req.bodyAs(classOf[DomainOnlineConfig])
     doc.fillCommonFields(getProfileId())
     DomainOnlineConfigService.index(doc).toOkResult
+  }
+
+  def previewOnlineApiOfDomainConfig() = Action(parse.byteString).async { implicit req =>
+    val preview = req.bodyAs(classOf[PreviewOnlineApi])
+    OnlineRequestLogService.previewOnlineApi(preview.config, preview.domainTotal, SyncOnlineDomainAndRestApiJob.DEFAULT_API_COUNT).toOkResult
   }
 
   def getDomainConfig(name: String) = Action.async { implicit req =>

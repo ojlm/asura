@@ -175,16 +175,16 @@ object SystemJobs {
   case class ClearJobReportIndicesJobModel(
                                             var cron: String = "0 0 3 * * ?",
                                             var state: String = JobStates.UNCREATED,
-                                            var day: Int = 20,
+                                            var day: Int = ClearJobReportDataIndicesJob.DEFAULT_DAY,
                                             var next: Date = null
                                           )
 
   case class SyncDomainAndApiJobModel(
                                        var cron: String = "0 0 3 * * ?",
                                        var state: String = JobStates.UNCREATED,
-                                       var day: Int = 20,
-                                       var domainCount: Int = 1000,
-                                       var apiCount: Int = 2000,
+                                       var day: Int = SyncOnlineDomainAndRestApiJob.DEFAULT_DAY,
+                                       var domainCount: Int = SyncOnlineDomainAndRestApiJob.DEFAULT_DOMAIN_COUNT,
+                                       var apiCount: Int = SyncOnlineDomainAndRestApiJob.DEFAULT_API_COUNT,
                                        var next: Date = null
                                      )
 
