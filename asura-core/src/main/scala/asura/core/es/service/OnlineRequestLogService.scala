@@ -33,7 +33,13 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
 
   def getOnlineApi(domain: String, domainTotal: Long, apiCount: Int): Future[Seq[RestApiOnlineLog]] = {
     if (null != EsClient.esOnlineLogClient && StringUtils.isNotEmpty(CoreConfig.onlineLogIndexPrefix)) {
-      DomainOnlineConfigService.getConfig(domain).flatMap(previewOnlineApi(_, domainTotal, apiCount))
+      DomainOnlineConfigService.getConfig(domain).flatMap(config => {
+        if (null == config) {
+          previewOnlineApi(DomainOnlineConfig(null, null, domain, 0), domainTotal, apiCount)
+        } else {
+          previewOnlineApi(config, domainTotal, apiCount)
+        }
+      })
     } else {
       Future.successful(Nil)
     }
@@ -44,13 +50,14 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
       val inclusionPathItemMap = mutable.HashMap[String, FieldPattern]()
       var inMustQueries = ArrayBuffer[Query]()
       var notQueries: Seq[Query] = Nil
+      val domain = config.domain
       var aggSize = apiCount
       if (null != config) {
         if (Option(config.maxApiCount).nonEmpty && config.maxApiCount > 0) {
           aggSize = config.maxApiCount
         }
         if (null != config.inclusions && config.inclusions.nonEmpty) {
-          inMustQueries += termQuery(FieldKeys.FIELD_DOMAIN, config.domain)
+          inMustQueries += termQuery(FieldKeys.FIELD_DOMAIN, domain)
           config.inclusions.foreach(item => {
             inMustQueries += fieldPatternToQuery(item)
             inclusionPathItemMap += (item.value -> item)
@@ -62,7 +69,7 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
       }
       val yesterday = LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern(CoreConfig.onlineLogDatePattern))
       val tuple = for {
-        exclusion <- aggsItems(boolQuery().must(termQuery(FieldKeys.FIELD_DOMAIN, config.domain)).not(notQueries), yesterday, aggSize)
+        exclusion <- aggsItems(boolQuery().must(termQuery(FieldKeys.FIELD_DOMAIN, domain)).not(notQueries), yesterday, aggSize)
         inclusion <- if (inMustQueries.nonEmpty) {
           aggsItems(boolQuery().must(inMustQueries), yesterday, aggSize)
         } else {
@@ -74,7 +81,7 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
         t._1.foreach(item => {
           item.sub.foreach(subItem => {
             val percentage = if (domainTotal > 0) Math.round(((subItem.count * 10000L).toDouble / domainTotal.toDouble)).toInt else 0
-            apiLogs += RestApiOnlineLog(config.domain, subItem.id, item.id, subItem.count, percentage)
+            apiLogs += RestApiOnlineLog(domain, subItem.id, item.id, subItem.count, percentage)
           })
         })
         t._2.foreach(item => {
@@ -82,9 +89,9 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
             val percentage = if (domainTotal > 0) Math.round(((subItem.count * 10000L).toDouble / domainTotal.toDouble)).toInt else 0
             if (inclusionPathItemMap.get(item.id).nonEmpty) {
               val pathAlias = inclusionPathItemMap.get(item.id).get.alias
-              apiLogs += RestApiOnlineLog(config.domain, subItem.id, StringUtils.notEmptyElse(pathAlias, item.id), subItem.count, percentage)
+              apiLogs += RestApiOnlineLog(domain, subItem.id, StringUtils.notEmptyElse(pathAlias, item.id), subItem.count, percentage)
             } else {
-              apiLogs += RestApiOnlineLog(config.domain, subItem.id, item.id, subItem.count, percentage)
+              apiLogs += RestApiOnlineLog(domain, subItem.id, item.id, subItem.count, percentage)
             }
           })
         })
