@@ -32,8 +32,22 @@ class OnlineLogApi @Inject()(implicit system: ActorSystem,
           // order by date
           val ordered = dateAgg.sortWith((one, two) => one.id > two.id)
           query.date = ordered(0).id
-          DomainOnlineLogService.queryDomain(query).map(esRes => {
-            Map("dates" -> ordered, "domains" -> EsResponse.toApiData(esRes.result, false))
+          val tuple = for {
+            countItems <- {
+              query.sortField = FieldKeys.FIELD_COUNT
+              DomainOnlineLogService.queryDomain(query)
+            }
+            coverageItems <- {
+              query.sortField = FieldKeys.FIELD_COVERAGE
+              DomainOnlineLogService.queryDomain(query)
+            }
+          } yield (countItems, coverageItems)
+          tuple.map(counts => {
+            Map(
+              "dates" -> ordered,
+              "count" -> EsResponse.toApiData(counts._1.result, false),
+              "coverage" -> EsResponse.toApiData(counts._2.result, false),
+            )
           })
         } else {
           Future.successful(Map.empty)
