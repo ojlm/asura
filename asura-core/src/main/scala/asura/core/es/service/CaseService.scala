@@ -220,10 +220,14 @@ object CaseService extends CommonService with BaseAggregationService {
         }
       })
     } else {
+      var sortFields = Seq(FieldSort(FieldKeys.FIELD_CREATED_AT).desc())
       val esQueries = ArrayBuffer[Query]()
       if (StringUtils.isNotEmpty(query.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, query.group)
       if (StringUtils.isNotEmpty(query.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, query.project)
-      if (StringUtils.isNotEmpty(query.text)) esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
+      if (StringUtils.isNotEmpty(query.text)) {
+        esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
+        sortFields = Nil
+      }
       if (StringUtils.isNotEmpty(query.path)) esQueries += wildcardQuery(FieldKeys.FIELD_OBJECT_REQUEST_URLPATH, s"${query.path}*")
       if (null != query.methods && query.methods.nonEmpty) esQueries += termsQuery(FieldKeys.FIELD_OBJECT_REQUEST_METHOD, query.methods)
       if (null != query.labels && query.labels.nonEmpty) esQueries += nestedQuery(FieldKeys.FIELD_LABELS, termsQuery(FieldKeys.FIELD_NESTED_LABELS_NAME, query.labels))
@@ -231,7 +235,7 @@ object CaseService extends CommonService with BaseAggregationService {
         search(Case.Index).query(boolQuery().must(esQueries))
           .from(query.pageFrom)
           .size(query.pageSize)
-          .sortByFieldDesc(FieldKeys.FIELD_CREATED_AT)
+          .sortBy(sortFields)
           .sourceInclude(queryFields)
       }.flatMap(res => {
         if (res.isSuccess) {
@@ -248,17 +252,21 @@ object CaseService extends CommonService with BaseAggregationService {
   }
 
   def searchAfter(query: SearchAfterCase) = {
+    var sortFields = Seq(FieldSort(FieldKeys.FIELD_CREATED_AT).desc(), FieldSort(FieldKeys.FIELD__ID).desc())
     val esQueries = ArrayBuffer[Query]()
     if (StringUtils.isNotEmpty(query.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, query.group)
     if (StringUtils.isNotEmpty(query.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, query.project)
     if (StringUtils.isNotEmpty(query.creator)) esQueries += termQuery(FieldKeys.FIELD_CREATOR, query.creator)
-    if (StringUtils.isNotEmpty(query.text)) esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
+    if (StringUtils.isNotEmpty(query.text)) {
+      esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
+      sortFields = Seq(FieldSort(FieldKeys.FIELD__SCORE).desc(), FieldSort(FieldKeys.FIELD__ID).desc())
+    }
     EsClient.esClient.execute {
       search(Case.Index)
         .query(boolQuery().must(esQueries))
         .size(query.pageSize)
         .searchAfter(query.toSearchAfterSort)
-        .sortBy(FieldSort(FieldKeys.FIELD_CREATED_AT).desc(), FieldSort(FieldKeys.FIELD__ID).desc())
+        .sortBy(sortFields)
         .sourceInclude(queryFields)
     }.flatMap { res =>
       if (res.isSuccess) {

@@ -135,4 +135,5 @@ object FieldKeys {
   val FIELD__TEXT = "_text"
   val FIELD__ID = "_id"
   val FIELD__SORT = "_sort"
+  val FIELD__SCORE = "_score"
 }

@@ -11,6 +11,7 @@ import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl.{bulk, delete, indexInto, _}
 import com.sksamuel.elastic4s.searches.queries.{NestedQuery, Query}
+import com.sksamuel.elastic4s.searches.sort.FieldSort
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
@@ -87,15 +88,19 @@ object ScenarioService extends CommonService {
     if (null != query.ids && query.ids.nonEmpty) {
       getByIds(query.ids)
     } else {
+      var sortFields = Seq(FieldSort(FieldKeys.FIELD_CREATED_AT).desc())
       val esQueries = ArrayBuffer[Query]()
       if (StringUtils.isNotEmpty(query.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, query.group)
       if (StringUtils.isNotEmpty(query.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, query.project)
-      if (StringUtils.isNotEmpty(query.text)) esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
+      if (StringUtils.isNotEmpty(query.text)) {
+        esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
+        sortFields = Nil
+      }
       EsClient.esClient.execute {
         search(Scenario.Index).query(boolQuery().must(esQueries))
           .from(query.pageFrom)
           .size(query.pageSize)
-          .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
+          .sortBy(sortFields)
       }
     }
   }

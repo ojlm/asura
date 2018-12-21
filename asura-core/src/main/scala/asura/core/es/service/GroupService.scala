@@ -14,6 +14,7 @@ import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
 import com.sksamuel.elastic4s.searches.queries.Query
+import com.sksamuel.elastic4s.searches.sort.FieldSort
 import com.typesafe.scalalogging.Logger
 
 import scala.collection.mutable.ArrayBuffer
@@ -105,14 +106,18 @@ object GroupService extends CommonService {
   }
 
   def queryGroup(query: QueryGroup) = {
+    var sortFields = Seq(FieldSort(FieldKeys.FIELD_CREATED_AT).desc())
     val esQueries = ArrayBuffer[Query]()
     if (StringUtils.isNotEmpty(query.id)) esQueries += wildcardQuery(FieldKeys.FIELD_ID, query.id + "*")
-    if (StringUtils.isNotEmpty(query.text)) esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
+    if (StringUtils.isNotEmpty(query.text)) {
+      esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
+      sortFields = Nil
+    }
     EsClient.esClient.execute {
       search(Group.Index).query(boolQuery().must(esQueries))
         .from(query.pageFrom)
         .size(query.pageSize)
-        .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
+        .sortBy(sortFields)
         .sourceInclude(defaultIncludeFields :+ FieldKeys.FIELD_ID :+ FieldKeys.FIELD_AVATAR)
     }
   }
