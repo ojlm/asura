@@ -12,7 +12,6 @@ import asura.core.es.model._
 import com.sksamuel.elastic4s.http.ElasticDsl._
 import com.sksamuel.elastic4s.searches.queries.Query
 
-import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
@@ -47,21 +46,12 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
 
   def previewOnlineApi(config: DomainOnlineConfig, domainTotal: Long, apiCount: Int): Future[Seq[RestApiOnlineLog]] = {
     if (null != EsClient.esOnlineLogClient && StringUtils.isNotEmpty(CoreConfig.onlineLogIndexPrefix)) {
-      val inclusionPathItemMap = mutable.HashMap[String, FieldPattern]()
-      var inMustQueries = ArrayBuffer[Query]()
       var notQueries: Seq[Query] = Nil
       val domain = config.domain
       var aggSize = apiCount
       if (null != config) {
         if (Option(config.maxApiCount).nonEmpty && config.maxApiCount > 0) {
           aggSize = config.maxApiCount
-        }
-        if (null != config.inclusions && config.inclusions.nonEmpty) {
-          inMustQueries += termQuery(FieldKeys.FIELD_DOMAIN, domain)
-          config.inclusions.foreach(item => {
-            inMustQueries += fieldPatternToQuery(item)
-            inclusionPathItemMap += (item.value -> item)
-          })
         }
         if (null != config.exclusions && config.exclusions.nonEmpty) {
           notQueries = config.exclusions.map(fieldPatternToQuery(_))
@@ -70,32 +60,45 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
       val yesterday = LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern(CoreConfig.onlineLogDatePattern))
       val tuple = for {
         exclusion <- aggsItems(boolQuery().must(termQuery(FieldKeys.FIELD_DOMAIN, domain)).not(notQueries), yesterday, aggSize)
-        inclusion <- if (inMustQueries.nonEmpty) {
-          aggsItems(boolQuery().must(inMustQueries), yesterday, aggSize)
-        } else {
-          Future.successful(Nil)
-        }
+        inclusion <- getInclusions(domain, yesterday, config.inclusions)
       } yield (exclusion, inclusion)
       tuple.map(t => {
         val apiLogs = ArrayBuffer[RestApiOnlineLog]()
-        t._1.foreach(item => {
-          item.sub.foreach(subItem => {
+        val itemFunc = (aggsItem: AggsItem) => {
+          aggsItem.sub.foreach(subItem => {
             val percentage = if (domainTotal > 0) Math.round(((subItem.count * 10000L).toDouble / domainTotal.toDouble)).toInt else 0
-            apiLogs += RestApiOnlineLog(domain, subItem.id, item.id, subItem.count, percentage)
+            apiLogs += RestApiOnlineLog(domain, subItem.id, aggsItem.id, subItem.count, percentage)
           })
-        })
-        t._2.foreach(item => {
-          item.sub.foreach(subItem => {
-            val percentage = if (domainTotal > 0) Math.round(((subItem.count * 10000L).toDouble / domainTotal.toDouble)).toInt else 0
-            if (inclusionPathItemMap.get(item.id).nonEmpty) {
-              val pathAlias = inclusionPathItemMap.get(item.id).get.alias
-              apiLogs += RestApiOnlineLog(domain, subItem.id, StringUtils.notEmptyElse(pathAlias, item.id), subItem.count, percentage)
-            } else {
-              apiLogs += RestApiOnlineLog(domain, subItem.id, item.id, subItem.count, percentage)
-            }
-          })
-        })
+        }
+        t._1.foreach(itemFunc)
+        t._2.foreach(itemFunc)
         apiLogs
+      })
+    } else {
+      Future.successful(Nil)
+    }
+  }
+
+  private def getInclusions(
+                             domain: String,
+                             date: String,
+                             inclusions: Seq[FieldPattern],
+                           ): Future[Seq[AggsItem]] = {
+    if (null != inclusions && inclusions.nonEmpty) {
+      val domainTerm = termQuery(FieldKeys.FIELD_DOMAIN, domain)
+      val items = ArrayBuffer[AggsItem]()
+      inclusions.foldLeft(Future.successful(items))((itemsFuture, inclusion) => {
+        for {
+          items <- itemsFuture
+          item <- {
+            EsClient.esOnlineLogClient.execute {
+              search(s"${CoreConfig.onlineLogIndexPrefix}${date}")
+                .query(boolQuery().must(domainTerm, fieldPatternToQuery(inclusion)))
+                .size(0)
+                .aggregations(termsAgg(aggsTermName, OnlineRequestLog.KEY_METHOD))
+            }.map(toAggItems(_, null, null))
+              .map(AggsItem(null, StringUtils.notEmptyElse(inclusion.alias, inclusion.value), 0, _))
+          }} yield items += item
       })
     } else {
       Future.successful(Nil)
