@@ -5,6 +5,7 @@ import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.model.{AggsItem, AggsQuery, QueryDomain}
 import asura.core.es.model.{BulkDocResponse, DomainOnlineLog, FieldKeys}
+import asura.core.es.service.BaseAggregationService._
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.http.ElasticDsl._
@@ -45,7 +46,7 @@ object DomainOnlineLogService extends CommonService with BaseAggregationService 
       search(DomainOnlineLog.Index)
         .query(boolQuery().must(esQueries))
         .size(0)
-        .aggregations(termsAgg(aggsTermName, aggField).size(aggs.pageSize()))
+        .aggregations(termsAgg(aggsTermsName, aggField).size(aggs.pageSize()))
     }.map(toAggItems(_, aggField, null))
   }
 

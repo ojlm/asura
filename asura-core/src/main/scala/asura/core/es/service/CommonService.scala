@@ -14,7 +14,6 @@ import com.sksamuel.elastic4s.http.{ElasticRequest, Handler, Response}
 
 trait CommonService {
 
-  val aggsTermName = "aggs"
   val defaultIncludeFields = Seq(
     FieldKeys.FIELD_SUMMARY, FieldKeys.FIELD_DESCRIPTION,
     FieldKeys.FIELD_GROUP, FieldKeys.FIELD_PROJECT

@@ -20,4 +20,5 @@ object OnlineRequestLog {
   val KEY_DOMAIN = "domain"
   val KEY_URI = "uri"
   val KEY_METHOD = "verb"
+  val KEY_REQUEST_TIME = "request_time"
 }

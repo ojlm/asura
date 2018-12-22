@@ -5,6 +5,7 @@ import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.model.{AggsItem, AggsQuery, QueryJobReport}
 import asura.core.es.model._
+import asura.core.es.service.BaseAggregationService._
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
@@ -113,10 +114,10 @@ object JobReportService extends CommonService with BaseAggregationService {
   def trend(aggs: AggsQuery): Future[Seq[AggsItem]] = {
     val esQueries = buildEsQueryFromAggQuery(aggs, false)
     val termsField = aggs.aggTermsField()
-    val dateHistogram = dateHistogramAgg(aggsTermName, FieldKeys.FIELD_CREATED_AT)
+    val dateHistogram = dateHistogramAgg(aggsTermsName, FieldKeys.FIELD_CREATED_AT)
       .interval(DateHistogramInterval.fromString(aggs.aggInterval()))
       .format("yyyy-MM-dd")
-      .subAggregations(termsAgg(aggsTermName, termsField).size(aggs.pageSize()))
+      .subAggregations(termsAgg(aggsTermsName, termsField).size(aggs.pageSize()))
     EsClient.esClient.execute {
       search(JobReport.Index)
         .query(boolQuery().must(esQueries))

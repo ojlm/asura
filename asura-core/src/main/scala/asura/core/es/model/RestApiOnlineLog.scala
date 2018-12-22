@@ -1,8 +1,9 @@
 package asura.core.es.model
 
+import asura.core.cs.model.AggsItem.Metrics
 import asura.core.es.EsConfig
 import asura.core.es.model.RestApiOnlineLog.GroupProject
-import com.sksamuel.elastic4s.mappings.{BasicField, KeywordField, MappingDefinition, NestedField}
+import com.sksamuel.elastic4s.mappings._
 
 case class RestApiOnlineLog(
                              val domain: String,
@@ -11,6 +12,7 @@ case class RestApiOnlineLog(
                              val count: Long,
                              val percentage: Int, // like 44.22 but saved 4422
                              var belongs: Seq[GroupProject] = Nil,
+                             var metrics: Metrics = null,
                            )
 
 object RestApiOnlineLog extends IndexSetting {
@@ -33,6 +35,17 @@ object RestApiOnlineLog extends IndexSetting {
         KeywordField(name = FieldKeys.FIELD_PROJECT),
         BasicField(name = FieldKeys.FIELD_COVERED, `type` = "boolean"),
         BasicField(name = FieldKeys.FIELD_COUNT, `type` = "long"),
+      )),
+      ObjectField(name = FieldKeys.FIELD_METRICS, fields = Seq(
+        BasicField(name = FieldKeys.FIELD_P25, `type` = "integer"),
+        BasicField(name = FieldKeys.FIELD_P50, `type` = "integer"),
+        BasicField(name = FieldKeys.FIELD_P75, `type` = "integer"),
+        BasicField(name = FieldKeys.FIELD_P95, `type` = "integer"),
+        BasicField(name = FieldKeys.FIELD_P99, `type` = "integer"),
+        BasicField(name = FieldKeys.FIELD_P999, `type` = "integer"),
+        BasicField(name = FieldKeys.FIELD_MIN, `type` = "integer"),
+        BasicField(name = FieldKeys.FIELD_AVG, `type` = "integer"),
+        BasicField(name = FieldKeys.FIELD_MAX, `type` = "integer"),
       )),
     )
   )

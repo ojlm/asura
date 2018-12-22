@@ -3,19 +3,35 @@ package asura.core.es.service
 import asura.common.util.StringUtils
 import asura.core.cs.model.{AggsItem, AggsQuery}
 import asura.core.es.model.FieldKeys
-import asura.core.es.service.ActivityService.aggsTermName
 import com.sksamuel.elastic4s.http.ElasticDsl.{rangeQuery, termQuery, termsQuery, wildcardQuery, _}
 import com.sksamuel.elastic4s.http.Response
 import com.sksamuel.elastic4s.http.search.SearchResponse
+import com.sksamuel.elastic4s.searches.aggs.AbstractAggregation
 import com.sksamuel.elastic4s.searches.queries.Query
 
 import scala.collection.mutable.ArrayBuffer
 
 trait BaseAggregationService {
 
+  import BaseAggregationService._
+
+  def toMetricsAggregation(field: String): Seq[AbstractAggregation] = {
+    if (StringUtils.isNotEmpty(field)) {
+      Seq(
+        percentilesAgg(aggsPercentilesName, field).percents(percentilesPercents),
+        avgAgg(aggsAvg, field),
+        minAgg(aggsMin, field),
+        maxAgg(aggsMax, field),
+      )
+    } else {
+      Nil
+    }
+  }
+
+  // assume the metrics aggregations are child aggregation of terms aggregation
   def toAggItems(res: Response[SearchResponse], itemType: String, subItemType: String): Seq[AggsItem] = {
     val buckets = res.result
-      .aggregationsAsMap.getOrElse(aggsTermName, Map.empty)
+      .aggregationsAsMap.getOrElse(aggsTermsName, Map.empty)
       .asInstanceOf[Map[String, Any]]
       .getOrElse("buckets", Nil)
     buckets.asInstanceOf[Seq[Map[String, Any]]].map(bucket => {
@@ -28,17 +44,17 @@ trait BaseAggregationService {
           if (StringUtils.isEmpty(subItemType)) {
             null
           } else {
-            bucket.getOrElse(aggsTermName, Map.empty)
+            bucket.getOrElse(aggsTermsName, Map.empty)
               .asInstanceOf[Map[String, Any]]
               .getOrElse("buckets", Nil)
-              .asInstanceOf[Seq[Map[String, Any]]].map(bucket => {
+              .asInstanceOf[Seq[Map[String, Any]]].map(subBucket => {
               AggsItem(
                 `type` = subItemType,
-                id = bucket.getOrElse("key", "").asInstanceOf[String],
-                count = bucket.getOrElse("doc_count", 0).toString.toLong
-              )
+                id = subBucket.getOrElse("key_as_string", subBucket.getOrElse("key", "")).asInstanceOf[String],
+                count = subBucket.getOrElse("doc_count", 0).toString.toLong
+              ).evaluateBucketToMetrics(subBucket)
             })
-          })
+          }).evaluateBucketToMetrics(bucket)
     })
   }
 
@@ -72,4 +88,13 @@ trait BaseAggregationService {
     if (StringUtils.isNotEmpty(aggs.date)) esQueries += termQuery(FieldKeys.FIELD_DATE, aggs.date)
     esQueries
   }
+}
+
+object BaseAggregationService {
+  val aggsTermsName = "terms"
+  val aggsPercentilesName = "percentiles"
+  val percentilesPercents = Array(25, 50, 75, 95, 99, 99.9)
+  val aggsAvg = "avg"
+  val aggsMin = "min"
+  val aggsMax = "max"
 }
