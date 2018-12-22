@@ -5,6 +5,7 @@ import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.model.{AggsItem, AggsQuery, QueryActivity}
 import asura.core.es.model._
+import asura.core.es.service.BaseAggregationService._
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.http.ElasticDsl._
@@ -47,10 +48,10 @@ object ActivityService extends CommonService with BaseAggregationService {
   def trend(aggs: AggsQuery): Future[Seq[AggsItem]] = {
     val esQueries = buildEsQueryFromAggQuery(aggs, true)
     val termsField = aggs.aggTermsField()
-    val dateHistogram = dateHistogramAgg(aggsTermName, FieldKeys.FIELD_TIMESTAMP)
+    val dateHistogram = dateHistogramAgg(aggsTermsName, FieldKeys.FIELD_TIMESTAMP)
       .interval(DateHistogramInterval.fromString(aggs.aggInterval()))
       .format("yyyy-MM-dd")
-      .subAggregations(termsAgg(aggsTermName, if (termsField.equals("creator")) FieldKeys.FIELD_USER else termsField).size(aggs.pageSize()))
+      .subAggregations(termsAgg(aggsTermsName, if (termsField.equals("creator")) FieldKeys.FIELD_USER else termsField).size(aggs.pageSize()))
     EsClient.esClient.execute {
       search(Activity.Index)
         .query(boolQuery().must(esQueries))
@@ -66,7 +67,7 @@ object ActivityService extends CommonService with BaseAggregationService {
       search(Activity.Index)
         .query(boolQuery().must(esQueries))
         .size(0)
-        .aggregations(termsAgg(aggsTermName, aggField).size(aggs.pageSize()))
+        .aggregations(termsAgg(aggsTermsName, aggField).size(aggs.pageSize()))
     }.map(toAggItems(_, aggField, null))
   }
 }

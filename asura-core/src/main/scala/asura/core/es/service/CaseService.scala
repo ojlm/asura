@@ -8,6 +8,7 @@ import asura.core.cs.CaseValidator
 import asura.core.cs.model._
 import asura.core.es.model.JobData.JobDataExt
 import asura.core.es.model._
+import asura.core.es.service.BaseAggregationService._
 import asura.core.es.{EsClient, EsConfig, EsResponse}
 import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
@@ -285,7 +286,7 @@ object CaseService extends CommonService with BaseAggregationService {
       search(Case.Index)
         .query(boolQuery().must(esQueries))
         .size(0)
-        .aggregations(termsAgg(aggsTermName, aggField).size(aggs.pageSize()))
+        .aggregations(termsAgg(aggsTermsName, aggField).size(aggs.pageSize()))
     }.map(toAggItems(_, aggField, null))
   }
 
@@ -326,10 +327,10 @@ object CaseService extends CommonService with BaseAggregationService {
   def trend(query: AggsQuery): Future[Seq[AggsItem]] = {
     val esQueries = buildEsQueryFromAggQuery(query, false)
     val termsField = query.aggTermsField()
-    val dateHistogram = dateHistogramAgg(aggsTermName, FieldKeys.FIELD_CREATED_AT)
+    val dateHistogram = dateHistogramAgg(aggsTermsName, FieldKeys.FIELD_CREATED_AT)
       .interval(DateHistogramInterval.fromString(query.aggInterval()))
       .format("yyyy-MM-dd")
-      .subAggregations(termsAgg(aggsTermName, termsField).size(query.pageSize()))
+      .subAggregations(termsAgg(aggsTermsName, termsField).size(query.pageSize()))
     EsClient.esClient.execute {
       search(Case.Index)
         .query(boolQuery().must(esQueries))
@@ -386,8 +387,8 @@ object CaseService extends CommonService with BaseAggregationService {
         ))
         .size(0)
         .aggregations(
-          termsAgg(aggsTermName, FieldKeys.FIELD_OBJECT_REQUEST_URLPATH).size(aggSize)
-            .subAggregations(termsAgg(aggsTermName, FieldKeys.FIELD_OBJECT_REQUEST_METHOD))
+          termsAgg(aggsTermsName, FieldKeys.FIELD_OBJECT_REQUEST_URLPATH).size(aggSize)
+            .subAggregations(termsAgg(aggsTermsName, FieldKeys.FIELD_OBJECT_REQUEST_METHOD))
         )
     }.map(toAggItems(_, null, FieldKeys.FIELD_METHOD))
       .map(items => {
