@@ -4,3 +4,4 @@ POST        /domain/config/preview        asura.app.api.OnlineLogApi.previewOnli
 GET         /domain/config/:name          asura.app.api.OnlineLogApi.getDomainConfig(name)
 POST        /domain/aggs/terms            asura.app.api.OnlineLogApi.aggTerms()
 POST        /api                          asura.app.api.OnlineLogApi.queryApi(hasDomain: Option[Boolean])
+POST        /api/metrics                  asura.app.api.OnlineLogApi.getApiMetrics()

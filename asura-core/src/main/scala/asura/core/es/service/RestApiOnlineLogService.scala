@@ -9,7 +9,7 @@ import asura.core.es.model.{BulkDocResponse, FieldKeys, RestApiOnlineLog}
 import asura.core.es.service.CommonService.CustomCatIndices
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
-import com.sksamuel.elastic4s.http.ElasticDsl._
+import com.sksamuel.elastic4s.http.ElasticDsl.{termQuery, _}
 import com.sksamuel.elastic4s.searches.queries.Query
 
 import scala.collection.mutable.ArrayBuffer
@@ -52,4 +52,39 @@ object RestApiOnlineLogService extends CommonService {
       }
     }
   }
+
+  def getOnlineApiMetrics(query: QueryOnlineApi): Future[Seq[ApiMetrics]] = {
+    if (null != query && StringUtils.isNotEmpty(query.domain)) {
+      EsClient.esClient.execute {
+        search(s"${RestApiOnlineLog.Index}-*")
+          .query(boolQuery().must(
+            termQuery(FieldKeys.FIELD_DOMAIN, query.domain),
+            termQuery(FieldKeys.FIELD_METHOD, query.method),
+            termQuery(FieldKeys.FIELD_URL_PATH, query.urlPath)
+          ))
+          .size(query.pageSize)
+          .sourceInclude(FieldKeys.FIELD_METRICS)
+      }.map(res => {
+        if (res.isSuccess) {
+          res.result.hits.hits.map(hit => {
+            val dateIndex = hit.index
+            val offset = dateIndex.length - RestApiOnlineLog.INDEX_DATE_TIME_PATTERN.length
+            val date = if (offset >= 0) {
+              dateIndex.substring(offset)
+            } else {
+              dateIndex
+            }
+            ApiMetrics(date, hit.sourceAsMap.getOrElse(FieldKeys.FIELD_METRICS, Map.empty))
+          }).sortWith((d1, d2) => d1.date < d2.date)
+        } else {
+          Nil
+        }
+      })
+    } else {
+      ErrorMessages.error_InvalidRequestParameters.toFutureFail
+    }
+  }
+
+  case class ApiMetrics(date: String, metrics: Any)
+
 }
