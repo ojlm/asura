@@ -11,6 +11,7 @@ import asura.core.es.{EsClient, EsConfig}
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.http.ElasticDsl.{termQuery, _}
 import com.sksamuel.elastic4s.searches.queries.Query
+import com.sksamuel.elastic4s.searches.sort.FieldSort
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
@@ -40,6 +41,19 @@ object RestApiOnlineLogService extends CommonService {
     if (StringUtils.isEmpty(query.date)) {
       ErrorMessages.error_EmptyDate.toFutureFail
     } else {
+      val sort = if (StringUtils.isNotEmpty(query.sortField)) {
+        if (query.asc) {
+          FieldSort(query.sortField).asc()
+        } else {
+          FieldSort(query.sortField).desc()
+        }
+      } else {
+        if (query.asc) {
+          FieldSort(FieldKeys.FIELD_COUNT).asc()
+        } else {
+          FieldSort(FieldKeys.FIELD_COUNT).desc()
+        }
+      }
       val esQueries = ArrayBuffer[Query]()
       if (StringUtils.isNotEmpty(query.domain)) esQueries += termQuery(FieldKeys.FIELD_DOMAIN, query.domain)
       if (StringUtils.isNotEmpty(query.method)) esQueries += termQuery(FieldKeys.FIELD_METHOD, query.method)
@@ -48,7 +62,7 @@ object RestApiOnlineLogService extends CommonService {
         search(s"${RestApiOnlineLog.Index}-${query.date}").query(boolQuery().must(esQueries))
           .from(query.pageFrom)
           .size(query.pageSize)
-          .sortByFieldDesc(FieldKeys.FIELD_COUNT)
+          .sortBy(sort)
       }
     }
   }

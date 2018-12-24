@@ -5,4 +5,6 @@ case class QueryOnlineApi(
                            method: String,
                            urlPath: String,
                            date: String,
+                           sortField: String,
+                           asc: Boolean,
                          ) extends QueryPage
