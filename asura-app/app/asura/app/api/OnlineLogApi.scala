@@ -100,4 +100,9 @@ class OnlineLogApi @Inject()(implicit system: ActorSystem,
   def getDomainConfig(name: String) = Action.async { implicit req =>
     DomainOnlineConfigService.getConfig(name).toOkResult
   }
+
+  def getApiMetrics() = Action(parse.byteString).async { implicit req =>
+    val query = req.bodyAs(classOf[QueryOnlineApi])
+    RestApiOnlineLogService.getOnlineApiMetrics(query).toOkResult
+  }
 }

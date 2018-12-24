@@ -38,3 +38,4 @@ error_CantDeleteEnv=包含关联的用例、场景和任务，无法删除这个
 error_JobValidate=任务验证失败：{0}
 error_EmptyDate=日期字段不能为空
 error_EmptyNamespace=代理的命名空间为空
+error_InvalidRequestParameters=无效的请求参数
