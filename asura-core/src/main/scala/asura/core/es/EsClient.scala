@@ -4,9 +4,11 @@ import asura.common.util.StringUtils
 import asura.core.es.model._
 import asura.core.es.service.IndexService
 import com.sksamuel.elastic4s.embedded.LocalNode
-import com.sksamuel.elastic4s.http.{ElasticClient, ElasticProperties}
+import com.sksamuel.elastic4s.http.{ElasticClient, ElasticProperties, NoOpHttpClientConfigCallback}
 import com.sksamuel.elastic4s.mappings.Analysis
 import com.typesafe.scalalogging.Logger
+import org.apache.http.client.config.RequestConfig
+import org.elasticsearch.client.RestClientBuilder.RequestConfigCallback
 
 object EsClient {
 
@@ -50,7 +52,22 @@ object EsClient {
 
   def initOnlineLogClient(url: String): Unit = {
     if (StringUtils.isNotEmpty(url)) {
-      onlineLogClient = ElasticClient(ElasticProperties(url))
+      onlineLogClient = ElasticClient(ElasticProperties(url), new CusRequestConfigCallback(), NoOpHttpClientConfigCallback)
     }
   }
+
+  class CusRequestConfigCallback extends RequestConfigCallback {
+
+    val connectionTimeout = 600000
+    val socketTimeout = 600000
+
+    override def customizeRequestConfig(requestConfigBuilder: RequestConfig.Builder): RequestConfig.Builder = {
+      // See https://github.com/elastic/elasticsearch/issues/24069
+      // It's fixed in master now but still yet to release to 6.3.1
+      requestConfigBuilder.setConnectionRequestTimeout(0)
+        .setConnectTimeout(connectionTimeout)
+        .setSocketTimeout(socketTimeout)
+    }
+  }
+
 }
