@@ -50,7 +50,7 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
 
   def previewOnlineApi(config: DomainOnlineConfig, domainTotal: Long, apiCount: Int): Future[Seq[RestApiOnlineLog]] = {
     if (null != EsClient.esOnlineLogClient && StringUtils.isNotEmpty(CoreConfig.onlineLogIndexPrefix)) {
-      var notQueries: Seq[Query] = Nil
+      var notQueries = ArrayBuffer[Query]()
       val domain = config.domain
       var aggSize = apiCount
       if (null != config) {
@@ -58,7 +58,14 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
           aggSize = config.maxApiCount
         }
         if (null != config.exclusions && config.exclusions.nonEmpty) {
-          notQueries = config.exclusions.map(fieldPatternToQuery(_))
+          config.exclusions.foreach(item => {
+            notQueries += fieldPatternToQuery(item)
+          })
+        }
+        if (null != config.exMethods && config.exMethods.nonEmpty) {
+          config.exMethods.filter(method => StringUtils.isNotEmpty(method.name)).foreach(method => {
+            notQueries += termQuery(OnlineRequestLog.KEY_METHOD, method.name)
+          })
         }
       }
       val yesterday = LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern(CoreConfig.onlineLogDatePattern))
@@ -69,12 +76,17 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
           aggSize,
           requestTimeMetrics
         )
-        inclusion <- getInclusions(domain, yesterday, config.inclusions, requestTimeMetrics)
+        inclusion <- getInclusions(domain, yesterday, config, requestTimeMetrics)
       } yield (exclusion, inclusion)
       tuple.map(t => {
+        val minReqCount = if (Option(config.minReqCount).nonEmpty && config.minReqCount > 0) {
+          config.minReqCount
+        } else {
+          -1
+        }
         val apiLogs = ArrayBuffer[RestApiOnlineLog]()
         val itemFunc = (aggsItem: AggsItem) => {
-          aggsItem.sub.foreach(subItem => {
+          aggsItem.sub.filter(_.count >= minReqCount).foreach(subItem => {
             val percentage = if (domainTotal > 0) Math.round(((subItem.count * 10000L).toDouble / domainTotal.toDouble)).toInt else 0
             apiLogs += RestApiOnlineLog(domain, subItem.id, aggsItem.id, subItem.count, percentage, metrics = subItem.metrics)
           })
@@ -91,19 +103,29 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
   private def getInclusions(
                              domain: String,
                              date: String,
-                             inclusions: Seq[FieldPattern],
+                             config: DomainOnlineConfig,
                              metricsAggregations: Seq[AbstractAggregation] = Nil
                            ): Future[Seq[AggsItem]] = {
-    if (null != inclusions && inclusions.nonEmpty) {
+    if (null != config && null != config.inclusions && config.inclusions.nonEmpty) {
       val domainTerm = termQuery(FieldKeys.FIELD_DOMAIN, domain)
+      val notMethods = if (null != config.exMethods) {
+        config.exMethods.filter(method => StringUtils.isNotEmpty(method.name)).map(method => {
+          termQuery(OnlineRequestLog.KEY_METHOD, method.name)
+        })
+      } else {
+        Nil
+      }
       val items = ArrayBuffer[AggsItem]()
-      inclusions.foldLeft(Future.successful(items))((itemsFuture, inclusion) => {
+      config.inclusions.foldLeft(Future.successful(items))((itemsFuture, inclusion) => {
         for {
           items <- itemsFuture
           item <- {
             EsClient.esOnlineLogClient.execute {
               search(s"${CoreConfig.onlineLogIndexPrefix}${date}")
-                .query(boolQuery().must(domainTerm, fieldPatternToQuery(inclusion)))
+                .query(boolQuery()
+                  .must(domainTerm, fieldPatternToQuery(inclusion))
+                  .not(notMethods)
+                )
                 .size(0)
                 .aggregations(
                   termsAgg(aggsTermsName, OnlineRequestLog.KEY_METHOD)

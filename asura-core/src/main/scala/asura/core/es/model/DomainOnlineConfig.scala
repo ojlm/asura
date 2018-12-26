@@ -12,6 +12,8 @@ case class DomainOnlineConfig(
                                val description: String,
                                val domain: String,
                                val maxApiCount: Int,
+                               val minReqCount: Int = 0,
+                               val exMethods: Seq[LabelRef] = Nil,
                                val inclusions: Seq[FieldPattern] = Nil, // online api include pattern
                                val exclusions: Seq[FieldPattern] = Nil, // online api exclude pattern
                                var creator: String = null,
@@ -26,6 +28,12 @@ case class DomainOnlineConfig(
     }
     if (Option(maxApiCount).nonEmpty && maxApiCount > 0) {
       m += (FieldKeys.FIELD_MAX_API_COUNT -> maxApiCount)
+    }
+    if (Option(minReqCount).nonEmpty && minReqCount > 0) {
+      m += (FieldKeys.FIELD_MIN_REQ_COUNT -> minReqCount)
+    }
+    if (null != exMethods) {
+      m += (FieldKeys.FIELD_EX_METHODS -> JacksonSupport.mapper.convertValue(inclusions, classOf[java.util.List[Map[String, Any]]]))
     }
     if (null != inclusions) {
       m += (FieldKeys.FIELD_INCLUSIONS -> JacksonSupport.mapper.convertValue(inclusions, classOf[java.util.List[Map[String, Any]]]))
@@ -47,6 +55,10 @@ object DomainOnlineConfig extends IndexSetting {
     fields = BaseIndex.fieldDefinitions ++ Seq(
       KeywordField(name = FieldKeys.FIELD_DOMAIN),
       BasicField(name = FieldKeys.FIELD_MAX_API_COUNT, `type` = "integer"),
+      BasicField(name = FieldKeys.FIELD_MIN_REQ_COUNT, `type` = "integer"),
+      NestedField(name = FieldKeys.FIELD_EX_METHODS, fields = Seq(
+        KeywordField(name = FieldKeys.FIELD_NAME),
+      )),
       NestedField(name = FieldKeys.FIELD_INCLUSIONS, fields = Seq(
         KeywordField(name = FieldKeys.FIELD_FIELD),
         KeywordField(name = FieldKeys.FIELD_VALUE),
