@@ -23,7 +23,7 @@ object HeaderUtils {
     if (null != request) {
       val headerSeq = request.header
       if (null != headerSeq) {
-        for (h <- headerSeq if h.enabled) {
+        for (h <- headerSeq if (h.enabled && StringUtils.isNotEmpty(h.key))) {
           HttpHeader.parse(h.key, context.renderSingleMacroAsString(h.value)) match {
             case Ok(header: HttpHeader, errors: List[ErrorInfo]) =>
               if (errors.nonEmpty) logger.warn(errors.mkString(","))
@@ -35,13 +35,13 @@ object HeaderUtils {
       }
       val cookieSeq = request.cookie
       if (null != cookieSeq) {
-        for (c <- cookieSeq if c.enabled) {
+        for (c <- cookieSeq if (c.enabled && StringUtils.isNotEmpty(c.key))) {
           headers += Cookie(c.key, context.renderSingleMacroAsString(c.value))
         }
       }
     }
     if (null != env && null != env.headers && env.headers.nonEmpty) {
-      for (h <- env.headers if h.enabled) {
+      for (h <- env.headers if (h.enabled && StringUtils.isNotEmpty(h.key))) {
         HttpHeader.parse(h.key, context.renderSingleMacroAsString(h.value)) match {
           case Ok(header: HttpHeader, errors: List[ErrorInfo]) =>
             if (errors.nonEmpty) logger.warn(errors.mkString(","))
