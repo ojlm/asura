@@ -36,7 +36,7 @@ object EntityUtils {
             try {
               val sb = StringBuilder.newBuilder
               val params = JacksonSupport.parse(context.renderBodyAsString(body.get.data), new TypeReference[Seq[KeyValueObject]]() {})
-              for (pair <- params if pair.enabled) {
+              for (pair <- params if (pair.enabled && StringUtils.isNotEmpty(pair.key))) {
                 sb.append(pair.key).append("=").append(URLEncoder.encode(pair.value, UTF8)).append("&")
               }
               if (sb.nonEmpty) {
