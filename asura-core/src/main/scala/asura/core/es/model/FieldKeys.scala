@@ -121,6 +121,7 @@ object FieldKeys {
   val FIELD_P25 = "p25"
   val FIELD_P50 = "p50"
   val FIELD_P75 = "p75"
+  val FIELD_P90 = "p90"
   val FIELD_P95 = "p95"
   val FIELD_P99 = "p99"
   val FIELD_P999 = "p999"
