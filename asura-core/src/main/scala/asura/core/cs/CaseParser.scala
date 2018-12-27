@@ -1,6 +1,6 @@
 package asura.core.cs
 
-import akka.http.scaladsl.model.{HttpHeader, HttpMethod, HttpRequest, Uri, HttpMethods => AkkaHttpMethods}
+import akka.http.scaladsl.model.{HttpEntity, HttpHeader, HttpMethod, HttpRequest, Uri, HttpMethods => AkkaHttpMethods}
 import asura.core.ErrorMessages
 import asura.core.auth.AuthManager
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
@@ -22,7 +22,11 @@ object CaseParser {
       method = HttpMethods.toAkkaMethod(request.method)
     }
     val uri: Uri = UriUtils.toUri(cs, context)
-    val entity = EntityUtils.toEntity(cs, context)
+    val entity = if (AkkaHttpMethods.GET != method) {
+      EntityUtils.toEntity(cs, context)
+    } else {
+      HttpEntity.Empty
+    }
     val notAuthoredRequest = HttpRequest(method = method, uri = uri, headers = headers, entity = entity)
     metrics.renderRequestEnd()
     val authUsed: Seq[Authorization] = if (null != context.options && null != context.options.getUsedEnv()) {

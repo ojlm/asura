@@ -69,10 +69,12 @@ object CaseRunner {
 
   def toCaseRequestTuple(req: HttpRequest): Future[(HttpRequest, CaseRequest)] = {
     Unmarshal(req.entity).to[String].map(reqBody => {
-      val mediaType = req.entity.contentType.mediaType.value
       val headers = scala.collection.mutable.HashMap[String, String]()
       req.headers.foreach(h => headers += (h.name() -> h.value()))
-      headers += (HttpContentTypes.KEY_CONTENT_TYPE -> mediaType)
+      val mediaType = req.entity.contentType.mediaType.value
+      if (mediaType != "none/none") {
+        headers += (HttpContentTypes.KEY_CONTENT_TYPE -> mediaType)
+      }
       (req, CaseRequest(req.method.value, req.getUri().toString, headers, reqBody))
     })
   }
