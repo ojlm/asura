@@ -40,6 +40,7 @@ object RestApiOnlineLog extends IndexSetting {
         BasicField(name = FieldKeys.FIELD_P25, `type` = "integer"),
         BasicField(name = FieldKeys.FIELD_P50, `type` = "integer"),
         BasicField(name = FieldKeys.FIELD_P75, `type` = "integer"),
+        BasicField(name = FieldKeys.FIELD_P90, `type` = "integer"),
         BasicField(name = FieldKeys.FIELD_P95, `type` = "integer"),
         BasicField(name = FieldKeys.FIELD_P99, `type` = "integer"),
         BasicField(name = FieldKeys.FIELD_P999, `type` = "integer"),

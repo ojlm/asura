@@ -93,7 +93,7 @@ trait BaseAggregationService {
 object BaseAggregationService {
   val aggsTermsName = "terms"
   val aggsPercentilesName = "percentiles"
-  val percentilesPercents = Array(25, 50, 75, 95, 99, 99.9)
+  val percentilesPercents = Array(25, 50, 75, 90, 95, 99, 99.9)
   val aggsAvg = "avg"
   val aggsMin = "min"
   val aggsMax = "max"
