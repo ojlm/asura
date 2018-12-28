@@ -61,6 +61,7 @@ class UserApi @Inject()(
               apiUserProfile.summary = profile.summary
               apiUserProfile.description = profile.description
               apiUserProfile.email = profile.email
+              activityActor ! Activity(StringUtils.EMPTY, StringUtils.EMPTY, username, Activity.TYPE_USER_LOGIN, username)
               Future.successful(OkApiRes(ApiRes(data = apiUserProfile)))
             } else {
               // new user
