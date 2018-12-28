@@ -14,6 +14,7 @@ case class DomainOnlineConfig(
                                val maxApiCount: Int,
                                val minReqCount: Int = 0,
                                val exMethods: Seq[LabelRef] = Nil,
+                               val exSuffixes: String = StringUtils.EMPTY,
                                val inclusions: Seq[FieldPattern] = Nil, // online api include pattern
                                val exclusions: Seq[FieldPattern] = Nil, // online api exclude pattern
                                var creator: String = null,
@@ -41,6 +42,9 @@ case class DomainOnlineConfig(
     if (null != exclusions) {
       m += (FieldKeys.FIELD_EXCLUSIONS -> JacksonSupport.mapper.convertValue(exclusions, classOf[java.util.List[Map[String, Any]]]))
     }
+    if (null != exSuffixes) {
+      m += (FieldKeys.FIELD_EX_SUFFIXES -> exSuffixes)
+    }
     m.toMap
   }
 }
@@ -56,6 +60,7 @@ object DomainOnlineConfig extends IndexSetting {
       KeywordField(name = FieldKeys.FIELD_DOMAIN),
       BasicField(name = FieldKeys.FIELD_MAX_API_COUNT, `type` = "integer"),
       BasicField(name = FieldKeys.FIELD_MIN_REQ_COUNT, `type` = "integer"),
+      KeywordField(name = FieldKeys.FIELD_EX_SUFFIXES, index = Option("false")),
       NestedField(name = FieldKeys.FIELD_EX_METHODS, fields = Seq(
         KeywordField(name = FieldKeys.FIELD_NAME),
       )),
