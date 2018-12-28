@@ -34,6 +34,7 @@ object Activity extends IndexSetting {
 
   // types
   val TYPE_NEW_USER = "new-user"
+  val TYPE_USER_LOGIN = "user-login"
   val TYPE_NEW_CASE = "new-case"
   val TYPE_TEST_CASE = "test-case"
   val TYPE_UPDATE_CASE = "update-case"
