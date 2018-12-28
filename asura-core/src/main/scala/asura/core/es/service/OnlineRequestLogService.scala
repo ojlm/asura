@@ -84,12 +84,19 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
         } else {
           -1
         }
+        val exFileSuffixes: Set[String] = if (StringUtils.isNotEmpty(config.exSuffixes)) {
+          config.exSuffixes.split(",").toSet
+        } else {
+          null
+        }
         val apiLogs = ArrayBuffer[RestApiOnlineLog]()
         val itemFunc = (aggsItem: AggsItem) => {
-          aggsItem.sub.filter(_.count >= minReqCount).foreach(subItem => {
-            val percentage = if (domainTotal > 0) Math.round(((subItem.count * 10000L).toDouble / domainTotal.toDouble)).toInt else 0
-            apiLogs += RestApiOnlineLog(domain, subItem.id, aggsItem.id, subItem.count, percentage, metrics = subItem.metrics)
-          })
+          aggsItem.sub
+            .filter(subItem => subItem.count >= minReqCount && !isOneOfSuffix(aggsItem.id, exFileSuffixes))
+            .foreach(subItem => {
+              val percentage = if (domainTotal > 0) Math.round(((subItem.count * 10000L).toDouble / domainTotal.toDouble)).toInt else 0
+              apiLogs += RestApiOnlineLog(domain, subItem.id, aggsItem.id, subItem.count, percentage, metrics = subItem.metrics)
+            })
         }
         t._1.foreach(itemFunc)
         t._2.foreach(itemFunc)
@@ -97,6 +104,14 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
       })
     } else {
       Future.successful(Nil)
+    }
+  }
+
+  private def isOneOfSuffix(path: String, suffixes: Set[String]): Boolean = {
+    if (null != suffixes && path != null) {
+      suffixes.exists(path.endsWith(_))
+    } else {
+      false
     }
   }
 

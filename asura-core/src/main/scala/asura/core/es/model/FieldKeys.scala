@@ -130,6 +130,7 @@ object FieldKeys {
   val FIELD_MAX = "max"
   val FIELD_MIN_REQ_COUNT = "minReqCount"
   val FIELD_EX_METHODS = "exMethods"
+  val FIELD_EX_SUFFIXES = "exSuffixes"
 
   val FIELD_OBJECT_REQUEST_URLPATH = "request.urlPath"
   val FIELD_OBJECT_REQUEST_METHOD = "request.method"
