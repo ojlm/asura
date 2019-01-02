@@ -1,16 +1,18 @@
 package asura.core.es.model
 
+import asura.common.util.StringUtils
 import asura.core.es.EsConfig
 import com.sksamuel.elastic4s.mappings.{BasicField, KeywordField, MappingDefinition}
 
 case class DomainOnlineLog(
                             val name: String,
+                            val tag: String,
                             val count: Long,
                             var coverage: Int,
                             val date: String,
                           ) {
 
-  def generateDocId() = s"${name}_${date}"
+  def generateDocId() = s"${name}_${date}${if (StringUtils.isNotEmpty(tag)) s"_${tag}" else StringUtils.EMPTY}"
 }
 
 object DomainOnlineLog extends IndexSetting {
@@ -23,6 +25,7 @@ object DomainOnlineLog extends IndexSetting {
     `type` = EsConfig.DefaultType,
     fields = Seq(
       KeywordField(name = FieldKeys.FIELD_NAME),
+      KeywordField(name = FieldKeys.FIELD_TAG),
       BasicField(name = FieldKeys.FIELD_COUNT, `type` = "long"),
       BasicField(name = FieldKeys.FIELD_COVERAGE, `type` = "integer"),
       KeywordField(name = FieldKeys.FIELD_DATE),

@@ -29,16 +29,6 @@ object DomainOnlineLogService extends CommonService with BaseAggregationService 
     }
   }
 
-  def getOnlineDomain(domainCount: Int, date: String): Future[Seq[DomainOnlineLog]] = {
-    OnlineRequestLogService.getOnlineDomain(domainCount, date).map(items => {
-      if (items.nonEmpty) {
-        items.map(item => DomainOnlineLog(item.id, item.count, 0, item.`type`))
-      } else {
-        Nil
-      }
-    })
-  }
-
   def aggTerms(aggs: AggsQuery): Future[Seq[AggsItem]] = {
     val esQueries = buildEsQueryFromAggQuery(aggs, false)
     val aggField = aggs.termsField

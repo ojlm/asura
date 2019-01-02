@@ -18,7 +18,7 @@ object DomainOnlineConfigService extends CommonService {
       ErrorMessages.error_EmptyId.toFutureFail
     } else {
       EsClient.esClient.execute {
-        indexInto(DomainOnlineConfig.Index / EsConfig.DefaultType).doc(item).id(item.domain)
+        indexInto(DomainOnlineConfig.Index / EsConfig.DefaultType).doc(item).id(item.generateDocId())
       }.map(toIndexDocResponse(_))
     }
   }

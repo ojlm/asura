@@ -3,10 +3,11 @@ package asura.app.api
 import akka.actor.ActorSystem
 import asura.app.api.model.PreviewOnlineApi
 import asura.common.util.StringUtils
+import asura.core.ErrorMessages
 import asura.core.cs.model.{AggsQuery, QueryDomain, QueryOnlineApi}
-import asura.core.es.EsResponse
 import asura.core.es.model.{DomainOnlineConfig, FieldKeys}
 import asura.core.es.service._
+import asura.core.es.{EsClient, EsResponse}
 import asura.core.job.impl.SyncOnlineDomainAndRestApiJob
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
@@ -94,7 +95,12 @@ class OnlineLogApi @Inject()(implicit system: ActorSystem,
 
   def previewOnlineApiOfDomainConfig() = Action(parse.byteString).async { implicit req =>
     val preview = req.bodyAs(classOf[PreviewOnlineApi])
-    OnlineRequestLogService.previewOnlineApi(preview.config, preview.domainTotal, SyncOnlineDomainAndRestApiJob.DEFAULT_API_COUNT).toOkResult
+    val onlineEsLogConfigOpt = EsClient.esOnlineLogClient(preview.config.tag)
+    if (onlineEsLogConfigOpt.nonEmpty) {
+      OnlineRequestLogService.previewOnlineApi(preview.config, preview.domainTotal, SyncOnlineDomainAndRestApiJob.DEFAULT_API_COUNT, onlineEsLogConfigOpt.get).toOkResult
+    } else {
+      ErrorMessages.error_InvalidRequestParameters.toFutureFail
+    }
   }
 
   def getDomainConfig(name: String) = Action.async { implicit req =>

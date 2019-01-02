@@ -11,7 +11,8 @@ case class DomainOnlineConfig(
                                val summary: String,
                                val description: String,
                                val domain: String,
-                               val maxApiCount: Int,
+                               val tag: String = StringUtils.EMPTY,
+                               val maxApiCount: Int = 2000,
                                val minReqCount: Int = 0,
                                val exMethods: Seq[LabelRef] = Nil,
                                val exSuffixes: String = StringUtils.EMPTY,
@@ -26,6 +27,9 @@ case class DomainOnlineConfig(
     checkCommFieldsToUpdate(m)
     if (StringUtils.isNotEmpty(domain)) {
       m += (FieldKeys.FIELD_DOMAIN -> domain)
+    }
+    if (null != tag) {
+      m += (FieldKeys.FIELD_TAG -> tag)
     }
     if (Option(maxApiCount).nonEmpty && maxApiCount > 0) {
       m += (FieldKeys.FIELD_MAX_API_COUNT -> maxApiCount)
@@ -47,6 +51,8 @@ case class DomainOnlineConfig(
     }
     m.toMap
   }
+
+  def generateDocId() = s"${domain}${if (StringUtils.isNotEmpty(tag)) s"_${tag}" else StringUtils.EMPTY}"
 }
 
 object DomainOnlineConfig extends IndexSetting {
@@ -58,6 +64,7 @@ object DomainOnlineConfig extends IndexSetting {
     `type` = EsConfig.DefaultType,
     fields = BaseIndex.fieldDefinitions ++ Seq(
       KeywordField(name = FieldKeys.FIELD_DOMAIN),
+      KeywordField(name = FieldKeys.FIELD_TAG),
       BasicField(name = FieldKeys.FIELD_MAX_API_COUNT, `type` = "integer"),
       BasicField(name = FieldKeys.FIELD_MIN_REQ_COUNT, `type` = "integer"),
       KeywordField(name = FieldKeys.FIELD_EX_SUFFIXES, index = Option("false")),
