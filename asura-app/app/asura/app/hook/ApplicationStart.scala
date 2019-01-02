@@ -5,12 +5,14 @@ import akka.stream.ActorMaterializer
 import asura.app.api.auth.BasicAuth
 import asura.app.notify.MailNotifier
 import asura.core.CoreConfig
+import asura.core.CoreConfig.EsOnlineLogConfig
 import asura.core.auth.AuthManager
 import asura.core.es.EsClient
 import asura.core.job.JobCenter
 import asura.core.job.actor.SchedulerActor
 import asura.core.notify.JobNotifyManager
 import asura.namerd.NamerdConfig
+import com.typesafe.config.ConfigList
 import javax.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
 import play.api.Configuration
@@ -39,7 +41,6 @@ class ApplicationStart @Inject()(
     import asura.common.config.PropertiesConversions.toProperties
     system.actorOf(SchedulerActor.props(toProperties(quartzCommon, defaultSchedulerConfig), toProperties(quartzCommon, systemSchedulerConfig)), "JobScheduler")
   }
-
   private val materializer = ActorMaterializer()(system)
   CoreConfig.init(CoreConfig(
     system = system,
@@ -56,9 +57,7 @@ class ApplicationStart @Inject()(
     httpsProxyPort = configuration.getOptional[Int]("asura.linkerd.httpsProxyPort").getOrElse(4143),
     proxyIdentifier = configuration.getOptional[String]("asura.linkerd.headerIdentifier").getOrElse(""),
     reportBaseUrl = configuration.getOptional[String]("asura.reportBaseUrl").getOrElse(""),
-    onlineLogUrl = configuration.getOptional[String]("asura.es.onlineLogUrl").getOrElse(""),
-    onlineLogIndexPrefix = configuration.getOptional[String]("asura.es.onlineLogPrefix").getOrElse(""),
-    onlineLogDatePattern = configuration.getOptional[String]("asura.es.onlineLogDatePattern").getOrElse(""),
+    onlineConfigs = toEsOnlineConfigs(configuration.getOptional[ConfigList]("asura.es.onlineLog"))
   ))
   NamerdConfig.init(
     url = configuration.get[String]("asura.linkerd.namerd"),
@@ -78,5 +77,10 @@ class ApplicationStart @Inject()(
     Future {
       if (null != EsClient.esClient) EsClient.esClient.close()
     }(system.dispatcher)
+  }
+
+  private def toEsOnlineConfigs(listOpt: Option[ConfigList]): Seq[EsOnlineLogConfig] = {
+    // TODO
+    Nil
   }
 }

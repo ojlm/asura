@@ -3,7 +3,9 @@ package asura.core
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import asura.common.util.StringUtils
+import asura.core.CoreConfig.EsOnlineLogConfig
 import asura.core.es.{EsClient, EsConfig}
+import com.sksamuel.elastic4s.http.ElasticClient
 
 import scala.concurrent.ExecutionContext
 
@@ -22,9 +24,7 @@ case class CoreConfig(
                        val httpProxyPort: Int = 0,
                        val httpsProxyPort: Int = 0,
                        val reportBaseUrl: String = StringUtils.EMPTY,
-                       val onlineLogUrl: String = StringUtils.EMPTY,
-                       val onlineLogIndexPrefix: String = StringUtils.EMPTY,
-                       val onlineLogDatePattern: String = "yyyy-MM-dd",
+                       val onlineConfigs: Seq[EsOnlineLogConfig] = Nil,
                      )
 
 object CoreConfig {
@@ -38,9 +38,6 @@ object CoreConfig {
   var proxyIdentifier: String = _
   var reportBaseUrl: String = StringUtils.EMPTY
   var enableProxy = false
-  var onlineLogUrl = StringUtils.EMPTY
-  var onlineLogIndexPrefix = StringUtils.EMPTY
-  var onlineLogDatePattern = "yyyy-MM-dd"
 
   def init(config: CoreConfig): Unit = {
     system = config.system
@@ -57,9 +54,20 @@ object CoreConfig {
       EsConfig.IndexPrefix = config.esIndexPrefix.get
     }
     EsClient.init(config.useLocalEsNode, config.esUrl, config.localEsDataDir)
-    CoreConfig.onlineLogUrl = config.onlineLogUrl
-    CoreConfig.onlineLogIndexPrefix = config.onlineLogIndexPrefix
-    CoreConfig.onlineLogDatePattern = config.onlineLogDatePattern
-    EsClient.initOnlineLogClient(CoreConfig.onlineLogUrl)
+    EsClient.initOnlineLogClient(config.onlineConfigs)
   }
+
+  case class EsOnlineLogConfig(
+                                tag: String,
+                                url: String,
+                                prefix: String,
+                                datePattern: String,
+                                fieldDomain: String,
+                                fieldMethod: String,
+                                fieldUri: String,
+                                fieldRequestTime: String,
+                              ) {
+    var onlineLogClient: ElasticClient = _
+  }
+
 }

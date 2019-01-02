@@ -1,6 +1,7 @@
 package asura.core.es
 
 import asura.common.util.StringUtils
+import asura.core.CoreConfig.EsOnlineLogConfig
 import asura.core.es.model._
 import asura.core.es.service.IndexService
 import com.sksamuel.elastic4s.embedded.LocalNode
@@ -10,15 +11,19 @@ import com.typesafe.scalalogging.Logger
 import org.apache.http.client.config.RequestConfig
 import org.elasticsearch.client.RestClientBuilder.RequestConfigCallback
 
+import scala.collection.mutable
+
 object EsClient {
 
   val logger = Logger("EsClient")
   private var client: ElasticClient = _
-  private var onlineLogClient: ElasticClient = _
+  private val onlineLogClient = mutable.Map[String, EsOnlineLogConfig]()
 
   def esClient: ElasticClient = client
 
-  def esOnlineLogClient = onlineLogClient
+  def esOnlineLogClient(tag: String) = onlineLogClient.get(tag)
+
+  def esOnlineLogClients = onlineLogClient.values
 
   /**
     * check if index exists, if not create
@@ -50,9 +55,19 @@ object EsClient {
     isAllOk
   }
 
-  def initOnlineLogClient(url: String): Unit = {
-    if (StringUtils.isNotEmpty(url)) {
-      onlineLogClient = ElasticClient(ElasticProperties(url), new CusRequestConfigCallback(), NoOpHttpClientConfigCallback)
+  def initOnlineLogClient(configs: Seq[EsOnlineLogConfig]): Unit = {
+    if (null != configs && configs.nonEmpty) {
+      val clientCache = mutable.Map[String, ElasticClient]()
+      configs.foreach(config => {
+        if (StringUtils.isNotEmpty(config.url)) {
+          config.onlineLogClient = clientCache.get(config.url).getOrElse({
+            val client = ElasticClient(ElasticProperties(config.url), new CusRequestConfigCallback(), NoOpHttpClientConfigCallback)
+            clientCache += (config.url -> client)
+            client
+          })
+          onlineLogClient += (config.tag -> config)
+        }
+      })
     }
   }
 

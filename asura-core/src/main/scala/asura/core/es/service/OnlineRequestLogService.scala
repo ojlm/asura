@@ -4,10 +4,9 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 import asura.common.util.StringUtils
-import asura.core.CoreConfig
+import asura.core.CoreConfig.EsOnlineLogConfig
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.model.AggsItem
-import asura.core.es.EsClient
 import asura.core.es.model._
 import asura.core.es.service.BaseAggregationService._
 import com.sksamuel.elastic4s.http.ElasticDsl._
@@ -19,28 +18,33 @@ import scala.concurrent.Future
 
 object OnlineRequestLogService extends CommonService with BaseAggregationService {
 
-  val requestTimeMetrics = toMetricsAggregation(OnlineRequestLog.KEY_REQUEST_TIME)
-
-  def getOnlineDomain(domainCount: Int, date: String): Future[Seq[AggsItem]] = {
-    if (null != EsClient.esOnlineLogClient && StringUtils.isNotEmpty(CoreConfig.onlineLogIndexPrefix)) {
-      EsClient.esOnlineLogClient.execute {
-        search(s"${CoreConfig.onlineLogIndexPrefix}${date}")
+  def getOnlineDomain(domainCount: Int, date: String, esConfig: EsOnlineLogConfig): Future[Seq[DomainOnlineLog]] = {
+    if (null != esConfig.onlineLogClient && StringUtils.isNotEmpty(esConfig.prefix)) {
+      esConfig.onlineLogClient.execute {
+        search(s"${esConfig.prefix}${date}")
           .query(matchAllQuery())
           .size(0)
-          .aggregations(termsAgg(aggsTermsName, OnlineRequestLog.KEY_DOMAIN).size(domainCount))
+          .aggregations(termsAgg(aggsTermsName, esConfig.fieldDomain).size(domainCount))
       }.map(toAggItems(_, date, null))
+        .map(aggsItems => {
+          if (aggsItems.nonEmpty) {
+            aggsItems.map(item => DomainOnlineLog(item.id, esConfig.tag, item.count, 0, item.`type`))
+          } else {
+            Nil
+          }
+        })
     } else {
       Future.successful(Nil)
     }
   }
 
-  def getOnlineApi(domain: String, domainTotal: Long, apiCount: Int): Future[Seq[RestApiOnlineLog]] = {
-    if (null != EsClient.esOnlineLogClient && StringUtils.isNotEmpty(CoreConfig.onlineLogIndexPrefix)) {
+  def getOnlineApi(domain: String, domainTotal: Long, apiCount: Int, esConfig: EsOnlineLogConfig): Future[Seq[RestApiOnlineLog]] = {
+    if (null != esConfig.onlineLogClient && StringUtils.isNotEmpty(esConfig.prefix)) {
       DomainOnlineConfigService.getConfig(domain).flatMap(config => {
         if (null == config) {
-          previewOnlineApi(DomainOnlineConfig(null, null, domain, 0), domainTotal, apiCount)
+          previewOnlineApi(DomainOnlineConfig(null, null, domain, esConfig.tag, 0), domainTotal, apiCount, esConfig)
         } else {
-          previewOnlineApi(config, domainTotal, apiCount)
+          previewOnlineApi(config, domainTotal, apiCount, esConfig)
         }
       })
     } else {
@@ -48,8 +52,8 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
     }
   }
 
-  def previewOnlineApi(config: DomainOnlineConfig, domainTotal: Long, apiCount: Int): Future[Seq[RestApiOnlineLog]] = {
-    if (null != EsClient.esOnlineLogClient && StringUtils.isNotEmpty(CoreConfig.onlineLogIndexPrefix)) {
+  def previewOnlineApi(config: DomainOnlineConfig, domainTotal: Long, apiCount: Int, esConfig: EsOnlineLogConfig): Future[Seq[RestApiOnlineLog]] = {
+    if (null != esConfig.onlineLogClient && StringUtils.isNotEmpty(esConfig.prefix)) {
       var notQueries = ArrayBuffer[Query]()
       val domain = config.domain
       var aggSize = apiCount
@@ -59,24 +63,25 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
         }
         if (null != config.exclusions && config.exclusions.nonEmpty) {
           config.exclusions.foreach(item => {
-            notQueries += fieldPatternToQuery(item)
+            notQueries += fieldPatternToQuery(item, esConfig)
           })
         }
         if (null != config.exMethods && config.exMethods.nonEmpty) {
           config.exMethods.filter(method => StringUtils.isNotEmpty(method.name)).foreach(method => {
-            notQueries += termQuery(OnlineRequestLog.KEY_METHOD, method.name)
+            notQueries += termQuery(esConfig.fieldMethod, method.name)
           })
         }
       }
-      val yesterday = LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern(CoreConfig.onlineLogDatePattern))
+      val yesterday = LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern(esConfig.datePattern))
       val tuple = for {
         exclusion <- aggsItems(
           boolQuery().must(termQuery(FieldKeys.FIELD_DOMAIN, domain)).not(notQueries),
           yesterday,
           aggSize,
-          requestTimeMetrics
+          toMetricsAggregation(esConfig.fieldRequestTime),
+          esConfig
         )
-        inclusion <- getInclusions(domain, yesterday, config, requestTimeMetrics)
+        inclusion <- getInclusions(domain, yesterday, config, toMetricsAggregation(esConfig.fieldRequestTime), esConfig)
       } yield (exclusion, inclusion)
       tuple.map(t => {
         val minReqCount = if (Option(config.minReqCount).nonEmpty && config.minReqCount > 0) {
@@ -119,13 +124,14 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
                              domain: String,
                              date: String,
                              config: DomainOnlineConfig,
-                             metricsAggregations: Seq[AbstractAggregation] = Nil
+                             metricsAggregations: Seq[AbstractAggregation] = Nil,
+                             esConfig: EsOnlineLogConfig,
                            ): Future[Seq[AggsItem]] = {
     if (null != config && null != config.inclusions && config.inclusions.nonEmpty) {
       val domainTerm = termQuery(FieldKeys.FIELD_DOMAIN, domain)
       val notMethods = if (null != config.exMethods) {
         config.exMethods.filter(method => StringUtils.isNotEmpty(method.name)).map(method => {
-          termQuery(OnlineRequestLog.KEY_METHOD, method.name)
+          termQuery(esConfig.fieldMethod, method.name)
         })
       } else {
         Nil
@@ -135,15 +141,15 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
         for {
           items <- itemsFuture
           item <- {
-            EsClient.esOnlineLogClient.execute {
-              search(s"${CoreConfig.onlineLogIndexPrefix}${date}")
+            esConfig.onlineLogClient.execute {
+              search(s"${esConfig.prefix}${date}")
                 .query(boolQuery()
-                  .must(domainTerm, fieldPatternToQuery(inclusion))
+                  .must(domainTerm, fieldPatternToQuery(inclusion, esConfig))
                   .not(notMethods)
                 )
                 .size(0)
                 .aggregations(
-                  termsAgg(aggsTermsName, OnlineRequestLog.KEY_METHOD)
+                  termsAgg(aggsTermsName, esConfig.fieldMethod)
                     .subAggregations(metricsAggregations)
                 )
             }.map(toAggItems(_, null, null))
@@ -159,28 +165,29 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
                          query: Query,
                          date: String,
                          aggSize: Int,
-                         metricsAggregations: Seq[AbstractAggregation] = Nil
+                         metricsAggregations: Seq[AbstractAggregation] = Nil,
+                         esConfig: EsOnlineLogConfig,
                        ): Future[Seq[AggsItem]] = {
-    EsClient.esOnlineLogClient.execute {
-      search(s"${CoreConfig.onlineLogIndexPrefix}${date}")
+    esConfig.onlineLogClient.execute {
+      search(s"${esConfig.prefix}${date}")
         .query(query)
         .size(0)
         .aggregations(
-          termsAgg(aggsTermsName, OnlineRequestLog.KEY_URI).size(aggSize)
+          termsAgg(aggsTermsName, esConfig.fieldUri).size(aggSize)
             .subAggregations(
-              termsAgg(aggsTermsName, OnlineRequestLog.KEY_METHOD)
+              termsAgg(aggsTermsName, esConfig.fieldMethod)
                 .subAggregations(metricsAggregations)
             )
         )
-    }.map(toAggItems(_, null, OnlineRequestLog.KEY_METHOD))
+    }.map(toAggItems(_, null, esConfig.fieldMethod))
   }
 
-  private def fieldPatternToQuery(fieldPattern: FieldPattern): Query = {
+  private def fieldPatternToQuery(fieldPattern: FieldPattern, esConfig: EsOnlineLogConfig): Query = {
     fieldPattern.`type` match {
-      case FieldPattern.TYPE_TERM => termQuery(OnlineRequestLog.KEY_URI, fieldPattern.value)
-      case FieldPattern.TYPE_WILDCARD => wildcardQuery(OnlineRequestLog.KEY_URI, fieldPattern.value)
-      case FieldPattern.TYPE_REGEX => regexQuery(OnlineRequestLog.KEY_URI, fieldPattern.value)
-      case _ => termQuery(OnlineRequestLog.KEY_URI, fieldPattern.value)
+      case FieldPattern.TYPE_TERM => termQuery(esConfig.fieldUri, fieldPattern.value)
+      case FieldPattern.TYPE_WILDCARD => wildcardQuery(esConfig.fieldUri, fieldPattern.value)
+      case FieldPattern.TYPE_REGEX => regexQuery(esConfig.fieldUri, fieldPattern.value)
+      case _ => termQuery(esConfig.fieldUri, fieldPattern.value)
     }
   }
 }
