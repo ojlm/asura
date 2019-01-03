@@ -43,15 +43,18 @@ object DomainOnlineLogService extends CommonService with BaseAggregationService 
 
   def queryDomainWildcard(query: QueryDomainWildcard) = {
     if (StringUtils.isNotEmpty(query.date) && StringUtils.isNotEmpty(query.domain)) {
+      val subBoolQuery = boolQuery().should(
+        prefixQuery(FieldKeys.FIELD_NAME, query.domain).boost(2D),
+        wildcardQuery(FieldKeys.FIELD_NAME, s"*${query.domain}*").boost(1D)
+      )
+      val esQueries = if (StringUtils.isNotEmpty(query.tag)) {
+        Seq(termQuery(FieldKeys.FIELD_DATE, query.date), termQuery(FieldKeys.FIELD_TAG, query.tag), subBoolQuery)
+      } else {
+        Seq(termQuery(FieldKeys.FIELD_DATE, query.date), subBoolQuery)
+      }
       EsClient.esClient.execute {
         search(DomainOnlineLog.Index)
-          .query(boolQuery().must(
-            termQuery(FieldKeys.FIELD_DATE, query.date),
-            boolQuery().should(
-              prefixQuery(FieldKeys.FIELD_NAME, query.domain).boost(2D),
-              wildcardQuery(FieldKeys.FIELD_NAME, s"*${query.domain}*").boost(1D)
-            )
-          ))
+          .query(boolQuery().must(esQueries))
           .from(query.pageFrom)
           .size(query.pageSize)
       }
