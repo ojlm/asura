@@ -85,16 +85,17 @@ class ApplicationStart @Inject()(
     if (listOpt.nonEmpty) {
       val esConfigs = ArrayBuffer[EsOnlineLogConfig]()
       listOpt.get.forEach(config => {
-        val value = config.unwrapped().asInstanceOf[java.util.HashMap[String, String]]
+        val value = config.unwrapped().asInstanceOf[java.util.HashMap[String, Any]]
         esConfigs += EsOnlineLogConfig(
-          tag = value.getOrDefault("tag", StringUtils.EMPTY),
-          url = value.get("url"),
-          prefix = value.get("prefix"),
-          datePattern = value.get("datePattern"),
-          fieldDomain = value.get("fieldDomain"),
-          fieldMethod = value.get("fieldMethod"),
-          fieldUri = value.get("fieldUri"),
-          fieldRequestTime = value.get("fieldRequestTime"),
+          tag = value.getOrDefault("tag", StringUtils.EMPTY).asInstanceOf[String],
+          url = value.get("url").asInstanceOf[String],
+          prefix = value.get("prefix").asInstanceOf[String],
+          datePattern = value.get("datePattern").asInstanceOf[String],
+          fieldDomain = value.get("fieldDomain").asInstanceOf[String],
+          fieldMethod = value.get("fieldMethod").asInstanceOf[String],
+          fieldUri = value.get("fieldUri").asInstanceOf[String],
+          fieldRequestTime = value.get("fieldRequestTime").asInstanceOf[String],
+          fieldRequestTimeResolution = value.get("fieldRequestTimeResolution").asInstanceOf[Int].toDouble,
         )
       })
       esConfigs
