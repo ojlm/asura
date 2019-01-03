@@ -47,7 +47,10 @@ object DomainOnlineLogService extends CommonService with BaseAggregationService 
         search(DomainOnlineLog.Index)
           .query(boolQuery().must(
             termQuery(FieldKeys.FIELD_DATE, query.date),
-            wildcardQuery(FieldKeys.FIELD_NAME, s"*${query.domain}*")
+            boolQuery().should(
+              prefixQuery(FieldKeys.FIELD_NAME, query.domain).boost(2D),
+              wildcardQuery(FieldKeys.FIELD_NAME, s"*${query.domain}*").boost(1D)
+            )
           ))
           .from(query.pageFrom)
           .size(query.pageSize)
