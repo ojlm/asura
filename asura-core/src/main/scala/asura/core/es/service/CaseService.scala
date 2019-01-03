@@ -374,7 +374,7 @@ object CaseService extends CommonService with BaseAggregationService {
     })
   }
 
-  // assume the api is less equal than online api
+  // assume the api is less equal than twice count of online api
   // return api set of specified project, key: {method}{urlPath} value: count
   def getApiSet(project: Project, apisQuery: Seq[Query], aggSize: Int): Future[mutable.HashMap[String, Long]] = {
     val apiSet = mutable.HashMap[String, Long]()
