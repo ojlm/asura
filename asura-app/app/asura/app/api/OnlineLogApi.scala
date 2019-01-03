@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import asura.app.api.model.PreviewOnlineApi
 import asura.common.util.StringUtils
 import asura.core.ErrorMessages
-import asura.core.cs.model.{AggsQuery, QueryDomain, QueryOnlineApi}
+import asura.core.cs.model.{AggsQuery, QueryDomain, QueryDomainWildcard, QueryOnlineApi}
 import asura.core.es.model.{DomainOnlineConfig, FieldKeys}
 import asura.core.es.service._
 import asura.core.es.{EsClient, EsResponse}
@@ -20,9 +20,14 @@ class OnlineLogApi @Inject()(implicit system: ActorSystem,
                              val controllerComponents: SecurityComponents
                             ) extends BaseApi {
 
-  def aggTerms() = Action(parse.byteString).async { implicit req =>
+  def domainAggTerms() = Action(parse.byteString).async { implicit req =>
     val aggs = req.bodyAs(classOf[AggsQuery])
     DomainOnlineLogService.aggTerms(aggs).toOkResult
+  }
+
+  def domainWildcard() = Action(parse.byteString).async { implicit req =>
+    val query = req.bodyAs(classOf[QueryDomainWildcard])
+    DomainOnlineLogService.queryDomainWildcard(query).toOkResultByEsList(false)
   }
 
   def queryDomain() = Action(parse.byteString).async { implicit req =>

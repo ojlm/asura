@@ -2,8 +2,9 @@ package asura.core.es.service
 
 import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
+import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.cs.model.{AggsItem, AggsQuery, QueryDomain}
+import asura.core.cs.model.{AggsItem, AggsQuery, QueryDomain, QueryDomainWildcard}
 import asura.core.es.model.{BulkDocResponse, DomainOnlineLog, FieldKeys}
 import asura.core.es.service.BaseAggregationService._
 import asura.core.es.{EsClient, EsConfig}
@@ -38,6 +39,22 @@ object DomainOnlineLogService extends CommonService with BaseAggregationService 
         .size(0)
         .aggregations(termsAgg(aggsTermsName, aggField).size(aggs.pageSize()))
     }.map(toAggItems(_, aggField, null))
+  }
+
+  def queryDomainWildcard(query: QueryDomainWildcard) = {
+    if (StringUtils.isNotEmpty(query.date) && StringUtils.isNotEmpty(query.domain)) {
+      EsClient.esClient.execute {
+        search(DomainOnlineLog.Index)
+          .query(boolQuery().must(
+            termQuery(FieldKeys.FIELD_DATE, query.date),
+            wildcardQuery(FieldKeys.FIELD_NAME, s"*${query.domain}*")
+          ))
+          .from(query.pageFrom)
+          .size(query.pageSize)
+      }
+    } else {
+      ErrorMessages.error_InvalidRequestParameters.toFutureFail
+    }
   }
 
   def queryDomain(query: QueryDomain) = {
