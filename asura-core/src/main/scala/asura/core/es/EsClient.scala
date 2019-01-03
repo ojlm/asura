@@ -71,6 +71,13 @@ object EsClient {
     }
   }
 
+  def closeClient(): Unit = {
+    if (null != esClient) esClient.close()
+    if (esOnlineLogClients.nonEmpty) esOnlineLogClients.foreach(config => {
+      if (null != config.onlineLogClient) config.onlineLogClient.close()
+    })
+  }
+
   class CusRequestConfigCallback extends RequestConfigCallback {
 
     val connectionTimeout = 600000

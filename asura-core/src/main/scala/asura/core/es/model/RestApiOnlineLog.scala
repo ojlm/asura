@@ -7,6 +7,7 @@ import com.sksamuel.elastic4s.mappings._
 
 case class RestApiOnlineLog(
                              val domain: String,
+                             val tag: String,
                              val method: String,
                              val urlPath: String,
                              val count: Long,
@@ -26,6 +27,7 @@ object RestApiOnlineLog extends IndexSetting {
     `type` = EsConfig.DefaultType,
     fields = Seq(
       KeywordField(name = FieldKeys.FIELD_DOMAIN),
+      KeywordField(name = FieldKeys.FIELD_TAG),
       KeywordField(name = FieldKeys.FIELD_METHOD),
       KeywordField(name = FieldKeys.FIELD_URL_PATH),
       BasicField(name = FieldKeys.FIELD_COUNT, `type` = "long"),

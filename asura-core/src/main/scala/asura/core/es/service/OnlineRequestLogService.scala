@@ -75,7 +75,7 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
       val yesterday = LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern(esConfig.datePattern))
       val tuple = for {
         exclusion <- aggsItems(
-          boolQuery().must(termQuery(FieldKeys.FIELD_DOMAIN, domain)).not(notQueries),
+          boolQuery().must(termQuery(esConfig.fieldDomain, domain)).not(notQueries),
           yesterday,
           aggSize,
           toMetricsAggregation(esConfig.fieldRequestTime),
@@ -100,7 +100,7 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
             .filter(subItem => subItem.count >= minReqCount && !isOneOfSuffix(aggsItem.id, exFileSuffixes))
             .foreach(subItem => {
               val percentage = if (domainTotal > 0) Math.round(((subItem.count * 10000L).toDouble / domainTotal.toDouble)).toInt else 0
-              apiLogs += RestApiOnlineLog(domain, subItem.id, aggsItem.id, subItem.count, percentage, metrics = subItem.metrics)
+              apiLogs += RestApiOnlineLog(domain, esConfig.tag, subItem.id, aggsItem.id, subItem.count, percentage, metrics = subItem.metrics)
             })
         }
         t._1.foreach(itemFunc)
@@ -128,7 +128,7 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
                              esConfig: EsOnlineLogConfig,
                            ): Future[Seq[AggsItem]] = {
     if (null != config && null != config.inclusions && config.inclusions.nonEmpty) {
-      val domainTerm = termQuery(FieldKeys.FIELD_DOMAIN, domain)
+      val domainTerm = termQuery(esConfig.fieldDomain, domain)
       val notMethods = if (null != config.exMethods) {
         config.exMethods.filter(method => StringUtils.isNotEmpty(method.name)).map(method => {
           termQuery(esConfig.fieldMethod, method.name)

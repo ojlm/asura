@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import asura.app.api.auth.BasicAuth
 import asura.app.notify.MailNotifier
+import asura.common.util.StringUtils
 import asura.core.CoreConfig
 import asura.core.CoreConfig.EsOnlineLogConfig
 import asura.core.auth.AuthManager
@@ -19,6 +20,7 @@ import play.api.Configuration
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.mailer.MailerClient
 
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
 @Singleton
@@ -75,12 +77,29 @@ class ApplicationStart @Inject()(
   // add stop hook
   lifecycle.addStopHook { () =>
     Future {
-      if (null != EsClient.esClient) EsClient.esClient.close()
+      EsClient.closeClient()
     }(system.dispatcher)
   }
 
   private def toEsOnlineConfigs(listOpt: Option[ConfigList]): Seq[EsOnlineLogConfig] = {
-    // TODO
-    Nil
+    if (listOpt.nonEmpty) {
+      val esConfigs = ArrayBuffer[EsOnlineLogConfig]()
+      listOpt.get.forEach(config => {
+        val value = config.unwrapped().asInstanceOf[java.util.HashMap[String, String]]
+        esConfigs += EsOnlineLogConfig(
+          tag = value.getOrDefault("tag", StringUtils.EMPTY),
+          url = value.get("url"),
+          prefix = value.get("prefix"),
+          datePattern = value.get("datePattern"),
+          fieldDomain = value.get("fieldDomain"),
+          fieldMethod = value.get("fieldMethod"),
+          fieldUri = value.get("fieldUri"),
+          fieldRequestTime = value.get("fieldRequestTime"),
+        )
+      })
+      esConfigs
+    } else {
+      Nil
+    }
   }
 }
