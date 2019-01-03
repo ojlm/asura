@@ -72,7 +72,7 @@ class OnlineLogApi @Inject()(implicit system: ActorSystem,
     val res = if (hasDomain.nonEmpty && hasDomain.get) {
       val tupleRes = for {
         domain <- {
-          val queryDomain = QueryDomain(names = Seq(query.domain), date = null)
+          val queryDomain = QueryDomain(names = Seq(query.domain), tag = query.tag, date = null)
           queryDomain.size = 30
           DomainOnlineLogService.queryDomain(queryDomain)
         }

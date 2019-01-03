@@ -90,6 +90,7 @@ class SyncOnlineDomainAndRestApiJob extends Job {
                 group = project.group,
                 project = project.id,
                 domain = domainCountLog.name,
+                tag = esConfig.tag,
                 date = yesterday,
                 coverage = {
                   if (onlineApiCount > 0) {

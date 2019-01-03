@@ -62,6 +62,7 @@ object DomainOnlineLogService extends CommonService with BaseAggregationService 
     var sortField = query.sortField
     var order: SortOrder = SortOrder.DESC
     if (StringUtils.isNotEmpty(query.date)) esQueries += termQuery(FieldKeys.FIELD_DATE, query.date)
+    if (StringUtils.isNotEmpty(query.tag)) esQueries += termQuery(FieldKeys.FIELD_TAG, query.tag)
     if (null != query.names && query.names.nonEmpty) {
       esQueries += termsQuery(FieldKeys.FIELD_NAME, query.names)
       if (query.names.length == 1) {
