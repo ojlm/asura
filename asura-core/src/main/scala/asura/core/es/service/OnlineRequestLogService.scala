@@ -152,7 +152,7 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
                   termsAgg(aggsTermsName, esConfig.fieldMethod)
                     .subAggregations(metricsAggregations)
                 )
-            }.map(toAggItems(_, null, null))
+            }.map(toAggItems(_, null, null, esConfig.fieldRequestTimeResolution))
               .map(AggsItem(null, StringUtils.notEmptyElse(inclusion.alias, inclusion.value), 0, _))
           }} yield items += item
       })
@@ -179,7 +179,7 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
                 .subAggregations(metricsAggregations)
             )
         )
-    }.map(toAggItems(_, null, esConfig.fieldMethod))
+    }.map(toAggItems(_, null, esConfig.fieldMethod, esConfig.fieldRequestTimeResolution))
   }
 
   private def fieldPatternToQuery(fieldPattern: FieldPattern, esConfig: EsOnlineLogConfig): Query = {

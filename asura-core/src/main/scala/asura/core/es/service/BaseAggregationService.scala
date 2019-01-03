@@ -29,7 +29,7 @@ trait BaseAggregationService {
   }
 
   // assume the metrics aggregations are child aggregation of terms aggregation
-  def toAggItems(res: Response[SearchResponse], itemType: String, subItemType: String): Seq[AggsItem] = {
+  def toAggItems(res: Response[SearchResponse], itemType: String, subItemType: String, resolution: Double = 1D): Seq[AggsItem] = {
     val buckets = res.result
       .aggregationsAsMap.getOrElse(aggsTermsName, Map.empty)
       .asInstanceOf[Map[String, Any]]
@@ -52,9 +52,9 @@ trait BaseAggregationService {
                 `type` = subItemType,
                 id = subBucket.getOrElse("key_as_string", subBucket.getOrElse("key", "")).asInstanceOf[String],
                 count = subBucket.getOrElse("doc_count", 0).toString.toLong
-              ).evaluateBucketToMetrics(subBucket)
+              ).evaluateBucketToMetrics(subBucket, resolution)
             })
-          }).evaluateBucketToMetrics(bucket)
+          }).evaluateBucketToMetrics(bucket, resolution)
     })
   }
 

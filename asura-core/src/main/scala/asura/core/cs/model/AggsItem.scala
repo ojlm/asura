@@ -13,7 +13,7 @@ case class AggsItem(
                      var description: String = null,
                    ) {
 
-  def evaluateBucketToMetrics(bucket: Map[String, Any]): AggsItem = {
+  def evaluateBucketToMetrics(bucket: Map[String, Any], resolution: Double = 1D): AggsItem = {
     if (null != bucket && bucket.get(BaseAggregationService.aggsPercentilesName).nonEmpty) {
       val percentiles = bucket.get(BaseAggregationService.aggsPercentilesName)
         .get.asInstanceOf[Map[String, Map[String, Double]]].getOrElse("values", Map.empty)
@@ -21,16 +21,16 @@ case class AggsItem(
       val avg = bucket.get(BaseAggregationService.aggsAvg).getOrElse(Map.empty).asInstanceOf[Map[String, Double]]
       val max = bucket.get(BaseAggregationService.aggsMax).getOrElse(Map.empty).asInstanceOf[Map[String, Double]]
       metrics = Metrics(
-        p25 = Math.round(percentiles.get("25.0").getOrElse(0D) * 1000D).toInt,
-        p50 = Math.round(percentiles.get("50.0").getOrElse(0D) * 1000D).toInt,
-        p75 = Math.round(percentiles.get("75.0").getOrElse(0D) * 1000D).toInt,
-        p90 = Math.round(percentiles.get("90.0").getOrElse(0D) * 1000D).toInt,
-        p95 = Math.round(percentiles.get("95.0").getOrElse(0D) * 1000D).toInt,
-        p99 = Math.round(percentiles.get("99.0").getOrElse(0D) * 1000D).toInt,
-        p999 = Math.round(percentiles.get("99.9").getOrElse(0D) * 1000D).toInt,
-        min = Math.round(min.get("value").getOrElse(0D) * 1000D).toInt,
-        avg = Math.round(avg.get("value").getOrElse(0D) * 1000D).toInt,
-        max = Math.round(max.get("value").getOrElse(0D) * 1000D).toInt,
+        p25 = Math.round(percentiles.get("25.0").getOrElse(0D) * resolution).toInt,
+        p50 = Math.round(percentiles.get("50.0").getOrElse(0D) * resolution).toInt,
+        p75 = Math.round(percentiles.get("75.0").getOrElse(0D) * resolution).toInt,
+        p90 = Math.round(percentiles.get("90.0").getOrElse(0D) * resolution).toInt,
+        p95 = Math.round(percentiles.get("95.0").getOrElse(0D) * resolution).toInt,
+        p99 = Math.round(percentiles.get("99.0").getOrElse(0D) * resolution).toInt,
+        p999 = Math.round(percentiles.get("99.9").getOrElse(0D) * resolution).toInt,
+        min = Math.round(min.get("value").getOrElse(0D) * resolution).toInt,
+        avg = Math.round(avg.get("value").getOrElse(0D) * resolution).toInt,
+        max = Math.round(max.get("value").getOrElse(0D) * resolution).toInt,
       )
     }
     this
