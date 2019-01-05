@@ -100,7 +100,12 @@ class OnlineLogApi @Inject()(implicit system: ActorSystem,
 
   def previewOnlineApiOfDomainConfig() = Action(parse.byteString).async { implicit req =>
     val preview = req.bodyAs(classOf[PreviewOnlineApi])
-    val onlineEsLogConfigOpt = EsClient.esOnlineLogClient(preview.config.tag)
+    val tag = if (null != preview.config && StringUtils.isNotEmpty(preview.config.tag)) {
+      preview.config.tag
+    } else {
+      StringUtils.EMPTY
+    }
+    val onlineEsLogConfigOpt = EsClient.esOnlineLogClient(tag)
     if (onlineEsLogConfigOpt.nonEmpty) {
       OnlineRequestLogService.previewOnlineApi(preview.config, preview.domainTotal, SyncOnlineDomainAndRestApiJob.DEFAULT_API_COUNT, onlineEsLogConfigOpt.get).toOkResult
     } else {
