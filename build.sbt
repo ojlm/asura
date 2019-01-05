@@ -44,6 +44,11 @@ lazy val core = asuraProjects("asura-core")
   .settings(publishSettings: _*)
   .dependsOn(common % "compile->compile;test->test")
 
+lazy val dubbo = asuraProjects("asura-dubbo")
+  .settings(libraryDependencies ++= dubboDependencies)
+  .settings(publishSettings: _*)
+  .dependsOn(common % "compile->compile;test->test")
+
 lazy val pcap = asuraProjects("asura-pcap")
   .settings(libraryDependencies ++= pcapDependencies)
   .settings(publishSettings: _*)
