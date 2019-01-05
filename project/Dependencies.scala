@@ -30,6 +30,9 @@ object Dependencies {
   private val joddCore = "org.jodd" % "jodd-core" % "3.9.1"
   private val jsonPath = "com.jayway.jsonpath" % "json-path" % "2.4.0"
 
+  // dubbo
+  private val dubbo = "com.alibaba" % "dubbo" % "2.6.5"
+  private val curator = "org.apache.curator" % "curator-recipes" % "2.12.0"
 
   // Database
   private val mysqlConnector = "mysql" % "mysql-connector-java" % "5.1.23"
@@ -70,6 +73,7 @@ object Dependencies {
   val appDependencies = Seq(config, guava, commonsCodec) ++ loggingDeps ++ httpDeps ++ testDeps ++ pcapDependencies
   val webDependencies = Seq(seleniumJava, jBrowserDriver, htmlunitDriver) ++ loggingDeps ++ httpDeps ++ testDeps
   val namerdDependencies = Seq(akkaStream, akkaHttp) ++ commonDependencies
+  val dubboDependencies = Seq(dubbo, curator) ++ commonDependencies
 
   val commonPlayDeps = Seq(
     guice,
