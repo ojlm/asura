@@ -67,10 +67,17 @@ object UriUtils {
       if (null != params && params.nonEmpty) {
         val sb = StringBuilder.newBuilder
         for (param <- params if param.enabled) {
-          sb.append(URLEncoder.encode(param.key, StandardCharsets.UTF_8.name()))
-            .append("=")
-            .append(URLEncoder.encode(context.renderSingleMacroAsString(param.value), StandardCharsets.UTF_8.name()))
-            .append("&")
+          val key = if (StringUtils.isNotEmpty(param.key)) {
+            URLEncoder.encode(param.key, StandardCharsets.UTF_8.name())
+          } else {
+            StringUtils.EMPTY
+          }
+          val value = if (StringUtils.isNotEmpty(param.value)) {
+            URLEncoder.encode(context.renderSingleMacroAsString(param.value), StandardCharsets.UTF_8.name())
+          } else {
+            StringUtils.EMPTY
+          }
+          sb.append(key).append("=").append(value).append("&")
         }
         if (sb.nonEmpty) {
           sb.deleteCharAt(sb.length - 1)
