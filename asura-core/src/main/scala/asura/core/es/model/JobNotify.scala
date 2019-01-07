@@ -1,6 +1,6 @@
 package asura.core.es.model
 
-import asura.common.util.StringUtils
+import asura.common.util.{DateUtils, StringUtils}
 import asura.core.es.EsConfig
 import com.sksamuel.elastic4s.mappings._
 
@@ -19,10 +19,12 @@ case class JobNotify(
                       var enabled: Boolean = true,
                       var creator: String = null,
                       var createdAt: String = null,
+                      var updatedAt: String = null,
                     ) extends BaseIndex {
 
   override def toUpdateMap: Map[String, Any] = {
     val m = mutable.Map[String, Any]()
+    m += (FieldKeys.FIELD_UPDATED_AT -> DateUtils.nowDateTime)
     if (null != `type`) {
       m += (FieldKeys.FIELD_TYPE -> `type`)
     }

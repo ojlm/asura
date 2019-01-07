@@ -17,7 +17,9 @@ case class Job(
                 val jobData: JobData,
                 val env: String = StringUtils.EMPTY,
                 var creator: String = null,
-                var createdAt: String = null) extends BaseIndex {
+                var createdAt: String = null,
+                var updatedAt: String = null,
+              ) extends BaseIndex {
 
   override def toUpdateMap: Map[String, Any] = {
     val m = mutable.Map[String, Any]()

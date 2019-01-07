@@ -26,6 +26,7 @@ case class JobReport(
                       val description: String = StringUtils.EMPTY,
                       var creator: String = null,
                       var createdAt: String = null,
+                      var updatedAt: String = StringUtils.EMPTY,
                     ) extends BaseIndex {
 
   @JsonIgnore

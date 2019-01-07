@@ -7,6 +7,7 @@ object FieldKeys {
   val FIELD_DESCRIPTION = "description"
   val FIELD_CREATOR = "creator"
   val FIELD_CREATED_AT = "createdAt"
+  val FIELD_UPDATED_AT = "updatedAt"
   val FIELD_PATH = "path"
   val FIELD_GROUP = "group"
   val FIELD_PROJECT = "project"
