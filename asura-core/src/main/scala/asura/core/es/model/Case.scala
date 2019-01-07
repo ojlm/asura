@@ -22,6 +22,7 @@ case class Case(
                  val generator: CaseGenerator = CaseGenerator(),
                  var creator: String = null,
                  var createdAt: String = null,
+                 var updatedAt: String = null,
                ) extends BaseIndex {
 
   override def toUpdateScriptParams: (String, Map[String, Any]) = {

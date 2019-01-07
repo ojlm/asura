@@ -17,6 +17,7 @@ case class Project(
                     val domains: Seq[LabelRef] = Nil, // online domain, should only one
                     var creator: String = null,
                     var createdAt: String = null,
+                    var updatedAt: String = null,
                   ) extends BaseIndex {
 
   override def toUpdateMap: Map[String, Any] = {

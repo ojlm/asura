@@ -20,6 +20,7 @@ case class DomainOnlineConfig(
                                val exclusions: Seq[FieldPattern] = Nil, // online api exclude pattern
                                var creator: String = null,
                                var createdAt: String = null,
+                               var updatedAt: String = null,
                              ) extends BaseIndex {
 
   override def toUpdateMap: Map[String, Any] = {

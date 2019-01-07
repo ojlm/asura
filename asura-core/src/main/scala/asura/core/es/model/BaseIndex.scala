@@ -12,6 +12,7 @@ trait BaseIndex {
   val description: String
   var creator: String
   var createdAt: String
+  var updatedAt: String
 
   def checkCommFieldsToUpdate(m: mutable.Map[String, Any], sb: StringBuilder = null): Unit = {
     if (null != summary) {
@@ -22,11 +23,14 @@ trait BaseIndex {
       m += (FieldKeys.FIELD_DESCRIPTION -> description)
       if (null != sb) addScriptUpdateItem(sb, FieldKeys.FIELD_DESCRIPTION)
     }
+    m += (FieldKeys.FIELD_UPDATED_AT -> DateUtils.nowDateTime)
+    if (null != sb) addScriptUpdateItem(sb, FieldKeys.FIELD_UPDATED_AT)
   }
 
   def fillCommonFields(creator: String): Unit = {
     this.creator = if (StringUtils.isNotEmpty(creator)) creator else StringUtils.EMPTY
     this.createdAt = DateUtils.nowDateTime
+    this.updatedAt = this.createdAt
   }
 
   def toUpdateMap: Map[String, Any] = Map.empty
@@ -46,7 +50,8 @@ object BaseIndex {
     TextField(name = FieldKeys.FIELD_DESCRIPTION, copyTo = Seq(FieldKeys.FIELD__TEXT), analysis = EsConfig.IK_ANALYZER),
     TextField(name = FieldKeys.FIELD__TEXT, analysis = EsConfig.IK_ANALYZER),
     KeywordField(name = FieldKeys.FIELD_CREATOR),
-    BasicField(name = FieldKeys.FIELD_CREATED_AT, `type` = "date", format = Some(EsConfig.DateFormat))
+    BasicField(name = FieldKeys.FIELD_CREATED_AT, `type` = "date", format = Some(EsConfig.DateFormat)),
+    BasicField(name = FieldKeys.FIELD_UPDATED_AT, `type` = "date", format = Some(EsConfig.DateFormat)),
   )
 
   /** user login by ldap */
