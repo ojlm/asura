@@ -3,6 +3,7 @@ package asura.core.cs.model
 case class QueryCase(
                       group: String,
                       project: String,
+                      host: String,
                       path: String,
                       methods: Seq[String],
                       text: String,
