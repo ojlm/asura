@@ -108,7 +108,7 @@ object GroupService extends CommonService {
   def queryGroup(query: QueryGroup) = {
     var sortFields = Seq(FieldSort(FieldKeys.FIELD_CREATED_AT).desc())
     val esQueries = ArrayBuffer[Query]()
-    if (StringUtils.isNotEmpty(query.id)) esQueries += wildcardQuery(FieldKeys.FIELD_ID, query.id + "*")
+    if (StringUtils.isNotEmpty(query.id)) esQueries += wildcardQuery(FieldKeys.FIELD_ID, s"*${query.id}*")
     if (StringUtils.isNotEmpty(query.text)) {
       esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
       sortFields = Nil
