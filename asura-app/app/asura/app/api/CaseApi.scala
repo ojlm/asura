@@ -8,7 +8,8 @@ import asura.common.model.{ApiRes, ApiResError}
 import asura.common.util.StringUtils
 import asura.core.ErrorMessages
 import asura.core.cs.assertion.Assertions
-import asura.core.cs.model.{AggsQuery, BatchOperation, QueryCase, SearchAfterCase}
+import asura.core.cs.model.BatchOperation.{BatchOperationLabels, BatchTransfer}
+import asura.core.cs.model.{AggsQuery, QueryCase, SearchAfterCase}
 import asura.core.cs.{CaseContext, CaseRunner}
 import asura.core.es.EsResponse
 import asura.core.es.actor.ActivitySaveActor
@@ -150,8 +151,14 @@ class CaseApi @Inject()(implicit system: ActorSystem,
     CaseService.aggsLabels(label).toOkResult
   }
 
-  def batch() = Action(parse.byteString).async { implicit req =>
-    val ops = req.bodyAs(classOf[BatchOperation])
-    CaseService.batchUpdate(ops).toOkResult
+  def batchLabels() = Action(parse.byteString).async { implicit req =>
+    val ops = req.bodyAs(classOf[BatchOperationLabels])
+    CaseService.batchUpdateLabels(ops).toOkResult
   }
+
+  def batchTransfer() = Action(parse.byteString).async { implicit req =>
+    val op = req.bodyAs(classOf[BatchTransfer])
+    CaseService.batchTransfer(op).toOkResult
+  }
+
 }
