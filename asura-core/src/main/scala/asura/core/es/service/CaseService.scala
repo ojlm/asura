@@ -34,6 +34,7 @@ object CaseService extends CommonService with BaseAggregationService {
     FieldKeys.FIELD_GROUP,
     FieldKeys.FIELD_PROJECT,
     FieldKeys.FIELD_LABELS,
+    FieldKeys.FIELD_OBJECT_REQUEST_HOST,
     FieldKeys.FIELD_OBJECT_REQUEST_URLPATH,
     FieldKeys.FIELD_OBJECT_REQUEST_METHOD,
   )
@@ -229,6 +230,7 @@ object CaseService extends CommonService with BaseAggregationService {
         esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
         sortFields = Nil
       }
+      if (StringUtils.isNotEmpty(query.host)) esQueries += termQuery(FieldKeys.FIELD_OBJECT_REQUEST_HOST, query.host)
       if (StringUtils.isNotEmpty(query.path)) esQueries += wildcardQuery(FieldKeys.FIELD_OBJECT_REQUEST_URLPATH, s"${query.path}*")
       if (null != query.methods && query.methods.nonEmpty) esQueries += termsQuery(FieldKeys.FIELD_OBJECT_REQUEST_METHOD, query.methods)
       if (null != query.labels && query.labels.nonEmpty) esQueries += nestedQuery(FieldKeys.FIELD_LABELS, termsQuery(FieldKeys.FIELD_NESTED_LABELS_NAME, query.labels))

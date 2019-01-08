@@ -134,6 +134,7 @@ object FieldKeys {
   val FIELD_EX_SUFFIXES = "exSuffixes"
   val FIELD_TAG = "tag"
 
+  val FIELD_OBJECT_REQUEST_HOST = "request.host"
   val FIELD_OBJECT_REQUEST_URLPATH = "request.urlPath"
   val FIELD_OBJECT_REQUEST_METHOD = "request.method"
   val FIELD_NESTED_TRIGGER_TRIGGER_TYPE = "trigger.triggerType"
