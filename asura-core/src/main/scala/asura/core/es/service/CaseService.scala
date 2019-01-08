@@ -5,6 +5,7 @@ import asura.common.util.StringUtils
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.CaseValidator
+import asura.core.cs.model.BatchOperation.{BatchOperationLabels, BatchTransfer}
 import asura.core.cs.model._
 import asura.core.es.model.JobData.JobDataExt
 import asura.core.es.model._
@@ -350,7 +351,7 @@ object CaseService extends CommonService with BaseAggregationService {
     }
   }
 
-  def batchUpdate(batch: BatchOperation): Future[BulkDocResponse] = {
+  def batchUpdateLabels(batch: BatchOperationLabels): Future[BulkDocResponse] = {
     if (null != batch.labels && batch.labels.nonEmpty) {
       EsClient.esClient.execute(bulk {
         batch.labels.filter(item => null != item.labels).map(item => {
@@ -360,6 +361,23 @@ object CaseService extends CommonService with BaseAggregationService {
       }.refresh(RefreshPolicy.WAIT_UNTIL)).map(toBulkDocResponse(_))
     } else {
       ErrorMessages.error_EmptyRequestBody.toFutureFail
+    }
+  }
+
+  def batchTransfer(batch: BatchTransfer): Future[BulkDocResponse] = {
+    if (StringUtils.isNotEmpty(batch.group) && StringUtils.isNotEmpty(batch.project) && null != batch.ids && batch.ids.nonEmpty) {
+      EsClient.esClient.execute(bulk {
+        batch.ids.map(csId => {
+          val docMap = Map(
+            FieldKeys.FIELD_GROUP -> batch.group,
+            FieldKeys.FIELD_PROJECT -> batch.project,
+            FieldKeys.FIELD_ENV -> StringUtils.EMPTY
+          )
+          update(csId).in(Case.Index / EsConfig.DefaultType).doc(docMap)
+        })
+      }.refresh(RefreshPolicy.WAIT_UNTIL)).map(toBulkDocResponse(_))
+    } else {
+      ErrorMessages.error_InvalidRequestParameters.toFutureFail
     }
   }
 
