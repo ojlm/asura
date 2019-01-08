@@ -1,5 +1,8 @@
 package asura.core.es.service
 
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
 import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.ErrorMessages
@@ -13,6 +16,7 @@ import com.sksamuel.elastic4s.http.ElasticDsl._
 import com.sksamuel.elastic4s.searches.queries.Query
 import com.sksamuel.elastic4s.searches.sort.{FieldSort, SortOrder}
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
@@ -42,15 +46,25 @@ object DomainOnlineLogService extends CommonService with BaseAggregationService 
   }
 
   def queryDomainWildcard(query: QueryDomainWildcard) = {
-    if (StringUtils.isNotEmpty(query.date) && StringUtils.isNotEmpty(query.domain)) {
+    val yesterday = LocalDate.now().minusDays(1)
+    val dates = if (StringUtils.isNotEmpty(query.date)) {
+      Seq(query.date)
+    } else {
+      val datesSet = mutable.HashSet[String]()
+      EsClient.esOnlineLogClients.foreach(config => {
+        datesSet += yesterday.format(DateTimeFormatter.ofPattern(config.datePattern))
+      })
+      datesSet
+    }
+    if (dates.nonEmpty && StringUtils.isNotEmpty(query.domain)) {
       val subBoolQuery = boolQuery().should(
         prefixQuery(FieldKeys.FIELD_NAME, query.domain).boost(2D),
         wildcardQuery(FieldKeys.FIELD_NAME, s"*${query.domain}*").boost(1D)
       )
       val esQueries = if (StringUtils.isNotEmpty(query.tag)) {
-        Seq(termQuery(FieldKeys.FIELD_DATE, query.date), termQuery(FieldKeys.FIELD_TAG, query.tag), subBoolQuery)
+        Seq(termsQuery(FieldKeys.FIELD_DATE, dates), termQuery(FieldKeys.FIELD_TAG, query.tag), subBoolQuery)
       } else {
-        Seq(termQuery(FieldKeys.FIELD_DATE, query.date), subBoolQuery)
+        Seq(termsQuery(FieldKeys.FIELD_DATE, dates), subBoolQuery)
       }
       EsClient.esClient.execute {
         search(DomainOnlineLog.Index)
