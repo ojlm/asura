@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import asura.app.AppErrorMessages
 import asura.app.api.BaseApi.OkApiRes
 import asura.common.model.ApiResError
-import asura.core.cs.model.QueryProject
+import asura.core.cs.model.{QueryProject, TransferProject}
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, Project}
 import asura.core.es.service.ProjectService
@@ -64,6 +64,11 @@ class ProjectApi @Inject()(
   def updateOpenApi(group: String, id: String) = Action(parse.byteString).async { implicit req =>
     val openapi = req.body.decodeString("UTF-8")
     ProjectService.updateOpenApi(group, id, openapi).toOkResult
+  }
+
+  def transfer() = Action(parse.byteString).async { implicit req =>
+    val op = req.bodyAs(classOf[TransferProject])
+    ProjectService.transferProject(op).toOkResult
   }
 
   private def checkPrivilege(func: String => Future[Result])(implicit request: RequestHeader): Future[Result] = {

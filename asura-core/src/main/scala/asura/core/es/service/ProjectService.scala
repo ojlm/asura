@@ -5,20 +5,28 @@ import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.CommonValidator
-import asura.core.cs.model.QueryProject
+import asura.core.cs.model.{QueryProject, TransferProject}
 import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
-import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
+import com.sksamuel.elastic4s.script.Script
 import com.sksamuel.elastic4s.searches.queries.Query
 import com.sksamuel.elastic4s.searches.sort.FieldSort
+import com.sksamuel.elastic4s.update.UpdateByQueryRequest
+import com.sksamuel.elastic4s.{IndexesAndTypes, RefreshPolicy}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
 object ProjectService extends CommonService {
+
+  val projectRelatedIndexes = Seq(
+    Case.Index, RestApi.Index, Job.Index, Environment.Index,
+    JobReport.Index, JobNotify.Index, Scenario.Index, Activity.Index,
+    ProjectApiCoverage.Index
+  )
 
   def index(project: Project): Future[IndexDocResponse] = {
     if (null == project || StringUtils.isEmpty(project.group)) {
@@ -49,14 +57,67 @@ object ProjectService extends CommonService {
     if (StringUtils.isEmpty(group) && StringUtils.isNotEmpty(project)) {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
-      IndexService.deleteByGroupOrProject(Seq(
-        Case.Index, RestApi.Index, Job.Index, Environment.Index,
-        JobReport.Index, JobNotify.Index, Scenario.Index, Activity.Index
-      ), group, project).flatMap(idxRes => {
+      IndexService.deleteByGroupOrProject(projectRelatedIndexes, group, project).flatMap(idxRes => {
         EsClient.esClient.execute {
           delete(Project.generateDocId(group, project)).from(Project.Index / EsConfig.DefaultType).refresh(RefreshPolicy.WAIT_UNTIL)
         }.map(_ => idxRes)
       })
+    }
+  }
+
+  // ugly and dangerous and unpredictable code
+  def transferProject(op: TransferProject) = {
+    if (
+      StringUtils.isNotEmpty(op.oldGroup) && StringUtils.isNotEmpty(op.newGroup) &&
+        StringUtils.isNotEmpty(op.oldId) && StringUtils.isNotEmpty(op.newId)
+    ) {
+      docCount(op.newGroup, op.newId).flatMap(res => {
+        if (res.isSuccess) {
+          if (res.result.count > 0) {
+            ErrorMessages.error_ProjectExists.toFutureFail
+          } else {
+            val esQueries = Seq(termQuery(FieldKeys.FIELD_GROUP, op.oldGroup), termQuery(FieldKeys.FIELD_PROJECT, op.oldId))
+            EsClient.esClient.execute {
+              UpdateByQueryRequest(
+                indexesAndTypes = IndexesAndTypes(projectRelatedIndexes, Seq(EsConfig.DefaultType)),
+                query = boolQuery().must(esQueries),
+                script = Option(Script(
+                  script = s"ctx._source.${FieldKeys.FIELD_GROUP} = '${op.newGroup}';ctx._source.${FieldKeys.FIELD_PROJECT} = '${op.newId}'",
+                  lang = Option("painless")
+                ))
+              ).refreshImmediately
+            }.flatMap(_ => {
+              getById(op.oldGroup, op.oldId, true)
+            }).flatMap(esRes => {
+              if (esRes.isSuccess) {
+                var newProject = esRes.result.hits.hits(0).sourceAsMap
+                newProject += (FieldKeys.FIELD_GROUP -> op.newGroup)
+                newProject += (FieldKeys.FIELD_ID -> op.newId)
+                // delete the old doc
+                EsClient.esClient.execute {
+                  delete(Project.generateDocId(op.oldGroup, op.oldId))
+                    .from(Project.Index / EsConfig.DefaultType)
+                    .refresh(RefreshPolicy.WAIT_UNTIL)
+                }.flatMap(_ => {
+                  // insert the new doc
+                  EsClient.esClient.execute {
+                    indexInto(Project.Index / EsConfig.DefaultType)
+                      .doc(newProject)
+                      .id(Project.generateDocId(op.newGroup, op.newId))
+                      .refresh(RefreshPolicy.WAIT_UNTIL)
+                  }.map(_ => op)
+                })
+              } else {
+                ErrorMessages.error_EsRequestFail(esRes).toFutureFail
+              }
+            })
+          }
+        } else {
+          ErrorMessages.error_EsRequestFail(res).toFutureFail
+        }
+      })
+    } else {
+      ErrorMessages.error_InvalidRequestParameters.toFutureFail
     }
   }
 
