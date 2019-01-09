@@ -79,7 +79,11 @@ object DomainOnlineLogService extends CommonService with BaseAggregationService 
 
   def queryDomain(query: QueryDomain) = {
     val esQueries = ArrayBuffer[Query]()
-    var sortField = query.sortField
+    var sortField = if (StringUtils.isNotEmpty(query.sortField)) {
+      query.sortField
+    } else {
+      FieldKeys.FIELD_COUNT
+    }
     val order: SortOrder = SortOrder.DESC
     if (StringUtils.isNotEmpty(query.date)) esQueries += termQuery(FieldKeys.FIELD_DATE, query.date)
     if (null != query.tag) {
