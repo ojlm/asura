@@ -1,0 +1,2 @@
+POST        /interfaces        asura.app.api.DubboApi.getInterfaces()
+POST        /providers         asura.app.api.DubboApi.getProviders()

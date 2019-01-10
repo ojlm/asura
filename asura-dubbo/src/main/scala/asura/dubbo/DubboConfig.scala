@@ -9,6 +9,8 @@ case class DubboConfig(
 }
 
 object DubboConfig {
+
+  val DEFAULT_ROOT_DUBBO_PATH = "/dubbo"
   var appName = "asura-dubbo"
   var appConfig = new ApplicationConfig(appName)
 }
