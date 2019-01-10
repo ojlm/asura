@@ -30,8 +30,11 @@ object Dependencies {
   private val joddCore = "org.jodd" % "jodd-core" % "3.9.1"
   private val jsonPath = "com.jayway.jsonpath" % "json-path" % "2.4.0"
 
-  // dubbo
-  private val dubbo = "com.alibaba" % "dubbo" % "2.6.5"
+  // dubbo, specify javassist and jbossnetty deps because of coursier dep resolve problems
+  private val dubbo = "com.alibaba" % "dubbo" % "2.6.5" excludeAll(ExclusionRule(organization = "org.springframework"), ExclusionRule(organization = "org.javassist"), ExclusionRule(organization = "org.jboss.netty"))
+  private val dubboJavassist = "org.javassist" % "javassist" % "3.21.0-GA"
+  private val dubboJbossNetty = "org.jboss.netty" % "netty" % "3.2.5.Final"
+  private val dubboSpring = "org.springframework" % "spring-context" % "4.3.10.RELEASE" % Test
   private val curator = "org.apache.curator" % "curator-recipes" % "2.12.0"
 
   // Database
@@ -73,7 +76,7 @@ object Dependencies {
   val appDependencies = Seq(config, guava, commonsCodec) ++ loggingDeps ++ httpDeps ++ testDeps ++ pcapDependencies
   val webDependencies = Seq(seleniumJava, jBrowserDriver, htmlunitDriver) ++ loggingDeps ++ httpDeps ++ testDeps
   val namerdDependencies = Seq(akkaStream, akkaHttp) ++ commonDependencies
-  val dubboDependencies = Seq(dubbo, curator) ++ commonDependencies
+  val dubboDependencies = Seq(dubbo, curator, dubboJavassist, dubboJbossNetty, dubboSpring) ++ commonDependencies
 
   val commonPlayDeps = Seq(
     guice,
