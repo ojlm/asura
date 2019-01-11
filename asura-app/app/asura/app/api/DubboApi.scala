@@ -3,6 +3,8 @@ package asura.app.api
 import akka.actor.ActorSystem
 import akka.pattern.ask
 import akka.util.Timeout
+import asura.core.ErrorMessages
+import asura.dubbo.GenericRequest
 import asura.dubbo.actor.GenericServiceInvokerActor
 import asura.dubbo.actor.GenericServiceInvokerActor.{GetInterfacesMessage, GetProvidersMessage}
 import javax.inject.{Inject, Singleton}
@@ -31,5 +33,14 @@ class DubboApi @Inject()(
   def getProviders() = Action(parse.byteString).async { implicit req =>
     val msg = req.bodyAs(classOf[GetProvidersMessage])
     (dubboInvoker ? msg).toOkResult
+  }
+
+  def test() = Action(parse.byteString).async { implicit req =>
+    val msg = req.bodyAs(classOf[GenericRequest])
+    if (msg.validate()) {
+      (dubboInvoker ? msg).toOkResult
+    } else {
+      ErrorMessages.error_InvalidRequestParameters.toFutureFail
+    }
   }
 }

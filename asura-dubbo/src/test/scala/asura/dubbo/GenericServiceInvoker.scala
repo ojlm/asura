@@ -14,7 +14,8 @@ object GenericServiceInvoker {
       method = "echoString",
       parameterTypes = Array("java.lang.String"),
       args = Array("world"),
-      address = "dubbo://127.0.0.1:20880",
+      address = "127.0.0.1",
+      port = 20880,
       version = ""
     )
     val (service, refConfig) = ReferenceCache.getServiceAndConfig(genericRequest)

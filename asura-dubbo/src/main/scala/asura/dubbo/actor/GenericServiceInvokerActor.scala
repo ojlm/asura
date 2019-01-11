@@ -4,9 +4,10 @@ import akka.actor.{Props, Status}
 import akka.pattern.pipe
 import asura.common.actor.BaseActor
 import asura.common.util.{LogUtils, StringUtils}
-import asura.dubbo.DubboConfig
 import asura.dubbo.actor.GenericServiceInvokerActor.{GetInterfacesMessage, GetProvidersMessage}
+import asura.dubbo.cache.ReferenceCache
 import asura.dubbo.model.{DubboInterface, DubboProvider}
+import asura.dubbo.{DubboConfig, GenericRequest}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -19,9 +20,13 @@ class GenericServiceInvokerActor extends BaseActor {
       getInterfaces(zkAddr, path) pipeTo sender()
     case GetProvidersMessage(zkAddr, path, ref) =>
       getProviders(zkAddr, path, ref) pipeTo sender()
+    case request: GenericRequest =>
+      test(request) pipeTo sender()
     case Status.Failure(t) =>
       log.warning(LogUtils.stackTraceToString(t))
+      Future.failed(t) pipeTo sender()
     case _ =>
+      Future.failed(new RuntimeException("Unknown message type")) pipeTo sender()
   }
 
   def getInterfaces(zkAddr: String, path: String): Future[Seq[DubboInterface]] = {
@@ -40,6 +45,15 @@ class GenericServiceInvokerActor extends BaseActor {
     Future.successful {
       1.to(30).map(_ => DubboProvider(zkAddr, path, ref, "127.0.0.1", 20880, Seq("getInterfaces", "getProviders")))
     }
+  }
+
+  def test(request: GenericRequest): Future[Any] = {
+    // TODO: clear cache when timeout
+    val (service, refConfig) = ReferenceCache.getServiceAndConfig(request)
+    Future {
+      // https://github.com/apache/incubator-dubbo/issues/3163
+      service.$invoke(request.method, request.getParameterTypes(), request.getArgs())
+    }(ExecutionContext.global)
   }
 
 }

@@ -10,7 +10,12 @@ object ReferenceCache {
   def getServiceAndConfig(request: GenericRequest): (GenericService, ReferenceConfig[GenericService]) = {
     val cache = ReferenceConfigCache.getCache()
     val referenceConfig = request.toReferenceConfig()
-    (cache.get(referenceConfig), referenceConfig)
+    var service = cache.get(referenceConfig)
+    if (null == service) {
+      destroyReference(referenceConfig)
+      service = cache.get(referenceConfig)
+    }
+    (service, referenceConfig)
   }
 
   def destroyReference(reference: ReferenceConfig[GenericService]): Unit = {
