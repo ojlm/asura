@@ -66,7 +66,9 @@ object CoreConfig {
                                 fieldMethod: String,
                                 fieldUri: String,
                                 fieldRequestTime: String,
-                                fieldRequestTimeResolution: Double
+                                fieldRequestTimeResolution: Double,
+                                fieldRemoteAddr: String = null,
+                                excludeRemoteAddrs: Seq[String] = Nil,
                               ) {
     var onlineLogClient: ElasticClient = _
   }

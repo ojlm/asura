@@ -71,6 +71,9 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
             notQueries += termQuery(esConfig.fieldMethod, method.name)
           })
         }
+        if (StringUtils.isNotEmpty(esConfig.fieldRemoteAddr) && null != esConfig.excludeRemoteAddrs && esConfig.excludeRemoteAddrs.nonEmpty) {
+          notQueries += termsQuery(esConfig.fieldRemoteAddr, esConfig.excludeRemoteAddrs)
+        }
       }
       val yesterday = LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern(esConfig.datePattern))
       val tuple = for {
@@ -129,12 +132,12 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
                            ): Future[Seq[AggsItem]] = {
     if (null != config && null != config.inclusions && config.inclusions.nonEmpty) {
       val domainTerm = termQuery(esConfig.fieldDomain, domain)
-      val notMethods = if (null != config.exMethods) {
-        config.exMethods.filter(method => StringUtils.isNotEmpty(method.name)).map(method => {
-          termQuery(esConfig.fieldMethod, method.name)
-        })
-      } else {
-        Nil
+      val notQueries = ArrayBuffer[Query]()
+      if (null != config.exMethods) {
+        notQueries += termsQuery(esConfig.fieldMethod, config.exMethods.filter(method => StringUtils.isNotEmpty(method.name)))
+      }
+      if (StringUtils.isNotEmpty(esConfig.fieldRemoteAddr) && null != esConfig.excludeRemoteAddrs && esConfig.excludeRemoteAddrs.nonEmpty) {
+        notQueries += termsQuery(esConfig.fieldRemoteAddr, esConfig.excludeRemoteAddrs)
       }
       val items = ArrayBuffer[AggsItem]()
       config.inclusions.foldLeft(Future.successful(items))((itemsFuture, inclusion) => {
@@ -145,7 +148,7 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
               search(s"${esConfig.prefix}${date}")
                 .query(boolQuery()
                   .must(domainTerm, fieldPatternToQuery(inclusion, esConfig))
-                  .not(notMethods)
+                  .not(notQueries)
                 )
                 .size(0)
                 .aggregations(
