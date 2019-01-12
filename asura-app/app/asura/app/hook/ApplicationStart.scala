@@ -96,11 +96,21 @@ class ApplicationStart @Inject()(
           fieldUri = value.get("fieldUri").asInstanceOf[String],
           fieldRequestTime = value.get("fieldRequestTime").asInstanceOf[String],
           fieldRequestTimeResolution = value.get("fieldRequestTimeResolution").asInstanceOf[Int].toDouble,
+          fieldRemoteAddr = value.get("fieldRemoteAddr").asInstanceOf[String],
+          excludeRemoteAddrs = javaListToSeq(value.get("excludeRemoteAddrs").asInstanceOf[java.util.List[String]])
         )
       })
       esConfigs
     } else {
       Nil
     }
+  }
+
+  private def javaListToSeq(list: java.util.List[String]): Seq[String] = {
+    val seq = ArrayBuffer[String]()
+    if (null != list) {
+      list.forEach(item => seq += item)
+    }
+    seq
   }
 }
