@@ -22,7 +22,21 @@ case class GenericRequest(
   }
 
   def getArgs(): Array[Object] = {
-    if (null != args) args else Array.empty[Object]
+    if (null != args) {
+      args.map(arg => {
+        arg match {
+          case map: Map[_, _] =>
+            val hashMap = new java.util.HashMap[Any, Any]()
+            map.foreach(entry => {
+              hashMap.put(entry._1, entry._2)
+            })
+            hashMap
+          case _ => arg
+        }
+      })
+    } else {
+      Array.empty[Object]
+    }
   }
 
   def toReferenceConfig(): ReferenceConfig[GenericService] = {
@@ -46,7 +60,12 @@ case class GenericRequest(
   }
 
   def validate(): Boolean = {
-    if (StringUtils.isEmpty(interface) || StringUtils.isEmpty(method) || StringUtils.isEmpty(address)) {
+    if (
+      StringUtils.isEmpty(interface) ||
+        StringUtils.isEmpty(method) ||
+        StringUtils.isEmpty(address) ||
+        !(null != parameterTypes && null != args && parameterTypes.length == args.length)
+    ) {
       false
     } else {
       true
