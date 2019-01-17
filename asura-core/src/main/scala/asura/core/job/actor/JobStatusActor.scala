@@ -4,7 +4,6 @@ import akka.actor.Status.Failure
 import akka.actor.{ActorRef, Props}
 import asura.common.actor._
 import asura.common.model.Pagination
-import asura.core.actor.messages.SenderMessage
 import asura.core.cs.model.QueryJob
 import asura.core.es.service.JobService
 import asura.core.job.actor.JobStatusMonitorActor.JobStatusOperationMessage

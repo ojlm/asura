@@ -5,9 +5,8 @@ import akka.actor.{ActorRef, PoisonPill}
 import akka.http.scaladsl.model.ws.{Message, TextMessage}
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{Flow, Sink, Source}
-import asura.common.actor.ActorEvent
+import asura.common.actor.{ActorEvent, SenderMessage}
 import asura.common.exceptions.InvalidStatusException
-import asura.core.actor.messages.SenderMessage
 import asura.core.util.JacksonSupport
 
 import scala.concurrent.duration._

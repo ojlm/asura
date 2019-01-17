@@ -1,4 +1,4 @@
-package asura.core.actor.messages
+package asura.common.actor
 
 import akka.actor.ActorRef
 
