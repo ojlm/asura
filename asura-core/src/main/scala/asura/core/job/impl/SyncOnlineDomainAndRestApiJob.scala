@@ -72,8 +72,8 @@ class SyncOnlineDomainAndRestApiJob extends Job {
             projects.foreach(project => {
               // get all apis of each project
               var projectApiOnlineCount = 0
-              // max twice count
-              val projectApiSet = getProjectApiSet(project, Nil, apiMap.size * 2)
+              val projectApiMaxSize = if (apiMap.size > 2000) apiMap.size * 2 else 2000
+              val projectApiSet = getProjectApiSet(project, Nil, projectApiMaxSize)
               projectApiSet.foreach(projectApiItem => {
                 // only if the api is also online
                 apiMap.get(projectApiItem._1).foreach(apiLog => {
