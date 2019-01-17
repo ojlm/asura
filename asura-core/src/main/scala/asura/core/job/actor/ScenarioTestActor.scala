@@ -5,7 +5,6 @@ import akka.pattern.pipe
 import asura.common.actor._
 import asura.common.util.LogUtils
 import asura.core.ErrorMessages
-import asura.core.actor.messages.SenderMessage
 import asura.core.cs.ContextOptions
 import asura.core.cs.scenario.ScenarioRunner
 import asura.core.es.model.JobReportData.ScenarioReportItem

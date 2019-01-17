@@ -3,7 +3,7 @@ package asura.app.api
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.Source
 import akka.stream.{Materializer, OverflowStrategy}
-import asura.core.actor.messages.SenderMessage
+import asura.common.actor.SenderMessage
 import asura.core.job.actor.JobCiActor
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents

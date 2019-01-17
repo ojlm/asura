@@ -5,7 +5,6 @@ import akka.pattern.pipe
 import asura.common.actor._
 import asura.common.util.{LogUtils, XtermUtils}
 import asura.core.CoreConfig
-import asura.core.actor.messages.SenderMessage
 import asura.core.cs.ContextOptions
 import asura.core.es.model.{JobData, JobReport}
 import asura.core.es.service.JobReportService

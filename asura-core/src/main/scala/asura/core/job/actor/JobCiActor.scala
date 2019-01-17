@@ -2,10 +2,9 @@ package asura.core.job.actor
 
 import akka.actor.{ActorRef, PoisonPill, Props, Status}
 import akka.pattern.pipe
-import asura.common.actor.BaseActor
+import asura.common.actor.{BaseActor, SenderMessage}
 import asura.common.util.{LogUtils, StringUtils}
 import asura.core.CoreConfig
-import asura.core.actor.messages.SenderMessage
 import asura.core.cs.ContextOptions
 import asura.core.es.model.{BaseIndex, Job, JobReport}
 import asura.core.es.service.{JobReportService, JobService}
