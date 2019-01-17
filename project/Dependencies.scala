@@ -76,7 +76,7 @@ object Dependencies {
   val appDependencies = Seq(config, guava, commonsCodec) ++ loggingDeps ++ httpDeps ++ testDeps ++ pcapDependencies
   val webDependencies = Seq(seleniumJava, jBrowserDriver, htmlunitDriver) ++ loggingDeps ++ httpDeps ++ testDeps
   val namerdDependencies = Seq(akkaStream, akkaHttp) ++ commonDependencies
-  val dubboDependencies = Seq(dubbo, curator, dubboJavassist, dubboJbossNetty, dubboSpring) ++ commonDependencies
+  val dubboDependencies = Seq(dubbo, curator, dubboJavassist, dubboJbossNetty, dubboSpring, akkaStream) ++ commonDependencies
 
   val commonPlayDeps = Seq(
     guice,

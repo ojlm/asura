@@ -55,7 +55,7 @@ case class GenericRequest(
   }
 
   def toDubboUrl() = {
-    val portStr = if (port > 0) port.toString else DubboConfig.DEFAULT_PORT
+    val portStr = if (port > 0) port.toString else DubboConfig.DEFAULT_PORT.toString
     s"${DubboConfig.DEFAULT_PROTOCOL}${address}:${portStr}"
   }
 

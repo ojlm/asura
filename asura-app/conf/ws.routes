@@ -1,3 +1,4 @@
 GET        /scenario/test/:group/:project         asura.app.api.WsApi.testScenario(group, project, id: Option[String])
 GET        /job/test/:group/:project              asura.app.api.WsApi.testJob(group, project, id: Option[String])
 GET        /job/manual/:group/:project/:id        asura.app.api.WsApi.manualTestJob(group, project, id)
+GET        /dubbo/telnet/:address/:port           asura.app.api.WsApi.telnetDubbo(address, port: Int)

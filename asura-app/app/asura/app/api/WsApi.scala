@@ -9,6 +9,7 @@ import asura.core.es.model.Activity
 import asura.core.job.actor.JobTestActor.JobTestMessage
 import asura.core.job.actor.ScenarioTestActor.ScenarioTestMessage
 import asura.core.job.actor.{JobManualActor, JobTestActor, ScenarioTestActor}
+import asura.dubbo.actor.TelnetDubboProviderActor
 import javax.inject.{Inject, Singleton}
 import org.pac4j.http.client.direct.HeaderClient
 import org.pac4j.jwt.credentials.authenticator.JwtAuthenticator
@@ -71,6 +72,22 @@ class WsApi @Inject()(
           val user = profile.getId
           activityActor ! Activity(group, project, user, Activity.TYPE_TEST_JOB, jobId)
           val testActor = system.actorOf(JobManualActor.props(jobId, user))
+          WebSocketMessageHandler.stringToActorEventFlow(testActor)
+        }
+      }
+    }
+  }
+
+  def telnetDubbo(address: String, port: Int) = WebSocket.acceptOrResult[String, String] { implicit req =>
+    Future.successful {
+      val profile = getWsProfile(auth)
+      if (null == profile) {
+        Left(Forbidden)
+      } else {
+        Right {
+          val user = profile.getId
+          activityActor ! Activity(user = user, `type` = Activity.TYPE_TELNET_DUBBO)
+          val testActor = system.actorOf(TelnetDubboProviderActor.props(address, port))
           WebSocketMessageHandler.stringToActorEventFlow(testActor)
         }
       }
