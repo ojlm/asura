@@ -1,15 +1,15 @@
 package asura.core.es.model
 
-import asura.common.util.DateUtils
+import asura.common.util.{DateUtils, StringUtils}
 import asura.core.es.EsConfig
 import com.sksamuel.elastic4s.mappings.{BasicField, KeywordField, MappingDefinition, ObjectField}
 
 case class Activity(
-                     val group: String,
-                     val project: String,
-                     val user: String,
-                     val `type`: String,
-                     val targetId: String,
+                     val group: String = StringUtils.EMPTY,
+                     val project: String = StringUtils.EMPTY,
+                     val user: String = StringUtils.EMPTY,
+                     val `type`: String = StringUtils.EMPTY,
+                     val targetId: String = StringUtils.EMPTY,
                      val timestamp: String = DateUtils.nowDateTime,
                      val data: Map[String, Any] = null,
                    )
@@ -46,6 +46,7 @@ object Activity extends IndexSetting {
   val TYPE_TEST_SCENARIO = "test-scenario"
   val TYPE_NEW_JOB = "new-job"
   val TYPE_TEST_JOB = "test-job"
+  val TYPE_TELNET_DUBBO = "telnet-dubbo"
 }
 
 
