@@ -84,7 +84,10 @@ object JobService extends CommonService {
         error.toFutureFail
       } else {
         EsClient.esClient.execute {
-          update(id).in(Job.Index / EsConfig.DefaultType).doc(JacksonSupport.stringify(job.toUpdateMap))
+          val (src, params) = job.toUpdateScriptParams
+          update(id).in(Job.Index / EsConfig.DefaultType).script {
+            script(src).params(params)
+          }
         }.map(toUpdateDocResponse(_))
       }
     }
