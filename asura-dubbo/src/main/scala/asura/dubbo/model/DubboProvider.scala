@@ -7,6 +7,8 @@ case class DubboProvider(
                           address: String,
                           port: Int,
                           methods: Seq[String],
+                          application: String,
+                          dubbo: String, // dubbo version
                         ) {
 
 }

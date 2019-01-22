@@ -5,7 +5,7 @@ import akka.pattern.pipe
 import asura.common.actor.BaseActor
 import asura.common.util.{LogUtils, StringUtils}
 import asura.dubbo.actor.GenericServiceInvokerActor.{GetInterfacesMessage, GetProvidersMessage}
-import asura.dubbo.cache.ReferenceCache
+import asura.dubbo.cache.{CuratorClientCache, ReferenceCache}
 import asura.dubbo.model.{DubboInterface, DubboProvider}
 import asura.dubbo.{DubboConfig, GenericRequest}
 
@@ -30,21 +30,18 @@ class GenericServiceInvokerActor extends BaseActor {
   }
 
   def getInterfaces(zkAddr: String, path: String): Future[Seq[DubboInterface]] = {
-    // TODO 1. conn zk 2. get path
     val dubboPath = if (StringUtils.isNotEmpty(path)) {
       DubboConfig.DEFAULT_ROOT_DUBBO_PATH
     } else {
       path
     }
-    Future.successful {
-      1.to(30).map(_ => DubboInterface(zkAddr, dubboPath, this.getClass.getName))
-    }
+    CuratorClientCache.getChildren(zkAddr, dubboPath).map(items => {
+      items.map(DubboInterface(zkAddr, dubboPath, _))
+    })
   }
 
   def getProviders(zkAddr: String, path: String, ref: String): Future[Seq[DubboProvider]] = {
-    Future.successful {
-      1.to(30).map(_ => DubboProvider(zkAddr, path, ref, "127.0.0.1", 20880, Seq("getInterfaces", "getProviders")))
-    }
+    CuratorClientCache.getInterfaceProviders(zkAddr, ref)
   }
 
   def test(request: GenericRequest): Future[Any] = {
@@ -56,6 +53,9 @@ class GenericServiceInvokerActor extends BaseActor {
     }(ExecutionContext.global)
   }
 
+  override def postStop(): Unit = {
+    CuratorClientCache.destroy()
+  }
 }
 
 object GenericServiceInvokerActor {
