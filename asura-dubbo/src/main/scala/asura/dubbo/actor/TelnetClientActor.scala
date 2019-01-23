@@ -18,10 +18,10 @@ class TelnetClientActor(remote: InetSocketAddress, listener: ActorRef) extends B
 
   override def receive: Receive = {
     case CommandFailed(_: Connect) =>
-      listener ! ByteString(s"connect to ${remote.getAddress.getHostAddress}:${remote.getPort} failed\r\n")
+      listener ! ByteString(s"${TelnetClientActor.MSG_CONNECT_TO} ${remote.getAddress.getHostAddress}:${remote.getPort} ${TelnetClientActor.MSG_FAIL}\r\n")
     case Connected(remote, local) =>
-      log.debug(s"local address ${local}")
-      listener ! ByteString(s"connect to ${remote.getAddress.getHostAddress}:${remote.getPort} success\r\n")
+      log.debug(s"local address: ${local}, remote address: ${remote}")
+      listener ! ByteString(s"${TelnetClientActor.MSG_CONNECT_TO} ${remote.getAddress.getHostAddress}:${remote.getPort} ${TelnetClientActor.MSG_SUCCESS}\r\n")
       val remoteConnection = sender()
       remoteConnection ! Register(self)
       context.become {
@@ -49,6 +49,9 @@ class TelnetClientActor(remote: InetSocketAddress, listener: ActorRef) extends B
 object TelnetClientActor {
 
   val CMD_CLOSE = "close"
+  val MSG_CONNECT_TO = "connect to"
+  val MSG_SUCCESS = "success"
+  val MSG_FAIL = "fail"
 
   def props(remote: InetSocketAddress, replies: ActorRef) = {
     Props(new TelnetClientActor(remote, replies))

@@ -15,7 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object CuratorClientCache {
 
-  implicit val ec = ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor())
+  implicit val ec = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
 
   def getChildren(zkAddr: String, path: String = DubboConfig.DEFAULT_ROOT_DUBBO_PATH): Future[Seq[String]] = {
     Future {

@@ -1,19 +1,22 @@
 package asura.dubbo.actor
 
-import akka.actor.{Props, Status}
-import akka.pattern.pipe
+import akka.actor.{PoisonPill, Props, Status}
+import akka.pattern.{ask, pipe}
+import akka.util.Timeout
 import asura.common.actor.BaseActor
 import asura.common.util.{LogUtils, StringUtils}
-import asura.dubbo.actor.GenericServiceInvokerActor.{GetInterfacesMessage, GetProvidersMessage}
+import asura.dubbo.actor.GenericServiceInvokerActor.{GetInterfaceMethodParams, GetInterfacesMessage, GetProvidersMessage}
 import asura.dubbo.cache.{CuratorClientCache, ReferenceCache}
 import asura.dubbo.model.{DubboInterface, DubboProvider}
 import asura.dubbo.{DubboConfig, GenericRequest}
 
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 class GenericServiceInvokerActor extends BaseActor {
 
   implicit val ec: ExecutionContext = context.dispatcher
+  implicit val timeout: Timeout = 30.seconds
 
   override def receive: Receive = {
     case GetInterfacesMessage(zkAddr, path) =>
@@ -22,6 +25,11 @@ class GenericServiceInvokerActor extends BaseActor {
       getProviders(zkAddr, path, ref) pipeTo sender()
     case request: GenericRequest =>
       test(request) pipeTo sender()
+    case msg: GetInterfaceMethodParams =>
+      val paramsActor = context.actorOf(InterfaceMethodParamsActor.props(sender(), msg))
+      val params = paramsActor ? s"ls -l ${msg.ref}"
+      params pipeTo sender()
+      params.onComplete(_ => paramsActor ! PoisonPill)
     case Status.Failure(t) =>
       log.warning(LogUtils.stackTraceToString(t))
       Future.failed(t) pipeTo sender()
@@ -30,7 +38,7 @@ class GenericServiceInvokerActor extends BaseActor {
   }
 
   def getInterfaces(zkAddr: String, path: String): Future[Seq[DubboInterface]] = {
-    val dubboPath = if (StringUtils.isNotEmpty(path)) {
+    val dubboPath = if (StringUtils.isEmpty(path)) {
       DubboConfig.DEFAULT_ROOT_DUBBO_PATH
     } else {
       path
@@ -65,5 +73,7 @@ object GenericServiceInvokerActor {
   case class GetInterfacesMessage(zkAddr: String, path: String)
 
   case class GetProvidersMessage(zkAddr: String, path: String, ref: String)
+
+  case class GetInterfaceMethodParams(address: String, port: Int, ref: String)
 
 }
