@@ -12,7 +12,7 @@ object ConsumerApp extends TestConfig {
     reference.setRegistry(new RegistryConfig(zkAddr))
     reference.setInterface(classOf[EchoService])
     val echoService = reference.get
-    val result = echoService.echoString("world")
+    val result = echoService.echoString("world", 27)
     println(result)
   }
 }
