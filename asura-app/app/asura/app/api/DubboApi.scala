@@ -6,7 +6,7 @@ import akka.util.Timeout
 import asura.core.ErrorMessages
 import asura.dubbo.GenericRequest
 import asura.dubbo.actor.GenericServiceInvokerActor
-import asura.dubbo.actor.GenericServiceInvokerActor.{GetInterfacesMessage, GetProvidersMessage}
+import asura.dubbo.actor.GenericServiceInvokerActor.{GetInterfaceMethodParams, GetInterfacesMessage, GetProvidersMessage}
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 import play.api.Configuration
@@ -32,6 +32,11 @@ class DubboApi @Inject()(
 
   def getProviders() = Action(parse.byteString).async { implicit req =>
     val msg = req.bodyAs(classOf[GetProvidersMessage])
+    (dubboInvoker ? msg).toOkResult
+  }
+
+  def getParams() = Action(parse.byteString).async { implicit req =>
+    val msg = req.bodyAs(classOf[GetInterfaceMethodParams])
     (dubboInvoker ? msg).toOkResult
   }
 
