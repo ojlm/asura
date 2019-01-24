@@ -31,6 +31,7 @@ object CuratorClientCache {
       val curator = CuratorFrameworkFactory.newClient(zkAddr, new RetryNTimes(0, 0))
       curator.start()
       val strings = curator.getChildren().forPath(s"${path}/${ref}/providers")
+      curator.close()
       JavaConverters.asScalaBuffer(strings)
         .map(item => URLDecoder.decode(item, StandardCharsets.UTF_8.name()))
         .map(uriStr => {

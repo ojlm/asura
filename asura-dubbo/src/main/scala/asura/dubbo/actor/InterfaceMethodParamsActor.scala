@@ -19,21 +19,26 @@ class InterfaceMethodParamsActor(invoker: ActorRef, msg: GetInterfaceMethodParam
   private val telnet: ActorRef = context.actorOf(TelnetClientActor.props(msg.address, if (msg.port > 0) msg.port else DubboConfig.DEFAULT_PORT, self))
 
   override def receive: Receive = {
-    case cmd: String =>
-      telnet ! ByteString(s"${cmd}\r\n")
     case telnetData: ByteString =>
       val utf8String = telnetData.utf8String
       if (utf8String.contains(TelnetClientActor.MSG_CONNECT_TO)) {
         log.debug(utf8String)
-        if (utf8String.contains(TelnetClientActor.MSG_FAIL)) {
-          invoker ! Future.failed(new RuntimeException(s"Remote connection to ${msg.address}:${msg.port} failed"))
+        if (utf8String.contains(TelnetClientActor.MSG_SUCCESS)) {
+          telnet ! ByteString(s"ls -l ${msg.ref}\r\n")
+        } else if (utf8String.contains(TelnetClientActor.MSG_FAIL)) {
+          Future.failed(new RuntimeException(s"Remote connection to ${msg.address}:${msg.port} failed")) pipeTo invoker
+          telnet ! TelnetClientActor.CMD_CLOSE
+          context stop self
+        } else {
+          Future.failed(new RuntimeException(s"Unknown response ${utf8String}")) pipeTo invoker
+          telnet ! TelnetClientActor.CMD_CLOSE
           context stop self
         }
       } else if (utf8String.contains("(") && utf8String.contains(")")) {
         getInterfaceMethodParams(msg.ref, utf8String) pipeTo invoker
         telnet ! TelnetClientActor.CMD_CLOSE
       } else {
-        invoker ! Future.failed(new RuntimeException(s"Unknown response: ${utf8String}"))
+        Future.failed(new RuntimeException(s"Unknown response: ${utf8String}")) pipeTo invoker
         telnet ! TelnetClientActor.CMD_CLOSE
         context stop self
       }
@@ -62,6 +67,8 @@ class InterfaceMethodParamsActor(invoker: ActorRef, msg: GetInterfaceMethodParam
       InterfaceMethodParams(ref, methods)
     }
   }
+
+  override def postStop(): Unit = log.debug(s"${self.path} stopped")
 }
 
 object InterfaceMethodParamsActor {

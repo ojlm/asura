@@ -1,7 +1,7 @@
 package asura.dubbo.actor
 
-import akka.actor.{PoisonPill, Props, Status}
-import akka.pattern.{ask, pipe}
+import akka.actor.{Props, Status}
+import akka.pattern.pipe
 import akka.util.Timeout
 import asura.common.actor.BaseActor
 import asura.common.util.{LogUtils, StringUtils}
@@ -26,10 +26,7 @@ class GenericServiceInvokerActor extends BaseActor {
     case request: GenericRequest =>
       test(request) pipeTo sender()
     case msg: GetInterfaceMethodParams =>
-      val paramsActor = context.actorOf(InterfaceMethodParamsActor.props(sender(), msg))
-      val params = paramsActor ? s"ls -l ${msg.ref}"
-      params pipeTo sender()
-      params.onComplete(_ => paramsActor ! PoisonPill)
+      context.actorOf(InterfaceMethodParamsActor.props(sender(), msg))
     case Status.Failure(t) =>
       log.warning(LogUtils.stackTraceToString(t))
       Future.failed(t) pipeTo sender()
