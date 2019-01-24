@@ -43,6 +43,8 @@ class TelnetClientActor(remote: InetSocketAddress, listener: ActorRef) extends B
       listener ! t.getMessage
       context stop self
   }
+
+  override def postStop(): Unit = log.debug(s"${self.path} stopped")
 }
 
 
