@@ -1,7 +1,5 @@
 package asura.dubbo
 
-import asura.dubbo.cache.ReferenceCache
-
 object GenericServiceInvoker {
 
   def main(args: Array[String]): Unit = {
@@ -12,15 +10,14 @@ object GenericServiceInvoker {
       dubboGroup = "",
       interface = "asura.dubbo.service.EchoService",
       method = "echoString",
-      parameterTypes = Array("java.lang.String"),
-      args = Array("world"),
+      parameterTypes = Array("java.lang.String", "int"),
+      args = Array("world", new Integer(27)),
       address = "127.0.0.1",
       port = 20880,
       version = ""
     )
-    val (service, refConfig) = ReferenceCache.getServiceAndConfig(genericRequest)
+    val service = genericRequest.toReferenceConfig().get()
     val result = service.$invoke(genericRequest.method, genericRequest.parameterTypes, genericRequest.args)
-    ReferenceCache.destroyReference(refConfig)
     println(result, result.getClass.getCanonicalName)
   }
 }
