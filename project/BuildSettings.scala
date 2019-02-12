@@ -5,6 +5,6 @@ object BuildSettings {
   lazy val commonSettings = Seq(
     organization := "cc.akkaha",
     version := "0.1.5",
-    scalaVersion := "2.12.6"
+    scalaVersion := "2.12.8"
   )
 }

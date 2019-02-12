@@ -3,7 +3,7 @@ import sbt._
 
 object Dependencies {
 
-  val akkaVersion = "2.5.11"
+  val akkaVersion = "2.5.20"
   val akkaHttpVersion = "10.0.13"
   val elastic4sVersion = "6.3.7"
   val playPac4jVersion = "6.0.0"
@@ -11,7 +11,9 @@ object Dependencies {
 
   private val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
   private val akkaStream = "com.typesafe.akka" %% "akka-stream" % akkaVersion
-  private val akkaCluster = "com.typesafe.akka" %% "akka-cluster" % akkaVersion
+  private val akkaCluster = "com.typesafe.akka" %% "akka-cluster" % akkaVersion excludeAll (ExclusionRule(organization = "io.netty", name = "netty"))
+  private val akkaMetrics = "com.typesafe.akka" %% "akka-cluster-metrics" % akkaVersion excludeAll (ExclusionRule(organization = "io.netty", name = "netty"))
+  private val akkaClusterTools = "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion excludeAll (ExclusionRule(organization = "io.netty", name = "netty"))
   private val akkaHttp = "com.typesafe.akka" %% "akka-http" % akkaHttpVersion
   private val akkaHttpXml = "com.typesafe.akka" %% "akka-http-xml" % akkaHttpVersion
   private val config = "com.typesafe" % "config" % "1.3.2"
@@ -70,7 +72,7 @@ object Dependencies {
   )
 
   val commonDependencies = Seq(akkaTestKit, config, akkaActor, jackson) ++ scalaTestDeps ++ loggingDeps
-  val clusterDependencies = Seq(akkaCluster) ++ commonDependencies
+  val clusterDependencies = Seq(akkaCluster, akkaMetrics, akkaClusterTools) ++ commonDependencies
   val coreDependencies = Seq(commonsLang3, jackson, faststring, elastic4sCore, elastic4sHttp, elastic4sEmbedded, joddCore, jsonPath, swaggerParser, quartz, redisson) ++ commonDependencies ++ httpDeps ++ databaseDeps
   val pcapDependencies = Seq(pcap4jCore, pcap4jPacketFactoryStatic) ++ loggingDeps ++ scalaTestDeps
   val appDependencies = Seq(config, guava, commonsCodec) ++ loggingDeps ++ httpDeps ++ testDeps ++ pcapDependencies
