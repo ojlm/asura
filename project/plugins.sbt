@@ -11,7 +11,7 @@ addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "1.0.0")
 addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.1")
 
 // swagger
-addSbtPlugin("com.iheart" %% "sbt-play-swagger" % "0.7.4")
+addSbtPlugin("com.iheart" %% "sbt-play-swagger" % "0.7.5-PLAY2.7")
 
 addSbtPlugin("com.jsuereth" % "sbt-pgp" % "1.1.2")
 addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.8")
