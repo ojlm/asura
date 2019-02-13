@@ -4,7 +4,7 @@ import sbt._
 object Dependencies {
 
   val akkaVersion = "2.5.20"
-  val akkaHttpVersion = "10.0.13"
+  val akkaHttpVersion = "10.1.7"
   val elastic4sVersion = "6.3.7"
   val playPac4jVersion = "6.0.0"
   val pac4jVersion = "3.0.1"
@@ -97,5 +97,6 @@ object Dependencies {
     "org.pac4j" % "pac4j-jwt" % "3.0.1",
     "com.typesafe.play" %% "play-mailer" % "6.0.1",
     "com.typesafe.play" %% "play-mailer-guice" % "6.0.1",
+    "com.typesafe.play" %% "play-json" % "2.7.1",
   ) ++ commonPlayDeps
 }
