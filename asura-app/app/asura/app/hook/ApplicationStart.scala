@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import asura.app.api.auth.BasicAuth
 import asura.app.notify.MailNotifier
+import asura.cluster.ClusterManager
 import asura.common.util.StringUtils
 import asura.core.CoreConfig
 import asura.core.CoreConfig.EsOnlineLogConfig
@@ -13,7 +14,7 @@ import asura.core.job.JobCenter
 import asura.core.job.actor.SchedulerActor
 import asura.core.notify.JobNotifyManager
 import asura.namerd.NamerdConfig
-import com.typesafe.config.ConfigList
+import com.typesafe.config.{ConfigFactory, ConfigList}
 import javax.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
 import play.api.Configuration
@@ -74,9 +75,14 @@ class ApplicationStart @Inject()(
   // add notify
   JobNotifyManager.register(MailNotifier(mailerClient))
 
+  if (configuration.getOptional[Boolean]("asura.cluster.enabled").getOrElse(false)) {
+    ClusterManager.init(ConfigFactory.load("cluster"))
+  }
+
   // add stop hook
   lifecycle.addStopHook { () =>
     Future {
+      ClusterManager.shutdown()
       EsClient.closeClient()
     }(system.dispatcher)
   }
