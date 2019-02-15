@@ -39,3 +39,4 @@ error_JobValidate=invalid job data: {0}
 error_EmptyDate=Empty date field
 error_EmptyNamespace=Empty namespace in proxy configuration
 error_InvalidRequestParameters=Invalid request parameters
+error_ClusterNotEnabled=Cluster is not enabled

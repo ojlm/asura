@@ -10,4 +10,5 @@ object AppErrorMessages {
   val error_CantDeleteCase = "error_CantDeleteCase"
   val error_CantDeleteScenario = "error_CantDeleteScenario"
   val error_CantDeleteEnv = "error_CantDeleteEnv"
+  val error_ClusterNotEnabled = "error_ClusterNotEnabled"
 }
