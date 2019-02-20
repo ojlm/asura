@@ -91,6 +91,11 @@ object JobReportService extends CommonService with BaseAggregationService {
     if (StringUtils.isNotEmpty(report.scheduler)) esQueries += termQuery(FieldKeys.FIELD_SCHEDULER, report.scheduler)
     if (StringUtils.isNotEmpty(report.text)) esQueries += matchQuery(FieldKeys.FIELD__TEXT, report.text)
     if (StringUtils.isNotEmpty(report.`type`)) esQueries += termQuery(FieldKeys.FIELD_TYPE, report.`type`)
+    if (StringUtils.isNotEmpty(report.result)) esQueries += termQuery(FieldKeys.FIELD_RESULT, report.result)
+    if (StringUtils.isNotEmpty(report.jobId)) esQueries += termQuery(FieldKeys.FIELD_JOB_ID, report.jobId)
+    if (StringUtils.isNotEmpty(report.timeStart) && StringUtils.isNotEmpty(report.timeEnd)) {
+      esQueries += rangeQuery(FieldKeys.FIELD_START_AT).gte(report.timeStart).lte(report.timeEnd)
+    }
     EsClient.esClient.execute {
       search(JobReport.Index)
         .query(boolQuery().must(esQueries))
