@@ -76,7 +76,38 @@ class ApplicationStart @Inject()(
   JobNotifyManager.register(MailNotifier(mailerClient))
 
   if (configuration.getOptional[Boolean]("asura.cluster.enabled").getOrElse(false)) {
-    ClusterManager.init(ConfigFactory.load("cluster"))
+    val hostnameOpt = configuration.getOptional[String]("asura.cluster.hostname")
+    val portOpt = configuration.getOptional[Int]("asura.cluster.port")
+    val seedNodes = configuration.underlying.getStringList("asura.cluster.seed-nodes")
+    import scala.collection.JavaConverters.asScalaBuffer
+    val seedNodesStr = if (null != seedNodes && !seedNodes.isEmpty) {
+      s""""${asScalaBuffer(seedNodes).mkString("\",\"")}""""
+    } else {
+      """"akka://ClusterSystem@127.0.0.1:2551","""
+    }
+    val roles = configuration.underlying.getStringList("asura.cluster.roles")
+    val rolesStr = if (null != roles && !roles.isEmpty) {
+      s""""${asScalaBuffer(roles).mkString("\",\"")}""""
+    } else {
+      """"indigo""""
+    }
+    val clusterConfig = ConfigFactory.parseString(
+      s"""
+         |akka {
+         |  remote {
+         |    artery {
+         |      canonical.hostname = "${hostnameOpt.getOrElse("127.0.0.1")}"
+         |      canonical.port = ${portOpt.getOrElse(2551)}
+         |    }
+         |  }
+         |  cluster {
+         |    seed-nodes = [${seedNodesStr}]
+         |    roles = [${rolesStr}]
+         |  }
+         |}
+       """.stripMargin)
+      .withFallback(ConfigFactory.load("cluster"))
+    ClusterManager.init(clusterConfig)
   }
 
   // add stop hook
