@@ -4,7 +4,7 @@ import java.security.cert.X509Certificate
 
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.http.scaladsl.{Http, HttpsConnectionContext}
+import akka.http.scaladsl.{Http, HttpsConnectionContext, UseHttp2}
 import asura.common.model.{ApiMsg, BoolErrorRes, BoolErrorTypeRes}
 import asura.common.util.LogUtils
 import asura.core.CoreConfig
@@ -29,10 +29,13 @@ object HttpEngine {
     **/
   def singleRequestWithProxy(
                               request: HttpRequest,
-                              proxyHost: String = CoreConfig.proxyHost,
-                              httpProxyPort: Int = CoreConfig.httpProxyPort,
-                              httpsProxyPort: Int = CoreConfig.httpsProxyPort,
+                              proxyServerTag: String
                             ): Future[HttpResponse] = {
+    // do not need to do the validation
+    val proxyServer = CoreConfig.linkerdConfig.servers.find(_.tag.equals(proxyServerTag)).get
+    val proxyHost = proxyServer.proxyHost
+    val httpProxyPort = proxyServer.httpProxyPort
+    val httpsProxyPort = proxyServer.httpsProxyPort
     val originUri = request.uri
     val proxyRequest = if (Protocols.HTTPS.equals(request.uri.scheme)) {
       val proxyUri = originUri.withScheme(Protocols.HTTP).withAuthority(proxyHost, httpsProxyPort)
@@ -72,7 +75,8 @@ object HttpEngine {
         ctx.enabledCipherSuites,
         ctx.enabledProtocols,
         ctx.clientAuth,
-        ctx.sslParameters
+        ctx.sslParameters,
+        UseHttp2.Negotiated
       )
       http.singleRequest(request, httpsCtx)
     } else {

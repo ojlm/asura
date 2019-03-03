@@ -5,7 +5,7 @@ import akka.http.scaladsl.model.headers.{Cookie, RawHeader}
 import akka.http.scaladsl.model.{ErrorInfo, HttpHeader}
 import asura.common.util.StringUtils
 import asura.core.cs.CaseContext
-import asura.core.es.model.Case
+import asura.core.es.model.{Case, Environment}
 import asura.core.{CoreConfig, ErrorMessages}
 import com.typesafe.scalalogging.Logger
 
@@ -52,20 +52,30 @@ object HeaderUtils {
       }
     }
     if (null != env && env.enableProxy) {
-      if (CoreConfig.enableProxy) {
-        val ns = env.namespace
-        if (StringUtils.isNotEmpty(ns)) {
-          val dst = StringBuilder.newBuilder
-          dst.append("/").append(cs.group).append("/").append(cs.project).append("/").append(ns)
-          headers += RawHeader(CoreConfig.proxyIdentifier, dst.toString)
-        } else {
-          throw ErrorMessages.error_EmptyNamespace.toException
-        }
-      } else {
-        throw ErrorMessages.error_ProxyDisabled.toException
-      }
+      val headerIdentifier = validateProxyVariables(env)
+      val dst = StringBuilder.newBuilder
+      dst.append("/").append(cs.group).append("/").append(cs.project).append("/").append(env.namespace)
+      headers += RawHeader(headerIdentifier, dst.toString)
     }
     headers.toList
+  }
+
+  def validateProxyVariables(env: Environment): String = {
+    if (!CoreConfig.linkerdConfig.enabled) {
+      throw ErrorMessages.error_ProxyDisabled.toException
+    }
+    if (StringUtils.isEmpty(env.namespace)) {
+      throw ErrorMessages.error_EmptyNamespace.toException
+    }
+    if (StringUtils.isEmpty(env.server)) {
+      throw ErrorMessages.error_EmptyProxyServer.toException
+    }
+    val proxyServerOpt = CoreConfig.linkerdConfig.servers.find(_.tag.equals(env.server))
+    if (proxyServerOpt.isEmpty && StringUtils.isEmpty(proxyServerOpt.get.headerIdentifier)) {
+      throw ErrorMessages.error_InvalidProxyConfig.toException
+    } else {
+      proxyServerOpt.get.headerIdentifier
+    }
   }
 
   def isApplicationJson(header: HttpHeader): Boolean = {

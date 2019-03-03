@@ -21,6 +21,8 @@ object ErrorMessages {
   val error_EmptySummary = ErrorMessage("Empty summary")("error_EmptySummary")
   val error_EmptyRequest = ErrorMessage("Empty request body")("error_EmptyRequest")
   val error_EmptyNamespace = ErrorMessage("Empty namespace")("error_EmptyNamespace")
+  val error_EmptyProxyServer = ErrorMessage("Empty proxy server")("error_EmptyProxyServer")
+  val error_InvalidProxyConfig = ErrorMessage("Invalid proxy config")("error_InvalidProxyConfig")
   val error_EmptyId = ErrorMessage("Empty id")("error_EmptyId")
   val error_IndexSuccess = ErrorMessage("Create success")("error_IndexSuccess")
   val error_UpdateSuccess = ErrorMessage("Update success")("error_UpdateSuccess")

@@ -1,6 +1,5 @@
 package asura.core.es.model
 
-import asura.common.util.StringUtils
 import asura.core.es.EsConfig
 import com.sksamuel.elastic4s.mappings._
 
@@ -17,6 +16,7 @@ case class Environment(
                         val auth: Seq[Authorization],
                         val namespace: String = null,
                         val enableProxy: Boolean = false,
+                        val server: String = null,
                         val custom: Seq[KeyValueObject] = Nil,
                         val headers: Seq[KeyValueObject] = Nil,
                         var creator: String = null,
@@ -27,11 +27,14 @@ case class Environment(
   override def toUpdateMap: Map[String, Any] = {
     val m = mutable.Map[String, Any]()
     checkCommFieldsToUpdate(m)
-    if (StringUtils.isNotEmpty(namespace)) {
+    if (null != namespace) {
       m += (FieldKeys.FIELD_NAMESPACE -> namespace)
     }
     if (Option(enableProxy).isDefined) {
       m += (FieldKeys.FIELD_ENABLE_PROXY -> enableProxy)
+    }
+    if (null != server) {
+      m += (FieldKeys.FIELD_SERVER -> server)
     }
     if (null != auth) {
       m += (FieldKeys.FIELD_AUTH -> auth)
@@ -61,6 +64,7 @@ object Environment extends IndexSetting {
       BasicField(name = FieldKeys.FIELD_PORT, `type` = "integer"),
       KeywordField(name = FieldKeys.FIELD_NAMESPACE),
       BasicField(name = FieldKeys.FIELD_ENABLE_PROXY, `type` = "boolean"),
+      KeywordField(name = FieldKeys.FIELD_SERVER),
       NestedField(name = FieldKeys.FIELD_AUTH, fields = Seq(
         KeywordField(name = FieldKeys.FIELD_TYPE),
         ObjectField(name = FieldKeys.FIELD_DATA, dynamic = Some("false")),

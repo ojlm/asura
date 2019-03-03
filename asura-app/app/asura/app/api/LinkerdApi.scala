@@ -4,9 +4,9 @@ import asura.app.api.BaseApi.OkApiRes
 import asura.app.api.model.Dtabs
 import asura.app.api.model.Dtabs.DtabItem
 import asura.common.model.{ApiRes, ApiResError}
-import asura.core.ErrorMessages
 import asura.core.ErrorMessages.ErrorMessage
 import asura.core.http.HttpEngine
+import asura.core.{CoreConfig, ErrorMessages}
 import asura.namerd.DtabEntry
 import asura.namerd.api.v1.NamerdV1Api
 import javax.inject.{Inject, Singleton}
@@ -29,9 +29,10 @@ class LinkerdApi @Inject()(
   val srcPrefix = "/svc/"
   val dstPrefix = "/$/inet/"
 
-  def getHttp(group: String, project: String) = Action.async { implicit req =>
-    if (config.getOptional[Boolean]("asura.linkerd.enabled").getOrElse(false)) {
-      NamerdV1Api.getNamespaceDtabs(config.get[String]("asura.linkerd.httpNs"))(HttpEngine.http).map(dtabs => {
+  def getHttp(group: String, project: String, server: String) = Action.async { implicit req =>
+    if (CoreConfig.linkerdConfig.enabled) {
+      val proxyServer = CoreConfig.linkerdConfig.servers.find(_.tag.equals(server)).get
+      NamerdV1Api.getNamespaceDtabs(proxyServer.namerd, proxyServer.httpNs)(HttpEngine.http).map(dtabs => {
         val items = ArrayBuffer[DtabItem]()
         dtabs.foreach(entry => {
           val pStrs = entry.prefix.split("/")
@@ -54,8 +55,9 @@ class LinkerdApi @Inject()(
     }
   }
 
-  def putHttp(group: String, project: String) = Action(parse.byteString).async { implicit req =>
-    if (config.getOptional[Boolean]("asura.linkerd.enabled").getOrElse(false)) {
+  def putHttp(group: String, project: String, server: String) = Action(parse.byteString).async { implicit req =>
+    if (CoreConfig.linkerdConfig.enabled) {
+      val proxyServer = CoreConfig.linkerdConfig.servers.find(_.tag.equals(server)).get
       val dtabs = req.bodyAs(classOf[Dtabs])
       if (null != dtabs && null != dtabs.dtabs && dtabs.dtabs.nonEmpty) {
         var error: ErrorMessage = null
@@ -69,7 +71,7 @@ class LinkerdApi @Inject()(
           )
         }
         if (null == error) {
-          NamerdV1Api.updateNamespaceDtabs(config.get[String]("asura.linkerd.httpNs"), entries)(HttpEngine.http).toOkResult
+          NamerdV1Api.updateNamespaceDtabs(proxyServer.namerd, proxyServer.httpNs, entries)(HttpEngine.http).toOkResult
         } else {
           error.toFutureFail
         }

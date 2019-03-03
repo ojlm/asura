@@ -133,6 +133,7 @@ object FieldKeys {
   val FIELD_EX_METHODS = "exMethods"
   val FIELD_EX_SUFFIXES = "exSuffixes"
   val FIELD_TAG = "tag"
+  val FIELD_SERVER = "server"
 
   val FIELD_OBJECT_REQUEST_HOST = "request.host"
   val FIELD_OBJECT_REQUEST_URLPATH = "request.urlPath"
