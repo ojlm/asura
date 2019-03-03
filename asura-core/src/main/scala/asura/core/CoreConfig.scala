@@ -3,7 +3,7 @@ package asura.core
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import asura.common.util.StringUtils
-import asura.core.CoreConfig.EsOnlineLogConfig
+import asura.core.CoreConfig.{EsOnlineLogConfig, LinkerdConfig}
 import asura.core.es.{EsClient, EsConfig}
 import com.sksamuel.elastic4s.http.ElasticClient
 
@@ -16,13 +16,9 @@ case class CoreConfig(
                        val redisServers: Seq[String],
                        val esIndexPrefix: Option[String] = None,
                        val esUrl: String,
-                       val proxyIdentifier: String,
+                       val linkerdConfig: LinkerdConfig,
                        val useLocalEsNode: Boolean = true,
                        val localEsDataDir: String = StringUtils.EMPTY,
-                       val enableProxy: Boolean = false,
-                       val proxyHost: String = StringUtils.EMPTY, /* for https transparent proxy */
-                       val httpProxyPort: Int = 0,
-                       val httpsProxyPort: Int = 0,
                        val reportBaseUrl: String = StringUtils.EMPTY,
                        val onlineConfigs: Seq[EsOnlineLogConfig] = Nil,
                      )
@@ -32,24 +28,16 @@ object CoreConfig {
   implicit var system: ActorSystem = _
   implicit var dispatcher: ExecutionContext = _
   implicit var materializer: ActorMaterializer = _
-  var proxyHost: String = _
-  var httpProxyPort: Int = 0
-  var httpsProxyPort: Int = 0
-  var proxyIdentifier: String = _
   var reportBaseUrl: String = StringUtils.EMPTY
-  var enableProxy = false
+  var linkerdConfig: LinkerdConfig = _
 
   def init(config: CoreConfig): Unit = {
     system = config.system
     dispatcher = config.dispatcher
     materializer = config.materializer
     // RedisClient.init(config.redisServers)
-    CoreConfig.proxyHost = config.proxyHost
-    CoreConfig.httpProxyPort = config.httpProxyPort
-    CoreConfig.httpsProxyPort = config.httpsProxyPort
-    CoreConfig.proxyIdentifier = config.proxyIdentifier
+    CoreConfig.linkerdConfig = config.linkerdConfig
     CoreConfig.reportBaseUrl = config.reportBaseUrl
-    CoreConfig.enableProxy = config.enableProxy
     if (config.esIndexPrefix.nonEmpty) {
       EsConfig.IndexPrefix = config.esIndexPrefix.get
     }
@@ -72,5 +60,20 @@ object CoreConfig {
                               ) {
     var onlineLogClient: ElasticClient = _
   }
+
+  case class LinkerdConfig(
+                            enabled: Boolean,
+                            servers: Seq[LinkerdConfigServer]
+                          )
+
+  case class LinkerdConfigServer(
+                                  tag: String,
+                                  namerd: String,
+                                  proxyHost: String,
+                                  httpProxyPort: Int,
+                                  httpsProxyPort: Int,
+                                  headerIdentifier: String,
+                                  httpNs: String,
+                                )
 
 }

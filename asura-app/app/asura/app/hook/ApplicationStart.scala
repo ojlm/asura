@@ -7,7 +7,7 @@ import asura.app.notify.MailNotifier
 import asura.cluster.ClusterManager
 import asura.common.util.StringUtils
 import asura.core.CoreConfig
-import asura.core.CoreConfig.EsOnlineLogConfig
+import asura.core.CoreConfig.{EsOnlineLogConfig, LinkerdConfig, LinkerdConfigServer}
 import asura.core.auth.AuthManager
 import asura.core.es.EsClient
 import asura.core.job.JobCenter
@@ -54,16 +54,11 @@ class ApplicationStart @Inject()(
     localEsDataDir = configuration.getOptional[String]("asura.es.localEsDataDir").getOrElse("./data"),
     esIndexPrefix = configuration.getOptional[String]("asura.es.indexPrefix"),
     esUrl = configuration.get[String]("asura.es.url"),
-    enableProxy = configuration.getOptional[Boolean]("asura.linkerd.enabled").getOrElse(false),
-    proxyHost = configuration.getOptional[String]("asura.linkerd.proxyHost").getOrElse(""),
-    httpProxyPort = configuration.getOptional[Int]("asura.linkerd.httpProxyPort").getOrElse(4140),
-    httpsProxyPort = configuration.getOptional[Int]("asura.linkerd.httpsProxyPort").getOrElse(4143),
-    proxyIdentifier = configuration.getOptional[String]("asura.linkerd.headerIdentifier").getOrElse(""),
+    linkerdConfig = toLinkerdConfig(configuration),
     reportBaseUrl = configuration.getOptional[String]("asura.reportBaseUrl").getOrElse(""),
     onlineConfigs = toEsOnlineConfigs(configuration.getOptional[ConfigList]("asura.es.onlineLog"))
   ))
   NamerdConfig.init(
-    url = configuration.get[String]("asura.linkerd.namerd"),
     system = system,
     dispatcher = system.dispatcher,
     materializer = materializer
@@ -116,6 +111,35 @@ class ApplicationStart @Inject()(
       ClusterManager.shutdown()
       EsClient.closeClient()
     }(system.dispatcher)
+  }
+
+  private def toLinkerdConfig(configuration: Configuration): LinkerdConfig = {
+    var enabled = configuration.getOptional[Boolean]("asura.linkerd.enabled").getOrElse(false)
+    if (enabled) {
+      val serversOpt = configuration.getOptional[ConfigList]("asura.linkerd.servers")
+      val servers = if (serversOpt.nonEmpty) {
+        val parsedServers = ArrayBuffer[LinkerdConfigServer]()
+        serversOpt.get.forEach(config => {
+          val value = config.unwrapped().asInstanceOf[java.util.HashMap[String, Any]]
+          parsedServers += LinkerdConfigServer(
+            tag = value.get("tag").asInstanceOf[String],
+            namerd = value.get("namerd").asInstanceOf[String],
+            proxyHost = value.get("proxyHost").asInstanceOf[String],
+            httpProxyPort = value.get("httpProxyPort").asInstanceOf[Int],
+            httpsProxyPort = value.get("httpsProxyPort").asInstanceOf[Int],
+            headerIdentifier = value.get("headerIdentifier").asInstanceOf[String],
+            httpNs = value.get("httpNs").asInstanceOf[String]
+          )
+        })
+        parsedServers
+      } else {
+        enabled = false
+        Nil
+      }
+      LinkerdConfig(enabled, servers)
+    } else {
+      LinkerdConfig(false, Nil)
+    }
   }
 
   private def toEsOnlineConfigs(listOpt: Option[ConfigList]): Seq[EsOnlineLogConfig] = {

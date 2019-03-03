@@ -14,9 +14,9 @@ import scala.concurrent.Future
 
 object NamerdV1Api extends NamerdV1Api {
 
-  def getAllNamespaces()(implicit http: HttpExt): Future[Seq[String]] = {
+  def getAllNamespaces(namerdUrl: String)(implicit http: HttpExt): Future[Seq[String]] = {
     import NamerdConfig._
-    http.singleRequest(HttpRequest(uri = API_V1_NAMESPACE, headers = List(ACCEPT_JSON_HEADER)))
+    http.singleRequest(HttpRequest(uri = getBaseUrl(namerdUrl), headers = List(ACCEPT_JSON_HEADER)))
       .flatMap(res =>
         if (res.status.isSuccess()) {
           Unmarshal(res.entity).to[String].map(str =>
@@ -28,9 +28,9 @@ object NamerdV1Api extends NamerdV1Api {
       )
   }
 
-  def getNamespaceDtabs(namespace: String)(implicit http: HttpExt): Future[Seq[DtabEntry]] = {
+  def getNamespaceDtabs(namerdUrl: String, namespace: String)(implicit http: HttpExt): Future[Seq[DtabEntry]] = {
     import NamerdConfig._
-    http.singleRequest(HttpRequest(uri = s"$API_V1_NAMESPACE/$namespace", headers = List(ACCEPT_JSON_HEADER)))
+    http.singleRequest(HttpRequest(uri = s"${getBaseUrl(namerdUrl)}/$namespace", headers = List(ACCEPT_JSON_HEADER)))
       .flatMap(res =>
         if (res.status.isSuccess()) {
           Unmarshal(res.entity).to[String].map(str =>
@@ -42,11 +42,11 @@ object NamerdV1Api extends NamerdV1Api {
       )
   }
 
-  def createNamespaceDtabs(namespace: String, dtabs: Seq[DtabEntry])(implicit http: HttpExt): Future[String] = {
+  def createNamespaceDtabs(namerdUrl: String, namespace: String, dtabs: Seq[DtabEntry])(implicit http: HttpExt): Future[String] = {
     import NamerdConfig._
     http.singleRequest(HttpRequest(
       method = HttpMethods.POST,
-      uri = s"$API_V1_NAMESPACE/$namespace",
+      uri = s"${getBaseUrl(namerdUrl)}/$namespace",
       entity = HttpEntity(ContentTypes.`application/json`, JsonUtils.stringify(dtabs))
     )).map(res =>
       res.status.intValue() match {
@@ -66,11 +66,11 @@ object NamerdV1Api extends NamerdV1Api {
     )
   }
 
-  def updateNamespaceDtabs(namespace: String, dtabs: Seq[DtabEntry])(implicit http: HttpExt): Future[String] = {
+  def updateNamespaceDtabs(namerdUrl: String, namespace: String, dtabs: Seq[DtabEntry])(implicit http: HttpExt): Future[String] = {
     import NamerdConfig._
     http.singleRequest(HttpRequest(
       method = HttpMethods.PUT,
-      uri = s"$API_V1_NAMESPACE/$namespace",
+      uri = s"${getBaseUrl(namerdUrl)}/$namespace",
       entity = HttpEntity(ContentTypes.`application/json`, JsonUtils.stringify(dtabs))
     )).map(res =>
       res.status.intValue() match {
@@ -93,11 +93,11 @@ object NamerdV1Api extends NamerdV1Api {
     )
   }
 
-  def deleteNamespaceDtabs(namespace: String)(implicit http: HttpExt): Future[String] = {
+  def deleteNamespaceDtabs(namerdUrl: String, namespace: String)(implicit http: HttpExt): Future[String] = {
     import NamerdConfig._
     http.singleRequest(HttpRequest(
       method = HttpMethods.DELETE,
-      uri = s"$API_V1_NAMESPACE/$namespace"
+      uri = s"${getBaseUrl(namerdUrl)}/$namespace"
     )).map(res =>
       res.status.intValue() match {
         case 204 =>
@@ -123,5 +123,5 @@ trait NamerdV1Api {
       RawHeader("Accept", "application/json")
   }
 
-  val API_V1_NAMESPACE = s"${NamerdConfig.url}/api/1/dtabs"
+  def getBaseUrl(namerdUrl: String) = s"${namerdUrl}/api/1/dtabs"
 }

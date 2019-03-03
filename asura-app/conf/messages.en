@@ -40,3 +40,5 @@ error_EmptyDate=Empty date field
 error_EmptyNamespace=Empty namespace in proxy configuration
 error_InvalidRequestParameters=Invalid request parameters
 error_ClusterNotEnabled=Cluster is not enabled
+error_EmptyProxyServer=Empty proxy server
+error_InvalidProxyConfig=Invalid proxy configuration

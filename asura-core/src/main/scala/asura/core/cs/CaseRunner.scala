@@ -39,7 +39,8 @@ object CaseRunner {
           val env = if (null != context.options) context.options.getUsedEnv() else null
           if (null != env && env.enableProxy) {
             metrics.performRequestStart()
-            HttpEngine.singleRequestWithProxy(tuple._1).flatMap(res => {
+            val proxyServer = context.options.getUsedEnv().server
+            HttpEngine.singleRequestWithProxy(tuple._1, proxyServer).flatMap(res => {
               Unmarshal(res.entity).to[ByteString].flatMap(resBody => {
                 metrics.evalAssertionBegin()
                 HttpResponseAssert.generateCaseReport(caseId, cs.assert, res,
