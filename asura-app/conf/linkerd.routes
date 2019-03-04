@@ -1,2 +1,3 @@
+GET        /v1/dtabs/http/servers                        asura.app.api.LinkerdApi.getProxyServers()
 GET        /v1/dtabs/http/:group/:project/:server        asura.app.api.LinkerdApi.getHttp(group, project, server)
 PUT        /v1/dtabs/http/:group/:project/:server        asura.app.api.LinkerdApi.putHttp(group, project, server)
