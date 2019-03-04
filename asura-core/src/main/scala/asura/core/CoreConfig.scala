@@ -68,6 +68,7 @@ object CoreConfig {
 
   case class LinkerdConfigServer(
                                   tag: String,
+                                  description: String,
                                   namerd: String,
                                   proxyHost: String,
                                   httpProxyPort: Int,

@@ -123,6 +123,7 @@ class ApplicationStart @Inject()(
           val value = config.unwrapped().asInstanceOf[java.util.HashMap[String, Any]]
           parsedServers += LinkerdConfigServer(
             tag = value.get("tag").asInstanceOf[String],
+            description = value.get("description").asInstanceOf[String],
             namerd = value.get("namerd").asInstanceOf[String],
             proxyHost = value.get("proxyHost").asInstanceOf[String],
             httpProxyPort = value.get("httpProxyPort").asInstanceOf[Int],
