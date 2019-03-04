@@ -29,6 +29,14 @@ class LinkerdApi @Inject()(
   val srcPrefix = "/svc/"
   val dstPrefix = "/$/inet/"
 
+  def getProxyServers() = Action { implicit req =>
+    if (CoreConfig.linkerdConfig.enabled) {
+      OkApiRes(ApiRes(data = CoreConfig.linkerdConfig.servers))
+    } else {
+      OkApiRes(ApiResError(getI18nMessage(ErrorMessages.error_ProxyDisabled.name)))
+    }
+  }
+
   def getHttp(group: String, project: String, server: String) = Action.async { implicit req =>
     if (CoreConfig.linkerdConfig.enabled) {
       val proxyServer = CoreConfig.linkerdConfig.servers.find(_.tag.equals(server)).get
