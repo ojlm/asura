@@ -160,7 +160,7 @@ object JobNotifyService extends CommonService {
 
   def sendNotifications(execDesc: JobExecDesc, notifies: Seq[JobNotify]) = {
     val report = execDesc.report
-    notifies.map(subscriber => {
+    notifies.filter(_.enabled).map(subscriber => {
       val func = JobNotifyManager.get(subscriber.`type`)
       if (func.nonEmpty) {
         report.result match {
