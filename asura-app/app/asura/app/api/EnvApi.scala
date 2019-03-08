@@ -19,7 +19,14 @@ class EnvApi @Inject()(implicit exec: ExecutionContext, val controllerComponents
   extends BaseApi {
 
   def getById(id: String) = Action.async { implicit req =>
-    EnvironmentService.getById(id).toOkResultByEsOneDoc(id)
+    EnvironmentService.getEnvById(id).map(env => {
+      if (null != env.auth && env.auth.nonEmpty) {
+        env.auth.foreach(authData => {
+          AuthManager(authData.`type`).foreach(_.mask(authData))
+        })
+      }
+      env
+    }).toOkResult
   }
 
   def put(group: String, project: String) = Action(parse.byteString).async { implicit req =>

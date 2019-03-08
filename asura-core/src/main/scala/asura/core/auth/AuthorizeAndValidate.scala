@@ -15,4 +15,7 @@ trait AuthorizeAndValidate {
   def authorize(request: HttpRequest, auth: Authorization): Future[HttpRequest]
 
   def validate(auth: Authorization): BoolErrorRes
+
+  // mask sensitive data
+  def mask(auth: Authorization): Unit = {}
 }
