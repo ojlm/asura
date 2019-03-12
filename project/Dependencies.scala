@@ -31,6 +31,7 @@ object Dependencies {
   private val elastic4sEmbedded = "com.sksamuel.elastic4s" %% "elastic4s-embedded" % elastic4sVersion excludeAll (ExclusionRule(organization = "org.apache.logging.log4j", name = "log4j-slf4j-impl"))
   private val joddCore = "org.jodd" % "jodd-core" % "3.9.1"
   private val jsonPath = "com.jayway.jsonpath" % "json-path" % "2.4.0"
+  private val gatling = "io.gatling.highcharts" % "gatling-charts-highcharts" % "3.0.3"
 
   // dubbo, specify javassist and jbossnetty deps because of coursier dep resolve problems
   private val dubbo = "com.alibaba" % "dubbo" % "2.6.5" excludeAll(ExclusionRule(organization = "org.springframework"), ExclusionRule(organization = "org.javassist"), ExclusionRule(organization = "org.jboss.netty"))
@@ -73,12 +74,16 @@ object Dependencies {
 
   val commonDependencies = Seq(akkaTestKit, config, akkaActor, jackson) ++ scalaTestDeps ++ loggingDeps
   val clusterDependencies = Seq(akkaCluster, akkaMetrics, akkaClusterTools) ++ commonDependencies
-  val coreDependencies = Seq(commonsLang3, jackson, faststring, elastic4sCore, elastic4sHttp, elastic4sEmbedded, joddCore, jsonPath, swaggerParser, quartz, redisson) ++ commonDependencies ++ httpDeps ++ databaseDeps
+  val coreDependencies = Seq(
+    commonsLang3, jackson, faststring, elastic4sCore, elastic4sHttp,
+    elastic4sEmbedded, joddCore, jsonPath, swaggerParser, quartz, redisson
+  ) ++ commonDependencies ++ httpDeps ++ databaseDeps
   val pcapDependencies = Seq(pcap4jCore, pcap4jPacketFactoryStatic) ++ loggingDeps ++ scalaTestDeps
   val appDependencies = Seq(config, guava, commonsCodec) ++ loggingDeps ++ httpDeps ++ testDeps ++ pcapDependencies
   val webDependencies = Seq(seleniumJava, jBrowserDriver, htmlunitDriver) ++ loggingDeps ++ httpDeps ++ testDeps
   val namerdDependencies = Seq(akkaStream, akkaHttp) ++ commonDependencies
   val dubboDependencies = Seq(dubbo, curator, dubboJavassist, dubboJbossNetty, dubboSpring, akkaStream) ++ commonDependencies
+  val gatlingDependencies = Seq(gatling) ++ clusterDependencies
 
   val commonPlayDeps = Seq(
     guice,

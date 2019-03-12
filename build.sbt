@@ -67,9 +67,12 @@ lazy val namerd = asuraProjects("asura-namerd")
 
 lazy val gatling = asuraProjects("asura-gatling")
   .enablePlugins(PlayScala)
-  .settings(libraryDependencies ++= commonPlayDeps)
-  .aggregate(common)
-  .dependsOn(common % "compile->compile;test->test")
+  .settings(libraryDependencies ++= gatlingDependencies ++ commonPlayDeps)
+  .dependsOn(
+    common % "compile->compile;test->test",
+    cluster % "compile->compile;test->test",
+  )
+  .aggregate(common, cluster)
 
 // release
 val username = "asura-pro"
