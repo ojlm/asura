@@ -1,6 +1,2 @@
-# Routes
-# This file defines all application routes (Higher priority routes first)
-# https://www.playframework.com/documentation/latest/ScalaRouting
-# ~~~~
-
-GET        /        asura.gatling.api.HomeApi.index()
+GET        /               asura.gatling.api.HomeApi.index()
+GET        /members        asura.gatling.api.HomeApi.getClusterMembers()
