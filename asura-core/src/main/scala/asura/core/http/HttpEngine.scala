@@ -27,35 +27,45 @@ object HttpEngine {
     * This method will use linkerd proxy and set a `Host` header of original `host` default.
     * If the schema is `https`, it will replaced by `http` to make the linkerd handle https traffic.
     **/
-  def singleRequestWithProxy(
-                              request: HttpRequest,
-                              proxyServerTag: String
-                            ): Future[HttpResponse] = {
-    // do not need to do the validation
-    val proxyServer = CoreConfig.linkerdConfig.servers.find(_.tag.equals(proxyServerTag)).get
-    val proxyHost = proxyServer.proxyHost
-    val httpProxyPort = proxyServer.httpProxyPort
-    val httpsProxyPort = proxyServer.httpsProxyPort
-    val originUri = request.uri
-    val proxyRequest = if (Protocols.HTTPS.equals(request.uri.scheme)) {
-      val proxyUri = originUri.withScheme(Protocols.HTTP).withAuthority(proxyHost, httpsProxyPort)
-      request.withUri(proxyUri)
-    } else {
-      val proxyUri = originUri.withAuthority(proxyHost, httpProxyPort)
-      request.withUri(proxyUri)
+  private def buildProxyRequest(request: HttpRequest, proxyServerTag: String): Future[HttpRequest] = {
+    Future.successful {
+      // do not need to do the validation
+      val proxyServer = CoreConfig.linkerdConfig.servers.find(_.tag.equals(proxyServerTag)).get
+      val proxyHost = proxyServer.proxyHost
+      val httpProxyPort = proxyServer.httpProxyPort
+      val httpsProxyPort = proxyServer.httpsProxyPort
+      val originUri = request.uri
+      val proxyRequest = if (Protocols.HTTPS.equals(request.uri.scheme)) {
+        val proxyUri = originUri.withScheme(Protocols.HTTP).withAuthority(proxyHost, httpsProxyPort)
+        request.withUri(proxyUri)
+      } else {
+        val proxyUri = originUri.withAuthority(proxyHost, httpProxyPort)
+        request.withUri(proxyUri)
+      }
+      // val host = originUri.authority.host.address()
+      // val hostHeader: HttpHeader = HttpHeader.parse("Host", host) match {
+      //   case Ok(header: HttpHeader, errors: List[ErrorInfo]) =>
+      //     if (errors.nonEmpty) logger.warn(errors.mkString(","))
+      //     header
+      //   case Error(error: ErrorInfo) =>
+      //     logger.warn(error.detail)
+      //     null
+      // }
+      // val proxyHeaders = if (null != hostHeader) proxyRequest.headers :+ hostHeader else proxyRequest.headers
+      proxyRequest
     }
-    /*val host = originUri.authority.host.address()
-    val hostHeader: HttpHeader = HttpHeader.parse("Host", host) match {
-      case Ok(header: HttpHeader, errors: List[ErrorInfo]) =>
-        if (errors.nonEmpty) logger.warn(errors.mkString(","))
-        header
-      case Error(error: ErrorInfo) =>
-        logger.warn(error.detail)
-        null
-    }
-    val proxyHeaders = if (null != hostHeader) proxyRequest.headers :+ hostHeader else proxyRequest.headers
-    http.singleRequest(proxyRequest.withHeaders(proxyHeaders))*/
-    http.singleRequest(proxyRequest)
+  }
+
+  def singleRequestWithProxy(request: HttpRequest, proxyServerTag: String): Future[HttpResponse] = {
+    buildProxyRequest(request, proxyServerTag).flatMap(request => singleRequest(request))
+  }
+
+  def singleRequestWithProxy[T >: Null <: AnyRef](
+                                                   request: HttpRequest,
+                                                   proxyServerTag: String,
+                                                   clazz: Class[T]
+                                                 ): Future[T] = {
+    buildProxyRequest(request, proxyServerTag).flatMap(request => singleRequest(request, clazz))
   }
 
   val badSslConfig: AkkaSSLConfig = AkkaSSLConfig().mapSettings(s =>
