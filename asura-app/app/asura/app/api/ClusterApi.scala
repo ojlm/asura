@@ -6,7 +6,7 @@ import akka.util.Timeout
 import asura.app.AppErrorMessages
 import asura.app.api.BaseApi.OkApiRes
 import asura.cluster.ClusterManager
-import asura.cluster.actor.ClusterManagerActor.GetAllMembers
+import asura.cluster.actor.MemberListenerActor.GetAllMembers
 import asura.common.model.ApiResError
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents

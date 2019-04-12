@@ -1,7 +1,7 @@
 package asura.cluster
 
 import akka.actor.{ActorRef, ActorSystem}
-import asura.cluster.actor.ClusterManagerActor
+import asura.cluster.actor.MemberListenerActor
 import com.typesafe.config.{Config, ConfigFactory}
 
 object ClusterManager {
@@ -23,7 +23,7 @@ object ClusterManager {
       isIndependentSystem = true
       ActorSystem(name, config)
     }
-    clusterManagerActor = system.actorOf(ClusterManagerActor.props())
+    clusterManagerActor = system.actorOf(MemberListenerActor.props())
   }
 
   def shutdown(): Unit = {
