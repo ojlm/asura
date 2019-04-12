@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.pattern.ask
 import akka.util.{ByteString, Timeout}
 import asura.cluster.ClusterManager
-import asura.cluster.actor.ClusterManagerActor.GetAllMembers
+import asura.cluster.actor.MemberListenerActor.GetAllMembers
 import asura.common.model.ApiRes
 import asura.common.util.JsonUtils
 import javax.inject.{Inject, Singleton}

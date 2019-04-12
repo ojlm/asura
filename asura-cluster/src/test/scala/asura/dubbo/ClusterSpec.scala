@@ -1,7 +1,7 @@
 package asura.dubbo
 
 import akka.actor.ActorSystem
-import asura.cluster.actor.ClusterManagerActor
+import asura.cluster.actor.MemberListenerActor
 import com.typesafe.config.ConfigFactory
 
 object ClusterSpec {
@@ -10,7 +10,7 @@ object ClusterSpec {
 
     val config1 = ConfigFactory.parseString(config1Str)
     val system1 = ActorSystem("ClusterSystem", config1.resolve())
-    val indigo1 = system1.actorOf(ClusterManagerActor.props(), "indigo")
+    val indigo1 = system1.actorOf(MemberListenerActor.props(), "indigo")
 
     val config2 = ConfigFactory.parseString(config2Str)
     val system2 = ActorSystem("ClusterSystem", config2.resolve())
