@@ -22,8 +22,6 @@ object Dependencies {
   private val commonsCodec = "commons-codec" % "commons-codec" % "1.10"
   private val commonsLang3 = "org.apache.commons" % "commons-lang3" % "3.7"
   private val quartz = "org.quartz-scheduler" % "quartz" % "2.3.0" excludeAll(ExclusionRule(organization = "com.mchange", name = "c3p0"), ExclusionRule(organization = "com.mchange", name = "mchange-commons-java"))
-  private val pcap4jCore = "org.pcap4j" % "pcap4j-core" % "1.7.2"
-  private val pcap4jPacketFactoryStatic = "org.pcap4j" % "pcap4j-packetfactory-static" % "1.7.2"
   private val swaggerParser = "io.swagger" % "swagger-parser" % "1.0.33"
   private val faststring = "com.dongxiguo" %% "fastring" % "0.3.1"
   private val elastic4sCore = "com.sksamuel.elastic4s" %% "elastic4s-core" % elastic4sVersion
@@ -79,8 +77,7 @@ object Dependencies {
     commonsLang3, jackson, faststring, elastic4sCore, elastic4sHttp, druid,
     elastic4sEmbedded, joddCore, jsonPath, swaggerParser, quartz, redisson
   ) ++ commonDependencies ++ httpDeps ++ databaseDeps
-  val pcapDependencies = Seq(pcap4jCore, pcap4jPacketFactoryStatic) ++ loggingDeps ++ scalaTestDeps
-  val appDependencies = Seq(config, guava, commonsCodec) ++ loggingDeps ++ httpDeps ++ testDeps ++ pcapDependencies
+  val appDependencies = Seq(config, guava, commonsCodec) ++ loggingDeps ++ httpDeps ++ testDeps
   val webDependencies = Seq(seleniumJava, jBrowserDriver, htmlunitDriver) ++ loggingDeps ++ httpDeps ++ testDeps
   val namerdDependencies = Seq(akkaStream, akkaHttp) ++ commonDependencies
   val dubboDependencies = Seq(dubbo, curator, dubboJavassist, dubboJbossNetty, dubboSpring, akkaStream) ++ commonDependencies

@@ -51,10 +51,6 @@ lazy val dubbo = asuraProjects("asura-dubbo")
   .settings(publishSettings: _*)
   .dependsOn(common % "compile->compile;test->test")
 
-lazy val pcap = asuraProjects("asura-pcap")
-  .settings(libraryDependencies ++= pcapDependencies)
-  .settings(publishSettings: _*)
-
 lazy val web = asuraProjects("asura-web")
   .settings(libraryDependencies ++= webDependencies)
   .settings(publishSettings: _*)
