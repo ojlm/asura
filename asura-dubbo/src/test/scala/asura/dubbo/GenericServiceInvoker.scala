@@ -5,8 +5,6 @@ object GenericServiceInvoker {
   def main(args: Array[String]): Unit = {
 
     val genericRequest = GenericRequest(
-      group = "indigo",
-      project = "docs",
       dubboGroup = "",
       interface = "asura.dubbo.service.EchoService",
       method = "echoString",
