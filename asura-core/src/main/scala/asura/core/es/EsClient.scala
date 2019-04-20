@@ -45,7 +45,8 @@ object EsClient {
     val indices: Seq[IndexSetting] = Seq(
       Case, RestApi, Job, Project, Environment,
       Group, JobReport, JobNotify, Scenario, UserProfile,
-      Activity, DomainOnlineLog, ProjectApiCoverage, DomainOnlineConfig
+      Activity, DomainOnlineLog, ProjectApiCoverage, DomainOnlineConfig,
+      DubboRequest,
     )
     for (index <- indices if isAllOk) {
       logger.info(s"check es index ${index.Index}")

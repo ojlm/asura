@@ -134,6 +134,11 @@ object FieldKeys {
   val FIELD_EX_SUFFIXES = "exSuffixes"
   val FIELD_TAG = "tag"
   val FIELD_SERVER = "server"
+  val FIELD_DUBBO_GROUP = "dubboGroup"
+  val FIELD_INTERFACE = "interface"
+  val FIELD_PARAMETER_TYPES = "parameterTypes"
+  val FIELD_ARGS = "args"
+  val FIELD_ADDRESS = "address"
 
   val FIELD_OBJECT_REQUEST_HOST = "request.host"
   val FIELD_OBJECT_REQUEST_URLPATH = "request.urlPath"
