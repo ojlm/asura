@@ -47,6 +47,8 @@ object Activity extends IndexSetting {
   val TYPE_NEW_JOB = "new-job"
   val TYPE_TEST_JOB = "test-job"
   val TYPE_TELNET_DUBBO = "telnet-dubbo"
+  val TYPE_NEW_DUBBO = "new-dubbo"
+  val TYPE_TEST_DUBBO = "new-dubbo"
 }
 
 
