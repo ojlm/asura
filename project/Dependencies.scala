@@ -43,6 +43,7 @@ object Dependencies {
   // Database
   private val mysqlConnector = "mysql" % "mysql-connector-java" % "5.1.23"
   private val redisson = "org.redisson" % "redisson" % "3.5.7"
+  private val druid = "com.alibaba" % "druid" % "1.1.16"
 
   // Log dependencies
   private val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.25"
@@ -75,7 +76,7 @@ object Dependencies {
   val commonDependencies = Seq(akkaTestKit, config, akkaActor, jackson) ++ scalaTestDeps ++ loggingDeps
   val clusterDependencies = Seq(akkaCluster, akkaMetrics, akkaClusterTools) ++ commonDependencies
   val coreDependencies = Seq(
-    commonsLang3, jackson, faststring, elastic4sCore, elastic4sHttp,
+    commonsLang3, jackson, faststring, elastic4sCore, elastic4sHttp, druid,
     elastic4sEmbedded, joddCore, jsonPath, swaggerParser, quartz, redisson
   ) ++ commonDependencies ++ httpDeps ++ databaseDeps
   val pcapDependencies = Seq(pcap4jCore, pcap4jPacketFactoryStatic) ++ loggingDeps ++ scalaTestDeps
