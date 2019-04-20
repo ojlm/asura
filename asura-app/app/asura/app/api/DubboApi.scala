@@ -3,7 +3,12 @@ package asura.app.api
 import akka.actor.ActorSystem
 import akka.pattern.ask
 import akka.util.Timeout
-import asura.core.ErrorMessages
+import asura.app.api.model.TestDubbo
+import asura.common.util.StringUtils
+import asura.core.cs.model.QueryDubboRequest
+import asura.core.es.actor.ActivitySaveActor
+import asura.core.es.model.{Activity, DubboRequest}
+import asura.core.es.service.DubboRequestService
 import asura.dubbo.GenericRequest
 import asura.dubbo.actor.GenericServiceInvokerActor
 import asura.dubbo.actor.GenericServiceInvokerActor.{GetInterfaceMethodParams, GetInterfacesMessage, GetProvidersMessage}
@@ -22,6 +27,7 @@ class DubboApi @Inject()(
                           val controllerComponents: SecurityComponents,
                         ) extends BaseApi {
 
+  val activityActor = system.actorOf(ActivitySaveActor.props())
   implicit val timeout: Timeout = 30.seconds
   val dubboInvoker = system.actorOf(GenericServiceInvokerActor.props(), "dubbo-invoker")
 
@@ -41,11 +47,56 @@ class DubboApi @Inject()(
   }
 
   def test() = Action(parse.byteString).async { implicit req =>
-    val msg = req.bodyAs(classOf[GenericRequest])
-    if (msg.validate()) {
-      (dubboInvoker ? msg).toOkResult
+    val testMsg = req.bodyAs(classOf[TestDubbo])
+    val dubboReq = testMsg.request
+    val error = DubboRequestService.validate(dubboReq)
+    if (null != error) {
+      val user = getProfileId()
+      activityActor ! Activity(dubboReq.group, dubboReq.project, user, Activity.TYPE_TEST_DUBBO, StringUtils.notEmptyElse(testMsg.id, StringUtils.EMPTY))
+      (dubboInvoker ? toDubboGenericRequest(dubboReq)).toOkResult
     } else {
-      ErrorMessages.error_InvalidRequestParameters.toFutureFail
+      error.toFutureFail
     }
+  }
+
+  def getById(id: String) = Action.async { implicit req =>
+    DubboRequestService.getById(id).toOkResultByEsOneDoc(id)
+  }
+
+  def delete(id: String) = Action.async { implicit req =>
+    DubboRequestService.deleteDoc(id).toOkResult
+  }
+
+  def put() = Action(parse.byteString).async { implicit req =>
+    val doc = req.bodyAs(classOf[DubboRequest])
+    val user = getProfileId()
+    doc.fillCommonFields(user)
+    DubboRequestService.index(doc).map(res => {
+      activityActor ! Activity(doc.group, StringUtils.EMPTY, user, Activity.TYPE_NEW_DUBBO, res.id)
+      toActionResultFromAny(res)
+    })
+  }
+
+  def query() = Action(parse.byteString).async { implicit req =>
+    val q = req.bodyAs(classOf[QueryDubboRequest])
+    DubboRequestService.query(q).toOkResultByEsList(false)
+  }
+
+  def update(id: String) = Action(parse.byteString).async { implicit req =>
+    val doc = req.bodyAs(classOf[DubboRequest])
+    DubboRequestService.updateDoc(id, doc).toOkResult
+  }
+
+  private def toDubboGenericRequest(req: DubboRequest): GenericRequest = {
+    GenericRequest(
+      dubboGroup = req.dubboGroup,
+      interface = req.interface,
+      method = req.method,
+      parameterTypes = req.parameterTypes,
+      args = req.args,
+      address = req.address,
+      port = req.port,
+      version = req.version
+    )
   }
 }
