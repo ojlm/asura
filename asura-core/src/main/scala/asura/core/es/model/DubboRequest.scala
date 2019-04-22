@@ -1,6 +1,7 @@
 package asura.core.es.model
 
 import asura.core.es.EsConfig
+import asura.core.util.JacksonSupport
 import com.sksamuel.elastic4s.mappings._
 
 import scala.collection.mutable
@@ -17,8 +18,11 @@ case class DubboRequest(
                          val args: Array[Object],
                          val address: String,
                          val port: Int,
+                         val zkAddr: String,
+                         val zkPort: Int,
                          val version: String,
                          val assert: Map[String, Any],
+                         val labels: Seq[LabelRef] = Nil,
                          var creator: String = null,
                          var createdAt: String = null,
                          var updatedAt: String = null,
@@ -66,6 +70,18 @@ case class DubboRequest(
       m += (FieldKeys.FIELD_VERSION -> version)
       addScriptUpdateItem(sb, FieldKeys.FIELD_VERSION)
     }
+    if (null != zkAddr) {
+      m += (FieldKeys.FIELD_ZK_ADDR -> zkAddr)
+      addScriptUpdateItem(sb, FieldKeys.FIELD_ZK_ADDR)
+    }
+    if (zkPort > 0) {
+      m += (FieldKeys.FIELD_ZK_PORT -> zkPort)
+      addScriptUpdateItem(sb, FieldKeys.FIELD_ZK_PORT)
+    }
+    if (null != labels) {
+      m += (FieldKeys.FIELD_LABELS -> JacksonSupport.mapper.convertValue(labels, classOf[java.util.List[Map[String, Any]]]))
+      addScriptUpdateItem(sb, FieldKeys.FIELD_LABELS)
+    }
     (sb.toString, m.toMap)
   }
 }
@@ -87,6 +103,11 @@ object DubboRequest extends IndexSetting {
       BasicField(name = FieldKeys.FIELD_PORT, `type` = "integer"),
       KeywordField(name = FieldKeys.FIELD_VERSION),
       ObjectField(name = FieldKeys.FIELD_ASSERT, dynamic = Some("false")),
+      KeywordField(name = FieldKeys.FIELD_ZK_ADDR),
+      BasicField(name = FieldKeys.FIELD_ZK_PORT, `type` = "integer"),
+      NestedField(name = FieldKeys.FIELD_LABELS, fields = Seq(
+        KeywordField(name = FieldKeys.FIELD_NAME),
+      )),
     )
   )
 }
