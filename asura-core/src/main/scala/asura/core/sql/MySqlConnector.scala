@@ -41,6 +41,7 @@ object MySqlConnector {
   def executeQuery(conn: Connection, sql: String): java.util.List[java.util.HashMap[String, Object]] = {
     var statement: Statement = null
     try {
+      // https://stackoverflow.com/questions/26046234/is-there-a-mysql-jdbc-that-will-respect-fetchsize
       statement = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
       statement.setFetchSize(SqlConfig.MAX_ROWS_SIZE)
       val rs = statement.executeQuery(sql)
