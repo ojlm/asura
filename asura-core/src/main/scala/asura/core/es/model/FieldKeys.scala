@@ -141,6 +141,11 @@ object FieldKeys {
   val FIELD_ADDRESS = "address"
   val FIELD_ZK_ADDR = "zkAddr"
   val FIELD_ZK_PORT = "zkPort"
+  val FIELD_PASSWORD = "password"
+  val FIELD_ENCRYPTED_PASS = "encryptedPass"
+  val FIELD_DATABASE = "database"
+  val FIELD_TABLE = "table"
+  val FIELD_SQL = "sql"
 
   val FIELD_OBJECT_REQUEST_HOST = "request.host"
   val FIELD_OBJECT_REQUEST_URLPATH = "request.urlPath"
