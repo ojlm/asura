@@ -78,6 +78,10 @@ case class DubboRequest(
       m += (FieldKeys.FIELD_ZK_PORT -> zkPort)
       addScriptUpdateItem(sb, FieldKeys.FIELD_ZK_PORT)
     }
+    if (null != assert) {
+      m += (FieldKeys.FIELD_ASSERT -> assert)
+      addScriptUpdateItem(sb, FieldKeys.FIELD_ASSERT)
+    }
     if (null != labels) {
       m += (FieldKeys.FIELD_LABELS -> JacksonSupport.mapper.convertValue(labels, classOf[java.util.List[Map[String, Any]]]))
       addScriptUpdateItem(sb, FieldKeys.FIELD_LABELS)
@@ -111,4 +115,3 @@ object DubboRequest extends IndexSetting {
     )
   )
 }
-
