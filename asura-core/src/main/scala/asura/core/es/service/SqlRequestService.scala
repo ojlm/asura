@@ -1,14 +1,17 @@
 package asura.core.es.service
 
+import java.nio.charset.StandardCharsets
+import java.util.Base64
+
 import asura.common.model.ApiMsg
-import asura.common.util.{FutureUtils, StringUtils}
-import asura.core.ErrorMessages
+import asura.common.util.{FutureUtils, RSAUtils, StringUtils}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.model.QuerySqlRequest
 import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.sql.SqlParserUtils
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
+import asura.core.{CoreConfig, ErrorMessages}
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
 import com.sksamuel.elastic4s.searches.queries.Query
@@ -98,18 +101,28 @@ object SqlRequestService extends CommonService with BaseAggregationService {
 
   def validate(doc: SqlRequest): ErrorMessages.ErrorMessage = {
     try {
-      val table = SqlParserUtils.getStatementTable(doc.sql)
-      doc.table = table
       if (null == doc) {
         ErrorMessages.error_EmptyRequestBody
-      } else if (StringUtils.isEmpty(doc.group)) {
-        ErrorMessages.error_EmptyGroup
-      } else if (StringUtils.isEmpty(doc.project)) {
-        ErrorMessages.error_EmptyProject
-      } else if (StringUtils.hasEmpty(doc.host, doc.username, doc.password, doc.encryptedPass, doc.database, doc.sql)) {
-        ErrorMessages.error_InvalidRequestParameters
       } else {
-        null
+        val table = SqlParserUtils.getStatementTable(doc.sql)
+        doc.table = table
+        val securityConfig = CoreConfig.securityConfig
+        if (StringUtils.isNotEmpty(doc.password) && !doc.password.equals(securityConfig.maskText)) {
+          // encrypt password
+          val encryptedBytes = RSAUtils.encryptByPrivateKey(
+            doc.password.getBytes(StandardCharsets.UTF_8), securityConfig.priKeyBytes)
+          doc.encryptedPass = new String(Base64.getEncoder.encode(encryptedBytes))
+          doc.password = securityConfig.maskText
+        }
+        if (StringUtils.isEmpty(doc.group)) {
+          ErrorMessages.error_EmptyGroup
+        } else if (StringUtils.isEmpty(doc.project)) {
+          ErrorMessages.error_EmptyProject
+        } else if (StringUtils.hasEmpty(doc.host, doc.username, doc.password, doc.encryptedPass, doc.database, doc.sql)) {
+          ErrorMessages.error_InvalidRequestParameters
+        } else {
+          null
+        }
       }
     } catch {
       case t: Throwable => ErrorMessages.error_Throwable(t)

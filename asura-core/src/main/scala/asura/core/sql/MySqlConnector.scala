@@ -2,8 +2,10 @@ package asura.core.sql
 
 import java.sql._
 import java.util
+import java.util.Base64
 
-import asura.common.util.LogUtils
+import asura.common.util.{LogUtils, RSAUtils, StringUtils}
+import asura.core.CoreConfig
 import asura.core.es.model.SqlRequest
 import com.typesafe.scalalogging.Logger
 
@@ -15,7 +17,13 @@ object MySqlConnector {
   def connect(sql: SqlRequest): Connection = {
     val url = s"jdbc:mysql://${sql.host}:${sql.port}/${sql.database}?useCursorFetch=true&useUnicode=true&characterEncoding=utf-8"
     try {
-      DriverManager.getConnection(url, sql.username, sql.password)
+      val password = if (StringUtils.isNotEmpty(sql.encryptedPass)) {
+        val bytes = Base64.getDecoder.decode(sql.encryptedPass)
+        new String(RSAUtils.decryptByPublicKey(bytes, CoreConfig.securityConfig.pubKeyBytes))
+      } else {
+        sql.password
+      }
+      DriverManager.getConnection(url, sql.username, password)
     } catch {
       case t: Throwable =>
         logger.error(LogUtils.stackTraceToString(t))
