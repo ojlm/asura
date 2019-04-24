@@ -8,4 +8,5 @@ case class QuerySqlRequest(
                             table: String,
                             text: String,
                             sql: String,
+                            hasCreators: Boolean = false,
                           ) extends QueryPage

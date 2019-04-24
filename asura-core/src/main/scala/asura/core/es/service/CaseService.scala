@@ -15,8 +15,6 @@ import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl.{bulk, delete, indexInto, nestedQuery, _}
-import com.sksamuel.elastic4s.http.Response
-import com.sksamuel.elastic4s.http.search.SearchResponse
 import com.sksamuel.elastic4s.searches.DateHistogramInterval
 import com.sksamuel.elastic4s.searches.queries.Query
 import com.sksamuel.elastic4s.searches.sort.FieldSort
@@ -379,19 +377,6 @@ object CaseService extends CommonService with BaseAggregationService {
     } else {
       ErrorMessages.error_InvalidRequestParameters.toFutureFail
     }
-  }
-
-  private def fetchWithCreatorProfiles(res: Response[SearchResponse]): Future[Map[String, Any]] = {
-    val hits = res.result.hits
-    val userIds = mutable.HashSet[String]()
-    val dataMap = Map("total" -> hits.total, "list" -> hits.hits.map(hit => {
-      val sourceMap = hit.sourceAsMap
-      userIds += sourceMap.getOrElse(FieldKeys.FIELD_CREATOR, StringUtils.EMPTY).asInstanceOf[String]
-      sourceMap + (FieldKeys.FIELD__ID -> hit.id) + (FieldKeys.FIELD__SORT -> hit.sort.getOrElse(Nil))
-    }))
-    UserProfileService.getByIds(userIds).map(users => {
-      dataMap + ("creators" -> users)
-    })
   }
 
   // assume the api is less equal than twice count of online api

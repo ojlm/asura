@@ -8,18 +8,33 @@ import asura.common.util.{FutureUtils, RSAUtils, StringUtils}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.model.QuerySqlRequest
 import asura.core.es.model._
-import asura.core.es.{EsClient, EsConfig}
+import asura.core.es.{EsClient, EsConfig, EsResponse}
 import asura.core.sql.SqlParserUtils
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import asura.core.{CoreConfig, ErrorMessages}
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
 import com.sksamuel.elastic4s.searches.queries.Query
+import com.sksamuel.elastic4s.searches.sort.FieldSort
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
 object SqlRequestService extends CommonService with BaseAggregationService {
+
+  val queryFields = Seq(
+    FieldKeys.FIELD_SUMMARY,
+    FieldKeys.FIELD_DESCRIPTION,
+    FieldKeys.FIELD_CREATOR,
+    FieldKeys.FIELD_CREATED_AT,
+    FieldKeys.FIELD_GROUP,
+    FieldKeys.FIELD_PROJECT,
+    FieldKeys.FIELD_LABELS,
+    FieldKeys.FIELD_HOST,
+    FieldKeys.FIELD_PORT,
+    FieldKeys.FIELD_DATABASE,
+    FieldKeys.FIELD_TABLE
+  )
 
   def index(doc: SqlRequest): Future[IndexDocResponse] = {
     val error = validate(doc)
@@ -62,22 +77,37 @@ object SqlRequestService extends CommonService with BaseAggregationService {
     }
   }
 
-  def query(q: QuerySqlRequest) = {
+  def query(q: QuerySqlRequest): Future[Map[String, Any]] = {
     val esQueries = ArrayBuffer[Query]()
+    var sortFields = Seq(FieldSort(FieldKeys.FIELD_CREATED_AT).desc())
     if (StringUtils.isNotEmpty(q.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, q.group)
     if (StringUtils.isNotEmpty(q.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, q.project)
     if (StringUtils.isNotEmpty(q.host)) esQueries += termQuery(FieldKeys.FIELD_HOST, q.host)
     if (StringUtils.isNotEmpty(q.database)) esQueries += termQuery(FieldKeys.FIELD_DATABASE, q.database)
     if (StringUtils.isNotEmpty(q.table)) esQueries += termQuery(FieldKeys.FIELD_TABLE, q.table)
-    if (StringUtils.isNotEmpty(q.text)) esQueries += matchQuery(FieldKeys.FIELD__TEXT, q.text)
+    if (StringUtils.isNotEmpty(q.text)) {
+      esQueries += matchQuery(FieldKeys.FIELD__TEXT, q.text)
+      sortFields = Nil
+    }
     if (StringUtils.isNotEmpty(q.sql)) esQueries += matchQuery(FieldKeys.FIELD_SQL, q.sql)
     EsClient.esClient.execute {
-      search(SqlRequest.Index)
-        .query(boolQuery().must(esQueries))
+      search(SqlRequest.Index).query(boolQuery().must(esQueries))
         .from(q.pageFrom)
         .size(q.pageSize)
-        .sortByFieldDesc(FieldKeys.FIELD_CREATED_AT)
-    }
+        .sortBy(sortFields)
+        .sourceInclude(queryFields)
+    }.flatMap(res => {
+      fetchWithCreatorProfiles(res)
+      if (res.isSuccess) {
+        if (q.hasCreators) {
+          fetchWithCreatorProfiles(res)
+        } else {
+          Future.successful(EsResponse.toApiData(res.result, true))
+        }
+      } else {
+        ErrorMessages.error_EsRequestFail(res).toFutureFail
+      }
+    })
   }
 
   def updateDoc(id: String, doc: SqlRequest) = {
