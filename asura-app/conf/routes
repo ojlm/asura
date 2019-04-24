@@ -36,4 +36,5 @@ POST        /api/home                            asura.app.api.HomeApi.query()
 ->          /api/activity                        activity.Routes
 ->          /api/online                          online.Routes
 ->          /api/dubbo                           dubbo.Routes
+->          /api/sql                             sql.Routes
 ->          /api/cluster                         cluster.Routes

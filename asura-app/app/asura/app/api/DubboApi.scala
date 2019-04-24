@@ -72,7 +72,7 @@ class DubboApi @Inject()(
     val user = getProfileId()
     doc.fillCommonFields(user)
     DubboRequestService.index(doc).map(res => {
-      activityActor ! Activity(doc.group, StringUtils.EMPTY, user, Activity.TYPE_NEW_DUBBO, res.id)
+      activityActor ! Activity(doc.group, doc.project, user, Activity.TYPE_NEW_DUBBO, res.id)
       toActionResultFromAny(res)
     })
   }
