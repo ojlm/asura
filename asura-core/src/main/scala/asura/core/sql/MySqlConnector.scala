@@ -24,7 +24,7 @@ object MySqlConnector {
   }
 
   @throws[Throwable]
-  def executeUpdate(conn: Connection, sql: String): Int = {
+  def executeUpdate(conn: Connection, sql: String): Integer = {
     val statement = conn.createStatement()
     try {
       statement.executeUpdate(sql)
