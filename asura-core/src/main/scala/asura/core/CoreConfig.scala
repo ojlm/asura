@@ -21,6 +21,7 @@ case class CoreConfig(
                        val localEsDataDir: String = StringUtils.EMPTY,
                        val reportBaseUrl: String = StringUtils.EMPTY,
                        val onlineConfigs: Seq[EsOnlineLogConfig] = Nil,
+                       val securityConfig: SecurityConfig = SecurityConfig(),
                      )
 
 object CoreConfig {
@@ -30,11 +31,13 @@ object CoreConfig {
   implicit var materializer: ActorMaterializer = _
   var reportBaseUrl: String = StringUtils.EMPTY
   var linkerdConfig: LinkerdConfig = _
+  var securityConfig: SecurityConfig = _
 
   def init(config: CoreConfig): Unit = {
     system = config.system
     dispatcher = config.dispatcher
     materializer = config.materializer
+    CoreConfig.securityConfig = config.securityConfig
     // RedisClient.init(config.redisServers)
     CoreConfig.linkerdConfig = config.linkerdConfig
     CoreConfig.reportBaseUrl = config.reportBaseUrl

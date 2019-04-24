@@ -1,18 +1,20 @@
 package asura.app.hook
 
+import java.util.Base64
+
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import asura.app.api.auth.BasicAuth
 import asura.app.notify.MailNotifier
 import asura.cluster.ClusterManager
-import asura.common.util.StringUtils
-import asura.core.CoreConfig
+import asura.common.util.{LogUtils, StringUtils}
 import asura.core.CoreConfig.{EsOnlineLogConfig, LinkerdConfig, LinkerdConfigServer}
 import asura.core.auth.AuthManager
 import asura.core.es.EsClient
 import asura.core.job.JobCenter
 import asura.core.job.actor.SchedulerActor
 import asura.core.notify.JobNotifyManager
+import asura.core.{CoreConfig, SecurityConfig}
 import asura.namerd.NamerdConfig
 import com.typesafe.config.{ConfigFactory, ConfigList}
 import javax.inject.{Inject, Singleton}
@@ -56,7 +58,8 @@ class ApplicationStart @Inject()(
     esUrl = configuration.get[String]("asura.es.url"),
     linkerdConfig = toLinkerdConfig(configuration),
     reportBaseUrl = configuration.getOptional[String]("asura.reportBaseUrl").getOrElse(""),
-    onlineConfigs = toEsOnlineConfigs(configuration.getOptional[ConfigList]("asura.es.onlineLog"))
+    onlineConfigs = toEsOnlineConfigs(configuration.getOptional[ConfigList]("asura.es.onlineLog")),
+    securityConfig = toSecurityConfig(configuration)
   ))
   NamerdConfig.init(
     system = system,
@@ -111,6 +114,27 @@ class ApplicationStart @Inject()(
       ClusterManager.shutdown()
       EsClient.closeClient()
     }(system.dispatcher)
+  }
+
+  private def toSecurityConfig(configuration: Configuration): SecurityConfig = {
+    val pubKeyStrOpt = configuration.getOptional[String]("asura.security.pubKey")
+    val priKeyStrOpt = configuration.getOptional[String]("asura.security.priKey")
+    val maskText = configuration.getOptional[String]("asura.security.maskText").getOrElse("***")
+    if (pubKeyStrOpt.nonEmpty && priKeyStrOpt.nonEmpty) {
+      try {
+        SecurityConfig(
+          pubKeyBytes = Base64.getDecoder.decode(pubKeyStrOpt.get),
+          priKeyBytes = Base64.getDecoder.decode(priKeyStrOpt.get),
+          maskText = maskText
+        )
+      } catch {
+        case t: Throwable =>
+          logger.error(LogUtils.stackTraceToString(t))
+          SecurityConfig()
+      }
+    } else {
+      SecurityConfig()
+    }
   }
 
   private def toLinkerdConfig(configuration: Configuration): LinkerdConfig = {
