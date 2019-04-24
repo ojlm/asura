@@ -50,7 +50,7 @@ class DubboApi @Inject()(
     val testMsg = req.bodyAs(classOf[TestDubbo])
     val dubboReq = testMsg.request
     val error = DubboRequestService.validate(dubboReq)
-    if (null != error) {
+    if (null == error) {
       val user = getProfileId()
       activityActor ! Activity(dubboReq.group, dubboReq.project, user, Activity.TYPE_TEST_DUBBO, StringUtils.notEmptyElse(testMsg.id, StringUtils.EMPTY))
       (dubboInvoker ? toDubboGenericRequest(dubboReq)).toOkResult
