@@ -10,7 +10,7 @@ object SqlParserUtils {
       val statement = SQLUtils.parseSingleMysqlStatement(sql)
       statement match {
         case _: SQLSelectStatement => (true, null)
-        case _ => (false, "Only allow select statement")
+        case _ => (false, null)
       }
     } catch {
       case t: Throwable => (false, t.getMessage)

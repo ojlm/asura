@@ -14,12 +14,12 @@ import asura.core.sql.{MySqlConnector, SqlConfig}
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
-class MySqlConnectionCacheActor extends BaseActor {
+class MySqlConnectionCacheActor(size: Int) extends BaseActor {
 
   implicit val ec: ExecutionContext = context.dispatcher
   implicit val timeout: Timeout = 30.seconds
 
-  private val lruCache = LRUCache[String, Connection](SqlConfig.DEFAULT_MYSQL_CONNECTOR_CACHE_SIZE, (_, conn) => {
+  private val lruCache = LRUCache[String, Connection](size, (_, conn) => {
     conn.close()
   })
 
@@ -57,7 +57,7 @@ class MySqlConnectionCacheActor extends BaseActor {
 
 object MySqlConnectionCacheActor {
 
-  def props() = Props(new MySqlConnectionCacheActor())
+  def props(size: Int = SqlConfig.DEFAULT_MYSQL_CONNECTOR_CACHE_SIZE) = Props(new MySqlConnectionCacheActor(size))
 
   case class GetConnectionMessage(request: SqlRequest)
 
