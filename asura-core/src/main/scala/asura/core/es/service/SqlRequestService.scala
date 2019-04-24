@@ -7,6 +7,7 @@ import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.model.QuerySqlRequest
 import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig}
+import asura.core.sql.SqlParserUtils
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
@@ -62,6 +63,9 @@ object SqlRequestService extends CommonService with BaseAggregationService {
     val esQueries = ArrayBuffer[Query]()
     if (StringUtils.isNotEmpty(q.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, q.group)
     if (StringUtils.isNotEmpty(q.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, q.project)
+    if (StringUtils.isNotEmpty(q.host)) esQueries += termQuery(FieldKeys.FIELD_HOST, q.host)
+    if (StringUtils.isNotEmpty(q.database)) esQueries += termQuery(FieldKeys.FIELD_DATABASE, q.database)
+    if (StringUtils.isNotEmpty(q.table)) esQueries += termQuery(FieldKeys.FIELD_TABLE, q.table)
     if (StringUtils.isNotEmpty(q.text)) esQueries += matchQuery(FieldKeys.FIELD__TEXT, q.text)
     if (StringUtils.isNotEmpty(q.sql)) esQueries += matchQuery(FieldKeys.FIELD_SQL, q.sql)
     EsClient.esClient.execute {
@@ -93,16 +97,22 @@ object SqlRequestService extends CommonService with BaseAggregationService {
   }
 
   def validate(doc: SqlRequest): ErrorMessages.ErrorMessage = {
-    if (null == doc) {
-      ErrorMessages.error_EmptyRequestBody
-    } else if (StringUtils.isEmpty(doc.group)) {
-      ErrorMessages.error_EmptyGroup
-    } else if (StringUtils.isEmpty(doc.project)) {
-      ErrorMessages.error_EmptyProject
-    } else if (StringUtils.hasEmpty(doc.host, doc.username, doc.encryptedPass, doc.database, doc.table, doc.sql)) {
-      ErrorMessages.error_InvalidRequestParameters
-    } else {
-      null
+    try {
+      val table = SqlParserUtils.getStatementTable(doc.sql)
+      doc.table = table
+      if (null == doc) {
+        ErrorMessages.error_EmptyRequestBody
+      } else if (StringUtils.isEmpty(doc.group)) {
+        ErrorMessages.error_EmptyGroup
+      } else if (StringUtils.isEmpty(doc.project)) {
+        ErrorMessages.error_EmptyProject
+      } else if (StringUtils.hasEmpty(doc.host, doc.username, doc.password, doc.encryptedPass, doc.database, doc.sql)) {
+        ErrorMessages.error_InvalidRequestParameters
+      } else {
+        null
+      }
+    } catch {
+      case t: Throwable => ErrorMessages.error_Throwable(t)
     }
   }
 }
