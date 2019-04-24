@@ -33,7 +33,7 @@ class SqlApi @Inject()(
     val testMsg = req.bodyAs(classOf[TestSql])
     val sqlReq = testMsg.request
     val error = SqlRequestService.validate(sqlReq)
-    if (null != error) {
+    if (null == error) {
       val user = getProfileId()
       activityActor ! Activity(sqlReq.group, sqlReq.project, user, Activity.TYPE_TEST_SQL, StringUtils.notEmptyElse(testMsg.id, StringUtils.EMPTY))
       (sqlInvoker ? sqlReq).toOkResult
