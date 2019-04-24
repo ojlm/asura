@@ -42,12 +42,18 @@ case class SqlRequest(
       m += (FieldKeys.FIELD_USERNAME -> username)
       addScriptUpdateItem(sb, FieldKeys.FIELD_USERNAME)
     }
-    // TODO: handle password and encrypted password
+    if (null != password) {
+      m += (FieldKeys.FIELD_PASSWORD -> password)
+      addScriptUpdateItem(sb, FieldKeys.FIELD_PASSWORD)
+    }
+    if (null != encryptedPass) {
+      m += (FieldKeys.FIELD_ENCRYPTED_PASS -> encryptedPass)
+      addScriptUpdateItem(sb, FieldKeys.FIELD_ENCRYPTED_PASS)
+    }
     if (null != database) {
       m += (FieldKeys.FIELD_DATABASE -> database)
       addScriptUpdateItem(sb, FieldKeys.FIELD_DATABASE)
     }
-    // TODO: parse table from raw sql
     if (null != table) {
       m += (FieldKeys.FIELD_TABLE -> table)
       addScriptUpdateItem(sb, FieldKeys.FIELD_TABLE)
