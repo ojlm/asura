@@ -62,7 +62,7 @@ class SqlApi @Inject()(
 
   def query() = Action(parse.byteString).async { implicit req =>
     val q = req.bodyAs(classOf[QuerySqlRequest])
-    SqlRequestService.query(q).toOkResultByEsList(false)
+    SqlRequestService.query(q).toOkResult
   }
 
   def update(id: String) = Action(parse.byteString).async { implicit req =>
