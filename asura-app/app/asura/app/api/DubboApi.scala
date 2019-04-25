@@ -6,6 +6,7 @@ import akka.util.Timeout
 import asura.app.api.model.TestDubbo
 import asura.common.util.StringUtils
 import asura.core.cs.model.QueryDubboRequest
+import asura.core.dubbo.DubboResult
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, DubboRequest}
 import asura.core.es.service.DubboRequestService
@@ -53,7 +54,9 @@ class DubboApi @Inject()(
     if (null == error) {
       val user = getProfileId()
       activityActor ! Activity(dubboReq.group, dubboReq.project, user, Activity.TYPE_TEST_DUBBO, StringUtils.notEmptyElse(testMsg.id, StringUtils.EMPTY))
-      (dubboInvoker ? toDubboGenericRequest(dubboReq)).toOkResult
+      (dubboInvoker ? toDubboGenericRequest(dubboReq)).flatMap(context => {
+        DubboResult.evaluate(dubboReq, if (null == context) null else context.asInstanceOf[Object])
+      }).toOkResult
     } else {
       error.toFutureFail
     }
@@ -79,7 +82,7 @@ class DubboApi @Inject()(
 
   def query() = Action(parse.byteString).async { implicit req =>
     val q = req.bodyAs(classOf[QueryDubboRequest])
-    DubboRequestService.query(q).toOkResultByEsList(false)
+    DubboRequestService.query(q).toOkResult
   }
 
   def update(id: String) = Action(parse.byteString).async { implicit req =>
@@ -88,12 +91,22 @@ class DubboApi @Inject()(
   }
 
   private def toDubboGenericRequest(req: DubboRequest): GenericRequest = {
+    val parameterTypes = if (null != req.parameterTypes && req.parameterTypes.nonEmpty) {
+      req.parameterTypes.map(_.`type`).toArray
+    } else {
+      null
+    }
+    val args = if (null != req.args && req.args.args.nonEmpty) {
+      req.args.args.toArray
+    } else {
+      null
+    }
     GenericRequest(
       dubboGroup = req.dubboGroup,
       interface = req.interface,
       method = req.method,
-      parameterTypes = req.parameterTypes,
-      args = req.args,
+      parameterTypes = parameterTypes,
+      args = args,
       address = req.address,
       port = req.port,
       version = req.version

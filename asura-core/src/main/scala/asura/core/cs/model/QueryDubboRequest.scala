@@ -5,4 +5,6 @@ case class QueryDubboRequest(
                               project: String,
                               text: String,
                               interface: String,
+                              method: String,
+                              hasCreators: Boolean = false,
                             ) extends QueryPage
