@@ -1,6 +1,7 @@
 package asura.core.es.model
 
 import asura.core.es.EsConfig
+import asura.core.es.model.DubboRequest.{ArgumentList, ParameterType}
 import asura.core.util.JacksonSupport
 import com.sksamuel.elastic4s.mappings._
 
@@ -12,15 +13,16 @@ case class DubboRequest(
                          val group: String,
                          val project: String,
                          val dubboGroup: String,
+                         var version: String,
                          val interface: String,
                          val method: String,
-                         val parameterTypes: Array[String],
-                         val args: Array[Object],
+                         val parameterTypes: Seq[ParameterType],
+                         val args: ArgumentList,
                          val address: String,
                          val port: Int,
                          val zkAddr: String,
                          val zkPort: Int,
-                         val version: String,
+                         var path: String,
                          val assert: Map[String, Any],
                          val labels: Seq[LabelRef] = Nil,
                          var creator: String = null,
@@ -45,17 +47,14 @@ case class DubboRequest(
       addScriptUpdateItem(sb, FieldKeys.FIELD_METHOD)
     }
     if (null != parameterTypes) {
-      m += (FieldKeys.FIELD_PARAMETER_TYPES -> parameterTypes)
+      m += (FieldKeys.FIELD_PARAMETER_TYPES -> JacksonSupport.mapper.convertValue(parameterTypes, classOf[java.util.List[Map[String, Any]]]))
       addScriptUpdateItem(sb, FieldKeys.FIELD_PARAMETER_TYPES)
     } else {
       m += (FieldKeys.FIELD_PARAMETER_TYPES -> Nil)
       addScriptUpdateItem(sb, FieldKeys.FIELD_PARAMETER_TYPES)
     }
     if (null != args) {
-      m += (FieldKeys.FIELD_ARGS -> args)
-      addScriptUpdateItem(sb, FieldKeys.FIELD_ARGS)
-    } else {
-      m += (FieldKeys.FIELD_ARGS -> Nil)
+      m += (FieldKeys.FIELD_ARGS -> JacksonSupport.mapper.convertValue(args, classOf[java.util.Map[String, Any]]))
       addScriptUpdateItem(sb, FieldKeys.FIELD_ARGS)
     }
     if (null != address) {
@@ -65,6 +64,10 @@ case class DubboRequest(
     if (port > 0) {
       m += (FieldKeys.FIELD_PORT -> port)
       addScriptUpdateItem(sb, FieldKeys.FIELD_PORT)
+    }
+    if (null != path) {
+      m += (FieldKeys.FIELD_PATH -> path)
+      addScriptUpdateItem(sb, FieldKeys.FIELD_PATH)
     }
     if (null != version) {
       m += (FieldKeys.FIELD_VERSION -> version)
@@ -101,10 +104,13 @@ object DubboRequest extends IndexSetting {
       KeywordField(name = FieldKeys.FIELD_DUBBO_GROUP),
       KeywordField(name = FieldKeys.FIELD_INTERFACE),
       KeywordField(name = FieldKeys.FIELD_METHOD),
-      NestedField(name = FieldKeys.FIELD_PARAMETER_TYPES, dynamic = Some("false")),
-      NestedField(name = FieldKeys.FIELD_ARGS, dynamic = Some("false")),
+      NestedField(name = FieldKeys.FIELD_PARAMETER_TYPES, fields = Seq(
+        KeywordField(name = FieldKeys.FIELD_TYPE),
+      )),
+      ObjectField(name = FieldKeys.FIELD_ARGS, dynamic = Some("false")),
       KeywordField(name = FieldKeys.FIELD_ADDRESS),
       BasicField(name = FieldKeys.FIELD_PORT, `type` = "integer"),
+      KeywordField(name = FieldKeys.FIELD_PATH),
       KeywordField(name = FieldKeys.FIELD_VERSION),
       ObjectField(name = FieldKeys.FIELD_ASSERT, dynamic = Some("false")),
       KeywordField(name = FieldKeys.FIELD_ZK_ADDR),
@@ -114,4 +120,9 @@ object DubboRequest extends IndexSetting {
       )),
     )
   )
+
+  case class ParameterType(`type`: String)
+
+  case class ArgumentList(args: Seq[Object])
+
 }
