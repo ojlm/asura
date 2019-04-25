@@ -25,7 +25,7 @@ class DubboReferenceCacheActor extends BaseActor {
       Future.failed(new RuntimeException("Unknown message type")) pipeTo sender()
   }
 
-  def test(request: GenericRequest): Future[Any] = {
+  def test(request: GenericRequest): Future[Object] = {
     Future {
       val refConfig = request.toReferenceConfig()
       val cacheKey = ReferenceConfigCache.DEFAULT_KEY_GENERATOR.generateKey(refConfig)
