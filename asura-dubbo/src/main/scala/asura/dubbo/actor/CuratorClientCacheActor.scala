@@ -25,11 +25,12 @@ class CuratorClientCacheActor extends BaseActor {
   implicit val actorEC: ExecutionContext = context.dispatcher
 
   override def receive: Receive = {
-    case GetInterfacesMessage(zkAddr, path) =>
-      getInterfaces(zkAddr, StringUtils.notEmptyElse(path, DubboConfig.DEFAULT_ROOT_DUBBO_PATH)) pipeTo sender()
-    case GetProvidersMessage(zkAddr, path, ref) =>
+    case GetInterfacesMessage(zkAddr, zkPort, path) =>
+      getInterfaces(zkAddr, zkPort, StringUtils.notEmptyElse(path, DubboConfig.DEFAULT_ROOT_DUBBO_PATH)) pipeTo sender()
+    case GetProvidersMessage(zkAddr, zkPort, path, ref) =>
       getInterfaceProviders(
         zkAddr,
+        zkPort,
         ref,
         StringUtils.notEmptyElse(path, DubboConfig.DEFAULT_ROOT_DUBBO_PATH)
       ) pipeTo sender()
@@ -37,16 +38,16 @@ class CuratorClientCacheActor extends BaseActor {
       Future.failed(new RuntimeException("Unknown message type")) pipeTo sender()
   }
 
-  def getInterfaces(zkAddr: String, path: String): Future[Seq[DubboInterface]] = {
-    getClient(zkAddr)
+  def getInterfaces(zkAddr: String, zkPort: Int, path: String): Future[Seq[DubboInterface]] = {
+    getClient(s"${zkAddr}:${zkPort}")
       .map(client => {
         JavaConverters.asScalaBuffer(client.getChildren().forPath(path))
-          .map(DubboInterface(zkAddr, path, _))
+          .map(DubboInterface(zkAddr, zkPort, path, _))
       })
   }
 
-  def getInterfaceProviders(zkAddr: String, ref: String, path: String): Future[Seq[DubboProvider]] = {
-    getClient(zkAddr).map(client => {
+  def getInterfaceProviders(zkAddr: String, zkPort: Int, ref: String, path: String): Future[Seq[DubboProvider]] = {
+    getClient(s"${zkAddr}:${zkPort}").map(client => {
       val strings = client.getChildren().forPath(s"${path}/${ref}/providers")
       JavaConverters.asScalaBuffer(strings)
         .map(item => URLDecoder.decode(item, StandardCharsets.UTF_8.name()))
@@ -73,13 +74,13 @@ class CuratorClientCacheActor extends BaseActor {
     })
   }
 
-  def getClient(zkAddr: String): Future[CuratorFramework] = {
+  def getClient(connectString: String): Future[CuratorFramework] = {
     Future {
-      val client = lruCache.get(zkAddr)
+      val client = lruCache.get(connectString)
       if (null == client) {
-        val newClient = CuratorFrameworkFactory.newClient(zkAddr, new RetryNTimes(0, 0))
+        val newClient = CuratorFrameworkFactory.newClient(connectString, new RetryNTimes(0, 0))
         newClient.start()
-        lruCache.put(zkAddr, newClient)
+        lruCache.put(connectString, newClient)
         newClient
       } else {
         client
