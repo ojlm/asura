@@ -44,7 +44,10 @@ lazy val cluster = asuraProjects("asura-cluster")
 lazy val core = asuraProjects("asura-core")
   .settings(libraryDependencies ++= coreDependencies)
   .settings(publishSettings: _*)
-  .dependsOn(common % "compile->compile;test->test")
+  .dependsOn(
+    common % "compile->compile;test->test",
+    dubbo % "compile->compile;test->test",
+  )
 
 lazy val dubbo = asuraProjects("asura-dubbo")
   .settings(libraryDependencies ++= dubboDependencies)
