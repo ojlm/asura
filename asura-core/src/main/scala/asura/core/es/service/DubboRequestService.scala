@@ -7,12 +7,14 @@ import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.cs.model.QueryDubboRequest
 import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig, EsResponse}
+import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
 import com.sksamuel.elastic4s.searches.queries.Query
 import com.sksamuel.elastic4s.searches.sort.FieldSort
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
@@ -69,6 +71,41 @@ object DubboRequestService extends CommonService with BaseAggregationService {
       EsClient.esClient.execute {
         search(DubboRequest.Index).query(idsQuery(id)).size(1)
       }
+    }
+  }
+
+  private def getByIds(ids: Seq[String], filterFields: Boolean = false) = {
+    if (null != ids) {
+      EsClient.esClient.execute {
+        search(DubboRequest.Index)
+          .query(idsQuery(ids))
+          .from(0)
+          .size(ids.length)
+          .sortByFieldDesc(FieldKeys.FIELD_CREATED_AT)
+          .sourceInclude(if (filterFields) queryFields else Nil)
+      }
+    } else {
+      ErrorMessages.error_EmptyId.toFutureFail
+    }
+  }
+
+  def getByIdsAsMap(ids: Seq[String], filterFields: Boolean = false): Future[Map[String, DubboRequest]] = {
+    if (null != ids && ids.nonEmpty) {
+      val map = mutable.HashMap[String, DubboRequest]()
+      getByIds(ids, filterFields).map(res => {
+        if (res.isSuccess) {
+          if (res.result.isEmpty) {
+            throw ErrorMessages.error_IdsNotFound(ids).toException
+          } else {
+            res.result.hits.hits.foreach(hit => map += (hit.id -> JacksonSupport.parse(hit.sourceAsString, classOf[DubboRequest])))
+            map.toMap
+          }
+        } else {
+          throw ErrorMessages.error_EsRequestFail(res).toException
+        }
+      })
+    } else {
+      Future.successful(Map.empty)
     }
   }
 

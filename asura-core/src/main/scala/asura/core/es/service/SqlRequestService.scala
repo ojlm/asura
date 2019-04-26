@@ -10,6 +10,7 @@ import asura.core.cs.model.QuerySqlRequest
 import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig, EsResponse}
 import asura.core.sql.SqlParserUtils
+import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import asura.core.{CoreConfig, ErrorMessages}
 import com.sksamuel.elastic4s.RefreshPolicy
@@ -17,6 +18,7 @@ import com.sksamuel.elastic4s.http.ElasticDsl._
 import com.sksamuel.elastic4s.searches.queries.Query
 import com.sksamuel.elastic4s.searches.sort.FieldSort
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
@@ -74,6 +76,41 @@ object SqlRequestService extends CommonService with BaseAggregationService {
       EsClient.esClient.execute {
         search(SqlRequest.Index).query(idsQuery(id)).size(1)
       }
+    }
+  }
+
+  private def getByIds(ids: Seq[String], filterFields: Boolean = false) = {
+    if (null != ids) {
+      EsClient.esClient.execute {
+        search(DubboRequest.Index)
+          .query(idsQuery(ids))
+          .from(0)
+          .size(ids.length)
+          .sortByFieldDesc(FieldKeys.FIELD_CREATED_AT)
+          .sourceInclude(if (filterFields) queryFields else Nil)
+      }
+    } else {
+      ErrorMessages.error_EmptyId.toFutureFail
+    }
+  }
+
+  def getByIdsAsMap(ids: Seq[String], filterFields: Boolean = false): Future[Map[String, SqlRequest]] = {
+    if (null != ids && ids.nonEmpty) {
+      val map = mutable.HashMap[String, SqlRequest]()
+      getByIds(ids, filterFields).map(res => {
+        if (res.isSuccess) {
+          if (res.result.isEmpty) {
+            throw ErrorMessages.error_IdsNotFound(ids).toException
+          } else {
+            res.result.hits.hits.foreach(hit => map += (hit.id -> JacksonSupport.parse(hit.sourceAsString, classOf[SqlRequest])))
+            map.toMap
+          }
+        } else {
+          throw ErrorMessages.error_EsRequestFail(res).toException
+        }
+      })
+    } else {
+      Future.successful(Map.empty)
     }
   }
 
