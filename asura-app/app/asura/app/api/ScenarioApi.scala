@@ -8,11 +8,12 @@ import asura.core.ErrorMessages
 import asura.core.cs.model.QueryScenario
 import asura.core.es.EsResponse
 import asura.core.es.actor.ActivitySaveActor
-import asura.core.es.model.{Activity, Scenario}
-import asura.core.es.service.{JobService, ScenarioService}
+import asura.core.es.model.{Activity, FieldKeys, Scenario, ScenarioStep}
+import asura.core.es.service._
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -25,7 +26,39 @@ class ScenarioApi @Inject()(
   val activityActor = system.actorOf(ActivitySaveActor.props())
 
   def getById(id: String) = Action.async { implicit req =>
-    ScenarioService.getById(id).toOkResultByEsOneDoc(id)
+    ScenarioService.getById(id).flatMap(response => {
+      if (response.isSuccess) {
+        if (response.result.nonEmpty) {
+          val scenarioDoc = EsResponse.toSingleApiData(response.result, true)
+          val steps = scenarioDoc.getOrElse(FieldKeys.FIELD_STEPS, Nil).asInstanceOf[Seq[Map[String, Any]]]
+          val csSeq = ArrayBuffer[String]()
+          val dubboSeq = ArrayBuffer[String]()
+          val sqlSeq = ArrayBuffer[String]()
+          steps.foreach(step => {
+            val ty = step.getOrElse(FieldKeys.FIELD_TYPE, null).asInstanceOf[String]
+            val id = step.getOrElse(FieldKeys.FIELD_ID, null).asInstanceOf[String]
+            ty match {
+              case ScenarioStep.TYPE_CASE => csSeq += id
+              case ScenarioStep.TYPE_DUBBO => dubboSeq += id
+              case ScenarioStep.TYPE_SQL => sqlSeq += id
+              case _ =>
+            }
+          })
+          val res = for {
+            cs <- CaseService.getByIdsAsMap(csSeq)
+            dubbo <- DubboRequestService.getByIdsAsMap(dubboSeq)
+            sql <- SqlRequestService.getByIdsAsMap(sqlSeq)
+          } yield (cs, dubbo, sql)
+          res.map(triple => {
+            Map("scenario" -> scenarioDoc, "case" -> triple._1, "dubbo" -> triple._2, "sql" -> triple._3)
+          })
+        } else {
+          Future.successful(ApiResError(getI18nMessage(ErrorMessages.error_IdNonExists.name, id)))
+        }
+      } else {
+        Future.successful(ApiResError(getI18nMessage(ErrorMessages.error_EsRequestFail(response).name)))
+      }
+    }).toOkResult
   }
 
   def delete(id: String, preview: Option[Boolean]) = Action.async { implicit req =>

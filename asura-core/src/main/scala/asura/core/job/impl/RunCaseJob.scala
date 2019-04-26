@@ -71,7 +71,7 @@ object RunCaseJob extends JobBase {
     if (null != cases && !cases.isEmpty || null != jobData.ext) {
       val scenarioReportFuture = if (null != cases && !cases.isEmpty) {
         val caseIds = cases.map(_.id)
-        CaseService.getCasesByIdsAsMap(caseIds, false).flatMap(caseIdMap => {
+        CaseService.getByIdsAsMap(caseIds, false).flatMap(caseIdMap => {
           val cases = ArrayBuffer[(String, Case)]()
           caseIds.foreach(id => {
             val value = caseIdMap.get(id)
