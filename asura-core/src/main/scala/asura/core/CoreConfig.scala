@@ -46,6 +46,7 @@ object CoreConfig {
     }
     EsClient.init(config.useLocalEsNode, config.esUrl, config.localEsDataDir)
     EsClient.initOnlineLogClient(config.onlineConfigs)
+    RunnerActors.init(system)
   }
 
   case class EsOnlineLogConfig(
