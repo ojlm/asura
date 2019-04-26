@@ -141,7 +141,7 @@ object CaseService extends CommonService with BaseAggregationService {
     }
   }
 
-  def getCasesByIdsAsMap(ids: Seq[String], filterFields: Boolean = false): Future[Map[String, Case]] = {
+  def getByIdsAsMap(ids: Seq[String], filterFields: Boolean = false): Future[Map[String, Case]] = {
     if (null != ids && ids.nonEmpty) {
       val map = mutable.HashMap[String, Case]()
       getByIds(ids, filterFields).map(res => {

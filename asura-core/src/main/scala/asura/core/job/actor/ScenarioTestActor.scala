@@ -28,7 +28,7 @@ class ScenarioTestActor(user: String, out: ActorRef) extends BaseActor {
     case ScenarioTestMessage(summary, steps, options) =>
       val caseIds = steps.filter(ScenarioStep.TYPE_CASE == _.`type`).map(_.id)
       if (null != steps && steps.nonEmpty) {
-        CaseService.getCasesByIdsAsMap(caseIds).map(caseIdMap => {
+        CaseService.getByIdsAsMap(caseIds).map(caseIdMap => {
           val cases = ArrayBuffer[(String, Case)]()
           caseIds.foreach(id => {
             val value = caseIdMap.get(id)
