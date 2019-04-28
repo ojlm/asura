@@ -2,8 +2,6 @@
 
 > ⛩`( ⊙ o ⊙ )`
 
-这个是 [Indigo](https://github.com/asura-pro/indigo) 项目的后端
-
 [![Build Status](https://travis-ci.org/asura-pro/indigo-api.svg?branch=master)](https://travis-ci.org/asura-pro/indigo-api)
 ![GitHub release](https://img.shields.io/github/release/asura-pro/indigo-api.svg)
 ![Maven Central](https://img.shields.io/maven-metadata/v/http/central.maven.org/maven2/cc/akkaha/asura-core_2.12/maven-metadata.xml.svg)
@@ -29,4 +27,4 @@
 
 2. 执行 `sbt dist` 即可打包应用
 
-3. 执行 `sbt run` 运行应用
+3. 执行 `sbt asura-app/run` 运行应用
