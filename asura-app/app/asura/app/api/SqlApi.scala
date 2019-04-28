@@ -27,7 +27,7 @@ class SqlApi @Inject()(
 
   val activityActor = system.actorOf(ActivitySaveActor.props())
   implicit val timeout: Timeout = 30.seconds
-  val sqlInvoker = RunnerActors.sqlInvoker
+  lazy val sqlInvoker = RunnerActors.sqlInvoker
 
   def test() = Action(parse.byteString).async { implicit req =>
     val testMsg = req.bodyAs(classOf[TestSql])
