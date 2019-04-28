@@ -30,7 +30,7 @@ class DubboApi @Inject()(
 
   val activityActor = system.actorOf(ActivitySaveActor.props())
   implicit val timeout: Timeout = 30.seconds
-  val dubboInvoker = RunnerActors.dubboInvoker
+  lazy val dubboInvoker = RunnerActors.dubboInvoker
 
   def getInterfaces() = Action(parse.byteString).async { implicit req =>
     val msg = req.bodyAs(classOf[GetInterfacesMessage])
