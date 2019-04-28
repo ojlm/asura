@@ -82,7 +82,7 @@ object SqlRequestService extends CommonService with BaseAggregationService {
   private def getByIds(ids: Seq[String], filterFields: Boolean = false) = {
     if (null != ids) {
       EsClient.esClient.execute {
-        search(DubboRequest.Index)
+        search(SqlRequest.Index)
           .query(idsQuery(ids))
           .from(0)
           .size(ids.length)
