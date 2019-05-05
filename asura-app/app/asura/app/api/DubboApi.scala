@@ -11,7 +11,6 @@ import asura.core.dubbo.DubboResult
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, DubboRequest}
 import asura.core.es.service.DubboRequestService
-import asura.dubbo.GenericRequest
 import asura.dubbo.actor.GenericServiceInvokerActor.{GetInterfaceMethodParams, GetInterfacesMessage, GetProvidersMessage}
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
@@ -54,7 +53,7 @@ class DubboApi @Inject()(
     if (null == error) {
       val user = getProfileId()
       activityActor ! Activity(dubboReq.group, dubboReq.project, user, Activity.TYPE_TEST_DUBBO, StringUtils.notEmptyElse(testMsg.id, StringUtils.EMPTY))
-      (dubboInvoker ? toDubboGenericRequest(dubboReq)).flatMap(context => {
+      (dubboInvoker ? dubboReq.toDubboGenericRequest).flatMap(context => {
         DubboResult.evaluate(dubboReq, if (null == context) null else context.asInstanceOf[Object])
       }).toOkResult
     } else {
@@ -88,28 +87,5 @@ class DubboApi @Inject()(
   def update(id: String) = Action(parse.byteString).async { implicit req =>
     val doc = req.bodyAs(classOf[DubboRequest])
     DubboRequestService.updateDoc(id, doc).toOkResult
-  }
-
-  private def toDubboGenericRequest(req: DubboRequest): GenericRequest = {
-    val parameterTypes = if (null != req.parameterTypes && req.parameterTypes.nonEmpty) {
-      req.parameterTypes.map(_.`type`).toArray
-    } else {
-      null
-    }
-    val args = if (null != req.args && req.args.args.nonEmpty) {
-      req.args.args.toArray
-    } else {
-      null
-    }
-    GenericRequest(
-      dubboGroup = req.dubboGroup,
-      interface = req.interface,
-      method = req.method,
-      parameterTypes = parameterTypes,
-      args = args,
-      address = req.address,
-      port = req.port,
-      version = req.version
-    )
   }
 }
