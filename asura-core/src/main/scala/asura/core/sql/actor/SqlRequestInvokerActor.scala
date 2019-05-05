@@ -7,7 +7,6 @@ import akka.pattern.{ask, pipe}
 import akka.util.Timeout
 import asura.common.actor.BaseActor
 import asura.common.util.FutureUtils
-import asura.core.cs.assertion.engine.AssertionContext
 import asura.core.es.model.SqlRequest
 import asura.core.sql.actor.MySqlConnectionCacheActor.GetConnectionMessage
 import asura.core.sql.{MySqlConnector, SqlConfig, SqlParserUtils, SqlResult}
@@ -37,18 +36,15 @@ class SqlRequestInvokerActor extends BaseActor {
       futConn.flatMap(conn => {
         if (isOk) {
           Future {
-            SqlResult(MySqlConnector.executeQuery(conn, sqlRequest.sql))
+            MySqlConnector.executeQuery(conn, sqlRequest.sql)
           }
         } else {
           Future {
-            SqlResult(MySqlConnector.executeUpdate(conn, sqlRequest.sql))
+            MySqlConnector.executeUpdate(conn, sqlRequest.sql)
           }
         }
       }).flatMap(result => {
-        AssertionContext.eval(sqlRequest.assert, result.context, result.statis).map(assertResult => {
-          result.result = assertResult
-          result
-        })
+        SqlResult.evaluate(sqlRequest, result)
       })
     } else {
       FutureUtils.requestFail(errMsg)

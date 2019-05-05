@@ -3,6 +3,7 @@ package asura.core.es.model
 import asura.core.es.EsConfig
 import asura.core.es.model.DubboRequest.{ArgumentList, ParameterType}
 import asura.core.util.JacksonSupport
+import asura.dubbo.GenericRequest
 import com.sksamuel.elastic4s.mappings._
 
 import scala.collection.mutable
@@ -90,6 +91,29 @@ case class DubboRequest(
       addScriptUpdateItem(sb, FieldKeys.FIELD_LABELS)
     }
     (sb.toString, m.toMap)
+  }
+
+  def toDubboGenericRequest(): GenericRequest = {
+    val parameterTypes = if (null != this.parameterTypes && this.parameterTypes.nonEmpty) {
+      this.parameterTypes.map(_.`type`).toArray
+    } else {
+      null
+    }
+    val args = if (null != this.args && this.args.args.nonEmpty) {
+      this.args.args.toArray
+    } else {
+      null
+    }
+    GenericRequest(
+      dubboGroup = dubboGroup,
+      interface = interface,
+      method = method,
+      parameterTypes = parameterTypes,
+      args = args,
+      address = address,
+      port = port,
+      version = version
+    )
   }
 }
 
