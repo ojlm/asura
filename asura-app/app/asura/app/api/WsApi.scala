@@ -7,8 +7,8 @@ import asura.core.actor.flow.WebSocketMessageHandler
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.Activity
 import asura.core.job.actor.JobTestActor.JobTestMessage
-import asura.core.job.actor.ScenarioTestActor.ScenarioTestMessage
-import asura.core.job.actor.{JobManualActor, JobTestActor, ScenarioTestActor}
+import asura.core.job.actor.ScenarioRunnerActor.ScenarioTestMessage
+import asura.core.job.actor.{JobManualActor, JobTestActor, ScenarioRunnerActor}
 import asura.dubbo.actor.TelnetDubboProviderActor
 import javax.inject.{Inject, Singleton}
 import org.pac4j.http.client.direct.HeaderClient
@@ -39,7 +39,7 @@ class WsApi @Inject()(
         Right {
           val user = profile.getId
           activityActor ! Activity(group, project, user, Activity.TYPE_TEST_SCENARIO, id.getOrElse(StringUtils.EMPTY))
-          val testActor = system.actorOf(ScenarioTestActor.props(user))
+          val testActor = system.actorOf(ScenarioRunnerActor.props())
           WebSocketMessageHandler.stringToActorEventFlow(testActor, classOf[ScenarioTestMessage])
         }
       }
