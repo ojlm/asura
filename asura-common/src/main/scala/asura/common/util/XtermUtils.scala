@@ -1,5 +1,6 @@
 package asura.common.util
 
+// https://en.wikipedia.org/wiki/ANSI_escape_code
 object XtermUtils {
 
   def redWrap(msg: String): String = {
@@ -16,5 +17,9 @@ object XtermUtils {
 
   def blueWrap(msg: String): String = {
     s"\033[1;34m$msg\033[0m"
+  }
+
+  def magentaWrap(msg: String): String = {
+    s"\033[1;35m$msg\033[0m"
   }
 }
