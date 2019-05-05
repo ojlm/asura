@@ -33,6 +33,7 @@ object JobReportData {
     var id: String
     var title: String
     var status: String = ReportItemStatus.STATUS_PASS
+    var `type`: String = ScenarioStep.TYPE_CASE
     // not empty when error occur
     var msg: String = StringUtils.EMPTY
 
@@ -66,8 +67,7 @@ object JobReportData {
                                   )
 
   /**
-    * @param id    caseId
-    * @param title summary
+    * for any type of request. eg: http, dubbo, sql
     */
   case class CaseReportItem(
                              var id: String,
