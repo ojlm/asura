@@ -46,6 +46,7 @@ case class GenericRequest(
     referenceConfig.setUrl(toDubboUrl())
     referenceConfig.setInterface(interface)
     referenceConfig.setGeneric(true)
+    referenceConfig.setTimeout(DubboConfig.DEFAULT_TIMEOUT)
     if (StringUtils.isNotEmpty(version)) {
       referenceConfig.setVersion(version)
     }

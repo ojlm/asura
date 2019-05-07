@@ -20,6 +20,7 @@ object DubboConfig {
   val DEFAULT_PROMPT = "dubbo>"
   val DEFAULT_ZK_CLIENT_CACHE_SIZE = 10
   val DEFAULT_DUBBO_REF_CACHE_SIZE = 20
+  val DEFAULT_TIMEOUT = 10000
   var appName = "asura-dubbo"
   var appConfig = new ApplicationConfig(appName)
 
