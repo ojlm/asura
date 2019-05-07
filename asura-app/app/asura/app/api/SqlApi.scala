@@ -6,7 +6,7 @@ import akka.util.Timeout
 import asura.app.api.model.TestSql
 import asura.common.util.StringUtils
 import asura.core.RunnerActors
-import asura.core.cs.model.QuerySqlRequest
+import asura.core.model.QuerySqlRequest
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, SqlRequest}
 import asura.core.es.service.SqlRequestService

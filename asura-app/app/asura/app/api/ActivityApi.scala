@@ -3,7 +3,7 @@ package asura.app.api
 import akka.actor.ActorSystem
 import asura.app.api.BaseApi.OkApiRes
 import asura.common.model.ApiRes
-import asura.core.cs.model.AggsQuery
+import asura.core.model.AggsQuery
 import asura.core.es.model.Activity
 import asura.core.es.service._
 import javax.inject.{Inject, Singleton}

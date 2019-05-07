@@ -4,7 +4,7 @@ import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.cs.model.QueryDubboRequest
+import asura.core.model.QueryDubboRequest
 import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig, EsResponse}
 import asura.core.util.JacksonSupport

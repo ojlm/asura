@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import asura.app.AppErrorMessages
 import asura.app.api.BaseApi.OkApiRes
 import asura.common.model.ApiResError
-import asura.core.cs.model.{QueryProject, TransferProject}
+import asura.core.model.{QueryProject, TransferProject}
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, Project}
 import asura.core.es.service.ProjectService

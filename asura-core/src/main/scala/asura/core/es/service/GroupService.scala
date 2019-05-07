@@ -5,11 +5,10 @@ import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.cs.CommonValidator
-import asura.core.cs.model.QueryGroup
+import asura.core.model.QueryGroup
 import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig}
-import asura.core.util.JacksonSupport
+import asura.core.util.{CommonValidator, JacksonSupport}
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
@@ -49,7 +48,7 @@ object GroupService extends CommonService {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
       IndexService.deleteByGroupOrProject(Seq(
-        Case.Index, RestApi.Index, Job.Index, Environment.Index,
+        HttpCaseRequest.Index, RestApi.Index, Job.Index, Environment.Index,
         JobReport.Index, JobNotify.Index, Project.Index, Scenario.Index, Activity.Index
       ), id, null).flatMap(idxRes => {
         EsClient.esClient.execute {

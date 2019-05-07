@@ -1,6 +1,6 @@
 package asura.app.api.model
 
-import asura.core.cs.ContextOptions
-import asura.core.es.model.Case
+import asura.core.runtime.ContextOptions
+import asura.core.es.model.HttpCaseRequest
 
-case class TestCase(id: String, cs: Case, options: ContextOptions)
+case class TestCase(id: String, cs: HttpCaseRequest, options: ContextOptions)

@@ -6,7 +6,7 @@ import akka.util.Timeout
 import asura.app.api.model.TestDubbo
 import asura.common.util.StringUtils
 import asura.core.RunnerActors
-import asura.core.cs.model.QueryDubboRequest
+import asura.core.model.QueryDubboRequest
 import asura.core.dubbo.DubboResult
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, DubboRequest}

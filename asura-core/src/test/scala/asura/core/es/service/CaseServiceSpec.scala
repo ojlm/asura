@@ -1,7 +1,7 @@
 package asura.core.es.service
 
 import asura.common.ScalaTestBaseSpec
-import asura.core.es.model.Case
+import asura.core.es.model.HttpCaseRequest
 import asura.core.es.{EsClient, EsClientConfig, EsConfig}
 import com.sksamuel.elastic4s.http.ElasticDsl._
 

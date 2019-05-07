@@ -5,7 +5,7 @@ import asura.app.AppErrorMessages
 import asura.app.api.BaseApi.OkApiRes
 import asura.common.model.ApiResError
 import asura.core.ErrorMessages
-import asura.core.cs.model.QueryScenario
+import asura.core.model.QueryScenario
 import asura.core.es.EsResponse
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, FieldKeys, Scenario, ScenarioStep}
@@ -45,7 +45,7 @@ class ScenarioApi @Inject()(
             }
           })
           val res = for {
-            cs <- CaseService.getByIdsAsMap(httpSeq)
+            cs <- HttpCaseRequestService.getByIdsAsMap(httpSeq)
             dubbo <- DubboRequestService.getByIdsAsMap(dubboSeq)
             sql <- SqlRequestService.getByIdsAsMap(sqlSeq)
           } yield (cs, dubbo, sql)

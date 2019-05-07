@@ -2,7 +2,7 @@ package asura.core.es.service
 
 import asura.common.ScalaTestBaseSpec
 import asura.common.util.JsonUtils
-import asura.core.cs.model.QueryScenario
+import asura.core.model.QueryScenario
 import asura.core.es.model.Scenario
 import asura.core.es.{EsClient, EsClientConfig}
 import com.sksamuel.elastic4s.http.ElasticDsl._

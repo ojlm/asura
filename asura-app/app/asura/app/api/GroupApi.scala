@@ -5,7 +5,7 @@ import asura.app.AppErrorMessages
 import asura.app.api.BaseApi.OkApiRes
 import asura.common.model.ApiResError
 import asura.common.util.StringUtils
-import asura.core.cs.model.QueryGroup
+import asura.core.model.QueryGroup
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, Group}
 import asura.core.es.service.GroupService

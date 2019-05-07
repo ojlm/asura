@@ -4,9 +4,9 @@ import asura.common.model.{ApiMsg, BoolErrorRes}
 import asura.common.util.FutureUtils.RichFuture
 import asura.common.util.StringUtils
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.cs.scenario.{ItemStoreDataHelper, ScenarioRunner}
-import asura.core.es.model.{Case, JobData}
-import asura.core.es.service.CaseService
+import asura.core.scenario.{ItemStoreDataHelper, ScenarioRunner}
+import asura.core.es.model.{HttpCaseRequest, JobData}
+import asura.core.es.service.HttpCaseRequestService
 import asura.core.job._
 
 import scala.collection.mutable.ArrayBuffer
@@ -71,8 +71,8 @@ object RunCaseJob extends JobBase {
     if (null != cases && !cases.isEmpty || null != jobData.ext) {
       val scenarioReportFuture = if (null != cases && !cases.isEmpty) {
         val caseIds = cases.map(_.id)
-        CaseService.getByIdsAsMap(caseIds, false).flatMap(caseIdMap => {
-          val cases = ArrayBuffer[(String, Case)]()
+        HttpCaseRequestService.getByIdsAsMap(caseIds, false).flatMap(caseIdMap => {
+          val cases = ArrayBuffer[(String, HttpCaseRequest)]()
           caseIds.foreach(id => {
             val value = caseIdMap.get(id)
             if (value.nonEmpty) {
@@ -80,7 +80,7 @@ object RunCaseJob extends JobBase {
             }
           })
           if (null != jobData.ext) {
-            CaseService.getCasesByJobDataExtAsMap(execDesc.job.group, execDesc.job.project, jobData.ext).flatMap(res => {
+            HttpCaseRequestService.getCasesByJobDataExtAsMap(execDesc.job.group, execDesc.job.project, jobData.ext).flatMap(res => {
               res.foreach(idCsTuple => cases.append((idCsTuple._1, idCsTuple._2)))
               val storeDataHelper = ItemStoreDataHelper(execDesc.reportId, "c", execDesc.reportItemSaveActor, execDesc.jobId)
               ScenarioRunner.test(null, "job cases", cases, log, execDesc.options)(storeDataHelper)
@@ -91,8 +91,8 @@ object RunCaseJob extends JobBase {
           }
         })
       } else {
-        val cases = ArrayBuffer[(String, Case)]()
-        CaseService.getCasesByJobDataExtAsMap(execDesc.job.group, execDesc.job.project, jobData.ext).flatMap(res => {
+        val cases = ArrayBuffer[(String, HttpCaseRequest)]()
+        HttpCaseRequestService.getCasesByJobDataExtAsMap(execDesc.job.group, execDesc.job.project, jobData.ext).flatMap(res => {
           res.foreach(idCsTuple => cases.append((idCsTuple._1, idCsTuple._2)))
           val storeDataHelper = ItemStoreDataHelper(execDesc.reportId, "c", execDesc.reportItemSaveActor, execDesc.jobId)
           ScenarioRunner.test(null, "job cases", cases, log, execDesc.options)(storeDataHelper)

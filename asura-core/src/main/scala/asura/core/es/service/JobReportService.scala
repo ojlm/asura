@@ -3,7 +3,7 @@ package asura.core.es.service
 import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.cs.model.{AggsItem, AggsQuery, QueryJobReport}
+import asura.core.model.{AggsItem, AggsQuery, QueryJobReport}
 import asura.core.es.model._
 import asura.core.es.service.BaseAggregationService._
 import asura.core.es.{EsClient, EsConfig}

@@ -2,7 +2,7 @@ package com.example.asura
 
 import akka.actor.ActorSystem
 import asura.core.auth.AuthManager
-import asura.core.cs.assertion.Assertions
+import asura.core.assertion.Assertions
 import asura.core.notify.JobNotifyManager
 import com.example.asura.assertion.ExampleAssertion
 import com.example.asura.auth.ExampleAuth

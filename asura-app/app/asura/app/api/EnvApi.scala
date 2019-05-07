@@ -5,10 +5,10 @@ import asura.app.api.BaseApi.OkApiRes
 import asura.common.model.{ApiRes, ApiResError}
 import asura.core.ErrorMessages
 import asura.core.auth.AuthManager
-import asura.core.cs.model.QueryEnv
+import asura.core.model.QueryEnv
 import asura.core.es.EsResponse
 import asura.core.es.model.Environment
-import asura.core.es.service.{CaseService, EnvironmentService, JobService, ScenarioService}
+import asura.core.es.service.{HttpCaseRequestService, EnvironmentService, JobService, ScenarioService}
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 
@@ -53,7 +53,7 @@ class EnvApi @Inject()(implicit exec: ExecutionContext, val controllerComponents
   def delete(id: String, preview: Option[Boolean]) = Action.async { implicit req =>
     val ids = Seq(id)
     val res = for {
-      c <- CaseService.containEnv(ids)
+      c <- HttpCaseRequestService.containEnv(ids)
       s <- ScenarioService.containEnv(ids)
       j <- JobService.containEnv(ids)
     } yield (c, s, j)
