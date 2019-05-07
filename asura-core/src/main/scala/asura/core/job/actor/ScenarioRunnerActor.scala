@@ -4,7 +4,7 @@ import akka.actor.{ActorRef, PoisonPill, Props, Status}
 import akka.pattern.{ask, pipe}
 import akka.util.Timeout
 import asura.common.actor._
-import asura.common.util.{FutureUtils, LogUtils, XtermUtils}
+import asura.common.util.{FutureUtils, LogUtils, StringUtils, XtermUtils}
 import asura.core.cs.{CaseContext, CaseResult, CaseRunner, ContextOptions}
 import asura.core.dubbo.DubboResult
 import asura.core.es.model.JobReportData.ScenarioReportItem
@@ -71,17 +71,17 @@ class ScenarioRunnerActor() extends BaseActor {
   private def executeStep(idx: Int): Future[Int] = {
     val step = this.steps(idx)
     step.`type` match {
-      case ScenarioStep.TYPE_CASE =>
+      case ScenarioStep.TYPE_HTTP =>
         val csOpt = this.stepsData.http.get(step.id)
         if (csOpt.nonEmpty) {
           val httpRequest = csOpt.get
           CaseRunner.test(step.id, httpRequest, CaseContext(options = this.contextOptions))
-            .map(httpResult => {
-              handleResult(httpRequest, httpResult)
-              idx + 1
-            })
+            .map(httpResult => handleSuccessResult(httpRequest, httpResult, idx))
+            .recover {
+              case t: Throwable => handleFailureResult(httpRequest, idx, t)
+            }
         } else {
-          Future.successful(idx + 1)
+          handleEmptyStepData(idx, ScenarioStep.TYPE_HTTP, step.id)
         }
       case ScenarioStep.TYPE_DUBBO =>
         val dubboOpt = this.stepsData.dubbo.get(step.id)
@@ -89,12 +89,13 @@ class ScenarioRunnerActor() extends BaseActor {
           val dubboRequest = dubboOpt.get
           (this.dubboInvoker ? dubboRequest.toDubboGenericRequest).flatMap(dubboResponse => {
             DubboResult.evaluate(dubboRequest, dubboResponse.asInstanceOf[Object])
-          }).map(dubboResult => {
-            handleResult(dubboRequest, dubboResult)
-            idx + 1
-          })
+          }).map(dubboResult => handleSuccessResult(dubboRequest, dubboResult, idx))
+            .recover {
+              case t: Throwable => handleFailureResult(dubboRequest, idx, t)
+            }
+
         } else {
-          Future.successful(idx + 1)
+          handleEmptyStepData(idx, ScenarioStep.TYPE_DUBBO, step.id)
         }
       case ScenarioStep.TYPE_SQL =>
         val sqlOpt = this.stepsData.sql.get(step.id)
@@ -102,36 +103,72 @@ class ScenarioRunnerActor() extends BaseActor {
           val sqlRequest = sqlOpt.get
           (this.sqlInvoker ? sqlRequest).flatMap(sqlResponse => {
             SqlResult.evaluate(sqlRequest, sqlResponse.asInstanceOf[Object])
-          }).map(sqlResult => {
-            handleResult(sqlRequest, sqlResult)
-            idx + 1
-          })
+          }).map(sqlResult => handleSuccessResult(sqlRequest, sqlResult, idx))
+            .recover {
+              case t: Throwable => handleFailureResult(sqlRequest, idx, t)
+            }
         } else {
-          Future.successful(idx + 1)
+          handleEmptyStepData(idx, ScenarioStep.TYPE_SQL, step.id)
         }
       case _ => FutureUtils.requestFail(s"Unknown step type: ${step.`type`}")
     }
   }
 
-  private def handleResult(request: Case, result: CaseResult): Unit = {
+  private def handleSuccessResult(request: Case, result: CaseResult, idx: Int): Int = {
     if (null != wsActor) {
-      val msg = s"${consoleLogPrefix(ScenarioStep.TYPE_CASE)}${request.summary} ${result.statis.isSuccessful}"
+      val msg = s"${consoleLogPrefix(ScenarioStep.TYPE_HTTP, idx)}${request.summary} ${result.statis.isSuccessful}"
       wsActor ! NotifyActorEvent(msg)
     }
+    idx + 1
   }
 
-  private def handleResult(request: DubboRequest, result: DubboResult): Unit = {
+  private def handleFailureResult(request: Case, idx: Int, t: Throwable): Int = {
     if (null != wsActor) {
-      val msg = s"${consoleLogPrefix(ScenarioStep.TYPE_DUBBO)}${request.summary} ${result.statis.isSuccessful}"
+      val msg = s"${consoleLogPrefix(ScenarioStep.TYPE_HTTP, idx)}${request.summary} fail"
       wsActor ! NotifyActorEvent(msg)
     }
+    idx + 1
   }
 
-  private def handleResult(request: SqlRequest, result: SqlResult): Unit = {
+  private def handleSuccessResult(request: DubboRequest, result: DubboResult, idx: Int): Int = {
     if (null != wsActor) {
-      val msg = s"${consoleLogPrefix(ScenarioStep.TYPE_SQL)}${request.summary} ${result.statis.isSuccessful}"
+      val msg = s"${consoleLogPrefix(ScenarioStep.TYPE_DUBBO, idx)}${request.summary} ${result.statis.isSuccessful}"
       wsActor ! NotifyActorEvent(msg)
     }
+    idx + 1
+  }
+
+  private def handleFailureResult(request: DubboRequest, idx: Int, t: Throwable): Int = {
+    if (null != wsActor) {
+      val msg = s"${consoleLogPrefix(ScenarioStep.TYPE_DUBBO, idx)}${request.summary} fail"
+      wsActor ! NotifyActorEvent(msg)
+    }
+    idx + 1
+  }
+
+  private def handleSuccessResult(request: SqlRequest, result: SqlResult, idx: Int): Int = {
+    if (null != wsActor) {
+      val msg = s"${consoleLogPrefix(ScenarioStep.TYPE_SQL, idx)}${request.summary} ${result.statis.isSuccessful}"
+      wsActor ! NotifyActorEvent(msg)
+    }
+    idx + 1
+  }
+
+  private def handleFailureResult(request: SqlRequest, idx: Int, t: Throwable): Int = {
+    if (null != wsActor) {
+      val msg = s"${consoleLogPrefix(ScenarioStep.TYPE_SQL, idx)}${request.summary} fail"
+      wsActor ! NotifyActorEvent(msg)
+    }
+    idx + 1
+  }
+
+  private def handleEmptyStepData(idx: Int, stepType: String, docId: String): Future[Int] = {
+    // this should not be called for now
+    if (null != wsActor) {
+      val msg = s"${consoleLogPrefix(stepType, idx)}${XtermUtils.redWrap(s"Empty id: ${docId}")}"
+      wsActor ! NotifyActorEvent(msg)
+    }
+    Future.successful(idx + 1)
   }
 
   private def getScenarioTestData(steps: Seq[ScenarioStep]): Future[ScenarioTestData] = {
@@ -140,7 +177,7 @@ class ScenarioRunnerActor() extends BaseActor {
     val sqlSeq = ArrayBuffer[String]()
     steps.foreach(step => {
       step.`type` match {
-        case ScenarioStep.TYPE_CASE => csSeq += step.id
+        case ScenarioStep.TYPE_HTTP => csSeq += step.id
         case ScenarioStep.TYPE_DUBBO => dubboSeq += step.id
         case ScenarioStep.TYPE_SQL => sqlSeq += step.id
         case _ =>
@@ -153,17 +190,29 @@ class ScenarioRunnerActor() extends BaseActor {
     } yield (cs, dubbo, sql)
     res.map(triple => {
       if (null != wsActor) {
-        val msg = s"${consoleLogPrefix("summary")}${XtermUtils.magentaWrap("http")}:${triple._1.size}, " +
-          s"${XtermUtils.magentaWrap("dubbo")}:${triple._2.size}, " +
-          s"${XtermUtils.magentaWrap("sql")}:${triple._3.size}"
+        val msg = s"\n\n${consoleLogPrefix("SUM  ", -1)} " +
+          s"${XtermUtils.magentaWrap("HTTP")}:${triple._1.size}, " +
+          s"${XtermUtils.magentaWrap("DUBBO")}:${triple._2.size}, " +
+          s"${XtermUtils.magentaWrap("SQL")}:${triple._3.size}\n"
         wsActor ! NotifyActorEvent(msg)
       }
       ScenarioTestData(triple._1, triple._2, triple._3)
     })
   }
 
-  def consoleLogPrefix(stepType: String) = {
-    s"scenario[${this.scenarioReportItem.title}]=> [${XtermUtils.magentaWrap(stepType)}] "
+  def consoleLogPrefix(stepType: String, idx: Int) = {
+    val formattedType = stepType match {
+      case ScenarioStep.TYPE_HTTP => "HTTP "
+      case ScenarioStep.TYPE_DUBBO => "DUBBO"
+      case ScenarioStep.TYPE_SQL => "SQL  "
+      case _ => stepType
+    }
+    val formattedIdx = if (-1 == idx) {
+      StringUtils.EMPTY
+    } else {
+      s"[${idx}] "
+    }
+    s"[SCN][${this.scenarioReportItem.title}][${XtermUtils.magentaWrap(formattedType)}]${formattedIdx}"
   }
 
   override def postStop(): Unit = {
