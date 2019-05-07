@@ -1,6 +1,6 @@
 package asura.core.es.model
 
-import asura.core.cs.model.AggsItem.Metrics
+import asura.core.model.AggsItem.Metrics
 import asura.core.es.EsConfig
 import asura.core.es.model.RestApiOnlineLog.GroupProject
 import com.sksamuel.elastic4s.mappings._

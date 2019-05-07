@@ -5,7 +5,7 @@ import akka.pattern.pipe
 import asura.common.actor.{BaseActor, SenderMessage}
 import asura.common.util.{LogUtils, StringUtils}
 import asura.core.CoreConfig
-import asura.core.cs.ContextOptions
+import asura.core.runtime.ContextOptions
 import asura.core.es.model.{BaseIndex, Job, JobReport}
 import asura.core.es.service.{JobReportService, JobService}
 import asura.core.job.{JobCenter, JobExecDesc}

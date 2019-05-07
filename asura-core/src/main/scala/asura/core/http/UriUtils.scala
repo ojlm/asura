@@ -6,8 +6,8 @@ import java.nio.charset.StandardCharsets
 import akka.http.scaladsl.model.Uri
 import asura.common.exceptions.InvalidStatusException
 import asura.common.util.StringUtils
-import asura.core.cs.CaseContext
-import asura.core.es.model.Case
+import asura.core.runtime.RuntimeContext
+import asura.core.es.model.HttpCaseRequest
 import asura.core.protocols.Protocols
 import asura.core.util.StringTemplate
 
@@ -15,7 +15,7 @@ object UriUtils {
 
   val UTF8 = StandardCharsets.UTF_8.name()
 
-  def toUri(cs: Case, context: CaseContext): Uri = {
+  def toUri(cs: HttpCaseRequest, context: RuntimeContext): Uri = {
     Uri.from(
       scheme = StringUtils.notEmptyElse(cs.request.protocol, Protocols.HTTP),
       host = cs.request.host,
@@ -25,7 +25,7 @@ object UriUtils {
     )
   }
 
-  def mapToQueryString(map: Map[String, Any], context: CaseContext = null): String = {
+  def mapToQueryString(map: Map[String, Any], context: RuntimeContext = null): String = {
     val sb = StringBuilder.newBuilder
     for ((k, v) <- map) {
       v match {
@@ -47,7 +47,7 @@ object UriUtils {
   }
 
   @throws[InvalidStatusException]("if path template variable not in cs")
-  def renderPath(tpl: String, cs: Case, context: CaseContext): String = {
+  def renderPath(tpl: String, cs: HttpCaseRequest, context: RuntimeContext): String = {
     if (null != cs.request) {
       val params = cs.request.path
       if (null != params && params.nonEmpty) {
@@ -61,7 +61,7 @@ object UriUtils {
     }
   }
 
-  def buildQueryString(cs: Case, context: CaseContext): Option[String] = {
+  def buildQueryString(cs: HttpCaseRequest, context: RuntimeContext): Option[String] = {
     if (null != cs.request) {
       val params = cs.request.query
       if (null != params && params.nonEmpty) {

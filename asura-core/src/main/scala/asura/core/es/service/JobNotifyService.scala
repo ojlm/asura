@@ -3,7 +3,7 @@ package asura.core.es.service
 import asura.common.util.{LogUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.cs.model.QueryJobNotify
+import asura.core.model.QueryJobNotify
 import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.job.JobExecDesc

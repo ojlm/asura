@@ -1,9 +1,9 @@
 package asura.core.es.model
 
 import asura.common.util.StringUtils
-import asura.core.cs.{CaseRequest, CaseResponse}
 import asura.core.es.EsConfig
-import asura.core.es.model.JobReportData.CaseReportItemMetrics
+import asura.core.es.model.JobReportData.JobReportItemMetrics
+import asura.core.http.{HttpRequestModel, HttpResponseModel}
 import com.sksamuel.elastic4s.mappings._
 
 case class JobReportDataItem(
@@ -11,9 +11,9 @@ case class JobReportDataItem(
                               val caseId: String,
                               val scenarioId: String,
                               val jobId: String,
-                              var metrics: CaseReportItemMetrics,
-                              val request: CaseRequest,
-                              val response: CaseResponse,
+                              var metrics: JobReportItemMetrics,
+                              val request: HttpRequestModel,
+                              val response: HttpResponseModel,
                               var assertions: Map[String, Any],
                               var assertionsResult: java.util.Map[_, _],
                               var generator: String = StringUtils.EMPTY, // specify generator type

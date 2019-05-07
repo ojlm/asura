@@ -4,7 +4,7 @@ import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.cs.model.QueryApi
+import asura.core.model.QueryApi
 import asura.core.es.model.{BulkDocResponse, FieldKeys, IndexDocResponse, RestApi}
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.util.JacksonSupport.jacksonJsonIndexable

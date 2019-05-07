@@ -1,7 +1,7 @@
 package asura.core.es.model
 
 import asura.common.util.StringUtils
-import asura.core.cs.FieldTypes
+import asura.core.assertion.FieldTypes
 
 /**
   * https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#schemaObject
@@ -13,7 +13,7 @@ trait SchemaObject {
   var description: String
 
   /**
-    * a [[asura.core.cs.FieldTypes]] field converted from `type` and `format`,
+    * a [[FieldTypes]] field converted from `type` and `format`,
     */
   var `type`: String
 }

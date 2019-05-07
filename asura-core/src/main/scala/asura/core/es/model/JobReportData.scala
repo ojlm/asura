@@ -4,9 +4,9 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 import asura.common.util.StringUtils
-import asura.core.cs.CaseResult
-import asura.core.cs.assertion.engine.Statistic
-import asura.core.es.model.JobReportData.{CaseReportItem, ScenarioReportItem}
+import asura.core.assertion.engine.Statistic
+import asura.core.es.model.JobReportData.{JobReportItem, ScenarioReportItem}
+import asura.core.http.HttpResult
 import com.fasterxml.jackson.annotation.JsonIgnore
 
 
@@ -15,7 +15,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
   */
 case class JobReportData(
                           var dayIndexSuffix: String = LocalDateTime.now().format(DateTimeFormatter.ofPattern(JobReportDataItem.INDEX_DATE_TIME_PATTERN)),
-                          var cases: Seq[CaseReportItem] = Nil,
+                          var cases: Seq[JobReportItem] = Nil,
                           var scenarios: Seq[ScenarioReportItem] = Nil,
                           var ext: Map[String, Any] = Map.empty
                         )
@@ -58,29 +58,29 @@ object JobReportData {
     }
   }
 
-  case class CaseReportItemMetrics(
-                                    val renderRequestTime: Long,
-                                    val renderAuthTime: Long,
-                                    val requestTime: Long,
-                                    val evalAssertionTime: Long,
-                                    val totalTime: Long,
-                                  )
+  case class JobReportItemMetrics(
+                                   val renderRequestTime: Long,
+                                   val renderAuthTime: Long,
+                                   val requestTime: Long,
+                                   val evalAssertionTime: Long,
+                                   val totalTime: Long,
+                                 )
 
   /**
     * for any type of request. eg: http, dubbo, sql
     */
-  case class CaseReportItem(
-                             var id: String,
-                             var title: String,
-                             var itemId: String,
-                             var statis: Statistic,
-                             var generator: String = StringUtils.EMPTY, // specify generator type
-                           ) extends BasicReportItem
+  case class JobReportItem(
+                            var id: String,
+                            var title: String,
+                            var itemId: String,
+                            var statis: Statistic,
+                            var generator: String = StringUtils.EMPTY, // specify generator type
+                          ) extends BasicReportItem
 
-  object CaseReportItem {
+  object JobReportItem {
 
-    def parse(title: String, result: CaseResult, itemId: String = null, status: String = null, msg: String = null): CaseReportItem = {
-      val item = CaseReportItem(id = result.caseId, title = title, itemId, statis = result.statis)
+    def parse(title: String, result: HttpResult, itemId: String = null, status: String = null, msg: String = null): JobReportItem = {
+      val item = JobReportItem(id = result.caseId, title = title, itemId, statis = result.statis)
       if (StringUtils.isNotEmpty(status)) {
         item.status = status
       } else {
@@ -100,7 +100,7 @@ object JobReportData {
   case class ScenarioReportItem(
                                  var id: String,
                                  var title: String,
-                                 var steps: Seq[CaseReportItem] = Nil
+                                 var steps: Seq[JobReportItem] = Nil
                                ) extends BasicReportItem
 
 }

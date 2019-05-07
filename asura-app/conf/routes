@@ -26,7 +26,7 @@ POST        /api/home                            asura.app.api.HomeApi.query()
 ->          /api/project                         project.Routes
 ->          /api/openapi                         openapi.Routes
 ->          /api/api                             api.Routes
-->          /api/cs                              cs.Routes
+->          /api/cs                              http.Routes
 ->          /api/env                             env.Routes
 ->          /api/job                             job.Routes
 ->          /api/linkerd                         linkerd.Routes

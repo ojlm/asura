@@ -7,7 +7,7 @@ import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.cs.model.{AggsItem, AggsQuery, QueryDomain, QueryDomainWildcard}
+import asura.core.model.{AggsItem, AggsQuery, QueryDomain, QueryDomainWildcard}
 import asura.core.es.model.{BulkDocResponse, DomainOnlineLog, FieldKeys}
 import asura.core.es.service.BaseAggregationService._
 import asura.core.es.{EsClient, EsConfig}

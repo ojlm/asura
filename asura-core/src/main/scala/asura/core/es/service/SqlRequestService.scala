@@ -6,7 +6,7 @@ import java.util.Base64
 import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, RSAUtils, StringUtils}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.cs.model.QuerySqlRequest
+import asura.core.model.QuerySqlRequest
 import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig, EsResponse}
 import asura.core.sql.SqlParserUtils

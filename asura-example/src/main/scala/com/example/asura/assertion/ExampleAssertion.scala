@@ -1,7 +1,7 @@
 package com.example.asura.assertion
 
-import asura.core.cs.assertion.Assertion
-import asura.core.cs.assertion.engine.{AssertResult, PassAssertResult}
+import asura.core.assertion.Assertion
+import asura.core.assertion.engine.{AssertResult, PassAssertResult}
 
 import scala.concurrent.Future
 

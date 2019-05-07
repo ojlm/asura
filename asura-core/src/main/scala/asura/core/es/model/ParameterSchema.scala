@@ -1,6 +1,6 @@
 package asura.core.es.model
 
-import asura.core.cs.FieldTypes
+import asura.core.assertion.FieldTypes
 import asura.core.es.model.ParameterSchema.ArrayItems
 import io.swagger.models.parameters.{AbstractSerializableParameter, Parameter => SwaggerParameter}
 
