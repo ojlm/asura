@@ -1,6 +1,6 @@
 package asura.core.dubbo
 
-import asura.core.cs.assertion.engine.{AssertionContext, Statistic}
+import asura.core.assertion.engine.{AssertionContext, Statistic}
 import asura.core.es.model.DubboRequest
 
 import scala.concurrent.Future

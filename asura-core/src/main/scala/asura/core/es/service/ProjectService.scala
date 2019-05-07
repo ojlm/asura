@@ -4,11 +4,10 @@ import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.cs.CommonValidator
-import asura.core.cs.model.{QueryProject, TransferProject}
+import asura.core.model.{QueryProject, TransferProject}
 import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig}
-import asura.core.util.JacksonSupport
+import asura.core.util.{CommonValidator, JacksonSupport}
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.http.ElasticDsl._
 import com.sksamuel.elastic4s.script.Script
@@ -23,7 +22,7 @@ import scala.concurrent.Future
 object ProjectService extends CommonService {
 
   val projectRelatedIndexes = Seq(
-    Case.Index, RestApi.Index, Job.Index, Environment.Index,
+    HttpCaseRequest.Index, RestApi.Index, Job.Index, Environment.Index,
     JobReport.Index, JobNotify.Index, Scenario.Index, Activity.Index,
     ProjectApiCoverage.Index
   )

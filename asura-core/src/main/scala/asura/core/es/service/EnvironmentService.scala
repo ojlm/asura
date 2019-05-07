@@ -5,7 +5,7 @@ import asura.common.util.StringUtils
 import asura.core.ErrorMessages
 import asura.core.auth.AuthManager
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.cs.model.QueryEnv
+import asura.core.model.QueryEnv
 import asura.core.es.model.{DeleteDocResponse, Environment, FieldKeys, IndexDocResponse}
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.util.JacksonSupport

@@ -9,7 +9,7 @@ import asura.app.api.model.QueryJobState
 import asura.common.model.{ApiRes, ApiResError}
 import asura.common.util.StringUtils
 import asura.core.ErrorMessages.ErrorMessage
-import asura.core.cs.model.{AggsQuery, QueryJob, QueryJobReport}
+import asura.core.model.{AggsQuery, QueryJob, QueryJobReport}
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.Activity
 import asura.core.es.service._

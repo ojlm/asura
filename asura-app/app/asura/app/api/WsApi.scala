@@ -7,8 +7,9 @@ import asura.core.actor.flow.WebSocketMessageHandler
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.Activity
 import asura.core.job.actor.JobTestActor.JobTestMessage
-import asura.core.job.actor.ScenarioRunnerActor.ScenarioTestMessage
-import asura.core.job.actor.{JobManualActor, JobTestActor, ScenarioRunnerActor}
+import asura.core.job.actor.{JobManualActor, JobTestActor}
+import asura.core.scenario.actor.ScenarioRunnerActor
+import asura.core.scenario.actor.ScenarioRunnerActor.ScenarioTestMessage
 import asura.dubbo.actor.TelnetDubboProviderActor
 import javax.inject.{Inject, Singleton}
 import org.pac4j.http.client.direct.HeaderClient

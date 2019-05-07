@@ -2,7 +2,7 @@ package asura.core.es.service
 
 import asura.common.util.StringUtils
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.cs.model.QueryHome
+import asura.core.model.QueryHome
 import asura.core.es.EsClient
 import asura.core.es.model._
 import com.sksamuel.elastic4s.http.ElasticDsl._
@@ -26,7 +26,7 @@ object HomeService extends CommonService {
     EsClient.esClient.execute {
       val esQueries = ArrayBuffer[Query]()
       if (StringUtils.isNotEmpty(query.text)) esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
-      search(Group.Index, Project.Index, Case.Index, Environment.Index, Scenario.Index, Job.Index)
+      search(Group.Index, Project.Index, HttpCaseRequest.Index, Environment.Index, Scenario.Index, Job.Index)
         .query(boolQuery().must(esQueries))
         .sourceInclude(includeFields)
         .size(3)

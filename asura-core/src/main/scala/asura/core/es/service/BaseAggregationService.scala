@@ -1,7 +1,7 @@
 package asura.core.es.service
 
 import asura.common.util.StringUtils
-import asura.core.cs.model.{AggsItem, AggsQuery}
+import asura.core.model.{AggsItem, AggsQuery}
 import asura.core.es.model.FieldKeys
 import com.sksamuel.elastic4s.http.ElasticDsl.{rangeQuery, termQuery, termsQuery, wildcardQuery, _}
 import com.sksamuel.elastic4s.http.Response

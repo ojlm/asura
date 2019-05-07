@@ -3,7 +3,7 @@ package asura.core.es.service
 import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.cs.model.{AggsItem, AggsQuery, QueryActivity}
+import asura.core.model.{AggsItem, AggsQuery, QueryActivity}
 import asura.core.es.model._
 import asura.core.es.service.BaseAggregationService._
 import asura.core.es.{EsClient, EsConfig}
@@ -37,7 +37,7 @@ object ActivityService extends CommonService with BaseAggregationService {
     if (StringUtils.isNotEmpty(query.user)) esQueries += termQuery(FieldKeys.FIELD_USER, query.user)
     if (StringUtils.isNotEmpty(query.targetId)) esQueries += termQuery(FieldKeys.FIELD_TARGET_ID, query.targetId)
     EsClient.esClient.execute {
-      search(Case.Index)
+      search(HttpCaseRequest.Index)
         .query(boolQuery().must(esQueries))
         .from(query.pageFrom)
         .size(query.pageSize)

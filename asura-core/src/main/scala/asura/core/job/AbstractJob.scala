@@ -2,7 +2,7 @@ package asura.core.job
 
 import asura.common.util.FutureUtils.RichFuture
 import asura.common.util.LogUtils
-import asura.core.cs.ContextOptions
+import asura.core.runtime.ContextOptions
 import asura.core.es.model.{BaseIndex, JobReport}
 import asura.core.es.service.{JobNotifyService, JobReportService, JobService}
 import asura.core.job.actor.{JobFinished, JobRunning, SchedulerActor}

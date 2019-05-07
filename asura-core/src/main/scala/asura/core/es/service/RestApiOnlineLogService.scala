@@ -4,7 +4,7 @@ import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.cs.model.QueryOnlineApi
+import asura.core.model.QueryOnlineApi
 import asura.core.es.model.{BulkDocResponse, FieldKeys, RestApiOnlineLog}
 import asura.core.es.service.CommonService.CustomCatIndices
 import asura.core.es.{EsClient, EsConfig}

@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import asura.app.api.model.PreviewOnlineApi
 import asura.common.util.StringUtils
 import asura.core.ErrorMessages
-import asura.core.cs.model.{AggsQuery, QueryDomain, QueryDomainWildcard, QueryOnlineApi}
+import asura.core.model.{AggsQuery, QueryDomain, QueryDomainWildcard, QueryOnlineApi}
 import asura.core.es.model.{DomainOnlineConfig, FieldKeys}
 import asura.core.es.service._
 import asura.core.es.{EsClient, EsResponse}
