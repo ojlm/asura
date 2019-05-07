@@ -45,6 +45,8 @@ object Scenario extends IndexSetting {
       NestedField(name = FieldKeys.FIELD_STEPS, fields = Seq(
         KeywordField(name = FieldKeys.FIELD_ID),
         KeywordField(name = FieldKeys.FIELD_TYPE),
+        BasicField(name = FieldKeys.FIELD_STORED, `type` = "boolean"),
+        BasicField(name = FieldKeys.FIELD_ENABLED, `type` = "boolean"),
       )),
       NestedField(name = FieldKeys.FIELD_LABELS, fields = Seq(
         KeywordField(name = FieldKeys.FIELD_NAME),
