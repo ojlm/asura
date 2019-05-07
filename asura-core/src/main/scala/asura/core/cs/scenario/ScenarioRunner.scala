@@ -34,7 +34,7 @@ object ScenarioRunner {
         val caseIds = ArrayBuffer[String]()
         list.foreach(tuple => {
           val (scenarioId, scenario) = tuple
-          val scenarioCaseIds = scenario.steps.filter(ScenarioStep.TYPE_CASE == _.`type`).map(_.id)
+          val scenarioCaseIds = scenario.steps.filter(ScenarioStep.TYPE_HTTP == _.`type`).map(_.id)
           scenarioIdMap += (scenarioId -> scenario)
           caseIds ++= scenarioCaseIds
           scenarioIdCaseIdMap(scenarioId) = scenarioCaseIds

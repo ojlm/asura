@@ -31,21 +31,21 @@ class ScenarioApi @Inject()(
         if (response.result.nonEmpty) {
           val scenarioDoc = EsResponse.toSingleApiData(response.result, true)
           val steps = scenarioDoc.getOrElse(FieldKeys.FIELD_STEPS, Nil).asInstanceOf[Seq[Map[String, Any]]]
-          val csSeq = ArrayBuffer[String]()
+          val httpSeq = ArrayBuffer[String]()
           val dubboSeq = ArrayBuffer[String]()
           val sqlSeq = ArrayBuffer[String]()
           steps.foreach(step => {
             val ty = step.getOrElse(FieldKeys.FIELD_TYPE, null).asInstanceOf[String]
             val id = step.getOrElse(FieldKeys.FIELD_ID, null).asInstanceOf[String]
             ty match {
-              case ScenarioStep.TYPE_CASE => csSeq += id
+              case ScenarioStep.TYPE_HTTP => httpSeq += id
               case ScenarioStep.TYPE_DUBBO => dubboSeq += id
               case ScenarioStep.TYPE_SQL => sqlSeq += id
               case _ =>
             }
           })
           val res = for {
-            cs <- CaseService.getByIdsAsMap(csSeq)
+            cs <- CaseService.getByIdsAsMap(httpSeq)
             dubbo <- DubboRequestService.getByIdsAsMap(dubboSeq)
             sql <- SqlRequestService.getByIdsAsMap(sqlSeq)
           } yield (cs, dubbo, sql)
