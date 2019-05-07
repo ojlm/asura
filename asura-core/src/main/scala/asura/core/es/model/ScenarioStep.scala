@@ -10,7 +10,8 @@ case class ScenarioStep(
 
 object ScenarioStep {
 
-  val TYPE_CASE = "case"
+  // use `case` for http request backward compatible
+  val TYPE_HTTP = "case"
   val TYPE_SQL = "sql"
   val TYPE_DUBBO = "dubbo"
 }

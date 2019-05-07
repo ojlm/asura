@@ -26,7 +26,7 @@ class ScenarioTestActor(user: String, out: ActorRef) extends BaseActor {
 
   def handleRequest(wsActor: ActorRef): Receive = {
     case ScenarioTestMessage(summary, steps, options) =>
-      val caseIds = steps.filter(ScenarioStep.TYPE_CASE == _.`type`).map(_.id)
+      val caseIds = steps.filter(ScenarioStep.TYPE_HTTP == _.`type`).map(_.id)
       if (null != steps && steps.nonEmpty) {
         CaseService.getByIdsAsMap(caseIds).map(caseIdMap => {
           val cases = ArrayBuffer[(String, Case)]()

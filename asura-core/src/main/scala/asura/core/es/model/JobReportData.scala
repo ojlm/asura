@@ -33,7 +33,7 @@ object JobReportData {
     var id: String
     var title: String
     var status: String = ReportItemStatus.STATUS_PASS
-    var `type`: String = ScenarioStep.TYPE_CASE
+    var `type`: String = ScenarioStep.TYPE_HTTP
     // not empty when error occur
     var msg: String = StringUtils.EMPTY
 
