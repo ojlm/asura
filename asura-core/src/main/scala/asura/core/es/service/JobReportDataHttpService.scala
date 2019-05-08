@@ -6,21 +6,21 @@ import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.model._
 import asura.core.es.service.CommonService.CustomCatIndices
 import asura.core.es.{EsClient, EsConfig}
-import asura.core.job.actor.JobReportDataItemSaveActor.SaveReportDataItemMessage
+import asura.core.job.actor.JobReportDataItemSaveActor.SaveReportDataHttpItemMessage
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.http.ElasticDsl._
 
 import scala.concurrent.Future
 
-object JobReportDataService extends CommonService {
+object JobReportDataHttpService extends CommonService {
 
-  def index(items: Seq[SaveReportDataItemMessage], day: String): Future[BulkDocResponse] = {
+  def index(items: Seq[SaveReportDataHttpItemMessage], day: String): Future[BulkDocResponse] = {
     if (null == items && items.isEmpty) {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
       EsClient.esClient.execute {
         bulk(
-          items.map(item => indexInto(s"${JobReportDataItem.Index}-${day}" / EsConfig.DefaultType).doc(item.dataItem).id(item.id))
+          items.map(item => indexInto(s"${JobReportDataHttpItem.Index}-${day}" / EsConfig.DefaultType).doc(item.dataItem).id(item.id))
         )
       }.map(toBulkDocResponse(_))
     }
@@ -31,14 +31,14 @@ object JobReportDataService extends CommonService {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
       EsClient.esClient.execute {
-        search(s"${JobReportDataItem.Index}-${day}").query(idsQuery(id)).size(1)
+        search(s"${JobReportDataHttpItem.Index}-${day}").query(idsQuery(id)).size(1)
       }
     }
   }
 
   def getIndices() = {
     EsClient.esClient.execute {
-      CustomCatIndices(s"${JobReportDataItem.Index}-*")
+      CustomCatIndices(s"${JobReportDataHttpItem.Index}-*")
     }
   }
 }

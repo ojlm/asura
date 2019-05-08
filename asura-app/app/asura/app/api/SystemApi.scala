@@ -6,7 +6,7 @@ import asura.app.api.BaseApi.OkApiRes
 import asura.common.model.ApiResError
 import asura.core.ErrorMessages
 import asura.core.es.actor.ActivitySaveActor
-import asura.core.es.service.{IndexService, JobReportDataService}
+import asura.core.es.service.{IndexService, JobReportDataHttpService}
 import asura.core.job.SystemJobs
 import asura.core.job.SystemJobs.{ClearJobReportIndicesJobModel, SyncDomainAndApiJobModel}
 import asura.core.job.impl.{ClearJobReportDataIndicesJob, SyncOnlineDomainAndRestApiJob}
@@ -29,7 +29,7 @@ class SystemApi @Inject()(
   val activityActor = system.actorOf(ActivitySaveActor.props())
 
   def getJobReportIndices() = Action.async { implicit req =>
-    JobReportDataService.getIndices().map(res => {
+    JobReportDataHttpService.getIndices().map(res => {
       if (res.isSuccess) {
         toActionResultFromAny(res.result)
       } else {
