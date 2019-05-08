@@ -5,7 +5,7 @@ import asura.common.util.StringUtils
 import asura.core.assertion.engine.{AssertionContext, Statistic}
 import asura.core.concurrent.ExecutionContextManager.cachedExecutor
 import asura.core.runtime.RuntimeContext
-import asura.core.es.model.JobReportData.JobReportItemMetrics
+import asura.core.es.model.JobReportData.JobReportStepItemMetrics
 
 import scala.concurrent.Future
 
@@ -15,7 +15,7 @@ case class HttpResult(
                        var context: java.util.Map[Any, Any],
                        var request: HttpRequestModel,
                        var response: HttpResponseModel,
-                       var metrics: JobReportItemMetrics = null,
+                       var metrics: JobReportStepItemMetrics = null,
                        var statis: Statistic = Statistic(),
                        var result: java.util.Map[_, _] = java.util.Collections.EMPTY_MAP,
                        var generator: String = StringUtils.EMPTY, // generator type

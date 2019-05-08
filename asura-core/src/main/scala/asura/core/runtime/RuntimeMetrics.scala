@@ -1,6 +1,6 @@
 package asura.core.runtime
 
-import asura.core.es.model.JobReportData.JobReportItemMetrics
+import asura.core.es.model.JobReportData.JobReportStepItemMetrics
 
 class RuntimeMetrics {
 
@@ -60,8 +60,8 @@ class RuntimeMetrics {
     this
   }
 
-  def toReportItemMetrics(): JobReportItemMetrics = {
-    JobReportItemMetrics(
+  def toReportStepItemMetrics(): JobReportStepItemMetrics = {
+    JobReportStepItemMetrics(
       renderRequestTime = Math.round((_renderRequestEnd - _renderRequestStart).toDouble / scale),
       renderAuthTime = Math.round((_renderAuthEnd - _renderAuthStart).toDouble / scale),
       requestTime = Math.round((_evalAssertionStart - _performRequestStart).toDouble / scale),
