@@ -20,7 +20,7 @@ object HttpRunner {
 
   val logger = Logger("HttpRunner")
 
-  def test(caseId: String, cs: HttpCaseRequest, context: RuntimeContext = RuntimeContext()): Future[HttpResult] = {
+  def test(docId: String, cs: HttpCaseRequest, context: RuntimeContext = RuntimeContext()): Future[HttpResult] = {
     implicit val metrics = RuntimeMetrics()
     metrics.start()
     context.eraseCurrentData()
@@ -43,7 +43,7 @@ object HttpRunner {
             HttpEngine.singleRequestWithProxy(tuple._1, proxyServer).flatMap(res => {
               Unmarshal(res.entity).to[ByteString].flatMap(resBody => {
                 metrics.evalAssertionBegin()
-                HttpResponseAssert.generateCaseReport(caseId, cs.assert, res,
+                HttpResponseAssert.generateHttpReport(docId, cs.assert, res,
                   byteStringToString(resBody, res.entity.getContentType()), tuple._2, context
                 )
               })
@@ -53,7 +53,7 @@ object HttpRunner {
             HttpEngine.singleRequest(tuple._1).flatMap(res => {
               Unmarshal(res.entity).to[ByteString].flatMap(resBody => {
                 metrics.evalAssertionBegin()
-                HttpResponseAssert.generateCaseReport(caseId, cs.assert, res,
+                HttpResponseAssert.generateHttpReport(docId, cs.assert, res,
                   byteStringToString(resBody, res.entity.getContentType()), tuple._2, context
                 )
               })
@@ -68,7 +68,7 @@ object HttpRunner {
     })
   }
 
-  def toCaseRequestTuple(req: HttpRequest): Future[(HttpRequest, HttpRequestModel)] = {
+  def toCaseRequestTuple(req: HttpRequest): Future[(HttpRequest, HttpRequestReportModel)] = {
     Unmarshal(req.entity).to[String].map(reqBody => {
       val headers = scala.collection.mutable.HashMap[String, String]()
       req.headers.foreach(h => headers += (h.name() -> h.value()))
@@ -76,7 +76,7 @@ object HttpRunner {
       if (mediaType != "none/none") {
         headers += (HttpContentTypes.KEY_CONTENT_TYPE -> mediaType)
       }
-      (req, HttpRequestModel(req.method.value, req.getUri().toString, headers, reqBody))
+      (req, HttpRequestReportModel(req.method.value, req.getUri().toString, headers, reqBody))
     })
   }
 

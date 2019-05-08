@@ -4,8 +4,8 @@ import akka.actor.{Props, Status}
 import asura.common.actor.BaseActor
 import asura.common.util.LogUtils
 import asura.core.actor.messages.Flush
-import asura.core.es.model.JobReportDataHttpItem
-import asura.core.es.service.JobReportDataHttpService
+import asura.core.es.model.JobReportDataItem
+import asura.core.es.service.JobReportDataItemService
 import asura.core.job.actor.JobReportDataItemSaveActor.SaveReportDataHttpItemMessage
 
 import scala.collection.mutable.ArrayBuffer
@@ -41,7 +41,7 @@ class JobReportDataItemSaveActor(dayIndexSuffix: String) extends BaseActor {
   private def insert(): Unit = {
     if (messages.length > 0) {
       log.debug(s"${messages.length} items is saving...")
-      JobReportDataHttpService.index(messages, dayIndexSuffix)
+      JobReportDataItemService.index(messages, dayIndexSuffix)
       messages.clear()
     }
   }
@@ -51,6 +51,6 @@ object JobReportDataItemSaveActor {
 
   def props(dayIndexSuffix: String) = Props(new JobReportDataItemSaveActor(dayIndexSuffix))
 
-  case class SaveReportDataHttpItemMessage(id: String, dataItem: JobReportDataHttpItem)
+  case class SaveReportDataHttpItemMessage(id: String, dataItem: JobReportDataItem)
 
 }
