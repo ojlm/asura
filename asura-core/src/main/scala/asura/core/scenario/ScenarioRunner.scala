@@ -7,7 +7,7 @@ import asura.core.ErrorMessages
 import asura.core.assertion.engine.Statistic
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.model.JobReportData.{JobReportStepItemData, ReportStepItemStatus, ScenarioReportItemData}
-import asura.core.es.model.{HttpCaseRequest, JobReportDataHttpItem, Scenario, ScenarioStep}
+import asura.core.es.model.{HttpCaseRequest, JobReportDataItem, Scenario, ScenarioStep}
 import asura.core.es.service.{HttpCaseRequestService, ScenarioService}
 import asura.core.http.{HttpResult, HttpRunner}
 import asura.core.job.actor.JobReportDataItemSaveActor.SaveReportDataHttpItemMessage
@@ -75,7 +75,7 @@ object ScenarioRunner {
 
   /**
     * @param scenarioId if this value is null, previous case context should not be put context
-    * @param caseTuples (caseId, case)
+    * @param caseTuples (docId, case)
     */
   def test(
             scenarioId: String,
@@ -111,7 +111,7 @@ object ScenarioRunner {
           ///////////////////////////////
           if (failFast && isScenarioFailed) {
             // add skipped test case report item in a scenario
-            val item = JobReportStepItemData(id, cs.summary, null, Statistic())
+            val item = JobReportStepItemData(id, cs.summary, null, Statistic(), ScenarioStep.TYPE_HTTP)
             item.status = ReportStepItemStatus.STATUS_SKIPPED
             if (null != log) log(s"scenario(${summary}): ${cs.summary} ${XtermUtils.yellowWrap(ReportStepItemStatus.STATUS_SKIPPED)}.")
             if (null != logResult) logResult(ItemActorEvent(JobReportItemResultEvent(caseIndex, item.status, null, null)))
@@ -119,41 +119,42 @@ object ScenarioRunner {
           } else {
             // execute next test case
             HttpRunner.test(id, cs, caseContext)
-              .map { caseResult =>
+              .map { httpResult =>
                 var itemDataId: String = null
                 if (null != dataStoreHelper) {
                   // save item data if the item not skipped or exception happened
                   itemDataId = s"${dataStoreHelper.reportId}_${dataStoreHelper.infix}_${caseIndex}"
-                  val dataItem = JobReportDataHttpItem(
+                  val dataItem = JobReportDataItem(
                     reportId = dataStoreHelper.reportId,
                     caseId = id,
                     scenarioId = scenarioId,
                     jobId = dataStoreHelper.jobId,
-                    metrics = caseResult.metrics,
-                    request = caseResult.request,
-                    response = caseResult.response,
-                    assertions = caseResult.assert,
-                    assertionsResult = caseResult.result,
-                    generator = StringUtils.notEmptyElse(caseResult.generator, StringUtils.EMPTY)
+                    `type` = ScenarioStep.TYPE_HTTP,
+                    metrics = httpResult.metrics,
+                    request = httpResult.request,
+                    response = httpResult.response,
+                    assertions = httpResult.assert,
+                    assertionsResult = httpResult.result,
+                    generator = StringUtils.notEmptyElse(httpResult.generator, StringUtils.EMPTY)
                   )
                   dataStoreHelper.actorRef ! SaveReportDataHttpItemMessage(itemDataId, dataItem)
                 }
-                val statis = caseResult.statis
+                val statis = httpResult.statis
                 val item = if (statis.isSuccessful) {
                   if (null != log) log(s"scenario(${summary}): ${cs.summary} ${XtermUtils.greenWrap(ReportStepItemStatus.STATUS_PASS)}.")
                   if (StringUtils.isNotEmpty(scenarioId)) {
                     // when it's a real scenario instead of a plain array of case
-                    caseContext.setPrevCurrentData(RuntimeContext.extractCaseSelfContext(caseResult))
+                    caseContext.setPrevCurrentData(RuntimeContext.extractCaseSelfContext(httpResult))
                   }
-                  JobReportStepItemData.parse(cs.summary, caseResult, itemDataId)
+                  JobReportStepItemData.parse(cs.summary, httpResult, itemDataId)
                 } else {
                   if (null != log) log(s"scenario(${summary}): ${cs.summary} ${XtermUtils.redWrap(ReportStepItemStatus.STATUS_FAIL)}.")
                   isScenarioFailed = true
                   scenarioReportItem.markFail()
                   // fail because of assertions not pass
-                  JobReportStepItemData.parse(cs.summary, caseResult, itemDataId)
+                  JobReportStepItemData.parse(cs.summary, httpResult, itemDataId)
                 }
-                if (null != logResult) logResult(ItemActorEvent(JobReportItemResultEvent(caseIndex, item.status, null, caseResult)))
+                if (null != logResult) logResult(ItemActorEvent(JobReportItemResultEvent(caseIndex, item.status, null, httpResult)))
                 item
               }
               .recover {

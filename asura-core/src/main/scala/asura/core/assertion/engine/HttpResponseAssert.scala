@@ -1,8 +1,8 @@
 package asura.core.assertion.engine
 
 import akka.http.scaladsl.model.HttpResponse
+import asura.core.http.{HeaderUtils, HttpRequestReportModel, HttpResponseReportModel, HttpResult}
 import asura.core.runtime.RuntimeContext
-import asura.core.http.{HeaderUtils, HttpRequestModel, HttpResponseModel, HttpResult}
 import asura.core.util.JsonPathUtils
 
 import scala.concurrent.Future
@@ -14,12 +14,12 @@ object HttpResponseAssert {
   val KEY_ENTITY = "entity"
 
   /** use java type system because of json path library */
-  def generateCaseReport(
-                          caseId: String,
+  def generateHttpReport(
+                          docId: String,
                           assert: Map[String, Any],
                           response: HttpResponse,
                           entity: String,
-                          caseRequest: HttpRequestModel,
+                          caseRequest: HttpRequestReportModel,
                           caseContext: RuntimeContext
                         ): Future[HttpResult] = {
     var isJson = false
@@ -45,7 +45,7 @@ object HttpResponseAssert {
       }
     }
     import scala.collection.JavaConverters.mapAsScalaMap
-    val caseResponse = HttpResponseModel(
+    val caseResponse = HttpResponseReportModel(
       response.status.intValue(),
       response.status.reason(),
       mapAsScalaMap(headers), {
@@ -54,6 +54,6 @@ object HttpResponseAssert {
       },
       entity
     )
-    HttpResult.eval(caseId, response, assert, caseContext, caseRequest, caseResponse)
+    HttpResult.eval(docId, response, assert, caseContext, caseRequest, caseResponse)
   }
 }
