@@ -2,7 +2,7 @@ package asura.core.es.model
 
 import asura.common.util.StringUtils
 import asura.core.es.EsConfig
-import asura.core.es.model.JobReportData.JobReportItemMetrics
+import asura.core.es.model.JobReportData.JobReportStepItemMetrics
 import asura.core.http.{HttpRequestModel, HttpResponseModel}
 import com.sksamuel.elastic4s.mappings._
 
@@ -11,7 +11,7 @@ case class JobReportDataItem(
                               val caseId: String,
                               val scenarioId: String,
                               val jobId: String,
-                              var metrics: JobReportItemMetrics,
+                              var metrics: JobReportStepItemMetrics,
                               val request: HttpRequestModel,
                               val response: HttpResponseModel,
                               var assertions: Map[String, Any],
