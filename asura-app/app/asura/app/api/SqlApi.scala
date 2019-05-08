@@ -5,17 +5,16 @@ import akka.pattern.ask
 import akka.util.Timeout
 import asura.app.api.model.TestSql
 import asura.common.util.StringUtils
-import asura.core.RunnerActors
-import asura.core.model.QuerySqlRequest
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, SqlRequest}
 import asura.core.es.service.SqlRequestService
+import asura.core.model.QuerySqlRequest
+import asura.core.{CoreConfig, RunnerActors}
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 import play.api.Configuration
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration._
 
 @Singleton
 class SqlApi @Inject()(
@@ -26,7 +25,7 @@ class SqlApi @Inject()(
                       ) extends BaseApi {
 
   val activityActor = system.actorOf(ActivitySaveActor.props())
-  implicit val timeout: Timeout = 30.seconds
+  implicit val timeout: Timeout = CoreConfig.DEFAULT_ACTOR_ASK_TIMEOUT
   lazy val sqlInvoker = RunnerActors.sqlInvoker
 
   def test() = Action(parse.byteString).async { implicit req =>

@@ -2,12 +2,14 @@ package asura.core
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
+import akka.util.Timeout
 import asura.common.util.StringUtils
 import asura.core.CoreConfig.{EsOnlineLogConfig, LinkerdConfig}
 import asura.core.es.{EsClient, EsConfig}
 import com.sksamuel.elastic4s.http.ElasticClient
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 
 case class CoreConfig(
                        val system: ActorSystem,
@@ -26,6 +28,7 @@ case class CoreConfig(
 
 object CoreConfig {
 
+  implicit val DEFAULT_ACTOR_ASK_TIMEOUT: Timeout = 30.seconds
   implicit var system: ActorSystem = _
   implicit var dispatcher: ExecutionContext = _
   implicit var materializer: ActorMaterializer = _

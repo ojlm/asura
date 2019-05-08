@@ -5,19 +5,18 @@ import akka.pattern.ask
 import akka.util.Timeout
 import asura.app.api.model.TestDubbo
 import asura.common.util.StringUtils
-import asura.core.RunnerActors
-import asura.core.model.QueryDubboRequest
 import asura.core.dubbo.DubboResult
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, DubboRequest}
 import asura.core.es.service.DubboRequestService
+import asura.core.model.QueryDubboRequest
+import asura.core.{CoreConfig, RunnerActors}
 import asura.dubbo.actor.GenericServiceInvokerActor.{GetInterfaceMethodParams, GetInterfacesMessage, GetProvidersMessage}
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 import play.api.Configuration
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration._
 
 @Singleton
 class DubboApi @Inject()(
@@ -28,7 +27,7 @@ class DubboApi @Inject()(
                         ) extends BaseApi {
 
   val activityActor = system.actorOf(ActivitySaveActor.props())
-  implicit val timeout: Timeout = 30.seconds
+  implicit val timeout: Timeout = CoreConfig.DEFAULT_ACTOR_ASK_TIMEOUT
   lazy val dubboInvoker = RunnerActors.dubboInvoker
 
   def getInterfaces() = Action(parse.byteString).async { implicit req =>

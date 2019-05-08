@@ -5,6 +5,7 @@ import java.util.concurrent.Executors
 import com.alibaba.dubbo.config.ApplicationConfig
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 
 case class DubboConfig(
                         appName: String = "asura-dubbo"
@@ -14,6 +15,7 @@ case class DubboConfig(
 
 object DubboConfig {
 
+  val DEFAULT_ACTOR_ASK_TIMEOUT = 30.seconds
   val DEFAULT_PROTOCOL = "dubbo://"
   val DEFAULT_PORT = 20880
   val DEFAULT_ROOT_DUBBO_PATH = "/dubbo"

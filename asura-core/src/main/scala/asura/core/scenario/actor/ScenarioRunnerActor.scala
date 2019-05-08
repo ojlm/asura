@@ -8,21 +8,20 @@ import asura.common.util.{FutureUtils, LogUtils, StringUtils, XtermUtils}
 import asura.core.dubbo.DubboResult
 import asura.core.es.model.JobReportData.ScenarioReportItemData
 import asura.core.es.model._
-import asura.core.es.service.{HttpCaseRequestService, DubboRequestService, SqlRequestService}
+import asura.core.es.service.{DubboRequestService, HttpCaseRequestService, SqlRequestService}
 import asura.core.http.{HttpResult, HttpRunner}
 import asura.core.runtime.{ContextOptions, RuntimeContext}
 import asura.core.scenario.actor.ScenarioRunnerActor.{ScenarioTestData, ScenarioTestMessage}
 import asura.core.sql.SqlResult
-import asura.core.{ErrorMessages, RunnerActors}
+import asura.core.{CoreConfig, ErrorMessages, RunnerActors}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
-import scala.concurrent.duration._
 
 // alive during a scenario
 class ScenarioRunnerActor() extends BaseActor {
 
-  implicit val timeout: Timeout = 30.seconds
+  implicit val timeout: Timeout = CoreConfig.DEFAULT_ACTOR_ASK_TIMEOUT
   implicit val ec = context.dispatcher
 
   val dubboInvoker = RunnerActors.dubboInvoker
