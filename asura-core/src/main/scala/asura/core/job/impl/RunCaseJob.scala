@@ -4,7 +4,7 @@ import asura.common.model.{ApiMsg, BoolErrorRes}
 import asura.common.util.FutureUtils.RichFuture
 import asura.common.util.StringUtils
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.scenario.{ItemStoreDataHelper, ScenarioRunner}
+import asura.core.scenario.ScenarioRunner
 import asura.core.es.model.{HttpCaseRequest, JobData}
 import asura.core.es.service.HttpCaseRequestService
 import asura.core.job._
@@ -82,11 +82,11 @@ object RunCaseJob extends JobBase {
           if (null != jobData.ext) {
             HttpCaseRequestService.getCasesByJobDataExtAsMap(execDesc.job.group, execDesc.job.project, jobData.ext).flatMap(res => {
               res.foreach(idCsTuple => cases.append((idCsTuple._1, idCsTuple._2)))
-              val storeDataHelper = ItemStoreDataHelper(execDesc.reportId, "c", execDesc.reportItemSaveActor, execDesc.jobId)
+              val storeDataHelper = JobReportItemStoreDataHelper(execDesc.reportId, "c", execDesc.reportItemSaveActor, execDesc.jobId)
               ScenarioRunner.test(null, "job cases", cases, log, execDesc.options)(storeDataHelper)
             })
           } else {
-            val storeDataHelper = ItemStoreDataHelper(execDesc.reportId, "c", execDesc.reportItemSaveActor, execDesc.jobId)
+            val storeDataHelper = JobReportItemStoreDataHelper(execDesc.reportId, "c", execDesc.reportItemSaveActor, execDesc.jobId)
             ScenarioRunner.test(null, "job cases", cases, log, execDesc.options)(storeDataHelper)
           }
         })
@@ -94,7 +94,7 @@ object RunCaseJob extends JobBase {
         val cases = ArrayBuffer[(String, HttpCaseRequest)]()
         HttpCaseRequestService.getCasesByJobDataExtAsMap(execDesc.job.group, execDesc.job.project, jobData.ext).flatMap(res => {
           res.foreach(idCsTuple => cases.append((idCsTuple._1, idCsTuple._2)))
-          val storeDataHelper = ItemStoreDataHelper(execDesc.reportId, "c", execDesc.reportItemSaveActor, execDesc.jobId)
+          val storeDataHelper = JobReportItemStoreDataHelper(execDesc.reportId, "c", execDesc.reportItemSaveActor, execDesc.jobId)
           ScenarioRunner.test(null, "job cases", cases, log, execDesc.options)(storeDataHelper)
         })
       }

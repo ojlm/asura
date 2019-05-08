@@ -6,7 +6,7 @@ import akka.util.Timeout
 import asura.common.actor._
 import asura.common.util.{FutureUtils, LogUtils, StringUtils, XtermUtils}
 import asura.core.dubbo.DubboResult
-import asura.core.es.model.JobReportData.ScenarioReportItem
+import asura.core.es.model.JobReportData.ScenarioReportItemData
 import asura.core.es.model._
 import asura.core.es.service.{HttpCaseRequestService, DubboRequestService, SqlRequestService}
 import asura.core.http.{HttpResult, HttpRunner}
@@ -31,7 +31,7 @@ class ScenarioRunnerActor() extends BaseActor {
   var steps: Seq[ScenarioStep] = Nil
   var stepsData: ScenarioTestData = null
   var contextOptions: ContextOptions = null
-  var scenarioReportItem = ScenarioReportItem(null, null)
+  var scenarioReportItem = ScenarioReportItemData(null, null)
 
   // Actor which receive `asura.common.actor.ActorEvent` message for WebSocket api
   var wsActor: ActorRef = null

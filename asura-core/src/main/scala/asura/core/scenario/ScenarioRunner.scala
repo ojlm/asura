@@ -4,14 +4,15 @@ import akka.actor.ActorRef
 import asura.common.actor.{ActorEvent, ItemActorEvent}
 import asura.common.util.{LogUtils, StringUtils, XtermUtils}
 import asura.core.ErrorMessages
-import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.assertion.engine.Statistic
-import asura.core.runtime.{RuntimeContext, ContextOptions}
-import asura.core.es.model.JobReportData.{JobReportItem, ReportItemStatus, ScenarioReportItem}
+import asura.core.concurrent.ExecutionContextManager.sysGlobal
+import asura.core.es.model.JobReportData.{JobReportStepItemData, ReportStepItemStatus, ScenarioReportItemData}
 import asura.core.es.model.{HttpCaseRequest, JobReportDataItem, Scenario, ScenarioStep}
 import asura.core.es.service.{HttpCaseRequestService, ScenarioService}
 import asura.core.http.{HttpResult, HttpRunner}
 import asura.core.job.actor.JobReportDataItemSaveActor.SaveReportDataItemMessage
+import asura.core.job.{JobReportItemResultEvent, JobReportItemStoreDataHelper}
+import asura.core.runtime.{ContextOptions, RuntimeContext}
 import com.typesafe.scalalogging.Logger
 
 import scala.collection.mutable.ArrayBuffer
@@ -19,15 +20,13 @@ import scala.concurrent.Future
 
 object ScenarioRunner {
 
-  case class ReportItemEvent(index: Int, status: String, errMsg: String, result: HttpResult)
-
   val logger = Logger("ScenarioRunner")
 
   def testScenarios(
                      scenarioIds: Seq[String],
                      log: String => Unit = null,
                      options: ContextOptions = null
-                   )(implicit reportId: String, storeActor: ActorRef, jobId: String): Future[Seq[ScenarioReportItem]] = {
+                   )(implicit reportId: String, storeActor: ActorRef, jobId: String): Future[Seq[ScenarioReportItemData]] = {
     val scenarioIdMap = scala.collection.mutable.HashMap[String, Scenario]()
     val scenarioIdCaseIdMap = scala.collection.mutable.HashMap[String, Seq[String]]()
     if (null != scenarioIds && scenarioIds.nonEmpty) {
@@ -60,7 +59,7 @@ object ScenarioRunner {
           val cases = scenarioIdCaseMap(scenarioId)
           val scenario = scenarioIdMap(scenarioId)
           val dataStoreHelper = if (null != reportId && null != storeActor) {
-            ItemStoreDataHelper(reportId, s"s${index.toString}", storeActor, jobId)
+            JobReportItemStoreDataHelper(reportId, s"s${index.toString}", storeActor, jobId)
           } else {
             null
           }
@@ -85,14 +84,14 @@ object ScenarioRunner {
             log: String => Unit = null,
             options: ContextOptions = null,
             logResult: ActorEvent => Unit = null,
-          )(implicit dataStoreHelper: ItemStoreDataHelper = null): Future[ScenarioReportItem] = {
+          )(implicit dataStoreHelper: JobReportItemStoreDataHelper = null): Future[ScenarioReportItemData] = {
     if (null != log) log(s"scenario(${summary}): fetch ${caseTuples.length} cases.")
     if (caseTuples.isEmpty) throw ErrorMessages.error_EmptyJobCaseScenarioCount.toException
-    val scenarioReportItem = ScenarioReportItem(scenarioId, summary)
-    val caseReportItems = ArrayBuffer[JobReportItem]()
+    val scenarioReportItem = ScenarioReportItemData(scenarioId, summary)
+    val caseReportItems = ArrayBuffer[JobReportStepItemData]()
     scenarioReportItem.steps = caseReportItems
     // for `foldLeft` type inference
-    val nullCaseReportItem: JobReportItem = null
+    val nullCaseReportItem: JobReportStepItemData = null
     // it will be true only in a real scenario
     val failFast = StringUtils.isNotEmpty(scenarioId)
     var isScenarioFailed = false
@@ -112,10 +111,10 @@ object ScenarioRunner {
           ///////////////////////////////
           if (failFast && isScenarioFailed) {
             // add skipped test case report item in a scenario
-            val item = JobReportItem(id, cs.summary, null, Statistic())
-            item.status = ReportItemStatus.STATUS_SKIPPED
-            if (null != log) log(s"scenario(${summary}): ${cs.summary} ${XtermUtils.yellowWrap(ReportItemStatus.STATUS_SKIPPED)}.")
-            if (null != logResult) logResult(ItemActorEvent(ReportItemEvent(caseIndex, item.status, null, null)))
+            val item = JobReportStepItemData(id, cs.summary, null, Statistic())
+            item.status = ReportStepItemStatus.STATUS_SKIPPED
+            if (null != log) log(s"scenario(${summary}): ${cs.summary} ${XtermUtils.yellowWrap(ReportStepItemStatus.STATUS_SKIPPED)}.")
+            if (null != logResult) logResult(ItemActorEvent(JobReportItemResultEvent(caseIndex, item.status, null, null)))
             Future.successful(item)
           } else {
             // execute next test case
@@ -141,20 +140,20 @@ object ScenarioRunner {
                 }
                 val statis = caseResult.statis
                 val item = if (statis.isSuccessful) {
-                  if (null != log) log(s"scenario(${summary}): ${cs.summary} ${XtermUtils.greenWrap(ReportItemStatus.STATUS_PASS)}.")
+                  if (null != log) log(s"scenario(${summary}): ${cs.summary} ${XtermUtils.greenWrap(ReportStepItemStatus.STATUS_PASS)}.")
                   if (StringUtils.isNotEmpty(scenarioId)) {
                     // when it's a real scenario instead of a plain array of case
                     caseContext.setPrevCurrentData(RuntimeContext.extractCaseSelfContext(caseResult))
                   }
-                  JobReportItem.parse(cs.summary, caseResult, itemDataId)
+                  JobReportStepItemData.parse(cs.summary, caseResult, itemDataId)
                 } else {
-                  if (null != log) log(s"scenario(${summary}): ${cs.summary} ${XtermUtils.redWrap(ReportItemStatus.STATUS_FAIL)}.")
+                  if (null != log) log(s"scenario(${summary}): ${cs.summary} ${XtermUtils.redWrap(ReportStepItemStatus.STATUS_FAIL)}.")
                   isScenarioFailed = true
                   scenarioReportItem.markFail()
                   // fail because of assertions not pass
-                  JobReportItem.parse(cs.summary, caseResult, itemDataId)
+                  JobReportStepItemData.parse(cs.summary, caseResult, itemDataId)
                 }
-                if (null != logResult) logResult(ItemActorEvent(ReportItemEvent(caseIndex, item.status, null, caseResult)))
+                if (null != logResult) logResult(ItemActorEvent(JobReportItemResultEvent(caseIndex, item.status, null, caseResult)))
                 item
               }
               .recover {
@@ -163,12 +162,12 @@ object ScenarioRunner {
                   val errorStack = LogUtils.stackTraceToString(t)
                   logger.warn(errorStack)
                   if (null != log) {
-                    log(s"scenario(${summary}): ${cs.summary} ${XtermUtils.redWrap(ReportItemStatus.STATUS_FAIL)}.")
+                    log(s"scenario(${summary}): ${cs.summary} ${XtermUtils.redWrap(ReportStepItemStatus.STATUS_FAIL)}.")
                     log(s"scenario(${summary}): ${cs.summary} error : ${errorStack}.")
                   }
-                  val item = JobReportItem.parse(cs.summary, HttpResult.failResult(id), msg = errorStack)
+                  val item = JobReportStepItemData.parse(cs.summary, HttpResult.failResult(id), msg = errorStack)
                   scenarioReportItem.markFail()
-                  if (null != logResult) logResult(ItemActorEvent(ReportItemEvent(caseIndex, item.status, errorStack, null)))
+                  if (null != logResult) logResult(ItemActorEvent(JobReportItemResultEvent(caseIndex, item.status, errorStack, null)))
                   item
                 }
               }

@@ -5,7 +5,7 @@ import akka.pattern.pipe
 import asura.common.actor._
 import asura.common.util.LogUtils
 import asura.core.ErrorMessages
-import asura.core.es.model.JobReportData.ScenarioReportItem
+import asura.core.es.model.JobReportData.ScenarioReportItemData
 import asura.core.es.model.{HttpCaseRequest, ScenarioStep}
 import asura.core.es.service.HttpCaseRequestService
 import asura.core.runtime.ContextOptions
@@ -46,7 +46,7 @@ class ScenarioTestActor(user: String, out: ActorRef) extends BaseActor {
         wsActor ! ErrorActorEvent(ErrorMessages.error_EmptyCase.errMsg)
         wsActor ! PoisonPill
       }
-    case report: ScenarioReportItem =>
+    case report: ScenarioReportItemData =>
       wsActor ! OverActorEvent(report)
       wsActor ! PoisonPill
     case eventMessage: ActorEvent =>

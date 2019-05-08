@@ -63,7 +63,7 @@ object HttpRunner {
     }).map(result => {
       metrics.evalAssertionEnd()
       metrics.theEnd()
-      result.metrics = metrics.toReportItemMetrics()
+      result.metrics = metrics.toReportStepItemMetrics()
       result
     })
   }
