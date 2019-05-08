@@ -8,12 +8,12 @@ import asura.app.api.BaseApi.OkApiRes
 import asura.cluster.ClusterManager
 import asura.cluster.actor.MemberListenerActor.GetAllMembers
 import asura.common.model.ApiResError
+import asura.core.CoreConfig
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 import play.api.Configuration
 import play.api.mvc.{RequestHeader, Result}
 
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -24,7 +24,7 @@ class ClusterApi @Inject()(
                             val controllerComponents: SecurityComponents
                           ) extends BaseApi {
 
-  implicit val timeout: Timeout = 30.seconds
+  implicit val timeout: Timeout = CoreConfig.DEFAULT_ACTOR_ASK_TIMEOUT
 
   def getMembers() = Action(parse.byteString).async { implicit req =>
     checkClusterEnabled {
