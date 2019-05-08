@@ -1,7 +1,7 @@
 package asura.core.job.impl
 
 import asura.common.util.FutureUtils.RichFuture
-import asura.core.es.service.{IndexService, JobReportDataService}
+import asura.core.es.service.{IndexService, JobReportDataHttpService}
 import com.typesafe.scalalogging.Logger
 import org.quartz.{Job, JobExecutionContext}
 
@@ -17,7 +17,7 @@ class ClearJobReportDataIndicesJob extends Job {
     val detail = context.getJobDetail
     val day = detail.getJobDataMap.getInt(KEY_DAY)
     if (day > 0) {
-      val response = JobReportDataService.getIndices().await(30 seconds)
+      val response = JobReportDataHttpService.getIndices().await(30 seconds)
       if (response.isSuccess) {
         val indices = response.result.slice(day, response.result.size).map(_.index)
         if (indices.nonEmpty) {
