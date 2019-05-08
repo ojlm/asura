@@ -12,7 +12,7 @@ import com.sksamuel.elastic4s.http.ElasticDsl._
 
 import scala.concurrent.Future
 
-object JobReportDataHttpService extends CommonService {
+object JobReportDataItemService extends CommonService {
 
   def index(items: Seq[SaveReportDataHttpItemMessage], day: String): Future[BulkDocResponse] = {
     if (null == items && items.isEmpty) {
@@ -20,7 +20,7 @@ object JobReportDataHttpService extends CommonService {
     } else {
       EsClient.esClient.execute {
         bulk(
-          items.map(item => indexInto(s"${JobReportDataHttpItem.Index}-${day}" / EsConfig.DefaultType).doc(item.dataItem).id(item.id))
+          items.map(item => indexInto(s"${JobReportDataItem.Index}-${day}" / EsConfig.DefaultType).doc(item.dataItem).id(item.id))
         )
       }.map(toBulkDocResponse(_))
     }
@@ -31,14 +31,14 @@ object JobReportDataHttpService extends CommonService {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
       EsClient.esClient.execute {
-        search(s"${JobReportDataHttpItem.Index}-${day}").query(idsQuery(id)).size(1)
+        search(s"${JobReportDataItem.Index}-${day}").query(idsQuery(id)).size(1)
       }
     }
   }
 
   def getIndices() = {
     EsClient.esClient.execute {
-      CustomCatIndices(s"${JobReportDataHttpItem.Index}-*")
+      CustomCatIndices(s"${JobReportDataItem.Index}-*")
     }
   }
 }

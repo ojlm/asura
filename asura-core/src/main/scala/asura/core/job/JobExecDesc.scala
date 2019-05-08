@@ -6,10 +6,10 @@ import java.text.SimpleDateFormat
 import akka.actor.{ActorRef, PoisonPill}
 import asura.common.util.{DateUtils, StringUtils}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.runtime.ContextOptions
 import asura.core.es.model.{BaseIndex, Job, JobData, JobReport}
 import asura.core.es.service.JobReportService
 import asura.core.job.actor.JobReportDataItemSaveActor
+import asura.core.runtime.ContextOptions
 
 import scala.concurrent.Future
 
