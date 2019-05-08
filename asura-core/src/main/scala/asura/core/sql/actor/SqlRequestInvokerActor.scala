@@ -7,17 +7,17 @@ import akka.pattern.{ask, pipe}
 import akka.util.Timeout
 import asura.common.actor.BaseActor
 import asura.common.util.FutureUtils
+import asura.core.CoreConfig
 import asura.core.es.model.SqlRequest
 import asura.core.sql.actor.MySqlConnectionCacheActor.GetConnectionMessage
 import asura.core.sql.{MySqlConnector, SqlConfig, SqlParserUtils, SqlResult}
 
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 class SqlRequestInvokerActor extends BaseActor {
 
   implicit val ec: ExecutionContext = context.dispatcher
-  implicit val timeout: Timeout = 30.seconds
+  implicit val timeout: Timeout = CoreConfig.DEFAULT_ACTOR_ASK_TIMEOUT
 
   val connectionCacheActor = context.actorOf(MySqlConnectionCacheActor.props())
 

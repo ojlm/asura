@@ -8,13 +8,12 @@ import asura.common.util.LogUtils
 import asura.dubbo.actor.GenericServiceInvokerActor.{GetInterfaceMethodParams, GetInterfacesMessage, GetProvidersMessage}
 import asura.dubbo.{DubboConfig, GenericRequest}
 
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 class GenericServiceInvokerActor extends BaseActor {
 
   implicit val ec: ExecutionContext = context.dispatcher
-  implicit val timeout: Timeout = 30.seconds
+  implicit val timeout: Timeout = DubboConfig.DEFAULT_ACTOR_ASK_TIMEOUT
 
   val curatorClientCacheActor = context.actorOf(CuratorClientCacheActor.props())
   val referenceActor = context.actorOf(DubboReferenceCacheActor.props())
