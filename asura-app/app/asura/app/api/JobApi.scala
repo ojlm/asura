@@ -110,7 +110,7 @@ class JobApi @Inject()(
   }
 
   def reportItem(day: String, id: String) = Action(parse.byteString).async { implicit req =>
-    JobReportDataService.getById(day, id).toOkResultByEsOneDoc(id)
+    JobReportDataHttpService.getById(day, id).toOkResultByEsOneDoc(id)
   }
 
   def jobTrend(id: String, days: Option[Int]) = Action(parse.byteString).async { implicit req =>

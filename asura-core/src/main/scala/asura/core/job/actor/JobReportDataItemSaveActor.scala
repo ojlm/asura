@@ -4,19 +4,19 @@ import akka.actor.{Props, Status}
 import asura.common.actor.BaseActor
 import asura.common.util.LogUtils
 import asura.core.actor.messages.Flush
-import asura.core.es.model.JobReportDataItem
-import asura.core.es.service.JobReportDataService
-import asura.core.job.actor.JobReportDataItemSaveActor.SaveReportDataItemMessage
+import asura.core.es.model.JobReportDataHttpItem
+import asura.core.es.service.JobReportDataHttpService
+import asura.core.job.actor.JobReportDataItemSaveActor.SaveReportDataHttpItemMessage
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration._
 
 class JobReportDataItemSaveActor(dayIndexSuffix: String) extends BaseActor {
 
-  val messages = ArrayBuffer[SaveReportDataItemMessage]()
+  val messages = ArrayBuffer[SaveReportDataHttpItemMessage]()
 
   override def receive: Receive = {
-    case m: SaveReportDataItemMessage =>
+    case m: SaveReportDataHttpItemMessage =>
       messages += m
       if (messages.length >= 10) {
         insert()
@@ -41,7 +41,7 @@ class JobReportDataItemSaveActor(dayIndexSuffix: String) extends BaseActor {
   private def insert(): Unit = {
     if (messages.length > 0) {
       log.debug(s"${messages.length} items is saving...")
-      JobReportDataService.index(messages, dayIndexSuffix)
+      JobReportDataHttpService.index(messages, dayIndexSuffix)
       messages.clear()
     }
   }
@@ -51,6 +51,6 @@ object JobReportDataItemSaveActor {
 
   def props(dayIndexSuffix: String) = Props(new JobReportDataItemSaveActor(dayIndexSuffix))
 
-  case class SaveReportDataItemMessage(id: String, dataItem: JobReportDataItem)
+  case class SaveReportDataHttpItemMessage(id: String, dataItem: JobReportDataHttpItem)
 
 }

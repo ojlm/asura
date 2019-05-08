@@ -7,10 +7,10 @@ import asura.core.ErrorMessages
 import asura.core.assertion.engine.Statistic
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.model.JobReportData.{JobReportStepItemData, ReportStepItemStatus, ScenarioReportItemData}
-import asura.core.es.model.{HttpCaseRequest, JobReportDataItem, Scenario, ScenarioStep}
+import asura.core.es.model.{HttpCaseRequest, JobReportDataHttpItem, Scenario, ScenarioStep}
 import asura.core.es.service.{HttpCaseRequestService, ScenarioService}
 import asura.core.http.{HttpResult, HttpRunner}
-import asura.core.job.actor.JobReportDataItemSaveActor.SaveReportDataItemMessage
+import asura.core.job.actor.JobReportDataItemSaveActor.SaveReportDataHttpItemMessage
 import asura.core.job.{JobReportItemResultEvent, JobReportItemStoreDataHelper}
 import asura.core.runtime.{ContextOptions, RuntimeContext}
 import com.typesafe.scalalogging.Logger
@@ -124,7 +124,7 @@ object ScenarioRunner {
                 if (null != dataStoreHelper) {
                   // save item data if the item not skipped or exception happened
                   itemDataId = s"${dataStoreHelper.reportId}_${dataStoreHelper.infix}_${caseIndex}"
-                  val dataItem = JobReportDataItem(
+                  val dataItem = JobReportDataHttpItem(
                     reportId = dataStoreHelper.reportId,
                     caseId = id,
                     scenarioId = scenarioId,
@@ -136,7 +136,7 @@ object ScenarioRunner {
                     assertionsResult = caseResult.result,
                     generator = StringUtils.notEmptyElse(caseResult.generator, StringUtils.EMPTY)
                   )
-                  dataStoreHelper.actorRef ! SaveReportDataItemMessage(itemDataId, dataItem)
+                  dataStoreHelper.actorRef ! SaveReportDataHttpItemMessage(itemDataId, dataItem)
                 }
                 val statis = caseResult.statis
                 val item = if (statis.isSuccessful) {

@@ -9,12 +9,11 @@ import asura.core.es.model.JobReportData.{JobReportStepItemData, ScenarioReportI
 import asura.core.http.HttpResult
 import com.fasterxml.jackson.annotation.JsonIgnore
 
-
 /**
   * Be careful to modify this class's schema, it should be compatible with data structure in ES.
   */
 case class JobReportData(
-                          var dayIndexSuffix: String = LocalDateTime.now().format(DateTimeFormatter.ofPattern(JobReportDataItem.INDEX_DATE_TIME_PATTERN)),
+                          var dayIndexSuffix: String = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy.MM.dd")),
                           var cases: Seq[JobReportStepItemData] = Nil,
                           var scenarios: Seq[ScenarioReportItemData] = Nil,
                           var ext: Map[String, Any] = Map.empty
