@@ -4,9 +4,9 @@ import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.model.QueryDubboRequest
 import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig, EsResponse}
+import asura.core.model.QueryDubboRequest
 import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
@@ -28,9 +28,9 @@ object DubboRequestService extends CommonService with BaseAggregationService {
     FieldKeys.FIELD_GROUP,
     FieldKeys.FIELD_PROJECT,
     FieldKeys.FIELD_LABELS,
-    FieldKeys.FIELD_INTERFACE,
-    FieldKeys.FIELD_METHOD,
-    FieldKeys.FIELD_PARAMETER_TYPES,
+    FieldKeys.FIELD_OBJECT_REQUEST_INTERFACE,
+    FieldKeys.FIELD_OBJECT_REQUEST_METHOD,
+    FieldKeys.FIELD_OBJECT_REQUEST_PARAMETER_TYPES,
   )
 
   def index(doc: DubboRequest): Future[IndexDocResponse] = {
@@ -118,8 +118,8 @@ object DubboRequestService extends CommonService with BaseAggregationService {
       esQueries += matchQuery(FieldKeys.FIELD__TEXT, q.text)
       sortFields = Nil
     }
-    if (StringUtils.isNotEmpty(q.interface)) esQueries += wildcardQuery(FieldKeys.FIELD_INTERFACE, s"*${q.interface}*")
-    if (StringUtils.isNotEmpty(q.method)) esQueries += termQuery(FieldKeys.FIELD_METHOD, q.method)
+    if (StringUtils.isNotEmpty(q.interface)) esQueries += wildcardQuery(FieldKeys.FIELD_OBJECT_REQUEST_INTERFACE, s"*${q.interface}*")
+    if (StringUtils.isNotEmpty(q.method)) esQueries += termQuery(FieldKeys.FIELD_OBJECT_REQUEST_METHOD, q.method)
     EsClient.esClient.execute {
       search(DubboRequest.Index).query(boolQuery().must(esQueries))
         .from(q.pageFrom)
@@ -159,14 +159,14 @@ object DubboRequestService extends CommonService with BaseAggregationService {
   }
 
   def validate(doc: DubboRequest): ErrorMessages.ErrorMessage = {
-    if (null == doc) {
+    if (null == doc || null == doc.request) {
       ErrorMessages.error_EmptyRequestBody
     } else if (StringUtils.isEmpty(doc.group)) {
       ErrorMessages.error_EmptyGroup
     } else if (StringUtils.isEmpty(doc.project)) {
       ErrorMessages.error_EmptyProject
-    } else if (StringUtils.hasEmpty(doc.interface, doc.method, doc.address) ||
-      null == doc.parameterTypes || null == doc.args) {
+    } else if (StringUtils.hasEmpty(doc.request.interface, doc.request.method, doc.request.address)
+      || null == doc.request.parameterTypes || null == doc.request.args) {
       ErrorMessages.error_InvalidRequestParameters
     } else {
       null

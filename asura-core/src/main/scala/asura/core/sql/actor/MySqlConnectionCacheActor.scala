@@ -8,7 +8,7 @@ import akka.util.Timeout
 import asura.common.actor.BaseActor
 import asura.common.cache.LRUCache
 import asura.core.CoreConfig
-import asura.core.es.model.SqlRequest
+import asura.core.es.model.SqlRequest.SqlRequestBody
 import asura.core.sql.actor.MySqlConnectionCacheActor.GetConnectionMessage
 import asura.core.sql.{MySqlConnector, SqlConfig}
 
@@ -30,7 +30,7 @@ class MySqlConnectionCacheActor(size: Int) extends BaseActor {
       Future.failed(new RuntimeException("Unknown message type")) pipeTo sender()
   }
 
-  private def getConnection(request: SqlRequest): Future[Connection] = {
+  private def getConnection(request: SqlRequestBody): Future[Connection] = {
     Future {
       val key = generateCacheKey(request)
       val conn = lruCache.get(key)
@@ -44,7 +44,7 @@ class MySqlConnectionCacheActor(size: Int) extends BaseActor {
     }(SqlConfig.SQL_EC)
   }
 
-  private def generateCacheKey(request: SqlRequest): String = {
+  private def generateCacheKey(request: SqlRequestBody): String = {
     val sb = StringBuilder.newBuilder
     sb.append(request.username).append(":")
       .append(request.encryptedPass).append("@")
@@ -59,6 +59,6 @@ object MySqlConnectionCacheActor {
 
   def props(size: Int = SqlConfig.DEFAULT_MYSQL_CONNECTOR_CACHE_SIZE) = Props(new MySqlConnectionCacheActor(size))
 
-  case class GetConnectionMessage(request: SqlRequest)
+  case class GetConnectionMessage(request: SqlRequestBody)
 
 }

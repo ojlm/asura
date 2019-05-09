@@ -87,7 +87,7 @@ class ScenarioRunnerActor() extends BaseActor {
         val dubboOpt = this.stepsData.dubbo.get(step.id)
         if (dubboOpt.nonEmpty) {
           val dubboRequest = dubboOpt.get
-          (this.dubboInvoker ? dubboRequest.toDubboGenericRequest).flatMap(dubboResponse => {
+          (this.dubboInvoker ? dubboRequest.request.toDubboGenericRequest).flatMap(dubboResponse => {
             DubboResult.evaluate(dubboRequest, dubboResponse.asInstanceOf[Object])
           }).map(dubboResult => handleSuccessResult(dubboRequest, dubboResult, idx))
             .recover {

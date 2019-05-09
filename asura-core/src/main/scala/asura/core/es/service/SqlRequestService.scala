@@ -6,9 +6,9 @@ import java.util.Base64
 import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, RSAUtils, StringUtils}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.model.QuerySqlRequest
 import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig, EsResponse}
+import asura.core.model.QuerySqlRequest
 import asura.core.sql.SqlParserUtils
 import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
@@ -32,10 +32,10 @@ object SqlRequestService extends CommonService with BaseAggregationService {
     FieldKeys.FIELD_GROUP,
     FieldKeys.FIELD_PROJECT,
     FieldKeys.FIELD_LABELS,
-    FieldKeys.FIELD_HOST,
-    FieldKeys.FIELD_PORT,
-    FieldKeys.FIELD_DATABASE,
-    FieldKeys.FIELD_TABLE
+    FieldKeys.FIELD_OBJECT_REQUEST_HOST,
+    FieldKeys.FIELD_OBJECT_REQUEST_PORT,
+    FieldKeys.FIELD_OBJECT_REQUEST_DATABASE,
+    FieldKeys.FIELD_OBJECT_REQUEST_TABLE
   )
 
   def index(doc: SqlRequest): Future[IndexDocResponse] = {
@@ -119,9 +119,9 @@ object SqlRequestService extends CommonService with BaseAggregationService {
     var sortFields = Seq(FieldSort(FieldKeys.FIELD_CREATED_AT).desc())
     if (StringUtils.isNotEmpty(q.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, q.group)
     if (StringUtils.isNotEmpty(q.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, q.project)
-    if (StringUtils.isNotEmpty(q.host)) esQueries += termQuery(FieldKeys.FIELD_HOST, q.host)
-    if (StringUtils.isNotEmpty(q.database)) esQueries += termQuery(FieldKeys.FIELD_DATABASE, q.database)
-    if (StringUtils.isNotEmpty(q.table)) esQueries += termQuery(FieldKeys.FIELD_TABLE, q.table)
+    if (StringUtils.isNotEmpty(q.host)) esQueries += termQuery(FieldKeys.FIELD_OBJECT_REQUEST_HOST, q.host)
+    if (StringUtils.isNotEmpty(q.database)) esQueries += termQuery(FieldKeys.FIELD_OBJECT_REQUEST_DATABASE, q.database)
+    if (StringUtils.isNotEmpty(q.table)) esQueries += termQuery(FieldKeys.FIELD_OBJECT_REQUEST_TABLE, q.table)
     if (StringUtils.isNotEmpty(q.text)) {
       esQueries += matchQuery(FieldKeys.FIELD__TEXT, q.text)
       sortFields = Nil
@@ -168,24 +168,25 @@ object SqlRequestService extends CommonService with BaseAggregationService {
 
   def validate(doc: SqlRequest): ErrorMessages.ErrorMessage = {
     try {
-      if (null == doc) {
+      if (null == doc || null == doc.request) {
         ErrorMessages.error_EmptyRequestBody
       } else {
-        val table = SqlParserUtils.getStatementTable(doc.sql)
-        doc.table = table
+        val request = doc.request
+        val table = SqlParserUtils.getStatementTable(request.sql)
+        request.table = table
         val securityConfig = CoreConfig.securityConfig
-        if (StringUtils.isNotEmpty(doc.password) && !doc.password.equals(securityConfig.maskText)) {
+        if (StringUtils.isNotEmpty(request.password) && !request.password.equals(securityConfig.maskText)) {
           // encrypt password
           val encryptedBytes = RSAUtils.encryptByPrivateKey(
-            doc.password.getBytes(StandardCharsets.UTF_8), securityConfig.priKeyBytes)
-          doc.encryptedPass = new String(Base64.getEncoder.encode(encryptedBytes))
-          doc.password = securityConfig.maskText
+            request.password.getBytes(StandardCharsets.UTF_8), securityConfig.priKeyBytes)
+          request.encryptedPass = new String(Base64.getEncoder.encode(encryptedBytes))
+          request.password = securityConfig.maskText
         }
         if (StringUtils.isEmpty(doc.group)) {
           ErrorMessages.error_EmptyGroup
         } else if (StringUtils.isEmpty(doc.project)) {
           ErrorMessages.error_EmptyProject
-        } else if (StringUtils.hasEmpty(doc.host, doc.username, doc.password, doc.encryptedPass, doc.database, doc.sql)) {
+        } else if (StringUtils.hasEmpty(request.host, request.username, request.password, request.encryptedPass, request.database, request.sql)) {
           ErrorMessages.error_InvalidRequestParameters
         } else {
           null
