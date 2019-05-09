@@ -42,3 +42,4 @@ error_InvalidRequestParameters=Invalid request parameters
 error_ClusterNotEnabled=Cluster is not enabled
 error_EmptyProxyServer=Empty proxy server
 error_InvalidProxyConfig=Invalid proxy configuration
+error_IdsNotFound=ID({0}) not exist

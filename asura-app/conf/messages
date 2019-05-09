@@ -42,3 +42,4 @@ error_InvalidRequestParameters=无效的请求参数
 error_ClusterNotEnabled=集群功能未启用
 error_EmptyProxyServer=代理服务器配置为空
 error_InvalidProxyConfig=代理配置错误
+error_IdsNotFound=ID({0})不存在

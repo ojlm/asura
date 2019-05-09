@@ -1,7 +1,8 @@
 package asura.core.es.model
 
+import asura.common.util.StringUtils
 import asura.core.es.EsConfig
-import asura.core.es.model.DubboRequest.{ArgumentList, ParameterType}
+import asura.core.es.model.DubboRequest.DubboRequestBody
 import asura.core.util.JacksonSupport
 import asura.dubbo.GenericRequest
 import com.sksamuel.elastic4s.mappings._
@@ -13,19 +14,11 @@ case class DubboRequest(
                          val description: String,
                          val group: String,
                          val project: String,
-                         val dubboGroup: String,
-                         var version: String,
-                         val interface: String,
-                         val method: String,
-                         val parameterTypes: Seq[ParameterType],
-                         val args: ArgumentList,
-                         val address: String,
-                         val port: Int,
-                         val zkAddr: String,
-                         val zkPort: Int,
-                         var path: String,
+                         val request: DubboRequestBody,
                          val assert: Map[String, Any],
+                         val env: String = StringUtils.EMPTY,
                          val labels: Seq[LabelRef] = Nil,
+                         val generator: RequestGenerator = RequestGenerator(),
                          var creator: String = null,
                          var createdAt: String = null,
                          var updatedAt: String = null,
@@ -35,52 +28,13 @@ case class DubboRequest(
     val sb = StringBuilder.newBuilder
     val m = mutable.Map[String, Any]()
     checkCommFieldsToUpdate(m, sb)
-    if (null != dubboGroup) {
-      m += (FieldKeys.FIELD_DUBBO_GROUP -> dubboGroup)
-      addScriptUpdateItem(sb, FieldKeys.FIELD_DUBBO_GROUP)
+    if (null != env) {
+      m += (FieldKeys.FIELD_ENV -> env)
+      addScriptUpdateItem(sb, FieldKeys.FIELD_ENV)
     }
-    if (null != interface) {
-      m += (FieldKeys.FIELD_INTERFACE -> interface)
-      addScriptUpdateItem(sb, FieldKeys.FIELD_INTERFACE)
-    }
-    if (null != method) {
-      m += (FieldKeys.FIELD_METHOD -> method)
-      addScriptUpdateItem(sb, FieldKeys.FIELD_METHOD)
-    }
-    if (null != parameterTypes) {
-      m += (FieldKeys.FIELD_PARAMETER_TYPES -> JacksonSupport.mapper.convertValue(parameterTypes, classOf[java.util.List[Map[String, Any]]]))
-      addScriptUpdateItem(sb, FieldKeys.FIELD_PARAMETER_TYPES)
-    } else {
-      m += (FieldKeys.FIELD_PARAMETER_TYPES -> Nil)
-      addScriptUpdateItem(sb, FieldKeys.FIELD_PARAMETER_TYPES)
-    }
-    if (null != args) {
-      m += (FieldKeys.FIELD_ARGS -> JacksonSupport.mapper.convertValue(args, classOf[java.util.Map[String, Any]]))
-      addScriptUpdateItem(sb, FieldKeys.FIELD_ARGS)
-    }
-    if (null != address) {
-      m += (FieldKeys.FIELD_ADDRESS -> address)
-      addScriptUpdateItem(sb, FieldKeys.FIELD_ADDRESS)
-    }
-    if (port > 0) {
-      m += (FieldKeys.FIELD_PORT -> port)
-      addScriptUpdateItem(sb, FieldKeys.FIELD_PORT)
-    }
-    if (null != path) {
-      m += (FieldKeys.FIELD_PATH -> path)
-      addScriptUpdateItem(sb, FieldKeys.FIELD_PATH)
-    }
-    if (null != version) {
-      m += (FieldKeys.FIELD_VERSION -> version)
-      addScriptUpdateItem(sb, FieldKeys.FIELD_VERSION)
-    }
-    if (null != zkAddr) {
-      m += (FieldKeys.FIELD_ZK_ADDR -> zkAddr)
-      addScriptUpdateItem(sb, FieldKeys.FIELD_ZK_ADDR)
-    }
-    if (zkPort > 0) {
-      m += (FieldKeys.FIELD_ZK_PORT -> zkPort)
-      addScriptUpdateItem(sb, FieldKeys.FIELD_ZK_PORT)
+    if (null != request) {
+      m += (FieldKeys.FIELD_REQUEST -> JacksonSupport.mapper.convertValue(request, classOf[java.util.Map[String, Any]]))
+      addScriptUpdateItem(sb, FieldKeys.FIELD_REQUEST)
     }
     if (null != assert) {
       m += (FieldKeys.FIELD_ASSERT -> assert)
@@ -92,29 +46,6 @@ case class DubboRequest(
     }
     (sb.toString, m.toMap)
   }
-
-  def toDubboGenericRequest(): GenericRequest = {
-    val parameterTypes = if (null != this.parameterTypes && this.parameterTypes.nonEmpty) {
-      this.parameterTypes.map(_.`type`).toArray
-    } else {
-      null
-    }
-    val args = if (null != this.args && this.args.args.nonEmpty) {
-      this.args.args.toArray
-    } else {
-      null
-    }
-    GenericRequest(
-      dubboGroup = dubboGroup,
-      interface = interface,
-      method = method,
-      parameterTypes = parameterTypes,
-      args = args,
-      address = address,
-      port = port,
-      version = version
-    )
-  }
 }
 
 object DubboRequest extends IndexSetting {
@@ -125,22 +56,34 @@ object DubboRequest extends IndexSetting {
     fields = BaseIndex.fieldDefinitions ++ Seq(
       KeywordField(name = FieldKeys.FIELD_GROUP),
       KeywordField(name = FieldKeys.FIELD_PROJECT),
-      KeywordField(name = FieldKeys.FIELD_DUBBO_GROUP),
-      KeywordField(name = FieldKeys.FIELD_INTERFACE),
-      KeywordField(name = FieldKeys.FIELD_METHOD),
-      NestedField(name = FieldKeys.FIELD_PARAMETER_TYPES, fields = Seq(
-        KeywordField(name = FieldKeys.FIELD_TYPE),
-      )),
-      ObjectField(name = FieldKeys.FIELD_ARGS, dynamic = Some("false")),
-      KeywordField(name = FieldKeys.FIELD_ADDRESS),
-      BasicField(name = FieldKeys.FIELD_PORT, `type` = "integer"),
-      KeywordField(name = FieldKeys.FIELD_PATH),
-      KeywordField(name = FieldKeys.FIELD_VERSION),
-      ObjectField(name = FieldKeys.FIELD_ASSERT, dynamic = Some("false")),
-      KeywordField(name = FieldKeys.FIELD_ZK_ADDR),
-      BasicField(name = FieldKeys.FIELD_ZK_PORT, `type` = "integer"),
+      KeywordField(name = FieldKeys.FIELD_ENV),
+      ObjectField(
+        name = FieldKeys.FIELD_REQUEST,
+        fields = Seq(
+          KeywordField(name = FieldKeys.FIELD_DUBBO_GROUP),
+          KeywordField(name = FieldKeys.FIELD_INTERFACE),
+          KeywordField(name = FieldKeys.FIELD_METHOD),
+          NestedField(name = FieldKeys.FIELD_PARAMETER_TYPES, fields = Seq(
+            KeywordField(name = FieldKeys.FIELD_TYPE),
+          )),
+          ObjectField(name = FieldKeys.FIELD_ARGS, dynamic = Some("false")),
+          KeywordField(name = FieldKeys.FIELD_ADDRESS),
+          BasicField(name = FieldKeys.FIELD_PORT, `type` = "integer"),
+          KeywordField(name = FieldKeys.FIELD_PATH),
+          KeywordField(name = FieldKeys.FIELD_VERSION),
+          ObjectField(name = FieldKeys.FIELD_ASSERT, dynamic = Some("false")),
+          KeywordField(name = FieldKeys.FIELD_ZK_ADDR),
+          BasicField(name = FieldKeys.FIELD_ZK_PORT, `type` = "integer"),
+        )
+      ),
       NestedField(name = FieldKeys.FIELD_LABELS, fields = Seq(
         KeywordField(name = FieldKeys.FIELD_NAME),
+      )),
+      ObjectField(name = FieldKeys.FIELD_ASSERT, dynamic = Some("false")),
+      ObjectField(name = FieldKeys.FIELD_GENERATOR, fields = Seq(
+        TextField(name = FieldKeys.FIELD_SCRIPT, index = Option("false")),
+        NestedField(name = FieldKeys.FIELD_LIST, dynamic = Some("false")),
+        BasicField(name = FieldKeys.FIELD_COUNT, `type` = "integer"),
       )),
     )
   )
@@ -148,5 +91,42 @@ object DubboRequest extends IndexSetting {
   case class ParameterType(`type`: String)
 
   case class ArgumentList(args: Seq[Object])
+
+  case class DubboRequestBody(
+                               val dubboGroup: String,
+                               var version: String,
+                               val interface: String,
+                               val method: String,
+                               val parameterTypes: Seq[ParameterType],
+                               val args: ArgumentList,
+                               val address: String,
+                               val port: Int,
+                               val zkAddr: String,
+                               val zkPort: Int,
+                               var path: String,
+                             ) {
+    def toDubboGenericRequest(): GenericRequest = {
+      val parameterTypes = if (null != this.parameterTypes && this.parameterTypes.nonEmpty) {
+        this.parameterTypes.map(_.`type`).toArray
+      } else {
+        null
+      }
+      val args = if (null != this.args && this.args.args.nonEmpty) {
+        this.args.args.toArray
+      } else {
+        null
+      }
+      GenericRequest(
+        dubboGroup = dubboGroup,
+        interface = interface,
+        method = method,
+        parameterTypes = parameterTypes,
+        args = args,
+        address = address,
+        port = port,
+        version = version
+      )
+    }
+  }
 
 }

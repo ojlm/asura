@@ -52,7 +52,7 @@ class DubboApi @Inject()(
     if (null == error) {
       val user = getProfileId()
       activityActor ! Activity(dubboReq.group, dubboReq.project, user, Activity.TYPE_TEST_DUBBO, StringUtils.notEmptyElse(testMsg.id, StringUtils.EMPTY))
-      (dubboInvoker ? dubboReq.toDubboGenericRequest).flatMap(context => {
+      (dubboInvoker ? dubboReq.request.toDubboGenericRequest).flatMap(context => {
         DubboResult.evaluate(dubboReq, if (null == context) null else context.asInstanceOf[Object])
       }).toOkResult
     } else {

@@ -6,7 +6,7 @@ import java.util.Base64
 
 import asura.common.util.{LogUtils, RSAUtils, StringUtils}
 import asura.core.CoreConfig
-import asura.core.es.model.SqlRequest
+import asura.core.es.model.SqlRequest.SqlRequestBody
 import com.typesafe.scalalogging.Logger
 
 object MySqlConnector {
@@ -14,7 +14,7 @@ object MySqlConnector {
   val logger = Logger("MySqlConnectors")
 
   @throws[Throwable]
-  def connect(sql: SqlRequest): Connection = {
+  def connect(sql: SqlRequestBody): Connection = {
     val url = s"jdbc:mysql://${sql.host}:${sql.port}/${sql.database}?useCursorFetch=true&useUnicode=true&characterEncoding=utf-8"
     try {
       val password = if (StringUtils.isNotEmpty(sql.encryptedPass)) {
