@@ -30,17 +30,18 @@ class SqlRequestInvokerActor extends BaseActor {
 
   def getResponse(sqlRequest: SqlRequest): Future[SqlResult] = {
     implicit val sqlEc = SqlConfig.SQL_EC
-    val futConn = (connectionCacheActor ? GetConnectionMessage(sqlRequest)).asInstanceOf[Future[Connection]]
-    val (isOk, errMsg) = SqlParserUtils.isSelectStatement(sqlRequest.sql)
+    val requestBody = sqlRequest.request
+    val futConn = (connectionCacheActor ? GetConnectionMessage(requestBody)).asInstanceOf[Future[Connection]]
+    val (isOk, errMsg) = SqlParserUtils.isSelectStatement(requestBody.sql)
     if (null == errMsg) {
       futConn.flatMap(conn => {
         if (isOk) {
           Future {
-            MySqlConnector.executeQuery(conn, sqlRequest.sql)
+            MySqlConnector.executeQuery(conn, requestBody.sql)
           }
         } else {
           Future {
-            MySqlConnector.executeUpdate(conn, sqlRequest.sql)
+            MySqlConnector.executeUpdate(conn, requestBody.sql)
           }
         }
       }).flatMap(result => {
