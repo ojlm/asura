@@ -10,7 +10,7 @@ import asura.common.util.FutureUtils
 import asura.core.CoreConfig
 import asura.core.es.model.SqlRequest
 import asura.core.sql.actor.MySqlConnectionCacheActor.GetConnectionMessage
-import asura.core.sql.{MySqlConnector, SqlConfig, SqlParserUtils, SqlResult}
+import asura.core.sql.{MySqlConnector, SqlConfig, SqlParserUtils}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -28,7 +28,7 @@ class SqlRequestInvokerActor extends BaseActor {
       Future.failed(new RuntimeException("Unknown message type")) pipeTo sender()
   }
 
-  def getResponse(sqlRequest: SqlRequest): Future[SqlResult] = {
+  def getResponse(sqlRequest: SqlRequest): Future[Object] = {
     implicit val sqlEc = SqlConfig.SQL_EC
     val requestBody = sqlRequest.request
     val futConn = (connectionCacheActor ? GetConnectionMessage(requestBody)).asInstanceOf[Future[Connection]]
@@ -44,8 +44,6 @@ class SqlRequestInvokerActor extends BaseActor {
             MySqlConnector.executeUpdate(conn, requestBody.sql)
           }
         }
-      }).flatMap(result => {
-        SqlResult.evaluate(sqlRequest, result)
       })
     } else {
       FutureUtils.requestFail(errMsg)
