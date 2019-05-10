@@ -1,6 +1,7 @@
 package asura.core.sql
 
 import asura.core.assertion.engine.{AssertionContext, Statistic}
+import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.model.SqlRequest
 
 import scala.concurrent.Future
@@ -16,7 +17,6 @@ case class SqlResult(
 object SqlResult {
 
   def evaluate(request: SqlRequest, context: Object): Future[SqlResult] = {
-    import asura.core.concurrent.ExecutionContextManager.sysGlobal
     val statis = Statistic()
     AssertionContext.eval(request.assert, context, statis).map(result => {
       SqlResult(context, statis, result)
