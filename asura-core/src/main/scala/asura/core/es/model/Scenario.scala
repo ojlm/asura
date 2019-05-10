@@ -47,6 +47,7 @@ object Scenario extends IndexSetting {
         KeywordField(name = FieldKeys.FIELD_TYPE),
         BasicField(name = FieldKeys.FIELD_STORED, `type` = "boolean"),
         BasicField(name = FieldKeys.FIELD_ENABLED, `type` = "boolean"),
+        ObjectField(name = FieldKeys.FIELD_DATA, dynamic = Some("false")),
       )),
       NestedField(name = FieldKeys.FIELD_LABELS, fields = Seq(
         KeywordField(name = FieldKeys.FIELD_NAME),

@@ -1,6 +1,7 @@
 package asura.core.dubbo
 
 import asura.core.assertion.engine.{AssertionContext, Statistic}
+import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.model.DubboRequest
 
 import scala.concurrent.Future
@@ -16,7 +17,6 @@ case class DubboResult(
 object DubboResult {
 
   def evaluate(request: DubboRequest, context: Object): Future[DubboResult] = {
-    import asura.core.concurrent.ExecutionContextManager.sysGlobal
     val statis = Statistic()
     AssertionContext.eval(request.assert, context, statis).map(result => {
       DubboResult(context, statis, result)
