@@ -210,7 +210,7 @@ class ScenarioRunnerActor() extends BaseActor {
     val formattedIdx = if (-1 == idx) {
       StringUtils.EMPTY
     } else {
-      s"[${idx}] "
+      s"[${idx + 1}] "
     }
     s"[SCN][${this.scenarioReportItem.title}][${XtermUtils.magentaWrap(formattedType)}]${formattedIdx}"
   }
