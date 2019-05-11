@@ -6,11 +6,12 @@ import akka.util.Timeout
 import asura.common.actor._
 import asura.common.util.{FutureUtils, LogUtils, StringUtils, XtermUtils}
 import asura.core.dubbo.{DubboResult, DubboRunner}
-import asura.core.es.model.JobReportData.ScenarioReportItemData
+import asura.core.es.model.JobReportData.{JobReportStepItemData, ScenarioReportItemData}
 import asura.core.es.model._
 import asura.core.es.service.{DubboRequestService, HttpCaseRequestService, SqlRequestService}
 import asura.core.http.{HttpResult, HttpRunner}
-import asura.core.runtime.{ContextOptions, RuntimeContext}
+import asura.core.job.JobReportItemResultEvent
+import asura.core.runtime.{AbstractResult, ContextOptions, RuntimeContext}
 import asura.core.scenario.actor.ScenarioRunnerActor.{ScenarioTestData, ScenarioTestMessage}
 import asura.core.sql.{SqlResult, SqlRunner}
 import asura.core.{CoreConfig, ErrorMessages}
@@ -29,7 +30,8 @@ class ScenarioRunnerActor() extends BaseActor {
   val runtimeContext: RuntimeContext = RuntimeContext()
   var scenarioReportItem = ScenarioReportItemData(null, null)
 
-  // Actor which receive `asura.common.actor.ActorEvent` message for WebSocket api
+  // Actor which receive `asura.common.actor.ActorEvent` message.
+  // Console log and step result will be sent to this actor which will influence the web ui
   var wsActor: ActorRef = null
 
   override def receive: Receive = {
@@ -73,9 +75,10 @@ class ScenarioRunnerActor() extends BaseActor {
         if (csOpt.nonEmpty) {
           val httpRequest = csOpt.get
           HttpRunner.test(step.id, httpRequest, this.runtimeContext)
-            .map(httpResult => handleSuccessResult(httpRequest, httpResult, idx))
+            .map(httpResult => handleNormalResult(httpRequest.summary, httpResult, step, idx))
             .recover {
-              case t: Throwable => handleFailureResult(httpRequest, idx, t)
+              case t: Throwable =>
+                handleExceptionalResult(httpRequest.summary, HttpResult.failResult(step.id), step, idx, t)
             }
         } else {
           handleEmptyStepData(idx, ScenarioStep.TYPE_HTTP, step.id)
@@ -85,9 +88,10 @@ class ScenarioRunnerActor() extends BaseActor {
         if (dubboOpt.nonEmpty) {
           val dubboRequest = dubboOpt.get
           DubboRunner.test(step.id, dubboRequest, this.runtimeContext)
-            .map(dubboResult => handleSuccessResult(dubboRequest, dubboResult, idx))
+            .map(dubboResult => handleNormalResult(dubboRequest.summary, dubboResult, step, idx))
             .recover {
-              case t: Throwable => handleFailureResult(dubboRequest, idx, t)
+              case t: Throwable =>
+                handleExceptionalResult(dubboRequest.summary, DubboResult.failResult(step.id), step, idx, t)
             }
         } else {
           handleEmptyStepData(idx, ScenarioStep.TYPE_DUBBO, step.id)
@@ -97,9 +101,10 @@ class ScenarioRunnerActor() extends BaseActor {
         if (sqlOpt.nonEmpty) {
           val sqlRequest = sqlOpt.get
           SqlRunner.test(step.id, sqlRequest, this.runtimeContext)
-            .map(sqlResult => handleSuccessResult(sqlRequest, sqlResult, idx))
+            .map(sqlResult => handleNormalResult(sqlRequest.summary, sqlResult, step, idx))
             .recover {
-              case t: Throwable => handleFailureResult(sqlRequest, idx, t)
+              case t: Throwable =>
+                handleExceptionalResult(sqlRequest.summary, SqlResult.failResult(step.id), step, idx, t)
             }
         } else {
           handleEmptyStepData(idx, ScenarioStep.TYPE_SQL, step.id)
@@ -108,50 +113,25 @@ class ScenarioRunnerActor() extends BaseActor {
     }
   }
 
-  private def handleSuccessResult(request: HttpCaseRequest, result: HttpResult, idx: Int): Int = {
+  private def handleNormalResult(title: String, result: AbstractResult, step: ScenarioStep, idx: Int): Int = {
+    // assertion successful or failed
+    val stepItemData = JobReportStepItemData.parse(title, result)
     if (null != wsActor) {
-      val msg = s"${consoleLogPrefix(ScenarioStep.TYPE_HTTP, idx)}${request.summary} ${result.statis.isSuccessful}"
+      val msg = s"${consoleLogPrefix(step.`type`, idx)}${title} ${stepItemData.status}"
       wsActor ! NotifyActorEvent(msg)
+      wsActor ! ItemActorEvent(JobReportItemResultEvent(idx + 1, stepItemData.status, null, result))
     }
     idx + 1
   }
 
-  private def handleFailureResult(request: HttpCaseRequest, idx: Int, t: Throwable): Int = {
+  private def handleExceptionalResult(title: String, failResult: AbstractResult, step: ScenarioStep, idx: Int, t: Throwable): Int = {
+    // exception occurred
+    val errorStack = LogUtils.stackTraceToString(t)
+    val stepItemData = JobReportStepItemData.parse(title, failResult, msg = errorStack)
     if (null != wsActor) {
-      val msg = s"${consoleLogPrefix(ScenarioStep.TYPE_HTTP, idx)}${request.summary} fail"
+      val msg = s"${consoleLogPrefix(step.`type`, idx)}${title} fail"
       wsActor ! NotifyActorEvent(msg)
-    }
-    idx + 1
-  }
-
-  private def handleSuccessResult(request: DubboRequest, result: DubboResult, idx: Int): Int = {
-    if (null != wsActor) {
-      val msg = s"${consoleLogPrefix(ScenarioStep.TYPE_DUBBO, idx)}${request.summary} ${result.statis.isSuccessful}"
-      wsActor ! NotifyActorEvent(msg)
-    }
-    idx + 1
-  }
-
-  private def handleFailureResult(request: DubboRequest, idx: Int, t: Throwable): Int = {
-    if (null != wsActor) {
-      val msg = s"${consoleLogPrefix(ScenarioStep.TYPE_DUBBO, idx)}${request.summary} fail"
-      wsActor ! NotifyActorEvent(msg)
-    }
-    idx + 1
-  }
-
-  private def handleSuccessResult(request: SqlRequest, result: SqlResult, idx: Int): Int = {
-    if (null != wsActor) {
-      val msg = s"${consoleLogPrefix(ScenarioStep.TYPE_SQL, idx)}${request.summary} ${result.statis.isSuccessful}"
-      wsActor ! NotifyActorEvent(msg)
-    }
-    idx + 1
-  }
-
-  private def handleFailureResult(request: SqlRequest, idx: Int, t: Throwable): Int = {
-    if (null != wsActor) {
-      val msg = s"${consoleLogPrefix(ScenarioStep.TYPE_SQL, idx)}${request.summary} fail"
-      wsActor ! NotifyActorEvent(msg)
+      wsActor ! ItemActorEvent(JobReportItemResultEvent(idx + 1, stepItemData.status, errorStack, null))
     }
     idx + 1
   }
