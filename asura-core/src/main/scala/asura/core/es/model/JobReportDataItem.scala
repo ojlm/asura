@@ -46,8 +46,9 @@ object JobReportDataItem extends IndexSetting {
     )
   )
 
-  class ReportDataItemRequest
+  // rendered request
+  trait ReportDataItemRequest
 
-  class ReportDataItemResponse
+  trait ReportDataItemResponse
 
 }

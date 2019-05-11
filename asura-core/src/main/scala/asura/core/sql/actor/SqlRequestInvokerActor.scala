@@ -8,7 +8,7 @@ import akka.util.Timeout
 import asura.common.actor.BaseActor
 import asura.common.util.FutureUtils
 import asura.core.CoreConfig
-import asura.core.es.model.SqlRequest
+import asura.core.es.model.SqlRequest.SqlRequestBody
 import asura.core.sql.actor.MySqlConnectionCacheActor.GetConnectionMessage
 import asura.core.sql.{MySqlConnector, SqlConfig, SqlParserUtils}
 
@@ -22,15 +22,14 @@ class SqlRequestInvokerActor extends BaseActor {
   val connectionCacheActor = context.actorOf(MySqlConnectionCacheActor.props())
 
   override def receive: Receive = {
-    case sqlRequest: SqlRequest =>
-      getResponse(sqlRequest) pipeTo sender()
+    case requestBody: SqlRequestBody =>
+      getResponse(requestBody) pipeTo sender()
     case _ =>
       Future.failed(new RuntimeException("Unknown message type")) pipeTo sender()
   }
 
-  def getResponse(sqlRequest: SqlRequest): Future[Object] = {
+  def getResponse(requestBody: SqlRequestBody): Future[Object] = {
     implicit val sqlEc = SqlConfig.SQL_EC
-    val requestBody = sqlRequest.request
     val futConn = (connectionCacheActor ? GetConnectionMessage(requestBody)).asInstanceOf[Future[Connection]]
     val (isOk, errMsg) = SqlParserUtils.isSelectStatement(requestBody.sql)
     if (null == errMsg) {

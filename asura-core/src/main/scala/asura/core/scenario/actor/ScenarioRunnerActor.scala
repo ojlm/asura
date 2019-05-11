@@ -1,19 +1,19 @@
 package asura.core.scenario.actor
 
 import akka.actor.{ActorRef, PoisonPill, Props, Status}
-import akka.pattern.{ask, pipe}
+import akka.pattern.pipe
 import akka.util.Timeout
 import asura.common.actor._
 import asura.common.util.{FutureUtils, LogUtils, StringUtils, XtermUtils}
-import asura.core.dubbo.DubboResult
+import asura.core.dubbo.{DubboResult, DubboRunner}
 import asura.core.es.model.JobReportData.ScenarioReportItemData
 import asura.core.es.model._
 import asura.core.es.service.{DubboRequestService, HttpCaseRequestService, SqlRequestService}
 import asura.core.http.{HttpResult, HttpRunner}
 import asura.core.runtime.{ContextOptions, RuntimeContext}
 import asura.core.scenario.actor.ScenarioRunnerActor.{ScenarioTestData, ScenarioTestMessage}
-import asura.core.sql.SqlResult
-import asura.core.{CoreConfig, ErrorMessages, RunnerActors}
+import asura.core.sql.{SqlResult, SqlRunner}
+import asura.core.{CoreConfig, ErrorMessages}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
@@ -24,12 +24,9 @@ class ScenarioRunnerActor() extends BaseActor {
   implicit val timeout: Timeout = CoreConfig.DEFAULT_ACTOR_ASK_TIMEOUT
   implicit val ec = context.dispatcher
 
-  val dubboInvoker = RunnerActors.dubboInvoker
-  val sqlInvoker = RunnerActors.sqlInvoker
-
   var steps: Seq[ScenarioStep] = Nil
   var stepsData: ScenarioTestData = null
-  var contextOptions: ContextOptions = null
+  val runtimeContext: RuntimeContext = RuntimeContext()
   var scenarioReportItem = ScenarioReportItemData(null, null)
 
   // Actor which receive `asura.common.actor.ActorEvent` message for WebSocket api
@@ -44,7 +41,7 @@ class ScenarioRunnerActor() extends BaseActor {
   private def handlerWsRequest(): Receive = {
     case ScenarioTestMessage(summary, steps, options) =>
       scenarioReportItem.title = summary
-      contextOptions = options
+      runtimeContext.options = options
       this.steps = steps
       getScenarioTestData(steps).map(stepsData => {
         this.stepsData = stepsData
@@ -75,7 +72,7 @@ class ScenarioRunnerActor() extends BaseActor {
         val csOpt = this.stepsData.http.get(step.id)
         if (csOpt.nonEmpty) {
           val httpRequest = csOpt.get
-          HttpRunner.test(step.id, httpRequest, RuntimeContext(options = this.contextOptions))
+          HttpRunner.test(step.id, httpRequest, this.runtimeContext)
             .map(httpResult => handleSuccessResult(httpRequest, httpResult, idx))
             .recover {
               case t: Throwable => handleFailureResult(httpRequest, idx, t)
@@ -87,13 +84,11 @@ class ScenarioRunnerActor() extends BaseActor {
         val dubboOpt = this.stepsData.dubbo.get(step.id)
         if (dubboOpt.nonEmpty) {
           val dubboRequest = dubboOpt.get
-          (this.dubboInvoker ? dubboRequest.request.toDubboGenericRequest).flatMap(dubboResponse => {
-            DubboResult.evaluate(dubboRequest, dubboResponse.asInstanceOf[Object])
-          }).map(dubboResult => handleSuccessResult(dubboRequest, dubboResult, idx))
+          DubboRunner.test(step.id, dubboRequest, this.runtimeContext)
+            .map(dubboResult => handleSuccessResult(dubboRequest, dubboResult, idx))
             .recover {
               case t: Throwable => handleFailureResult(dubboRequest, idx, t)
             }
-
         } else {
           handleEmptyStepData(idx, ScenarioStep.TYPE_DUBBO, step.id)
         }
@@ -101,9 +96,8 @@ class ScenarioRunnerActor() extends BaseActor {
         val sqlOpt = this.stepsData.sql.get(step.id)
         if (sqlOpt.nonEmpty) {
           val sqlRequest = sqlOpt.get
-          (this.sqlInvoker ? sqlRequest).flatMap(sqlResponse => {
-            SqlResult.evaluate(sqlRequest, sqlResponse.asInstanceOf[Object])
-          }).map(sqlResult => handleSuccessResult(sqlRequest, sqlResult, idx))
+          SqlRunner.test(step.id, sqlRequest, this.runtimeContext)
+            .map(sqlResult => handleSuccessResult(sqlRequest, sqlResult, idx))
             .recover {
               case t: Throwable => handleFailureResult(sqlRequest, idx, t)
             }
