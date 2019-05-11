@@ -54,6 +54,6 @@ object HttpResponseAssert {
       },
       entity
     )
-    HttpResult.eval(docId, response, assert, caseContext, caseRequest, caseResponse)
+    HttpResult.eval(docId, assert, caseContext, caseRequest, caseResponse)
   }
 }
