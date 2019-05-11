@@ -1,15 +1,13 @@
 package asura.app.api
 
 import akka.actor.ActorSystem
-import akka.pattern.ask
-import akka.util.Timeout
 import asura.app.api.model.TestSql
 import asura.common.util.StringUtils
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, SqlRequest}
 import asura.core.es.service.SqlRequestService
 import asura.core.model.QuerySqlRequest
-import asura.core.{CoreConfig, RunnerActors}
+import asura.core.sql.SqlRunner
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 import play.api.Configuration
@@ -25,8 +23,6 @@ class SqlApi @Inject()(
                       ) extends BaseApi {
 
   val activityActor = system.actorOf(ActivitySaveActor.props())
-  implicit val timeout: Timeout = CoreConfig.DEFAULT_ACTOR_ASK_TIMEOUT
-  lazy val sqlInvoker = RunnerActors.sqlInvoker
 
   def test() = Action(parse.byteString).async { implicit req =>
     val testMsg = req.bodyAs(classOf[TestSql])
@@ -35,7 +31,7 @@ class SqlApi @Inject()(
     if (null == error) {
       val user = getProfileId()
       activityActor ! Activity(sqlReq.group, sqlReq.project, user, Activity.TYPE_TEST_SQL, StringUtils.notEmptyElse(testMsg.id, StringUtils.EMPTY))
-      (sqlInvoker ? sqlReq).toOkResult
+      SqlRunner.test(testMsg.id, sqlReq).toOkResult
     } else {
       error.toFutureFail
     }

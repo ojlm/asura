@@ -94,6 +94,13 @@ object SqlRequest extends IndexSetting {
                              val database: String,
                              var table: String,
                              val sql: String,
-                           )
+                           ) {
+
+    def copyFrom(host: String, port: Int, database: String, sql: String): SqlRequestBody = {
+      SqlRequestBody(
+        host, port, username, password, encryptedPass, database, table, sql
+      )
+    }
+  }
 
 }

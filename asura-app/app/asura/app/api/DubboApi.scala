@@ -5,7 +5,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 import asura.app.api.model.TestDubbo
 import asura.common.util.StringUtils
-import asura.core.dubbo.DubboResult
+import asura.core.dubbo.DubboRunner
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, DubboRequest}
 import asura.core.es.service.DubboRequestService
@@ -52,9 +52,7 @@ class DubboApi @Inject()(
     if (null == error) {
       val user = getProfileId()
       activityActor ! Activity(dubboReq.group, dubboReq.project, user, Activity.TYPE_TEST_DUBBO, StringUtils.notEmptyElse(testMsg.id, StringUtils.EMPTY))
-      (dubboInvoker ? dubboReq.request.toDubboGenericRequest).flatMap(context => {
-        DubboResult.evaluate(dubboReq, if (null == context) null else context.asInstanceOf[Object])
-      }).toOkResult
+      DubboRunner.test(testMsg.id, testMsg.request).toOkResult
     } else {
       error.toFutureFail
     }

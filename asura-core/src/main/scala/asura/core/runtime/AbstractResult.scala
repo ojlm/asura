@@ -22,5 +22,6 @@ trait AbstractResult {
 
   def result: java.util.Map[_, _]
 
+  // generator type
   def generator: String
 }
