@@ -1,6 +1,5 @@
 package asura.core.http
 
-import akka.http.scaladsl.model.HttpResponse
 import asura.common.util.StringUtils
 import asura.core.assertion.engine.{AssertionContext, Statistic}
 import asura.core.concurrent.ExecutionContextManager.cachedExecutor
@@ -18,7 +17,7 @@ case class HttpResult(
                        var metrics: JobReportStepItemMetrics = null,
                        var statis: Statistic = Statistic(),
                        var result: java.util.Map[_, _] = java.util.Collections.EMPTY_MAP,
-                       var generator: String = StringUtils.EMPTY, // generator type
+                       var generator: String = StringUtils.EMPTY,
                      ) extends AbstractResult
 
 object HttpResult {
@@ -37,11 +36,10 @@ object HttpResult {
 
   def eval(
             docId: String,
-            response: HttpResponse,
             assert: Map[String, Any],
             context: RuntimeContext,
             request: HttpRequestReportModel,
-            caseResponse: HttpResponseReportModel,
+            response: HttpResponseReportModel,
           ): Future[HttpResult] = {
     val statistic = Statistic()
     AssertionContext.eval(assert, context.rawContext, statistic).map { assertResult =>
@@ -50,7 +48,7 @@ object HttpResult {
         assert = assert,
         context = context.rawContext,
         request = request,
-        response = caseResponse,
+        response = response,
         statis = statistic,
         result = assertResult
       )
