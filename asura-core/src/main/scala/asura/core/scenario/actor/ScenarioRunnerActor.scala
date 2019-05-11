@@ -6,7 +6,7 @@ import akka.util.Timeout
 import asura.common.actor._
 import asura.common.util.{FutureUtils, LogUtils, StringUtils, XtermUtils}
 import asura.core.dubbo.{DubboResult, DubboRunner}
-import asura.core.es.model.JobReportData.{JobReportStepItemData, ScenarioReportItemData}
+import asura.core.es.model.JobReportData.{JobReportStepItemData, ReportStepItemStatus, ScenarioReportItemData}
 import asura.core.es.model._
 import asura.core.es.service.{DubboRequestService, HttpCaseRequestService, SqlRequestService}
 import asura.core.http.{HttpResult, HttpRunner}
@@ -116,8 +116,14 @@ class ScenarioRunnerActor() extends BaseActor {
   private def handleNormalResult(title: String, result: AbstractResult, step: ScenarioStep, idx: Int): Int = {
     // assertion successful or failed
     val stepItemData = JobReportStepItemData.parse(title, result)
+    val statis = stepItemData.statis
     if (null != wsActor) {
-      val msg = s"${consoleLogPrefix(step.`type`, idx)}${title} ${stepItemData.status}"
+      val statusText = if (statis.isSuccessful) {
+        XtermUtils.greenWrap(ReportStepItemStatus.STATUS_PASS)
+      } else {
+        XtermUtils.redWrap(ReportStepItemStatus.STATUS_FAIL)
+      }
+      val msg = s"${consoleLogPrefix(step.`type`, idx)}${title} ${statusText}"
       wsActor ! NotifyActorEvent(msg)
       wsActor ! ItemActorEvent(JobReportItemResultEvent(idx + 1, stepItemData.status, null, result))
     }
@@ -129,8 +135,9 @@ class ScenarioRunnerActor() extends BaseActor {
     val errorStack = LogUtils.stackTraceToString(t)
     val stepItemData = JobReportStepItemData.parse(title, failResult, msg = errorStack)
     if (null != wsActor) {
-      val msg = s"${consoleLogPrefix(step.`type`, idx)}${title} fail"
-      wsActor ! NotifyActorEvent(msg)
+      val statusText = s"${XtermUtils.redWrap(ReportStepItemStatus.STATUS_FAIL)}"
+      wsActor ! NotifyActorEvent(s"${consoleLogPrefix(step.`type`, idx)}${title} ${statusText}")
+      wsActor ! NotifyActorEvent(s"${consoleLogPrefix(step.`type`, idx)}${title} ${errorStack}")
       wsActor ! ItemActorEvent(JobReportItemResultEvent(idx + 1, stepItemData.status, errorStack, null))
     }
     idx + 1
