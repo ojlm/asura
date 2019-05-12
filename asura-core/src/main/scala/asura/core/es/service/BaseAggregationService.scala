@@ -1,8 +1,10 @@
 package asura.core.es.service
 
 import asura.common.util.StringUtils
-import asura.core.model.{AggsItem, AggsQuery}
+import asura.core.concurrent.ExecutionContextManager.sysGlobal
+import asura.core.es.EsClient
 import asura.core.es.model.FieldKeys
+import asura.core.model.{AggsItem, AggsQuery}
 import com.sksamuel.elastic4s.http.ElasticDsl.{rangeQuery, termQuery, termsQuery, wildcardQuery, _}
 import com.sksamuel.elastic4s.http.Response
 import com.sksamuel.elastic4s.http.search.SearchResponse
@@ -10,10 +12,45 @@ import com.sksamuel.elastic4s.searches.aggs.AbstractAggregation
 import com.sksamuel.elastic4s.searches.queries.Query
 
 import scala.collection.mutable.ArrayBuffer
+import scala.concurrent.Future
 
 trait BaseAggregationService {
 
   import BaseAggregationService._
+
+  def aggsLabels(index: String, labelPrefix: String): Future[Seq[AggsItem]] = {
+    val query = if (StringUtils.isNotEmpty(labelPrefix)) {
+      nestedQuery(
+        FieldKeys.FIELD_LABELS,
+        wildcardQuery(FieldKeys.FIELD_NESTED_LABELS_NAME, s"${labelPrefix}*")
+      )
+    } else {
+      matchAllQuery()
+    }
+    EsClient.esClient.execute {
+      search(index)
+        .query(query)
+        .size(0)
+        .aggregations(
+          nestedAggregation(FieldKeys.FIELD_LABELS, FieldKeys.FIELD_LABELS)
+            .subAggregations(termsAgg(FieldKeys.FIELD_LABELS, FieldKeys.FIELD_NESTED_LABELS_NAME))
+        )
+    }.map(res => {
+      val buckets = res.result
+        .aggregationsAsMap.getOrElse(FieldKeys.FIELD_LABELS, Map.empty).asInstanceOf[Map[String, Any]]
+        .getOrElse(FieldKeys.FIELD_LABELS, Map.empty).asInstanceOf[Map[String, Any]]
+        .getOrElse("buckets", Nil)
+      buckets.asInstanceOf[Seq[Map[String, Any]]].map(bucket => {
+        AggsItem(
+          `type` = null,
+          id = bucket.getOrElse("key", "").asInstanceOf[String],
+          count = bucket.getOrElse("doc_count", 0).asInstanceOf[Int],
+          summary = null,
+          description = null
+        )
+      })
+    })
+  }
 
   def toMetricsAggregation(field: String): Seq[AbstractAggregation] = {
     if (StringUtils.isNotEmpty(field)) {

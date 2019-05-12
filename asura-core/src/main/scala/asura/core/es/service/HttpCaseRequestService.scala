@@ -291,40 +291,6 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
     }.map(toAggItems(_, aggField, null))
   }
 
-  def aggsLabels(labelPrefix: String): Future[Seq[AggsItem]] = {
-    val query = if (StringUtils.isNotEmpty(labelPrefix)) {
-      nestedQuery(
-        FieldKeys.FIELD_LABELS,
-        wildcardQuery(FieldKeys.FIELD_NESTED_LABELS_NAME, s"${labelPrefix}*")
-      )
-    } else {
-      matchAllQuery()
-    }
-    EsClient.esClient.execute {
-      search(HttpCaseRequest.Index)
-        .query(query)
-        .size(0)
-        .aggregations(
-          nestedAggregation(FieldKeys.FIELD_LABELS, FieldKeys.FIELD_LABELS)
-            .subAggregations(termsAgg(FieldKeys.FIELD_LABELS, FieldKeys.FIELD_NESTED_LABELS_NAME))
-        )
-    }.map(res => {
-      val buckets = res.result
-        .aggregationsAsMap.getOrElse(FieldKeys.FIELD_LABELS, Map.empty).asInstanceOf[Map[String, Any]]
-        .getOrElse(FieldKeys.FIELD_LABELS, Map.empty).asInstanceOf[Map[String, Any]]
-        .getOrElse("buckets", Nil)
-      buckets.asInstanceOf[Seq[Map[String, Any]]].map(bucket => {
-        AggsItem(
-          `type` = null,
-          id = bucket.getOrElse("key", "").asInstanceOf[String],
-          count = bucket.getOrElse("doc_count", 0).asInstanceOf[Int],
-          summary = null,
-          description = null
-        )
-      })
-    })
-  }
-
   def trend(query: AggsQuery): Future[Seq[AggsItem]] = {
     val esQueries = buildEsQueryFromAggQuery(query, false)
     val termsField = query.aggTermsField()
