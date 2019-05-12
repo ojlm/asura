@@ -125,7 +125,7 @@ class ScenarioRunnerActor() extends BaseActor {
       }
       val msg = s"${consoleLogPrefix(step.`type`, idx)}${title} ${statusText}"
       wsActor ! NotifyActorEvent(msg)
-      wsActor ! ItemActorEvent(JobReportItemResultEvent(idx + 1, stepItemData.status, null, result))
+      wsActor ! ItemActorEvent(JobReportItemResultEvent(idx, stepItemData.status, null, result))
     }
     idx + 1
   }
@@ -138,7 +138,7 @@ class ScenarioRunnerActor() extends BaseActor {
       val statusText = s"${XtermUtils.redWrap(ReportStepItemStatus.STATUS_FAIL)}"
       wsActor ! NotifyActorEvent(s"${consoleLogPrefix(step.`type`, idx)}${title} ${statusText}")
       wsActor ! NotifyActorEvent(s"${consoleLogPrefix(step.`type`, idx)}${title} ${errorStack}")
-      wsActor ! ItemActorEvent(JobReportItemResultEvent(idx + 1, stepItemData.status, errorStack, null))
+      wsActor ! ItemActorEvent(JobReportItemResultEvent(idx, stepItemData.status, errorStack, null))
     }
     idx + 1
   }
