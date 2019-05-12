@@ -5,9 +5,11 @@ import java.time.format.DateTimeFormatter
 
 import asura.common.util.StringUtils
 import asura.core.assertion.engine.Statistic
+import asura.core.dubbo.DubboResult
 import asura.core.es.model.JobReportData.{JobReportStepItemData, ScenarioReportItemData}
 import asura.core.http.HttpResult
 import asura.core.runtime.AbstractResult
+import asura.core.sql.SqlResult
 import com.fasterxml.jackson.annotation.JsonIgnore
 
 /**
@@ -87,8 +89,8 @@ object JobReportData {
     def parse(title: String, result: AbstractResult, itemId: String = null, status: String = null, msg: String = null): JobReportStepItemData = {
       val stepType = result match {
         case _: HttpResult => ScenarioStep.TYPE_HTTP
-        case _: DubboRequest => ScenarioStep.TYPE_DUBBO
-        case _: SqlRequest => ScenarioStep.TYPE_SQL
+        case _: DubboResult => ScenarioStep.TYPE_DUBBO
+        case _: SqlResult => ScenarioStep.TYPE_SQL
       }
       val item = JobReportStepItemData(id = result.docId, title = title, itemId, statis = result.statis, stepType)
       if (StringUtils.isNotEmpty(status)) {
