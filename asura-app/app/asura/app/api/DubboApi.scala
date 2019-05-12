@@ -85,4 +85,8 @@ class DubboApi @Inject()(
     val doc = req.bodyAs(classOf[DubboRequest])
     DubboRequestService.updateDoc(id, doc).toOkResult
   }
+
+  def aggsLabels(label: String) = Action(parse.byteString).async { implicit req =>
+    DubboRequestService.aggsLabels(DubboRequest.Index, label).toOkResult
+  }
 }
