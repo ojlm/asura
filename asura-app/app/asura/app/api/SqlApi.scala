@@ -64,4 +64,8 @@ class SqlApi @Inject()(
     val doc = req.bodyAs(classOf[SqlRequest])
     SqlRequestService.updateDoc(id, doc).toOkResult
   }
+
+  def aggsLabels(label: String) = Action(parse.byteString).async { implicit req =>
+    SqlRequestService.aggsLabels(SqlRequest.Index, label).toOkResult
+  }
 }

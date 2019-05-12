@@ -149,7 +149,7 @@ class HttpCaseApi @Inject()(implicit system: ActorSystem,
   }
 
   def aggsLabels(label: String) = Action(parse.byteString).async { implicit req =>
-    HttpCaseRequestService.aggsLabels(label).toOkResult
+    HttpCaseRequestService.aggsLabels(HttpCaseRequest.Index, label).toOkResult
   }
 
   def batchLabels() = Action(parse.byteString).async { implicit req =>
