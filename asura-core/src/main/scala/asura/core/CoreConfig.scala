@@ -29,6 +29,7 @@ case class CoreConfig(
 object CoreConfig {
 
   implicit val DEFAULT_ACTOR_ASK_TIMEOUT: Timeout = 30.seconds
+  implicit val DEFAULT_JOB_TIMEOUT: Timeout = 10.minutes
   implicit var system: ActorSystem = _
   implicit var dispatcher: ExecutionContext = _
   implicit var materializer: ActorMaterializer = _
