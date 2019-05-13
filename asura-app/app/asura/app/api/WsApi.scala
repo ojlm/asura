@@ -9,7 +9,7 @@ import asura.core.es.model.Activity
 import asura.core.job.actor.JobTestActor.JobTestMessage
 import asura.core.job.actor.{JobManualActor, JobTestActor}
 import asura.core.scenario.actor.ScenarioRunnerActor
-import asura.core.scenario.actor.ScenarioRunnerActor.ScenarioTestMessage
+import asura.core.scenario.actor.ScenarioRunnerActor.ScenarioTestWebMessage
 import asura.dubbo.actor.TelnetDubboProviderActor
 import javax.inject.{Inject, Singleton}
 import org.pac4j.http.client.direct.HeaderClient
@@ -39,9 +39,10 @@ class WsApi @Inject()(
       } else {
         Right {
           val user = profile.getId
-          activityActor ! Activity(group, project, user, Activity.TYPE_TEST_SCENARIO, id.getOrElse(StringUtils.EMPTY))
-          val testActor = system.actorOf(ScenarioRunnerActor.props())
-          WebSocketMessageHandler.stringToActorEventFlow(testActor, classOf[ScenarioTestMessage])
+          val scenarioId = id.getOrElse(StringUtils.EMPTY)
+          activityActor ! Activity(group, project, user, Activity.TYPE_TEST_SCENARIO, scenarioId)
+          val testActor = system.actorOf(ScenarioRunnerActor.props(scenarioId))
+          WebSocketMessageHandler.stringToActorEventFlow(testActor, classOf[ScenarioTestWebMessage])
         }
       }
     }
