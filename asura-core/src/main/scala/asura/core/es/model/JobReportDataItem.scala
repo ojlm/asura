@@ -4,6 +4,7 @@ import asura.common.util.StringUtils
 import asura.core.es.EsConfig
 import asura.core.es.model.JobReportData.JobReportStepItemMetrics
 import asura.core.es.model.JobReportDataItem.{ReportDataItemRequest, ReportDataItemResponse}
+import asura.core.runtime.AbstractResult
 import com.sksamuel.elastic4s.mappings._
 
 // save all type results, eg: http, sql, dubbo
@@ -51,4 +52,25 @@ object JobReportDataItem extends IndexSetting {
 
   trait ReportDataItemResponse
 
+  def parse(
+             jobId: String,
+             reportId: String,
+             scenarioId: String,
+             `type`: String,
+             result: AbstractResult
+           ): JobReportDataItem = {
+    JobReportDataItem(
+      reportId = reportId,
+      caseId = result.docId,
+      scenarioId = scenarioId,
+      jobId = jobId,
+      `type` = `type`,
+      metrics = result.metrics,
+      request = result.request,
+      response = result.response,
+      assertions = result.assert,
+      assertionsResult = result.result,
+      generator = StringUtils.notEmptyElse(result.generator, StringUtils.EMPTY)
+    )
+  }
 }

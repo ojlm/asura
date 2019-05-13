@@ -22,6 +22,7 @@ object ScenarioRunner {
 
   val logger = Logger("ScenarioRunner")
 
+  @deprecated(message = "only http steps", since = "0.2.0")
   def testScenarios(
                      scenarioIds: Seq[String],
                      log: String => Unit = null,
@@ -77,6 +78,7 @@ object ScenarioRunner {
     * @param scenarioId if this value is null, previous case context should not be put context
     * @param caseTuples (docId, case)
     */
+  @deprecated(message = "only http steps", since = "0.2.0")
   def test(
             scenarioId: String,
             summary: String,

@@ -11,7 +11,8 @@ import asura.core.es.model.JobReportData.{JobReportStepItemData, ReportStepItemS
 import asura.core.es.model._
 import asura.core.es.service.{DubboRequestService, HttpCaseRequestService, SqlRequestService}
 import asura.core.http.{HttpResult, HttpRunner}
-import asura.core.job.JobReportItemResultEvent
+import asura.core.job.actor.JobReportDataItemSaveActor.SaveReportDataHttpItemMessage
+import asura.core.job.{JobReportItemResultEvent, JobReportItemStoreDataHelper}
 import asura.core.runtime.{AbstractResult, ContextOptions, RuntimeContext}
 import asura.core.scenario.actor.ScenarioRunnerActor.{ScenarioTestData, ScenarioTestJobMessage, ScenarioTestWebMessage}
 import asura.core.sql.{SqlResult, SqlRunner}
@@ -32,32 +33,40 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
 
   var steps: Seq[ScenarioStep] = Nil
   var stepsData: ScenarioTestData = null
-  val runtimeContext: RuntimeContext = RuntimeContext()
+  var runtimeContext: RuntimeContext = null
   val stepsReportItems = ArrayBuffer[JobReportStepItemData]()
   var scenarioReportItem = ScenarioReportItemData(scenarioId, null, stepsReportItems)
 
   // Actor which receive `asura.common.actor.ActorEvent` message.
   // Console log and step result will be sent to this actor which will influence the web ui
+  // It should not be poisoned when running in a job
   var wsActor: ActorRef = null
-  // Some job information which is used to store item data and send log message
-  var jobMetaInfo: ScenarioTestJobMessage = null
+  // Parent actor if this is running in a job
+  var jobActor: ActorRef = null
+  var storeHelper: JobReportItemStoreDataHelper = null
 
   override def receive: Receive = {
     case SenderMessage(wsSender) =>
       // WebSocket actor for web console log
       wsActor = wsSender
       context.become(doTheTest())
-    case ScenarioTestJobMessage =>
-      // Running in the job
-      // TODO
-      context.become(doTheTest())
   }
 
   private def doTheTest(): Receive = {
     case ScenarioTestWebMessage(summary, steps, options) =>
-      scenarioReportItem.title = summary
-      runtimeContext.options = options
+      this.scenarioReportItem.title = summary
+      this.runtimeContext = RuntimeContext(options = options)
       this.steps = steps
+      getScenarioTestData(steps).map(stepsData => {
+        this.stepsData = stepsData
+        self ! 0
+      })
+    case ScenarioTestJobMessage(summary, steps, storeHelper, runtimeContext) =>
+      this.jobActor = sender()
+      this.scenarioReportItem.title = summary
+      this.runtimeContext = runtimeContext
+      this.steps = steps
+      this.storeHelper = storeHelper
       getScenarioTestData(steps).map(stepsData => {
         this.stepsData = stepsData
         self ! 0
@@ -75,7 +84,11 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
           }\n"
           wsActor ! NotifyActorEvent(msg)
           wsActor ! OverActorEvent(this.scenarioReportItem)
-          wsActor ! PoisonPill
+          if (null != jobActor) wsActor ! PoisonPill
+        }
+        if (null != jobActor) {
+          jobActor ! this.scenarioReportItem
+          context stop self
         }
       }
     case Status.Failure(t) =>
@@ -83,12 +96,12 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
       log.warning(logErrMsg)
       if (null != wsActor) {
         wsActor ! ErrorActorEvent(t.getMessage)
-        wsActor ! PoisonPill
+        if (null != jobActor) wsActor ! PoisonPill
       }
     case _ =>
       if (null != wsActor) {
         wsActor ! ErrorActorEvent(ErrorMessages.error_UnknownMessageType.errMsg)
-        wsActor ! PoisonPill
+        if (null != jobActor) wsActor ! PoisonPill
       }
   }
 
@@ -142,6 +155,17 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
   private def handleNormalResult(title: String, result: AbstractResult, step: ScenarioStep, idx: Int): Int = {
     // assertion successful or failed
     val stepItemData = JobReportStepItemData.parse(title, result)
+    if (null != storeHelper) {
+      val itemDataId = s"${storeHelper.reportId}_${storeHelper.infix}_${idx}"
+      val dataItem = JobReportDataItem.parse(
+        storeHelper.jobId,
+        storeHelper.reportId,
+        scenarioId,
+        step.`type`,
+        result
+      )
+      storeHelper.actorRef ! SaveReportDataHttpItemMessage(itemDataId, dataItem)
+    }
     this.stepsReportItems += stepItemData
     val statis = stepItemData.statis
     if (null != wsActor) {
@@ -286,7 +310,12 @@ object ScenarioRunnerActor {
   case class ScenarioTestWebMessage(summary: String, steps: Seq[ScenarioStep], options: ContextOptions)
 
   // from job
-  case class ScenarioTestJobMessage(jobId: String, reportId: String, storeActor: ActorRef)
+  case class ScenarioTestJobMessage(
+                                     summary: String,
+                                     steps: Seq[ScenarioStep],
+                                     storeHelper: JobReportItemStoreDataHelper,
+                                     runtimeContext: RuntimeContext
+                                   )
 
   case class ScenarioTestData(
                                http: Map[String, HttpCaseRequest],
