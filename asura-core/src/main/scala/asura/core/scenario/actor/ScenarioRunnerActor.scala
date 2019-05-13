@@ -5,6 +5,7 @@ import akka.pattern.pipe
 import akka.util.Timeout
 import asura.common.actor._
 import asura.common.util.{FutureUtils, LogUtils, StringUtils, XtermUtils}
+import asura.core.assertion.engine.Statistic
 import asura.core.dubbo.{DubboResult, DubboRunner}
 import asura.core.es.model.JobReportData.{JobReportStepItemData, ReportStepItemStatus, ScenarioReportItemData}
 import asura.core.es.model._
@@ -12,15 +13,19 @@ import asura.core.es.service.{DubboRequestService, HttpCaseRequestService, SqlRe
 import asura.core.http.{HttpResult, HttpRunner}
 import asura.core.job.JobReportItemResultEvent
 import asura.core.runtime.{AbstractResult, ContextOptions, RuntimeContext}
-import asura.core.scenario.actor.ScenarioRunnerActor.{ScenarioTestData, ScenarioTestMessage}
+import asura.core.scenario.actor.ScenarioRunnerActor.{ScenarioTestData, ScenarioTestJobMessage, ScenarioTestWebMessage}
 import asura.core.sql.{SqlResult, SqlRunner}
 import asura.core.{CoreConfig, ErrorMessages}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
-// alive during a scenario
-class ScenarioRunnerActor() extends BaseActor {
+/** alive during a scenario
+  *
+  * @param scenarioId
+  * @param failFast if `true`, when a step is failed the left steps will be skipped
+  */
+class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends BaseActor {
 
   implicit val timeout: Timeout = CoreConfig.DEFAULT_ACTOR_ASK_TIMEOUT
   implicit val ec = context.dispatcher
@@ -28,20 +33,28 @@ class ScenarioRunnerActor() extends BaseActor {
   var steps: Seq[ScenarioStep] = Nil
   var stepsData: ScenarioTestData = null
   val runtimeContext: RuntimeContext = RuntimeContext()
-  var scenarioReportItem = ScenarioReportItemData(null, null)
+  val stepsReportItems = ArrayBuffer[JobReportStepItemData]()
+  var scenarioReportItem = ScenarioReportItemData(scenarioId, null, stepsReportItems)
 
   // Actor which receive `asura.common.actor.ActorEvent` message.
   // Console log and step result will be sent to this actor which will influence the web ui
   var wsActor: ActorRef = null
+  // Some job information which is used to store item data and send log message
+  var jobMetaInfo: ScenarioTestJobMessage = null
 
   override def receive: Receive = {
     case SenderMessage(wsSender) =>
+      // WebSocket actor for web console log
       wsActor = wsSender
-      context.become(handlerWsRequest())
+      context.become(doTheTest())
+    case ScenarioTestJobMessage =>
+      // Running in the job
+      // TODO
+      context.become(doTheTest())
   }
 
-  private def handlerWsRequest(): Receive = {
-    case ScenarioTestMessage(summary, steps, options) =>
+  private def doTheTest(): Receive = {
+    case ScenarioTestWebMessage(summary, steps, options) =>
       scenarioReportItem.title = summary
       runtimeContext.options = options
       this.steps = steps
@@ -53,20 +66,33 @@ class ScenarioRunnerActor() extends BaseActor {
       if (idx < this.steps.length) {
         executeStep(idx) pipeTo self
       } else {
-        wsActor ! OverActorEvent(this.scenarioReportItem)
-        wsActor ! PoisonPill
+        if (null != wsActor) {
+          val msg = s"[SCN][${this.scenarioReportItem.title}]${
+            if (this.scenarioReportItem.isSuccessful())
+              XtermUtils.greenWrap(this.scenarioReportItem.status)
+            else
+              XtermUtils.redWrap(this.scenarioReportItem.status)
+          }\n"
+          wsActor ! NotifyActorEvent(msg)
+          wsActor ! OverActorEvent(this.scenarioReportItem)
+          wsActor ! PoisonPill
+        }
       }
     case Status.Failure(t) =>
       val logErrMsg = LogUtils.stackTraceToString(t)
       log.warning(logErrMsg)
-      wsActor ! ErrorActorEvent(t.getMessage)
-      wsActor ! PoisonPill
+      if (null != wsActor) {
+        wsActor ! ErrorActorEvent(t.getMessage)
+        wsActor ! PoisonPill
+      }
     case _ =>
-      wsActor ! ErrorActorEvent(ErrorMessages.error_UnknownMessageType.errMsg)
-      wsActor ! PoisonPill
+      if (null != wsActor) {
+        wsActor ! ErrorActorEvent(ErrorMessages.error_UnknownMessageType.errMsg)
+        wsActor ! PoisonPill
+      }
   }
 
-  // execute step and return next step index
+  // execute step and return the next step index
   private def executeStep(idx: Int): Future[Int] = {
     val step = this.steps(idx)
     step.`type` match {
@@ -116,6 +142,7 @@ class ScenarioRunnerActor() extends BaseActor {
   private def handleNormalResult(title: String, result: AbstractResult, step: ScenarioStep, idx: Int): Int = {
     // assertion successful or failed
     val stepItemData = JobReportStepItemData.parse(title, result)
+    this.stepsReportItems += stepItemData
     val statis = stepItemData.statis
     if (null != wsActor) {
       val statusText = if (statis.isSuccessful) {
@@ -127,20 +154,70 @@ class ScenarioRunnerActor() extends BaseActor {
       wsActor ! NotifyActorEvent(msg)
       wsActor ! ItemActorEvent(JobReportItemResultEvent(idx, stepItemData.status, null, result))
     }
-    idx + 1
+    if (!statis.isSuccessful) {
+      this.scenarioReportItem.markFail()
+      if (this.failFast) {
+        skipLeftSteps(idx + 1)
+        this.steps.length
+      } else {
+        idx + 1
+      }
+    } else {
+      idx + 1
+    }
   }
 
-  private def handleExceptionalResult(title: String, failResult: AbstractResult, step: ScenarioStep, idx: Int, t: Throwable): Int = {
+  private def handleExceptionalResult(
+                                       title: String,
+                                       failResult: AbstractResult,
+                                       step: ScenarioStep,
+                                       idx: Int,
+                                       t: Throwable): Int = {
     // exception occurred
     val errorStack = LogUtils.stackTraceToString(t)
     val stepItemData = JobReportStepItemData.parse(title, failResult, msg = errorStack)
+    this.stepsReportItems += stepItemData
     if (null != wsActor) {
       val statusText = s"${XtermUtils.redWrap(ReportStepItemStatus.STATUS_FAIL)}"
       wsActor ! NotifyActorEvent(s"${consoleLogPrefix(step.`type`, idx)}${title} ${statusText}")
       wsActor ! NotifyActorEvent(s"${consoleLogPrefix(step.`type`, idx)}${title} ${errorStack}")
       wsActor ! ItemActorEvent(JobReportItemResultEvent(idx, stepItemData.status, errorStack, null))
     }
-    idx + 1
+    this.scenarioReportItem.markFail()
+    if (this.failFast) {
+      skipLeftSteps(idx + 1)
+      this.steps.length
+    } else {
+      idx + 1
+    }
+  }
+
+  private def skipLeftSteps(idx: Int): Unit = {
+    for (i <- idx.until(this.steps.length)) {
+      val step = this.steps(i)
+      val title = step.`type` match {
+        case ScenarioStep.TYPE_HTTP =>
+          val csOpt = this.stepsData.http.get(step.id)
+          csOpt.get.summary
+        case ScenarioStep.TYPE_DUBBO =>
+          val dubboOpt = this.stepsData.dubbo.get(step.id)
+          dubboOpt.get.summary
+        case ScenarioStep.TYPE_SQL =>
+          val sqlOpt = this.stepsData.sql.get(step.id)
+          sqlOpt.get.summary
+        case _ => StringUtils.EMPTY
+      }
+      val itemData = JobReportStepItemData(step.id, title, null, Statistic(), step.`type`)
+      itemData.status = ReportStepItemStatus.STATUS_SKIPPED
+      this.stepsReportItems += itemData
+      if (null != wsActor) {
+        val msg = s"${consoleLogPrefix(step.`type`, i)}${title} ${
+          XtermUtils.yellowWrap(ReportStepItemStatus.STATUS_SKIPPED)
+        }"
+        wsActor ! NotifyActorEvent(msg)
+        wsActor ! ItemActorEvent(JobReportItemResultEvent(i, ReportStepItemStatus.STATUS_SKIPPED, null, null))
+      }
+    }
   }
 
   private def handleEmptyStepData(idx: Int, stepType: String, docId: String): Future[Int] = {
@@ -171,10 +248,10 @@ class ScenarioRunnerActor() extends BaseActor {
     } yield (cs, dubbo, sql)
     res.map(triple => {
       if (null != wsActor) {
-        val msg = s"\n\n${consoleLogPrefix("SUM  ", -1)} " +
+        val msg = s"\n${consoleLogPrefix("SUM  ", -1)} " +
           s"${XtermUtils.magentaWrap("HTTP")}:${triple._1.size}, " +
           s"${XtermUtils.magentaWrap("DUBBO")}:${triple._2.size}, " +
-          s"${XtermUtils.magentaWrap("SQL")}:${triple._3.size}\n"
+          s"${XtermUtils.magentaWrap("SQL")}:${triple._3.size}"
         wsActor ! NotifyActorEvent(msg)
       }
       ScenarioTestData(triple._1, triple._2, triple._3)
@@ -203,9 +280,13 @@ class ScenarioRunnerActor() extends BaseActor {
 
 object ScenarioRunnerActor {
 
-  def props() = Props(new ScenarioRunnerActor())
+  def props(scenarioId: String, failFast: Boolean = true) = Props(new ScenarioRunnerActor(scenarioId, failFast))
 
-  case class ScenarioTestMessage(summary: String, steps: Seq[ScenarioStep], options: ContextOptions)
+  // from web
+  case class ScenarioTestWebMessage(summary: String, steps: Seq[ScenarioStep], options: ContextOptions)
+
+  // from job
+  case class ScenarioTestJobMessage(jobId: String, reportId: String, storeActor: ActorRef)
 
   case class ScenarioTestData(
                                http: Map[String, HttpCaseRequest],
