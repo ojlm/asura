@@ -1,13 +1,16 @@
 package asura.core.job.impl
 
+import akka.pattern.ask
 import asura.common.model.{ApiMsg, BoolErrorRes}
 import asura.common.util.FutureUtils.RichFuture
 import asura.common.util.StringUtils
+import asura.core.CoreConfig
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.scenario.ScenarioRunner
 import asura.core.es.model.{HttpCaseRequest, JobData}
 import asura.core.es.service.HttpCaseRequestService
 import asura.core.job._
+import asura.core.job.actor.JobRunnerActor
+import asura.core.scenario.ScenarioRunner
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
@@ -39,12 +42,18 @@ object RunCaseJob extends JobBase {
   }
 
   override def doTestAsync(execDesc: JobExecDesc, log: String => Unit): Future[JobExecDesc] = {
+    /*
     for {
       _ <- doTestCase(execDesc, log)
       _ <- doTestScenario(execDesc, log)
     } yield execDesc
+    */
+    import CoreConfig.DEFAULT_JOB_TIMEOUT
+    val runner = CoreConfig.system.actorOf(JobRunnerActor.props(null))
+    (runner ? execDesc).map(_ => execDesc)
   }
 
+  @deprecated(message = "only http steps", since = "0.2.0")
   def doTestScenario(execDesc: JobExecDesc, log: String => Unit): Future[JobExecDesc] = {
     val scenarios = execDesc.job.jobData.scenario
     if (null != scenarios && !scenarios.isEmpty) {
@@ -64,6 +73,7 @@ object RunCaseJob extends JobBase {
     }
   }
 
+  @deprecated(message = "only http steps", since = "0.2.0")
   def doTestCase(execDesc: JobExecDesc, log: String => Unit): Future[JobExecDesc] = {
     val report = execDesc.report
     val jobData = execDesc.job.jobData

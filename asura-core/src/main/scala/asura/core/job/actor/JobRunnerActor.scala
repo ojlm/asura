@@ -17,7 +17,8 @@ import asura.core.scenario.actor.ScenarioRunnerActor.ScenarioTestJobMessage
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
-/** Created by [[asura.core.job.actor.JobTestActor]] or [[asura.core.job.impl.RunCaseJob]]
+/** Created by [[asura.core.job.actor.JobTestActor]] or [[asura.core.job.impl.RunCaseJob]].
+  * This receive a `JobExecDesc` message and send it back after this is finished.
   *
   * @param wsActor receive WebSocket message event
   */
