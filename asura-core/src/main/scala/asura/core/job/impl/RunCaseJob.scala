@@ -83,11 +83,11 @@ object RunCaseJob extends JobBase {
             HttpCaseRequestService.getCasesByJobDataExtAsMap(execDesc.job.group, execDesc.job.project, jobData.ext).flatMap(res => {
               res.foreach(idCsTuple => cases.append((idCsTuple._1, idCsTuple._2)))
               val storeDataHelper = JobReportItemStoreDataHelper(execDesc.reportId, "c", execDesc.reportItemSaveActor, execDesc.jobId)
-              ScenarioRunner.test(null, "job cases", cases, log, execDesc.options)(storeDataHelper)
+              ScenarioRunner.test(null, "INNER", cases, log, execDesc.options)(storeDataHelper)
             })
           } else {
             val storeDataHelper = JobReportItemStoreDataHelper(execDesc.reportId, "c", execDesc.reportItemSaveActor, execDesc.jobId)
-            ScenarioRunner.test(null, "job cases", cases, log, execDesc.options)(storeDataHelper)
+            ScenarioRunner.test(null, "INNER", cases, log, execDesc.options)(storeDataHelper)
           }
         })
       } else {
@@ -95,7 +95,7 @@ object RunCaseJob extends JobBase {
         HttpCaseRequestService.getCasesByJobDataExtAsMap(execDesc.job.group, execDesc.job.project, jobData.ext).flatMap(res => {
           res.foreach(idCsTuple => cases.append((idCsTuple._1, idCsTuple._2)))
           val storeDataHelper = JobReportItemStoreDataHelper(execDesc.reportId, "c", execDesc.reportItemSaveActor, execDesc.jobId)
-          ScenarioRunner.test(null, "job cases", cases, log, execDesc.options)(storeDataHelper)
+          ScenarioRunner.test(null, "INNER", cases, log, execDesc.options)(storeDataHelper)
         })
       }
       scenarioReportFuture.map(scenarioReport => {

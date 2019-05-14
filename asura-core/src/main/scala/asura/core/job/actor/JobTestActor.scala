@@ -1,19 +1,21 @@
 package asura.core.job.actor
 
 import akka.actor.{ActorRef, PoisonPill, Props, Status}
-import akka.pattern.pipe
+import akka.pattern.{ask, pipe}
+import akka.util.Timeout
 import asura.common.actor._
 import asura.common.util.{LogUtils, XtermUtils}
 import asura.core.CoreConfig
-import asura.core.runtime.ContextOptions
 import asura.core.es.model.{JobData, JobReport}
 import asura.core.es.service.JobReportService
 import asura.core.job.actor.JobTestActor.JobTestMessage
 import asura.core.job.{JobCenter, JobExecDesc, JobMeta}
+import asura.core.runtime.ContextOptions
 
 class JobTestActor(user: String, out: ActorRef) extends BaseActor {
 
-  implicit val executionContext = context.dispatcher
+  implicit val ec = context.dispatcher
+  implicit val timeout: Timeout = CoreConfig.DEFAULT_JOB_TIMEOUT
   if (null != out) self ! SenderMessage(out)
 
   override def receive: Receive = {
@@ -32,9 +34,8 @@ class JobTestActor(user: String, out: ActorRef) extends BaseActor {
         val (isOk, errMsg) = job.checkJobData(jobData)
         if (isOk) {
           JobExecDesc.from(jobId, jobMeta, jobData, JobReport.TYPE_TEST, ContextOptions(jobEnv = jobMeta.env), user).map(jobExecDesc => {
-            job.doTestAsync(jobExecDesc, logMsg => {
-              wsActor ! NotifyActorEvent(logMsg)
-            }).pipeTo(self)
+            val runner = context.actorOf(JobRunnerActor.props(wsActor))
+            (runner.ask(jobExecDesc)(timeout, self)) pipeTo self
           }).recover {
             case t: Throwable =>
               self ! Status.Failure(t)
@@ -49,11 +50,11 @@ class JobTestActor(user: String, out: ActorRef) extends BaseActor {
       val report = execDesc.report
       JobReportService.indexReport(execDesc.reportId, report).map { res =>
         if (report.isSuccessful()) {
-          wsActor ! NotifyActorEvent(s"job(${report.jobName}): ${XtermUtils.greenWrap(report.result)}")
+          wsActor ! NotifyActorEvent(s"\n[JOB][${report.jobName}]: ${XtermUtils.greenWrap(report.result)}")
         } else {
-          wsActor ! NotifyActorEvent(s"job(${report.jobName}): ${XtermUtils.redWrap(report.result)}")
+          wsActor ! NotifyActorEvent(s"\n[JOB][${report.jobName}]: ${XtermUtils.redWrap(report.result)}")
         }
-        val reportUrl = s"view report: ${CoreConfig.reportBaseUrl}/${report.group}/${report.project}/${res.id}"
+        val reportUrl = s"[REPORT]: ${CoreConfig.reportBaseUrl}/${report.group}/${report.project}/${res.id}"
         wsActor ! NotifyActorEvent(reportUrl)
         wsActor ! OverActorEvent(report)
         wsActor ! PoisonPill
