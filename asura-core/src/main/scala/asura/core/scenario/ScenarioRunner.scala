@@ -87,7 +87,7 @@ object ScenarioRunner {
             options: ContextOptions = null,
             logResult: ActorEvent => Unit = null,
           )(implicit dataStoreHelper: JobReportItemStoreDataHelper = null): Future[ScenarioReportItemData] = {
-    if (null != log) log(s"scenario(${summary}): fetch ${caseTuples.length} cases.")
+    if (null != log) log(s"[SCN][${summary}] ${XtermUtils.magentaWrap("HTTP")}:${caseTuples.length}")
     if (caseTuples.isEmpty) throw ErrorMessages.error_EmptyJobCaseScenarioCount.toException
     val scenarioReportItem = ScenarioReportItemData(scenarioId, summary)
     val caseReportItems = ArrayBuffer[JobReportStepItemData]()
@@ -115,7 +115,7 @@ object ScenarioRunner {
             // add skipped test case report item in a scenario
             val item = JobReportStepItemData(id, cs.summary, null, Statistic(), ScenarioStep.TYPE_HTTP)
             item.status = ReportStepItemStatus.STATUS_SKIPPED
-            if (null != log) log(s"scenario(${summary}): ${cs.summary} ${XtermUtils.yellowWrap(ReportStepItemStatus.STATUS_SKIPPED)}.")
+            if (null != log) log(s"[SCN][${summary}]: ${cs.summary} ${XtermUtils.yellowWrap(ReportStepItemStatus.STATUS_SKIPPED)}.")
             if (null != logResult) logResult(ItemActorEvent(JobReportItemResultEvent(caseIndex, item.status, null, null)))
             Future.successful(item)
           } else {
@@ -143,14 +143,14 @@ object ScenarioRunner {
                 }
                 val statis = httpResult.statis
                 val item = if (statis.isSuccessful) {
-                  if (null != log) log(s"scenario(${summary}): ${cs.summary} ${XtermUtils.greenWrap(ReportStepItemStatus.STATUS_PASS)}.")
+                  if (null != log) log(s"[SCN][${summary}]: ${cs.summary} ${XtermUtils.greenWrap(ReportStepItemStatus.STATUS_PASS)}.")
                   if (StringUtils.isNotEmpty(scenarioId)) {
                     // when it's a real scenario instead of a plain array of case
                     caseContext.setPrevCurrentData(RuntimeContext.extractCaseSelfContext(httpResult))
                   }
                   JobReportStepItemData.parse(cs.summary, httpResult, itemDataId)
                 } else {
-                  if (null != log) log(s"scenario(${summary}): ${cs.summary} ${XtermUtils.redWrap(ReportStepItemStatus.STATUS_FAIL)}.")
+                  if (null != log) log(s"[SCN][${summary}]: ${cs.summary} ${XtermUtils.redWrap(ReportStepItemStatus.STATUS_FAIL)}.")
                   isScenarioFailed = true
                   scenarioReportItem.markFail()
                   // fail because of assertions not pass
@@ -165,8 +165,8 @@ object ScenarioRunner {
                   val errorStack = LogUtils.stackTraceToString(t)
                   logger.warn(errorStack)
                   if (null != log) {
-                    log(s"scenario(${summary}): ${cs.summary} ${XtermUtils.redWrap(ReportStepItemStatus.STATUS_FAIL)}.")
-                    log(s"scenario(${summary}): ${cs.summary} error : ${errorStack}.")
+                    log(s"[SCN][${summary}]: ${cs.summary} ${XtermUtils.redWrap(ReportStepItemStatus.STATUS_FAIL)}.")
+                    log(s"[SCN][${summary}]: ${cs.summary} error : ${errorStack}.")
                   }
                   val item = JobReportStepItemData.parse(cs.summary, HttpResult.failResult(id), msg = errorStack)
                   scenarioReportItem.markFail()
@@ -182,7 +182,7 @@ object ScenarioRunner {
       caseReportItems += lastReportItem
       if (StringUtils.isNotEmpty(scenarioId)) {
         // not in real scenario
-        if (null != log) log(s"scenario(${summary}): ${
+        if (null != log) log(s"[SCN][${summary}]: ${
           if (scenarioReportItem.isSuccessful())
             XtermUtils.greenWrap(scenarioReportItem.status)
           else
