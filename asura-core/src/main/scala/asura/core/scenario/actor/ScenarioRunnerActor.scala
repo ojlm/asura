@@ -76,15 +76,15 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
         executeStep(idx) pipeTo self
       } else {
         if (null != wsActor) {
-          val msg = s"[SCN][${this.scenarioReportItem.title}]${
+          val msg = s"[SCN][${this.scenarioReportItem.title}] ${
             if (this.scenarioReportItem.isSuccessful())
               XtermUtils.greenWrap(this.scenarioReportItem.status)
             else
               XtermUtils.redWrap(this.scenarioReportItem.status)
-          }\n"
+          }"
           wsActor ! NotifyActorEvent(msg)
           wsActor ! OverActorEvent(this.scenarioReportItem)
-          if (null != jobActor) wsActor ! PoisonPill
+          if (null == jobActor) wsActor ! PoisonPill
         }
         if (null != jobActor) {
           jobActor ! this.scenarioReportItem
@@ -96,12 +96,12 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
       log.warning(logErrMsg)
       if (null != wsActor) {
         wsActor ! ErrorActorEvent(t.getMessage)
-        if (null != jobActor) wsActor ! PoisonPill
+        if (null == jobActor) wsActor ! PoisonPill
       }
     case _ =>
       if (null != wsActor) {
         wsActor ! ErrorActorEvent(ErrorMessages.error_UnknownMessageType.errMsg)
-        if (null != jobActor) wsActor ! PoisonPill
+        if (null == jobActor) wsActor ! PoisonPill
       }
   }
 
@@ -157,6 +157,7 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
     val stepItemData = JobReportStepItemData.parse(title, result)
     if (null != storeHelper) {
       val itemDataId = s"${storeHelper.reportId}_${storeHelper.infix}_${idx}"
+      stepItemData.itemId = itemDataId
       val dataItem = JobReportDataItem.parse(
         storeHelper.jobId,
         storeHelper.reportId,
@@ -272,7 +273,7 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
     } yield (cs, dubbo, sql)
     res.map(triple => {
       if (null != wsActor) {
-        val msg = s"\n${consoleLogPrefix("SUM  ", -1)} " +
+        val msg = s"${consoleLogPrefix("SUM  ", -1)} " +
           s"${XtermUtils.magentaWrap("HTTP")}:${triple._1.size}, " +
           s"${XtermUtils.magentaWrap("DUBBO")}:${triple._2.size}, " +
           s"${XtermUtils.magentaWrap("SQL")}:${triple._3.size}"
