@@ -172,8 +172,12 @@ object SqlRequestService extends CommonService with BaseAggregationService {
         ErrorMessages.error_EmptyRequestBody
       } else {
         val request = doc.request
-        val table = SqlParserUtils.getStatementTable(request.sql)
-        request.table = table
+        try {
+          val table = SqlParserUtils.getStatementTable(request.sql)
+          request.table = table
+        } catch {
+          case _: Throwable => request.table = StringUtils.EMPTY // the sql maybe need to be rendered
+        }
         val securityConfig = CoreConfig.securityConfig
         if (StringUtils.isNotEmpty(request.password) && !request.password.equals(securityConfig.maskText)) {
           // encrypt password

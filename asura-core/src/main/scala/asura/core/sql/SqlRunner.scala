@@ -57,11 +57,10 @@ object SqlRunner {
 
   def renderRequest(request: SqlRequestBody, context: RuntimeContext)
                    (implicit metrics: RuntimeMetrics): Future[(SqlRequestBody, SqlRequestReportModel)] = {
-    // TODO render request from context
     val host = request.host
     val port = request.port
     val database = request.database
-    val sql = request.sql
+    val sql = context.renderBodyAsString(request.sql)
     metrics.renderRequestEnd()
     metrics.renderAuthBegin()
     metrics.renderAuthEnd()
