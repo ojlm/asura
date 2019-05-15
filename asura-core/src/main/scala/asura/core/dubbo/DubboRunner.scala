@@ -2,6 +2,7 @@ package asura.core.dubbo
 
 import akka.pattern.ask
 import akka.util.Timeout
+import asura.common.util.{JsonUtils, StringUtils}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.dubbo.DubboReportModel.{DubboRequestReportModel, DubboResponseReportModel}
 import asura.core.es.model.DubboRequest
@@ -57,10 +58,30 @@ object DubboRunner {
   }
 
   def renderRequest(request: DubboRequestBody, context: RuntimeContext)(implicit metrics: RuntimeMetrics): Future[GenericRequest] = {
-    // TODO render request from context
     metrics.renderRequestEnd()
     metrics.renderAuthBegin()
     metrics.renderAuthEnd()
-    Future.successful(request.toDubboGenericRequest())
+    val parameterTypes = if (null != request.parameterTypes && request.parameterTypes.nonEmpty) {
+      request.parameterTypes.map(_.`type`).toArray
+    } else {
+      null
+    }
+    val args = if (StringUtils.isNotEmpty(request.args)) {
+      val renderedText = context.renderBodyAsString(request.args)
+      JsonUtils.parse(renderedText, classOf[Array[Object]])
+    } else {
+      null
+    }
+    val genericRequest = GenericRequest(
+      dubboGroup = request.dubboGroup,
+      interface = request.interface,
+      method = request.method,
+      parameterTypes = parameterTypes,
+      args = args,
+      address = request.address,
+      port = request.port,
+      version = request.version
+    )
+    Future.successful(genericRequest)
   }
 }
