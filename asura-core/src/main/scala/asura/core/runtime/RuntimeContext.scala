@@ -4,9 +4,8 @@ import java.util
 
 import asura.common.util.StringUtils
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.es.model.Environment
+import asura.core.es.model.{Environment, VariablesExportItem}
 import asura.core.es.service.EnvironmentService
-import asura.core.http.HttpResult
 import asura.core.script.JavaScriptEngine
 import asura.core.util.{JsonPathUtils, StringTemplate}
 
@@ -14,18 +13,29 @@ import scala.concurrent.Future
 
 object RuntimeContext {
 
-  // builtin keys in context
-  val KEY__G = "_g" // global alias
-  val KEY__J = "_j" // job alias
-  val KEY__S = "_s" // scenario alias
-  val KEY__C = "_c" // cases alias
-  val KEY__P = "_p" // prev alias
-  val KEY_STATUS = "status" // current case status
-  val KEY_HEADERS = "headers" // current case headers
-  val KEY_ENTITY = "entity" // current case http body
+  // ###########################
+  // # builtin keys in context #
+  // ###########################
+
+  // alias for global scope
+  val KEY__G = "_g"
+  // alias for job scope
+  val KEY__J = "_j"
+  // alias for scenario scope
+  val KEY__S = "_s"
+  // alias for all steps
+  val KEY__C = "_c"
+  // alias for prev step
+  val KEY__P = "_p"
+  // current step status, now only http step
+  val KEY_STATUS = "status"
+  // current step headers, now only http step
+  val KEY_HEADERS = "headers"
+  // current step response body, eg: http, dubbo, sql
+  val KEY_ENTITY = "entity"
+  // alias for variable table of environment
   val KEY__ENV = "_env"
 
-  //
   val TEMPLATE_PREFIX = "{{"
   val TEMPLATE_SUFFIX = "}}"
   val JSON_PATH_MACRO_PREFIX_1 = "$."
@@ -95,8 +105,9 @@ object RuntimeContext {
 
   def apply(rawContext: util.Map[Any, Any]) = new RuntimeContext(rawContext)
 
-  def extractCaseSelfContext(caseResult: HttpResult): util.Map[Any, Any] = {
-    val context = caseResult.context
+  // extract current report result specified context as a new thread-unsafe map
+  def extractSelfContext(result: AbstractResult): util.Map[Any, Any] = {
+    val context = result.context
     val selfContext = new util.HashMap[Any, Any]()
     if (null != context && !context.isEmpty) {
       val status = context.get(RuntimeContext.KEY_STATUS)
@@ -120,58 +131,7 @@ case class RuntimeContext(
 
   def rawContext = ctx
 
-  def setOrUpdateGlobal(global: util.Map[Any, Any]): RuntimeContext = {
-    if (null != global && !global.isEmpty) {
-      val g = ctx.get(RuntimeContext.KEY__G)
-      if (null == g) {
-        ctx.put(RuntimeContext.KEY__G, global)
-      } else {
-        g.asInstanceOf[util.Map[Any, Any]].putAll(global)
-      }
-    }
-    this
-  }
-
-  def eraseGlobal(): RuntimeContext = {
-    ctx.remove(RuntimeContext.KEY__G)
-    this
-  }
-
-  def setOrUpdateJob(job: util.Map[Any, Any]): RuntimeContext = {
-    if (null != job && !job.isEmpty) {
-      val j = ctx.get(RuntimeContext.KEY__J)
-      if (null == j) {
-        ctx.put(RuntimeContext.KEY__J, job)
-      } else {
-        j.asInstanceOf[util.Map[Any, Any]].putAll(job)
-      }
-    }
-    this
-  }
-
-  def eraseJob(): RuntimeContext = {
-    ctx.remove(RuntimeContext.KEY__J)
-    this
-  }
-
-  def setOrUpdateScenario(scenario: util.Map[Any, Any]): RuntimeContext = {
-    if (null != scenario && !scenario.isEmpty) {
-      val s = ctx.get(RuntimeContext.KEY__S)
-      if (null == s) {
-        ctx.put(RuntimeContext.KEY__S, scenario)
-      } else {
-        s.asInstanceOf[util.Map[Any, Any]].putAll(scenario)
-      }
-    }
-    this
-  }
-
-  def eraseScenario(): RuntimeContext = {
-    ctx.remove(RuntimeContext.KEY__S)
-    this
-  }
-
-  def setPrevCurrentData(prevContext: util.Map[Any, Any]): RuntimeContext = {
+  def setPrevContext(prevContext: util.Map[Any, Any]): RuntimeContext = {
     if (null != prevContext && !prevContext.isEmpty) {
       ctx.put(RuntimeContext.KEY__P, prevContext)
       val cases = ctx.get(RuntimeContext.KEY__C)
@@ -182,6 +142,28 @@ case class RuntimeContext(
         list.add(prevContext)
         ctx.put(RuntimeContext.KEY__C, list)
       }
+    }
+    this
+  }
+
+  def evaluateExportsVariables(exports: Seq[VariablesExportItem]): RuntimeContext = {
+    if (null != exports && exports.nonEmpty) {
+      exports.filter(item => null != item && item.isValid()).foreach(item => {
+        var value: Object = null
+        try {
+          value = JsonPathUtils.read[Object](ctx, item.srcPath)
+        } catch {
+          case t: Throwable =>
+            value = t.getMessage
+        }
+        // usually do not need to check scope can only be one of `_g`, `_j`, `_s`
+        var scopeCtx = ctx.get(item.scope)
+        if (null == scopeCtx) {
+          scopeCtx = new util.concurrent.ConcurrentHashMap[Any, Any]()
+          ctx.put(item.scope, scopeCtx)
+        }
+        scopeCtx.asInstanceOf[util.Map[Any, Any]].put(item.dstName, value)
+      })
     }
     this
   }

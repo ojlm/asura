@@ -24,7 +24,7 @@ import scala.concurrent.Future
 /** alive during a scenario
   *
   * @param scenarioId
-  * @param failFast if `true`, when a step is failed the left steps will be skipped
+  * @param failFast if `true`, when a step is failed the left steps will be skipped, steps are relative
   */
 class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends BaseActor {
 
@@ -114,7 +114,7 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
         if (csOpt.nonEmpty) {
           val httpRequest = csOpt.get
           HttpRunner.test(step.id, httpRequest, this.runtimeContext)
-            .map(httpResult => handleNormalResult(httpRequest.summary, httpResult, step, idx))
+            .map(httpResult => handleNormalResult(httpRequest.summary, httpResult, step, idx, httpRequest.exports))
             .recover {
               case t: Throwable =>
                 handleExceptionalResult(httpRequest.summary, HttpResult.failResult(step.id), step, idx, t)
@@ -127,7 +127,7 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
         if (dubboOpt.nonEmpty) {
           val dubboRequest = dubboOpt.get
           DubboRunner.test(step.id, dubboRequest, this.runtimeContext)
-            .map(dubboResult => handleNormalResult(dubboRequest.summary, dubboResult, step, idx))
+            .map(dubboResult => handleNormalResult(dubboRequest.summary, dubboResult, step, idx, dubboRequest.exports))
             .recover {
               case t: Throwable =>
                 handleExceptionalResult(dubboRequest.summary, DubboResult.failResult(step.id), step, idx, t)
@@ -140,7 +140,7 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
         if (sqlOpt.nonEmpty) {
           val sqlRequest = sqlOpt.get
           SqlRunner.test(step.id, sqlRequest, this.runtimeContext)
-            .map(sqlResult => handleNormalResult(sqlRequest.summary, sqlResult, step, idx))
+            .map(sqlResult => handleNormalResult(sqlRequest.summary, sqlResult, step, idx, sqlRequest.exports))
             .recover {
               case t: Throwable =>
                 handleExceptionalResult(sqlRequest.summary, SqlResult.failResult(step.id), step, idx, t)
@@ -152,7 +152,13 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
     }
   }
 
-  private def handleNormalResult(title: String, result: AbstractResult, step: ScenarioStep, idx: Int): Int = {
+  private def handleNormalResult(
+                                  title: String,
+                                  result: AbstractResult,
+                                  step: ScenarioStep,
+                                  idx: Int,
+                                  exports: Seq[VariablesExportItem]
+                                ): Int = {
     // assertion successful or failed
     val stepItemData = JobReportStepItemData.parse(title, result)
     if (null != storeHelper) {
@@ -179,7 +185,17 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
       wsActor ! NotifyActorEvent(msg)
       wsActor ! ItemActorEvent(JobReportItemResultEvent(idx, stepItemData.status, null, result))
     }
-    if (!statis.isSuccessful) {
+    if (statis.isSuccessful) {
+      if (this.failFast) {
+        if (step.stored) {
+          // extract all response data into the `_p` runtime context
+          runtimeContext.setPrevContext(RuntimeContext.extractSelfContext(result))
+        }
+        // extract the exports into the runtime context
+        runtimeContext.evaluateExportsVariables(exports)
+      }
+      idx + 1
+    } else {
       this.scenarioReportItem.markFail()
       if (this.failFast) {
         skipLeftSteps(idx + 1)
@@ -187,8 +203,6 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
       } else {
         idx + 1
       }
-    } else {
-      idx + 1
     }
   }
 
