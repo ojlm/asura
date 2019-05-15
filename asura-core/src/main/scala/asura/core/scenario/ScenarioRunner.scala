@@ -146,7 +146,7 @@ object ScenarioRunner {
                   if (null != log) log(s"[SCN][${summary}]: ${cs.summary} ${XtermUtils.greenWrap(ReportStepItemStatus.STATUS_PASS)}.")
                   if (StringUtils.isNotEmpty(scenarioId)) {
                     // when it's a real scenario instead of a plain array of case
-                    caseContext.setPrevCurrentData(RuntimeContext.extractCaseSelfContext(httpResult))
+                    caseContext.setPrevContext(RuntimeContext.extractSelfContext(httpResult))
                   }
                   JobReportStepItemData.parse(cs.summary, httpResult, itemDataId)
                 } else {
