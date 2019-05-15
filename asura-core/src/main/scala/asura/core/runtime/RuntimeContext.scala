@@ -15,15 +15,10 @@ import scala.concurrent.Future
 object RuntimeContext {
 
   // builtin keys in context
-  val KEY__GLOBAL = "_global" // global scope
   val KEY__G = "_g" // global alias
-  val KEY__JOB = "_job" // job scope
   val KEY__J = "_j" // job alias
-  val KEY__SCENARIO = "_scenario" // current scenario scope
   val KEY__S = "_s" // scenario alias
-  val KEY__CASES = "_cases" // current scenario scope
   val KEY__C = "_c" // cases alias
-  val KEY__PREV = "_prev" // current scenario scope
   val KEY__P = "_p" // prev alias
   val KEY_STATUS = "status" // current case status
   val KEY_HEADERS = "headers" // current case headers
@@ -127,9 +122,8 @@ case class RuntimeContext(
 
   def setOrUpdateGlobal(global: util.Map[Any, Any]): RuntimeContext = {
     if (null != global && !global.isEmpty) {
-      val g = ctx.get(RuntimeContext.KEY__GLOBAL)
+      val g = ctx.get(RuntimeContext.KEY__G)
       if (null == g) {
-        ctx.put(RuntimeContext.KEY__GLOBAL, global)
         ctx.put(RuntimeContext.KEY__G, global)
       } else {
         g.asInstanceOf[util.Map[Any, Any]].putAll(global)
@@ -139,16 +133,14 @@ case class RuntimeContext(
   }
 
   def eraseGlobal(): RuntimeContext = {
-    ctx.remove(RuntimeContext.KEY__GLOBAL)
     ctx.remove(RuntimeContext.KEY__G)
     this
   }
 
   def setOrUpdateJob(job: util.Map[Any, Any]): RuntimeContext = {
     if (null != job && !job.isEmpty) {
-      val j = ctx.get(RuntimeContext.KEY__JOB)
+      val j = ctx.get(RuntimeContext.KEY__J)
       if (null == j) {
-        ctx.put(RuntimeContext.KEY__JOB, job)
         ctx.put(RuntimeContext.KEY__J, job)
       } else {
         j.asInstanceOf[util.Map[Any, Any]].putAll(job)
@@ -158,16 +150,14 @@ case class RuntimeContext(
   }
 
   def eraseJob(): RuntimeContext = {
-    ctx.remove(RuntimeContext.KEY__JOB)
     ctx.remove(RuntimeContext.KEY__J)
     this
   }
 
   def setOrUpdateScenario(scenario: util.Map[Any, Any]): RuntimeContext = {
     if (null != scenario && !scenario.isEmpty) {
-      val s = ctx.get(RuntimeContext.KEY__SCENARIO)
+      val s = ctx.get(RuntimeContext.KEY__S)
       if (null == s) {
-        ctx.put(RuntimeContext.KEY__SCENARIO, scenario)
         ctx.put(RuntimeContext.KEY__S, scenario)
       } else {
         s.asInstanceOf[util.Map[Any, Any]].putAll(scenario)
@@ -177,7 +167,6 @@ case class RuntimeContext(
   }
 
   def eraseScenario(): RuntimeContext = {
-    ctx.remove(RuntimeContext.KEY__SCENARIO)
     ctx.remove(RuntimeContext.KEY__S)
     this
   }
@@ -185,14 +174,12 @@ case class RuntimeContext(
   def setPrevCurrentData(prevContext: util.Map[Any, Any]): RuntimeContext = {
     if (null != prevContext && !prevContext.isEmpty) {
       ctx.put(RuntimeContext.KEY__P, prevContext)
-      ctx.put(RuntimeContext.KEY__PREV, prevContext)
-      val cases = ctx.get(RuntimeContext.KEY__CASES)
+      val cases = ctx.get(RuntimeContext.KEY__C)
       if (null != cases) {
         cases.asInstanceOf[util.ArrayList[util.Map[Any, Any]]].add(prevContext)
       } else {
         val list = new util.ArrayList[util.Map[Any, Any]]()
         list.add(prevContext)
-        ctx.put(RuntimeContext.KEY__CASES, list)
         ctx.put(RuntimeContext.KEY__C, list)
       }
     }
