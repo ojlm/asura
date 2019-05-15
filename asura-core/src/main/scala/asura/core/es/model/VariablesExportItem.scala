@@ -1,5 +1,7 @@
 package asura.core.es.model
 
+import asura.common.util.StringUtils
+
 /**
   *
   * @param srcPath     jsonpath expression, which represents the current response
@@ -18,4 +20,9 @@ case class VariablesExportItem(
                                 description: String,
                                 enabled: Boolean = true,
                                 function: String = null,
-                              )
+                              ) {
+
+  def isValid(): Boolean = {
+    !StringUtils.hasEmpty(srcPath, dstName, scope) && enabled
+  }
+}
