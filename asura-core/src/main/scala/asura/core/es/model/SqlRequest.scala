@@ -2,6 +2,7 @@ package asura.core.es.model
 
 import asura.common.util.StringUtils
 import asura.core.es.EsConfig
+import asura.core.es.model.Label.LabelRef
 import asura.core.es.model.SqlRequest.SqlRequestBody
 import asura.core.util.JacksonSupport
 import com.sksamuel.elastic4s.mappings._

@@ -3,6 +3,7 @@ package asura.core.es.model
 import asura.common.model.ApiType
 import asura.common.util.StringUtils
 import asura.core.es.EsConfig
+import asura.core.es.model.Label.LabelRef
 import com.sksamuel.elastic4s.mappings._
 
 import scala.collection.mutable

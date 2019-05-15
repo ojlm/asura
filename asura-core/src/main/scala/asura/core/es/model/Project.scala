@@ -1,6 +1,7 @@
 package asura.core.es.model
 
 import asura.core.es.EsConfig
+import asura.core.es.model.Label.LabelRef
 import asura.core.util.JacksonSupport
 import com.sksamuel.elastic4s.mappings.{KeywordField, MappingDefinition, NestedField}
 
