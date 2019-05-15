@@ -17,6 +17,7 @@ case class Job(
                 val trigger: Seq[JobTrigger],
                 val jobData: JobData,
                 val env: String = StringUtils.EMPTY,
+                val imports: Seq[VariablesImportItem] = Nil,
                 var creator: String = null,
                 var createdAt: String = null,
                 var updatedAt: String = null,
@@ -35,6 +36,12 @@ case class Job(
       m += (FieldKeys.FIELD_TRIGGER -> JacksonSupport.mapper.convertValue(trigger, classOf[java.util.List[Map[String, Any]]]))
     } else {
       m += (FieldKeys.FIELD_TRIGGER -> Nil)
+    }
+    addScriptUpdateItem(sb, FieldKeys.FIELD_IMPORTS)
+    if (null != imports) {
+      m += (FieldKeys.FIELD_IMPORTS -> JacksonSupport.mapper.convertValue(imports, classOf[java.util.List[Map[String, Any]]]))
+    } else {
+      m += (FieldKeys.FIELD_IMPORTS -> Nil)
     }
     addScriptUpdateItem(sb, FieldKeys.FIELD_JOB_DATA)
     if (null != jobData) {
@@ -98,6 +105,7 @@ object Job extends IndexSetting {
         ObjectField(name = FieldKeys.FIELD_EXT, dynamic = Option("false")),
       )),
       KeywordField(name = FieldKeys.FIELD_ENV),
+      ObjectField(name = FieldKeys.FIELD_IMPORTS, dynamic = Some("false")),
     )
   )
 }
