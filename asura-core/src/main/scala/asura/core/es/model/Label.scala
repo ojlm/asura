@@ -10,13 +10,17 @@ case class Label(
 
 }
 
-case class LabelRef(
-                     val name: String
-                   ) {
-}
+object Label {
 
-object LabelType {
+  case class LabelRef(
+                       val name: String
+                     ) {
+  }
 
-  val GROUP = "group"
-  val PROJECT = "project"
+  object LabelType {
+
+    val GROUP = "group"
+    val PROJECT = "project"
+  }
+
 }

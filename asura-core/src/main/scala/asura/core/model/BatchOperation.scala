@@ -1,6 +1,6 @@
 package asura.core.model
 
-import asura.core.es.model.LabelRef
+import asura.core.es.model.Label.LabelRef
 
 
 object BatchOperation {
