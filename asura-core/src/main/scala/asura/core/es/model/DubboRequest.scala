@@ -3,6 +3,7 @@ package asura.core.es.model
 import asura.common.util.StringUtils
 import asura.core.es.EsConfig
 import asura.core.es.model.DubboRequest.DubboRequestBody
+import asura.core.es.model.Label.LabelRef
 import asura.core.util.JacksonSupport
 import asura.dubbo.GenericRequest
 import com.sksamuel.elastic4s.mappings._
