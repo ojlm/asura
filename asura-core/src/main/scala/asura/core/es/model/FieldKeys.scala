@@ -147,6 +147,7 @@ object FieldKeys {
   val FIELD_TABLE = "table"
   val FIELD_SQL = "sql"
   val FIELD_STORED = "stored"
+  val FIELD_IMPORTS = "imports"
   val FIELD_EXPORTS = "exports"
 
   val FIELD_OBJECT_REQUEST_HOST = "request.host"
