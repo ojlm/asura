@@ -2,7 +2,7 @@ package asura.core.job.actor
 
 import asura.common.util.StringUtils
 import asura.core.ErrorMessages
-import asura.core.es.model.{JobData, JobNotify, JobReport}
+import asura.core.es.model.{JobData, JobNotify, JobReport, VariablesImportItem}
 import asura.core.job.{JobMeta, JobUtils, TriggerMeta}
 
 // notification messages
@@ -53,6 +53,6 @@ case class PauseJob(scheduler: String, group: String, project: String, id: Strin
 
 case class DeleteJob(scheduler: String, group: String, project: String, id: String) extends JobActionValidator
 
-case class NewJob(jobMeta: JobMeta, triggerMeta: TriggerMeta, jobData: JobData, notifies: Seq[JobNotify], creator: String)
+case class NewJob(jobMeta: JobMeta, triggerMeta: TriggerMeta, jobData: JobData, notifies: Seq[JobNotify], creator: String, imports: Seq[VariablesImportItem])
 
-case class UpdateJob(id: String, jobMeta: JobMeta, triggerMeta: TriggerMeta, jobData: JobData)
+case class UpdateJob(id: String, jobMeta: JobMeta, triggerMeta: TriggerMeta, jobData: JobData, imports: Seq[VariablesImportItem])

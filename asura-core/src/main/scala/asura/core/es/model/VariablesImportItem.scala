@@ -14,7 +14,7 @@ package asura.core.es.model
 case class VariablesImportItem(
                                 name: String,
                                 scope: String,
-                                value: String,
+                                value: Any,
                                 description: String,
                                 enabled: Boolean = true,
                                 function: String = null,
