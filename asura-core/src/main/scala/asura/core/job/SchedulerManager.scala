@@ -44,11 +44,18 @@ object SchedulerManager {
     Option(schedulers.get(name))
   }
 
-  def scheduleJob(jobMeta: JobMeta, triggerMeta: TriggerMeta, jobData: JobData, notifies: Seq[JobNotify], creator: String): Future[IndexDocResponse] = {
+  def scheduleJob(
+                   jobMeta: JobMeta,
+                   triggerMeta: TriggerMeta,
+                   jobData: JobData, notifies:
+                   Seq[JobNotify],
+                   creator: String,
+                   imports: Seq[VariablesImportItem]
+                 ): Future[IndexDocResponse] = {
     val schedulerOpt = getScheduler(jobMeta.getScheduler())
     if (schedulerOpt.nonEmpty) {
       val scheduler = schedulerOpt.get
-      val job = buildJob(jobMeta, triggerMeta, jobData)
+      val job = buildJob(jobMeta, triggerMeta, jobData, if (null != imports) imports else Nil)
       job.fillCommonFields(creator)
       JobService.index(job).map(res => {
         val (error, jobDetail) = jobMeta.toJobDetail(res.id)
@@ -169,13 +176,14 @@ object SchedulerManager {
     val jobMeta = toUpdate.jobMeta
     val triggerMeta = toUpdate.triggerMeta
     val jobData = toUpdate.jobData
+    val imports = if (null != toUpdate.imports) toUpdate.imports else Nil
     val error = JobUtils.validateJobAndTrigger(jobMeta, triggerMeta, jobData)
     if (null == error) {
       val schedulerOpt = getScheduler(jobMeta.getScheduler())
       val scheduler = schedulerOpt.get
       val (error, jobDetail) = jobMeta.toJobDetail(toUpdate.id)
       if (null == error) {
-        val job = buildJob(jobMeta, triggerMeta, jobData)
+        val job = buildJob(jobMeta, triggerMeta, jobData, imports)
         JobService.updateJob(toUpdate.id, job).map { res =>
           // replace job
           scheduler.addJob(jobDetail, true)
@@ -214,7 +222,7 @@ object SchedulerManager {
     }
   }
 
-  def buildJob(jobMeta: JobMeta, triggerMeta: TriggerMeta, jobData: JobData): Job = {
+  def buildJob(jobMeta: JobMeta, triggerMeta: TriggerMeta, jobData: JobData, imports: Seq[VariablesImportItem]): Job = {
     Job(
       summary = jobMeta.summary,
       description = jobMeta.description,
@@ -235,6 +243,7 @@ object SchedulerManager {
       )),
       jobData = jobData,
       env = StringUtils.notEmptyElse(jobMeta.env, StringUtils.EMPTY),
+      imports = imports,
     )
   }
 

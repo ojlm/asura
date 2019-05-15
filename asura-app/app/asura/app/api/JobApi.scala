@@ -9,12 +9,12 @@ import asura.app.api.model.QueryJobState
 import asura.common.model.{ApiRes, ApiResError}
 import asura.common.util.StringUtils
 import asura.core.ErrorMessages.ErrorMessage
-import asura.core.model.{AggsQuery, QueryJob, QueryJobReport}
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.Activity
 import asura.core.es.service._
 import asura.core.job.actor._
 import asura.core.job.{JobCenter, JobUtils, SchedulerManager}
+import asura.core.model.{AggsQuery, QueryJob, QueryJobReport}
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 import org.quartz.{CronExpression, TriggerKey}
@@ -57,7 +57,7 @@ class JobApi @Inject()(
       val error = JobUtils.validateJobAndTrigger(jobMeta, triggerMeta, jobData)
       if (null == error) {
         val user = getProfileId()
-        SchedulerManager.scheduleJob(jobMeta, triggerMeta, jobData, notifies, user).map(res => {
+        SchedulerManager.scheduleJob(jobMeta, triggerMeta, jobData, notifies, user, job.imports).map(res => {
           activityActor ! Activity(jobMeta.group, jobMeta.project, user, Activity.TYPE_NEW_JOB, res.id)
           toActionResultFromAny(res)
         })
