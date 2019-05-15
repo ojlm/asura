@@ -1,6 +1,6 @@
 package asura.core.es.model
 
-import asura.common.util.StringUtils
+import asura.common.util.{JsonUtils, StringUtils}
 import asura.core.es.EsConfig
 import asura.core.es.model.DubboRequest.DubboRequestBody
 import asura.core.es.model.Label.LabelRef
@@ -76,7 +76,7 @@ object DubboRequest extends IndexSetting {
           NestedField(name = FieldKeys.FIELD_PARAMETER_TYPES, fields = Seq(
             KeywordField(name = FieldKeys.FIELD_TYPE),
           )),
-          ObjectField(name = FieldKeys.FIELD_ARGS, dynamic = Some("false")),
+          TextField(name = FieldKeys.FIELD_ARGS, analysis = EsConfig.IK_ANALYZER),
           KeywordField(name = FieldKeys.FIELD_ADDRESS),
           BasicField(name = FieldKeys.FIELD_PORT, `type` = "integer"),
           KeywordField(name = FieldKeys.FIELD_PATH),
@@ -101,15 +101,13 @@ object DubboRequest extends IndexSetting {
 
   case class ParameterType(`type`: String)
 
-  case class ArgumentList(args: Seq[Object])
-
   case class DubboRequestBody(
                                val dubboGroup: String,
                                var version: String,
                                val interface: String,
                                val method: String,
                                val parameterTypes: Seq[ParameterType],
-                               val args: ArgumentList,
+                               val args: String,
                                val address: String,
                                val port: Int,
                                val zkAddr: String,
@@ -122,8 +120,8 @@ object DubboRequest extends IndexSetting {
       } else {
         null
       }
-      val args = if (null != this.args && this.args.args.nonEmpty) {
-        this.args.args.toArray
+      val args = if (StringUtils.isNotEmpty(this.args)) {
+        JsonUtils.parse(this.args, classOf[Array[Object]])
       } else {
         null
       }
