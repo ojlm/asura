@@ -21,6 +21,7 @@ case class HttpCaseRequest(
                             val env: String = StringUtils.EMPTY,
                             val labels: Seq[LabelRef] = Nil,
                             val generator: RequestGenerator = RequestGenerator(),
+                            val exports: Seq[VariablesExportItem] = Nil,
                             var creator: String = null,
                             var createdAt: String = null,
                             var updatedAt: String = null,
@@ -49,6 +50,10 @@ case class HttpCaseRequest(
     if (null != generator) {
       m += (FieldKeys.FIELD_GENERATOR -> JacksonSupport.mapper.convertValue(generator, classOf[java.util.Map[String, Any]]))
       addScriptUpdateItem(sb, FieldKeys.FIELD_GENERATOR)
+    }
+    if (null != exports) {
+      m += (FieldKeys.FIELD_EXPORTS -> JacksonSupport.mapper.convertValue(exports, classOf[java.util.List[Map[String, Any]]]))
+      addScriptUpdateItem(sb, FieldKeys.FIELD_EXPORTS)
     }
     (sb.toString, m.toMap)
   }
@@ -117,6 +122,7 @@ object HttpCaseRequest extends IndexSetting {
         NestedField(name = FieldKeys.FIELD_LIST, dynamic = Some("false")),
         BasicField(name = FieldKeys.FIELD_COUNT, `type` = "integer"),
       )),
+      ObjectField(name = FieldKeys.FIELD_EXPORTS, dynamic = Some("false")),
     )
   )
 }

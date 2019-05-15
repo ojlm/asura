@@ -15,6 +15,7 @@ case class Scenario(
                      val steps: Seq[ScenarioStep],
                      val env: String = StringUtils.EMPTY,
                      val labels: Seq[LabelRef] = Nil,
+                     val exports: Seq[VariablesExportItem] = Nil,
                      var creator: String = null,
                      var createdAt: String = null,
                      var updatedAt: String = null,
@@ -31,6 +32,9 @@ case class Scenario(
     }
     if (null != env) {
       m += (FieldKeys.FIELD_ENV -> env)
+    }
+    if (null != exports) {
+      m += (FieldKeys.FIELD_EXPORTS -> exports)
     }
     m.toMap
   }
@@ -55,6 +59,7 @@ object Scenario extends IndexSetting {
         ObjectField(name = FieldKeys.FIELD_DATA, dynamic = Some("false")),
       )),
       KeywordField(name = FieldKeys.FIELD_ENV),
+      ObjectField(name = FieldKeys.FIELD_EXPORTS, dynamic = Some("false")),
     )
   )
 }
