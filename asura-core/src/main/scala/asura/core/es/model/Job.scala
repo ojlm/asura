@@ -105,7 +105,7 @@ object Job extends IndexSetting {
         ObjectField(name = FieldKeys.FIELD_EXT, dynamic = Option("false")),
       )),
       KeywordField(name = FieldKeys.FIELD_ENV),
-      ObjectField(name = FieldKeys.FIELD_IMPORTS, dynamic = Some("false")),
+      NestedField(name = FieldKeys.FIELD_IMPORTS, dynamic = Some("false")),
     )
   )
 }

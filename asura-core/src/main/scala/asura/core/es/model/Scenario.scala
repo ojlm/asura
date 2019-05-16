@@ -60,11 +60,10 @@ object Scenario extends IndexSetting {
       )),
       NestedField(name = FieldKeys.FIELD_LABELS, fields = Seq(
         KeywordField(name = FieldKeys.FIELD_NAME),
-        ObjectField(name = FieldKeys.FIELD_DATA, dynamic = Some("false")),
       )),
       KeywordField(name = FieldKeys.FIELD_ENV),
-      ObjectField(name = FieldKeys.FIELD_IMPORTS, dynamic = Some("false")),
-      ObjectField(name = FieldKeys.FIELD_EXPORTS, dynamic = Some("false")),
+      NestedField(name = FieldKeys.FIELD_IMPORTS, dynamic = Some("false")),
+      NestedField(name = FieldKeys.FIELD_EXPORTS, dynamic = Some("false")),
     )
   )
 }
