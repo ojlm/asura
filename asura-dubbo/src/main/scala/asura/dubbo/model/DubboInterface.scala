@@ -1,10 +1,7 @@
 package asura.dubbo.model
 
 case class DubboInterface(
-                           zkAddr: String,
-                           zkPort: Int,
+                           zkConnectString: String,
                            path: String,
                            ref: String,
-                         ) {
-
-}
+                         )

@@ -1,7 +1,7 @@
 package asura.dubbo.model
 
 case class DubboProvider(
-                          zkAddr: String,
+                          zkConnectString: String,
                           path: String,
                           ref: String,
                           address: String,
@@ -9,6 +9,4 @@ case class DubboProvider(
                           methods: Seq[String],
                           application: String,
                           dubbo: String, // dubbo version
-                        ) {
-
-}
+                        )
