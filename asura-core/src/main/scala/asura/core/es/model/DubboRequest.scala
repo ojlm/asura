@@ -95,7 +95,7 @@ object DubboRequest extends IndexSetting {
         NestedField(name = FieldKeys.FIELD_LIST, dynamic = Some("false")),
         BasicField(name = FieldKeys.FIELD_COUNT, `type` = "integer"),
       )),
-      ObjectField(name = FieldKeys.FIELD_EXPORTS, dynamic = Some("false")),
+      NestedField(name = FieldKeys.FIELD_EXPORTS, dynamic = Some("false")),
     )
   )
 
