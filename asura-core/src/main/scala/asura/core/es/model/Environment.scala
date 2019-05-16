@@ -73,11 +73,13 @@ object Environment extends IndexSetting {
         KeywordField(name = FieldKeys.FIELD_KEY),
         KeywordField(name = FieldKeys.FIELD_VALUE),
         BasicField(name = FieldKeys.FIELD_ENABLED, `type` = "boolean"),
+        TextField(name = FieldKeys.FIELD_DESCRIPTION, index = Some("false")),
       )),
       NestedField(name = FieldKeys.FIELD_HEADERS, fields = Seq(
         KeywordField(name = FieldKeys.FIELD_KEY),
         KeywordField(name = FieldKeys.FIELD_VALUE),
         BasicField(name = FieldKeys.FIELD_ENABLED, `type` = "boolean"),
+        TextField(name = FieldKeys.FIELD_DESCRIPTION, index = Some("false")),
       )),
     )
   )
