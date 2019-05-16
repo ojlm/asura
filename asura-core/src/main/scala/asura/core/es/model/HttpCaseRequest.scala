@@ -94,21 +94,25 @@ object HttpCaseRequest extends IndexSetting {
             KeywordField(name = FieldKeys.FIELD_KEY),
             TextField(name = FieldKeys.FIELD_VALUE, analysis = EsConfig.IK_ANALYZER),
             BasicField(name = FieldKeys.FIELD_ENABLED, `type` = "boolean"),
+            TextField(name = FieldKeys.FIELD_DESCRIPTION, index = Some("false")),
           )),
           NestedField(name = FieldKeys.FIELD_QUERY, fields = Seq(
             KeywordField(name = FieldKeys.FIELD_KEY),
             TextField(name = FieldKeys.FIELD_VALUE, analysis = EsConfig.IK_ANALYZER),
             BasicField(name = FieldKeys.FIELD_ENABLED, `type` = "boolean"),
+            TextField(name = FieldKeys.FIELD_DESCRIPTION, index = Some("false")),
           )),
           NestedField(name = FieldKeys.FIELD_HEADER, fields = Seq(
             KeywordField(name = FieldKeys.FIELD_KEY),
             TextField(name = FieldKeys.FIELD_VALUE, analysis = EsConfig.IK_ANALYZER),
             BasicField(name = FieldKeys.FIELD_ENABLED, `type` = "boolean"),
+            TextField(name = FieldKeys.FIELD_DESCRIPTION, index = Some("false")),
           )),
           NestedField(name = FieldKeys.FIELD_COOKIE, fields = Seq(
             KeywordField(name = FieldKeys.FIELD_KEY),
             TextField(name = FieldKeys.FIELD_VALUE, analysis = EsConfig.IK_ANALYZER),
             BasicField(name = FieldKeys.FIELD_ENABLED, `type` = "boolean"),
+            TextField(name = FieldKeys.FIELD_DESCRIPTION, index = Some("false")),
           )),
           KeywordField(name = FieldKeys.FIELD_CONTENT_TYPE),
           NestedField(name = FieldKeys.FIELD_BODY, fields = Seq(
