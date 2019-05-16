@@ -82,8 +82,7 @@ object DubboRequest extends IndexSetting {
           KeywordField(name = FieldKeys.FIELD_PATH),
           KeywordField(name = FieldKeys.FIELD_VERSION),
           ObjectField(name = FieldKeys.FIELD_ASSERT, dynamic = Some("false")),
-          KeywordField(name = FieldKeys.FIELD_ZK_ADDR),
-          BasicField(name = FieldKeys.FIELD_ZK_PORT, `type` = "integer"),
+          TextField(name = FieldKeys.FIELD_ZK_CONNECT_STRING, analysis = EsConfig.IK_ANALYZER),
         )
       ),
       NestedField(name = FieldKeys.FIELD_LABELS, fields = Seq(
@@ -110,10 +109,10 @@ object DubboRequest extends IndexSetting {
                                val args: String,
                                val address: String,
                                val port: Int,
-                               val zkAddr: String,
-                               val zkPort: Int,
+                               val zkConnectString: String,
                                var path: String,
                              ) {
+
     def toDubboGenericRequest(): GenericRequest = {
       val parameterTypes = if (null != this.parameterTypes && this.parameterTypes.nonEmpty) {
         this.parameterTypes.map(_.`type`).toArray

@@ -25,12 +25,11 @@ class CuratorClientCacheActor extends BaseActor {
   implicit val actorEC: ExecutionContext = context.dispatcher
 
   override def receive: Receive = {
-    case GetInterfacesMessage(zkAddr, zkPort, path) =>
-      getInterfaces(zkAddr, zkPort, StringUtils.notEmptyElse(path, DubboConfig.DEFAULT_ROOT_DUBBO_PATH)) pipeTo sender()
-    case GetProvidersMessage(zkAddr, zkPort, path, ref) =>
+    case GetInterfacesMessage(zkConnectString, path) =>
+      getInterfaces(zkConnectString, StringUtils.notEmptyElse(path, DubboConfig.DEFAULT_ROOT_DUBBO_PATH)) pipeTo sender()
+    case GetProvidersMessage(zkConnectString, path, ref) =>
       getInterfaceProviders(
-        zkAddr,
-        zkPort,
+        zkConnectString,
         ref,
         StringUtils.notEmptyElse(path, DubboConfig.DEFAULT_ROOT_DUBBO_PATH)
       ) pipeTo sender()
@@ -38,16 +37,16 @@ class CuratorClientCacheActor extends BaseActor {
       Future.failed(new RuntimeException("Unknown message type")) pipeTo sender()
   }
 
-  def getInterfaces(zkAddr: String, zkPort: Int, path: String): Future[Seq[DubboInterface]] = {
-    getClient(s"${zkAddr}:${zkPort}")
+  def getInterfaces(zkConnectString: String, path: String): Future[Seq[DubboInterface]] = {
+    getClient(zkConnectString)
       .map(client => {
         JavaConverters.asScalaBuffer(client.getChildren().forPath(path))
-          .map(DubboInterface(zkAddr, zkPort, path, _))
+          .map(DubboInterface(zkConnectString, path, _))
       })
   }
 
-  def getInterfaceProviders(zkAddr: String, zkPort: Int, ref: String, path: String): Future[Seq[DubboProvider]] = {
-    getClient(s"${zkAddr}:${zkPort}").map(client => {
+  def getInterfaceProviders(zkConnectString: String, ref: String, path: String): Future[Seq[DubboProvider]] = {
+    getClient(zkConnectString).map(client => {
       val strings = client.getChildren().forPath(s"${path}/${ref}/providers")
       JavaConverters.asScalaBuffer(strings)
         .map(item => URLDecoder.decode(item, StandardCharsets.UTF_8.name()))
@@ -61,7 +60,7 @@ class CuratorClientCacheActor extends BaseActor {
             }
           })
           DubboProvider(
-            zkAddr = zkAddr,
+            zkConnectString = zkConnectString,
             path = path,
             ref = ref,
             address = uri.getHost,
