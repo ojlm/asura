@@ -14,6 +14,7 @@ import asura.core.runtime.RuntimeContext
 import asura.core.scenario.actor.ScenarioRunnerActor
 import asura.core.scenario.actor.ScenarioRunnerActor.ScenarioTestJobMessage
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
@@ -83,17 +84,18 @@ class JobRunnerActor(wsActor: ActorRef) extends BaseActor {
 
   private def buildScenarioTestJobMessages(execDesc: JobExecDesc): Future[Seq[(String, ScenarioTestJobMessage)]] = {
     val job = execDesc.job
-    val scenarioIds = job.jobData.scenario
-    if (null != scenarioIds && scenarioIds.nonEmpty) {
-      ScenarioService.getScenariosByIds(scenarioIds.map(_.id)).map(list => {
-        val messages = ArrayBuffer[(String, ScenarioTestJobMessage)]()
+    val scenarioDocs = job.jobData.scenario
+    if (null != scenarioDocs && scenarioDocs.nonEmpty) {
+      val scenarioIds = scenarioDocs.map(_.id)
+      ScenarioService.getScenariosByIds(scenarioIds).map(list => {
+        val map = mutable.Map[String, ScenarioTestJobMessage]()
         for (i <- 0 until list.length) {
           val (scenarioId, scenario) = list(i)
           val storeDataHelper = JobReportItemStoreDataHelper(execDesc.reportId, s"s${i.toString}", execDesc.reportItemSaveActor, execDesc.jobId)
           val message = ScenarioTestJobMessage(scenario.summary, scenario.steps, storeDataHelper, this.runtimeContext)
-          messages += ((scenarioId, message))
+          map += (scenarioId -> message)
         }
-        messages
+        scenarioIds.map(id => ((id, map.get(id).get)))
       })
     } else {
       Future.successful(Nil)
@@ -108,8 +110,6 @@ class JobRunnerActor(wsActor: ActorRef) extends BaseActor {
 object JobRunnerActor {
 
   def props(wsActor: ActorRef) = Props(new JobRunnerActor(wsActor))
-
-  case object Finished
 
   val DEFAULT_SCENARIO_NAME = "INNER"
 
