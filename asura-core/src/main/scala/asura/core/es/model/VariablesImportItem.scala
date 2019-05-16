@@ -1,5 +1,7 @@
 package asura.core.es.model
 
+import asura.common.util.StringUtils
+
 /**
   *
   * @param name        variable name, this should be unique in the whole scope
@@ -18,4 +20,8 @@ case class VariablesImportItem(
                                 description: String,
                                 enabled: Boolean = true,
                                 function: String = null,
-                              )
+                              ) {
+  def isValid(): Boolean = {
+    !StringUtils.hasEmpty(name, scope) && null != value && enabled
+  }
+}

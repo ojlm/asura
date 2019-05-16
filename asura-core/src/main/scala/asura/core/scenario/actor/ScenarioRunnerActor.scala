@@ -45,6 +45,8 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
   var jobActor: ActorRef = null
   var storeHelper: JobReportItemStoreDataHelper = null
 
+  var exports: Seq[VariablesExportItem] = Nil
+
   override def receive: Receive = {
     case SenderMessage(wsSender) =>
       // WebSocket actor for web console log
@@ -53,20 +55,24 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
   }
 
   private def doTheTest(): Receive = {
-    case ScenarioTestWebMessage(summary, steps, options) =>
+    case ScenarioTestWebMessage(summary, steps, options, imports, exports) =>
       this.scenarioReportItem.title = summary
       this.runtimeContext = RuntimeContext(options = options)
+      this.runtimeContext.evaluateImportsVariables(imports)
+      this.exports = exports
       this.steps = steps
       getScenarioTestData(steps).map(stepsData => {
         this.stepsData = stepsData
         self ! 0
       })
-    case ScenarioTestJobMessage(summary, steps, storeHelper, runtimeContext) =>
+    case ScenarioTestJobMessage(summary, steps, storeHelper, runtimeContext, imports, exports) =>
       this.jobActor = sender()
       this.scenarioReportItem.title = summary
       this.runtimeContext = runtimeContext
+      this.runtimeContext.evaluateImportsVariables(imports)
       this.steps = steps
       this.storeHelper = storeHelper
+      this.exports = exports
       getScenarioTestData(steps).map(stepsData => {
         this.stepsData = stepsData
         self ! 0
@@ -87,6 +93,8 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
           if (null == jobActor) wsActor ! PoisonPill
         }
         if (null != jobActor) {
+          // running in a job
+          runtimeContext.evaluateExportsVariables(this.exports)
           jobActor ! this.scenarioReportItem
           context stop self
         }
@@ -322,14 +330,22 @@ object ScenarioRunnerActor {
   def props(scenarioId: String, failFast: Boolean = true) = Props(new ScenarioRunnerActor(scenarioId, failFast))
 
   // from web
-  case class ScenarioTestWebMessage(summary: String, steps: Seq[ScenarioStep], options: ContextOptions)
+  case class ScenarioTestWebMessage(
+                                     summary: String,
+                                     steps: Seq[ScenarioStep],
+                                     options: ContextOptions,
+                                     imports: Seq[VariablesImportItem],
+                                     exports: Seq[VariablesExportItem],
+                                   )
 
   // from job
   case class ScenarioTestJobMessage(
                                      summary: String,
                                      steps: Seq[ScenarioStep],
                                      storeHelper: JobReportItemStoreDataHelper,
-                                     runtimeContext: RuntimeContext
+                                     runtimeContext: RuntimeContext,
+                                     imports: Seq[VariablesImportItem],
+                                     exports: Seq[VariablesExportItem],
                                    )
 
   case class ScenarioTestData(

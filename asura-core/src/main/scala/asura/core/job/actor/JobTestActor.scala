@@ -6,7 +6,7 @@ import akka.util.Timeout
 import asura.common.actor._
 import asura.common.util.{LogUtils, XtermUtils}
 import asura.core.CoreConfig
-import asura.core.es.model.{JobData, JobReport}
+import asura.core.es.model.{JobData, JobReport, VariablesImportItem}
 import asura.core.es.service.JobReportService
 import asura.core.job.actor.JobTestActor.JobTestMessage
 import asura.core.job.{JobCenter, JobExecDesc, JobMeta}
@@ -24,7 +24,7 @@ class JobTestActor(user: String, out: ActorRef) extends BaseActor {
   }
 
   def handleRequest(wsActor: ActorRef): Receive = {
-    case JobTestMessage(jobId, jobMeta, jobData) =>
+    case JobTestMessage(jobId, jobMeta, jobData, imports) =>
       val jobOpt = JobCenter.classAliasJobMap.get(jobMeta.getJobAlias())
       if (jobOpt.isEmpty) {
         wsActor ! ErrorActorEvent(s"Can't find job implementation of ${jobMeta.getJobAlias()}")
@@ -33,7 +33,15 @@ class JobTestActor(user: String, out: ActorRef) extends BaseActor {
         val job = jobOpt.get
         val (isOk, errMsg) = job.checkJobData(jobData)
         if (isOk) {
-          JobExecDesc.from(jobId, jobMeta, jobData, JobReport.TYPE_TEST, ContextOptions(jobEnv = jobMeta.env), user).map(jobExecDesc => {
+          JobExecDesc.from(
+            jobId,
+            jobMeta,
+            jobData,
+            JobReport.TYPE_TEST,
+            ContextOptions(jobEnv = jobMeta.env),
+            user,
+            imports
+          ).map(jobExecDesc => {
             val runner = context.actorOf(JobRunnerActor.props(wsActor))
             (runner.ask(jobExecDesc)(timeout, self)) pipeTo self
           }).recover {
@@ -80,6 +88,6 @@ object JobTestActor {
 
   def props(user: String, out: ActorRef = null) = Props(new JobTestActor(user, out))
 
-  case class JobTestMessage(jobId: String, jobMeta: JobMeta, jobData: JobData)
+  case class JobTestMessage(jobId: String, jobMeta: JobMeta, jobData: JobData, imports: Seq[VariablesImportItem])
 
 }
