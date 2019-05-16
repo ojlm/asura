@@ -6,7 +6,7 @@ import java.text.SimpleDateFormat
 import akka.actor.{ActorRef, PoisonPill}
 import asura.common.util.{DateUtils, StringUtils}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.es.model.{BaseIndex, Job, JobData, JobReport}
+import asura.core.es.model._
 import asura.core.es.service.JobReportService
 import asura.core.job.actor.JobReportDataItemSaveActor
 import asura.core.runtime.ContextOptions
@@ -22,7 +22,8 @@ case class JobExecDesc(
                         val configWorkDir: String,
                         val reportId: String,
                         val reportItemSaveActor: ActorRef,
-                        val options: ContextOptions = null
+                        val options: ContextOptions = null,
+                        val imports: Seq[VariablesImportItem] = Nil
                       ) {
 
   private var jobWorkDir: String = null
@@ -80,13 +81,18 @@ case class JobExecDesc(
   }
 }
 
-
 object JobExecDesc {
 
   val STATUS_SUCCESS = "success"
   val STATUS_FAIL = "fail"
 
-  def from(jobId: String, job: Job, `type`: String, options: ContextOptions, creator: String): Future[JobExecDesc] = {
+  def from(
+            jobId: String,
+            job: Job,
+            `type`: String,
+            options: ContextOptions,
+            creator: String
+          ): Future[JobExecDesc] = {
     val report = JobReport(
       scheduler = job.scheduler,
       group = job.group,
@@ -113,12 +119,21 @@ object JobExecDesc {
         configWorkDir = JobCenter.jobWorkDir,
         reportId = res.id,
         reportItemSaveActor = actor,
-        options = options
+        options = options,
+        imports = job.imports,
       )
     })
   }
 
-  def from(jobId: String, jobMeta: JobMeta, jobData: JobData, `type`: String, options: ContextOptions, creator: String): Future[JobExecDesc] = {
+  def from(
+            jobId: String,
+            jobMeta: JobMeta,
+            jobData: JobData,
+            `type`: String,
+            options: ContextOptions,
+            creator: String,
+            imports: Seq[VariablesImportItem]
+          ): Future[JobExecDesc] = {
     val job = Job(
       summary = jobMeta.summary,
       description = jobMeta.description,
@@ -156,7 +171,8 @@ object JobExecDesc {
         configWorkDir = JobCenter.jobWorkDir,
         reportId = res.id,
         reportItemSaveActor = actor,
-        options = options
+        options = options,
+        imports = imports,
       )
     })
   }

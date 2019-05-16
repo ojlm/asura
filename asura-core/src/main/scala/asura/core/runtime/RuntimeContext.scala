@@ -4,7 +4,7 @@ import java.util
 
 import asura.common.util.StringUtils
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.es.model.{Environment, VariablesExportItem}
+import asura.core.es.model.{Environment, VariablesExportItem, VariablesImportItem}
 import asura.core.es.service.EnvironmentService
 import asura.core.script.JavaScriptEngine
 import asura.core.util.{JsonPathUtils, StringTemplate}
@@ -142,6 +142,21 @@ case class RuntimeContext(
         list.add(prevContext)
         ctx.put(RuntimeContext.KEY__C, list)
       }
+    }
+    this
+  }
+
+  def evaluateImportsVariables(imports: Seq[VariablesImportItem]): RuntimeContext = {
+    if (null != imports && imports.nonEmpty) {
+      imports.filter(item => null != item && item.isValid()).foreach(item => {
+        // usually do not need to check scope can only be one of `_g`, `_j`, `_s`
+        var scopeCtx = ctx.get(item.scope)
+        if (null == scopeCtx) {
+          scopeCtx = new util.concurrent.ConcurrentHashMap[Any, Any]()
+          ctx.put(item.scope, scopeCtx)
+        }
+        scopeCtx.asInstanceOf[util.Map[Any, Any]].put(item.name, item.value)
+      })
     }
     this
   }

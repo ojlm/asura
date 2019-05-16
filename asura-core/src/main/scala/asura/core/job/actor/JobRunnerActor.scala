@@ -39,6 +39,7 @@ class JobRunnerActor(wsActor: ActorRef) extends BaseActor {
       this.execDesc.report.data.scenarios = scenarioReports
       this.resultReceiver = sender()
       this.runtimeContext.options = execDesc.options
+      this.runtimeContext.evaluateImportsVariables(execDesc.imports)
       runCases(execDesc)
         .flatMap(_ => buildScenarioTestJobMessages(execDesc))
         .map(messages => {
@@ -92,7 +93,7 @@ class JobRunnerActor(wsActor: ActorRef) extends BaseActor {
         for (i <- 0 until list.length) {
           val (scenarioId, scenario) = list(i)
           val storeDataHelper = JobReportItemStoreDataHelper(execDesc.reportId, s"s${i.toString}", execDesc.reportItemSaveActor, execDesc.jobId)
-          val message = ScenarioTestJobMessage(scenario.summary, scenario.steps, storeDataHelper, this.runtimeContext)
+          val message = ScenarioTestJobMessage(scenario.summary, scenario.steps, storeDataHelper, this.runtimeContext, scenario.imports, scenario.exports)
           map += (scenarioId -> message)
         }
         scenarioIds.map(id => ((id, map.get(id).get)))
