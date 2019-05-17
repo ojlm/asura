@@ -1,6 +1,7 @@
 package asura.core.es.model
 
 import asura.common.util.StringUtils
+import com.fasterxml.jackson.annotation.JsonIgnore
 
 /**
   *
@@ -21,6 +22,8 @@ case class VariablesImportItem(
                                 enabled: Boolean = true,
                                 function: String = null,
                               ) {
+
+  @JsonIgnore
   def isValid(): Boolean = {
     !StringUtils.hasEmpty(name, scope) && null != value && enabled
   }
