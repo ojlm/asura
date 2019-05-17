@@ -10,7 +10,7 @@ import asura.core.ErrorMessages
 import asura.core.assertion.Assertions
 import asura.core.es.EsResponse
 import asura.core.es.actor.ActivitySaveActor
-import asura.core.es.model.{Activity, FieldKeys, HttpCaseRequest}
+import asura.core.es.model.{Activity, HttpCaseRequest}
 import asura.core.es.service._
 import asura.core.http.HttpRunner
 import asura.core.model.BatchOperation.{BatchOperationLabels, BatchTransfer}
@@ -32,25 +32,7 @@ class HttpCaseApi @Inject()(implicit system: ActorSystem,
 
   def getById(id: String) = Action.async { implicit req =>
     HttpCaseRequestService.getById(id).flatMap(response => {
-      if (response.isSuccess) {
-        if (response.result.nonEmpty) {
-          val hit = response.result.hits.hits(0)
-          val creator = hit.sourceAsMap.getOrElse(FieldKeys.FIELD_CREATOR, StringUtils.EMPTY).asInstanceOf[String]
-          if (StringUtils.isNotEmpty(creator)) {
-            UserProfileService.getProfileById(creator).map(userProfile => {
-              OkApiRes(ApiRes(data =
-                EsResponse.toSingleApiData(response.result, true) + ("_creator" -> userProfile)
-              ))
-            })
-          } else {
-            Future.successful(OkApiRes(ApiRes(data = EsResponse.toSingleApiData(response.result, true))))
-          }
-        } else {
-          Future.successful(OkApiRes(ApiResError(getI18nMessage(ErrorMessages.error_IdNonExists.name, id))))
-        }
-      } else {
-        Future.successful(OkApiRes(ApiResError(getI18nMessage(ErrorMessages.error_EsRequestFail(response).name))))
-      }
+      withSingleUserProfile(id, response)
     })
   }
 

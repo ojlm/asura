@@ -59,7 +59,9 @@ class DubboApi @Inject()(
   }
 
   def getById(id: String) = Action.async { implicit req =>
-    DubboRequestService.getById(id).toOkResultByEsOneDoc(id)
+    DubboRequestService.getById(id).flatMap(response => {
+      withSingleUserProfile(id, response)
+    })
   }
 
   def delete(id: String) = Action.async { implicit req =>
