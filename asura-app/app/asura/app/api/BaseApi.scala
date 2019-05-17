@@ -2,9 +2,11 @@ package asura.app.api
 
 import akka.util.ByteString
 import asura.common.model.{ApiRes, ApiResError}
-import asura.common.util.JsonUtils
+import asura.common.util.{JsonUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.es.EsResponse
+import asura.core.es.model.FieldKeys
+import asura.core.es.service.UserProfileService
 import com.sksamuel.elastic4s.http.Response
 import com.sksamuel.elastic4s.http.search.SearchResponse
 import org.pac4j.core.profile.{CommonProfile, ProfileManager}
@@ -96,6 +98,29 @@ trait BaseApi extends Security[CommonProfile] {
       langs.availables.head
     }
     messagesApi(key, args: _*)
+  }
+
+  def withSingleUserProfile(docId: String, response: Response[SearchResponse])
+                           (implicit ec: ExecutionContext, req: Request[Any]): Future[Result] = {
+    if (response.isSuccess) {
+      if (response.result.nonEmpty) {
+        val hit = response.result.hits.hits(0)
+        val creator = hit.sourceAsMap.getOrElse(FieldKeys.FIELD_CREATOR, StringUtils.EMPTY).asInstanceOf[String]
+        if (StringUtils.isNotEmpty(creator)) {
+          UserProfileService.getProfileById(creator).map(userProfile => {
+            OkApiRes(ApiRes(data =
+              EsResponse.toSingleApiData(response.result, true) + ("_creator" -> userProfile)
+            ))
+          })
+        } else {
+          Future.successful(OkApiRes(ApiRes(data = EsResponse.toSingleApiData(response.result, true))))
+        }
+      } else {
+        Future.successful(OkApiRes(ApiResError(getI18nMessage(ErrorMessages.error_IdNonExists.name, docId))))
+      }
+    } else {
+      Future.successful(OkApiRes(ApiResError(getI18nMessage(ErrorMessages.error_EsRequestFail(response).name))))
+    }
   }
 }
 

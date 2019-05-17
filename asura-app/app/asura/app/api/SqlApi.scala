@@ -38,7 +38,9 @@ class SqlApi @Inject()(
   }
 
   def getById(id: String) = Action.async { implicit req =>
-    SqlRequestService.getById(id).toOkResultByEsOneDoc(id)
+    SqlRequestService.getById(id).flatMap(response => {
+      withSingleUserProfile(id, response)
+    })
   }
 
   def delete(id: String) = Action.async { implicit req =>
