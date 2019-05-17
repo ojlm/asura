@@ -1,6 +1,7 @@
 package asura.core.es.model
 
 import asura.common.util.StringUtils
+import com.fasterxml.jackson.annotation.JsonIgnore
 
 /**
   *
@@ -22,6 +23,7 @@ case class VariablesExportItem(
                                 function: String = null,
                               ) {
 
+  @JsonIgnore
   def isValid(): Boolean = {
     !StringUtils.hasEmpty(srcPath, dstName, scope) && enabled
   }
