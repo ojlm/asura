@@ -88,13 +88,14 @@ object RuntimeContext {
   def renderBody(template: String, ctx: util.Map[Any, Any]): String = {
     if (StringUtils.isNotEmpty(template)) {
       StringTemplate.mustacheParser.parse(template, macroName => {
-        if (macroName.startsWith(JSON_PATH_MACRO_PREFIX_1) || macroName.startsWith(JSON_PATH_MACRO_PREFIX_2)) {
-          JsonPathUtils.read[Any](ctx, macroName).toString
+        val bodyString = if (macroName.startsWith(JSON_PATH_MACRO_PREFIX_1) || macroName.startsWith(JSON_PATH_MACRO_PREFIX_2)) {
+          JsonPathUtils.read[Any](ctx, macroName)
         } else {
           val bindings = new java.util.HashMap[String, Any]()
           bindings.put(SELF_VARIABLE, ctx)
-          JavaScriptEngine.eval(macroName, bindings).toString
+          JavaScriptEngine.eval(macroName, bindings)
         }
+        if (null != bodyString) bodyString.toString else "null"
       })
     } else {
       StringUtils.EMPTY
