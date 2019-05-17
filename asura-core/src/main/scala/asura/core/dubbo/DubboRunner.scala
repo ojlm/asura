@@ -2,15 +2,19 @@ package asura.core.dubbo
 
 import akka.pattern.ask
 import akka.util.Timeout
+import asura.common.exceptions.RequestFailException
 import asura.common.util.{JsonUtils, StringUtils}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.dubbo.DubboReportModel.{DubboRequestReportModel, DubboResponseReportModel}
 import asura.core.es.model.DubboRequest
-import asura.core.es.model.DubboRequest.DubboRequestBody
+import asura.core.es.model.DubboRequest.{DubboRequestBody, LoadBalanceAlgorithms}
 import asura.core.runtime.{ContextOptions, RuntimeContext, RuntimeMetrics}
 import asura.core.{CoreConfig, RunnerActors}
 import asura.dubbo.GenericRequest
+import asura.dubbo.actor.GenericServiceInvokerActor.GetProvidersMessage
+import asura.dubbo.model.DubboProvider
 import com.typesafe.scalalogging.Logger
+import org.apache.commons.lang3.RandomUtils
 
 import scala.concurrent.Future
 
@@ -72,16 +76,51 @@ object DubboRunner {
     } else {
       null
     }
-    val genericRequest = GenericRequest(
-      dubboGroup = request.dubboGroup,
-      interface = request.interface,
-      method = request.method,
-      parameterTypes = parameterTypes,
-      args = args,
-      address = request.address,
-      port = request.port,
-      version = request.version
-    )
-    Future.successful(genericRequest)
+    if (request.enableLb) {
+      getTargetAddressAndPort(request).map(tuple => {
+        GenericRequest(
+          dubboGroup = request.dubboGroup,
+          interface = request.interface,
+          method = request.method,
+          parameterTypes = parameterTypes,
+          args = args,
+          address = tuple._1,
+          port = tuple._2,
+          version = request.version
+        )
+      })
+    } else {
+      val genericRequest = GenericRequest(
+        dubboGroup = request.dubboGroup,
+        interface = request.interface,
+        method = request.method,
+        parameterTypes = parameterTypes,
+        args = args,
+        address = request.address,
+        port = request.port,
+        version = request.version
+      )
+      Future.successful(genericRequest)
+    }
+  }
+
+  def getTargetAddressAndPort(request: DubboRequestBody): Future[(String, Int)] = {
+    val msg = GetProvidersMessage(request.zkConnectString, request.path, request.interface)
+    (dubboInvoker ? msg).map(res => {
+      val providers = res.asInstanceOf[Seq[DubboProvider]]
+      if (providers.nonEmpty) {
+        request.lbAlgorithm match {
+          case LoadBalanceAlgorithms.RANDOM =>
+            val provider = providers(RandomUtils.nextInt(0, providers.length))
+            (provider.address, provider.port)
+          case _ =>
+            // default use `random`
+            val provider = providers(RandomUtils.nextInt(0, providers.length))
+            (provider.address, provider.port)
+        }
+      } else {
+        throw RequestFailException("There is not available dubbo provider")
+      }
+    })
   }
 }

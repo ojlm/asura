@@ -141,4 +141,8 @@ object DubboRequest extends IndexSetting {
     }
   }
 
+  object LoadBalanceAlgorithms {
+    val RANDOM = "random"
+  }
+
 }
