@@ -152,7 +152,9 @@ case class RuntimeContext(
         // usually do not need to check scope can only be one of `_g`, `_j`, `_s`
         var scopeCtx = ctx.get(item.scope)
         if (null == scopeCtx) {
-          scopeCtx = new util.concurrent.ConcurrentHashMap[Any, Any]()
+          // use a HashMap to allow null values, currently the step run in sequence one by one
+          // the should be no thread-safe problem
+          scopeCtx = new util.HashMap[Any, Any]()
           ctx.put(item.scope, scopeCtx)
         }
         scopeCtx.asInstanceOf[util.Map[Any, Any]].put(item.name, item.value)
@@ -174,7 +176,8 @@ case class RuntimeContext(
         // usually do not need to check scope can only be one of `_g`, `_j`, `_s`
         var scopeCtx = ctx.get(item.scope)
         if (null == scopeCtx) {
-          scopeCtx = new util.concurrent.ConcurrentHashMap[Any, Any]()
+          // use a HashMap to allow null values
+          scopeCtx = new util.HashMap[Any, Any]()
           ctx.put(item.scope, scopeCtx)
         }
         scopeCtx.asInstanceOf[util.Map[Any, Any]].put(item.dstName, value)
