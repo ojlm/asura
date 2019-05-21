@@ -71,7 +71,7 @@ object SqlRunner {
       username = request.username,
       database = request.database,
       table = request.table,
-      sql = request.sql
+      sql = sql
     )
     Future.successful((renderedRequest, reportModel))
   }
