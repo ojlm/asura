@@ -10,4 +10,5 @@ object SqlConfig {
   val DEFAULT_MYSQL_CONNECTOR_CACHE_SIZE = 10
 
   val SQL_EC = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
+  val SQL_CONN_CHECK_TIMEOUT = 10
 }
