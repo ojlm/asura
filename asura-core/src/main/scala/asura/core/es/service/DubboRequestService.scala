@@ -28,6 +28,7 @@ object DubboRequestService extends CommonService with BaseAggregationService {
     FieldKeys.FIELD_GROUP,
     FieldKeys.FIELD_PROJECT,
     FieldKeys.FIELD_LABELS,
+    FieldKeys.FIELD_EXPORTS,
     FieldKeys.FIELD_OBJECT_REQUEST_INTERFACE,
     FieldKeys.FIELD_OBJECT_REQUEST_METHOD,
     FieldKeys.FIELD_OBJECT_REQUEST_PARAMETER_TYPES,

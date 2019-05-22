@@ -33,6 +33,7 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
     FieldKeys.FIELD_GROUP,
     FieldKeys.FIELD_PROJECT,
     FieldKeys.FIELD_LABELS,
+    FieldKeys.FIELD_EXPORTS,
     FieldKeys.FIELD_OBJECT_REQUEST_HOST,
     FieldKeys.FIELD_OBJECT_REQUEST_URLPATH,
     FieldKeys.FIELD_OBJECT_REQUEST_METHOD,

@@ -45,9 +45,9 @@ class ScenarioApi @Inject()(
             }
           })
           val res = for {
-            cs <- HttpCaseRequestService.getByIdsAsMap(httpSeq)
-            dubbo <- DubboRequestService.getByIdsAsMap(dubboSeq)
-            sql <- SqlRequestService.getByIdsAsMap(sqlSeq)
+            cs <- HttpCaseRequestService.getByIdsAsMap(httpSeq, true)
+            dubbo <- DubboRequestService.getByIdsAsMap(dubboSeq, true)
+            sql <- SqlRequestService.getByIdsAsMap(sqlSeq, true)
           } yield (cs, dubbo, sql)
           res.map(triple => {
             Map("scenario" -> scenarioDoc, "case" -> triple._1, "dubbo" -> triple._2, "sql" -> triple._3)
