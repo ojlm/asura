@@ -7,7 +7,9 @@ import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, SqlRequest}
 import asura.core.es.service.SqlRequestService
 import asura.core.model.QuerySqlRequest
+import asura.core.runtime.RuntimeContext
 import asura.core.sql.SqlRunner
+import asura.core.util.{JacksonSupport, JsonPathUtils}
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 import play.api.Configuration
@@ -31,7 +33,12 @@ class SqlApi @Inject()(
     if (null == error) {
       val user = getProfileId()
       activityActor ! Activity(sqlReq.group, sqlReq.project, user, Activity.TYPE_TEST_SQL, StringUtils.notEmptyElse(testMsg.id, StringUtils.EMPTY))
-      SqlRunner.test(testMsg.id, sqlReq).toOkResult
+      val options = testMsg.options
+      if (null != options && null != options.initCtx) {
+        val initCtx = JsonPathUtils.parse(JacksonSupport.stringify(options.initCtx)).asInstanceOf[java.util.Map[Any, Any]]
+        options.initCtx = initCtx
+      }
+      SqlRunner.test(testMsg.id, sqlReq, RuntimeContext(options = options)).toOkResult
     } else {
       error.toFutureFail
     }
