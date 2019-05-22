@@ -7,13 +7,14 @@ import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import asura.common.actor.{ActorEvent, SenderMessage}
 import asura.common.exceptions.InvalidStatusException
+import asura.core.CoreConfig
 import asura.core.util.JacksonSupport
 
 import scala.concurrent.duration._
 
 object WebSocketMessageHandler {
 
-  val DEFAULT_BUFFER_SIZE = 100
+  val DEFAULT_BUFFER_SIZE = CoreConfig.DEFAULT_WS_ACTOR_BUFFER_SIZE
   val KEEP_ALIVE_INTERVAL = 2
 
   def newHandleFlow[T <: AnyRef](workActor: ActorRef, msgClass: Class[T]): Flow[Message, Message, NotUsed] = {
