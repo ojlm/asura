@@ -15,7 +15,7 @@ object MySqlConnector {
 
   @throws[Throwable]
   def connect(sql: SqlRequestBody): Connection = {
-    val url = s"jdbc:mysql://${sql.host}:${sql.port}/${sql.database}?useCursorFetch=true&useUnicode=true&characterEncoding=utf-8"
+    val url = s"jdbc:mysql://${sql.host}:${sql.port}/${sql.database}?autoReconnect=true&useCursorFetch=true&useUnicode=true&characterEncoding=utf-8"
     try {
       val password = if (StringUtils.isNotEmpty(sql.encryptedPass)) {
         val bytes = Base64.getDecoder.decode(sql.encryptedPass)
