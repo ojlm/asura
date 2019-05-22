@@ -10,6 +10,8 @@ import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, DubboRequest}
 import asura.core.es.service.DubboRequestService
 import asura.core.model.QueryDubboRequest
+import asura.core.runtime.RuntimeContext
+import asura.core.util.{JacksonSupport, JsonPathUtils}
 import asura.core.{CoreConfig, RunnerActors}
 import asura.dubbo.actor.GenericServiceInvokerActor.{GetInterfaceMethodParams, GetInterfacesMessage, GetProvidersMessage}
 import javax.inject.{Inject, Singleton}
@@ -52,7 +54,12 @@ class DubboApi @Inject()(
     if (null == error) {
       val user = getProfileId()
       activityActor ! Activity(dubboReq.group, dubboReq.project, user, Activity.TYPE_TEST_DUBBO, StringUtils.notEmptyElse(testMsg.id, StringUtils.EMPTY))
-      DubboRunner.test(testMsg.id, testMsg.request).toOkResult
+      val options = testMsg.options
+      if (null != options && null != options.initCtx) {
+        val initCtx = JsonPathUtils.parse(JacksonSupport.stringify(options.initCtx)).asInstanceOf[java.util.Map[Any, Any]]
+        options.initCtx = initCtx
+      }
+      DubboRunner.test(testMsg.id, testMsg.request, RuntimeContext(options = options)).toOkResult
     } else {
       error.toFutureFail
     }
