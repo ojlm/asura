@@ -34,7 +34,7 @@ class MySqlConnectionCacheActor(size: Int) extends BaseActor {
     Future {
       val key = generateCacheKey(request)
       val conn = lruCache.get(key)
-      if (null == conn || conn.isClosed) {
+      if (null == conn || !conn.isValid(SqlConfig.SQL_CONN_CHECK_TIMEOUT)) {
         val newConn = MySqlConnector.connect(request)
         lruCache.put(key, newConn)
         newConn
