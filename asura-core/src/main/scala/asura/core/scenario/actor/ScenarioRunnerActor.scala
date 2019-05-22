@@ -1,6 +1,6 @@
 package asura.core.scenario.actor
 
-import akka.actor.{ActorRef, PoisonPill, Props, Status}
+import akka.actor.{ActorRef, Props, Status}
 import akka.pattern.pipe
 import akka.util.Timeout
 import asura.common.actor._
@@ -90,7 +90,7 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
           }"
           wsActor ! NotifyActorEvent(msg)
           wsActor ! OverActorEvent(this.scenarioReportItem)
-          if (null == jobActor) wsActor ! PoisonPill
+          if (null == jobActor) wsActor ! Status.Success
         }
         if (null != jobActor) {
           // running in a job
@@ -104,12 +104,12 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
       log.warning(logErrMsg)
       if (null != wsActor) {
         wsActor ! ErrorActorEvent(t.getMessage)
-        if (null == jobActor) wsActor ! PoisonPill
+        if (null == jobActor) wsActor ! Status.Success
       }
     case _ =>
       if (null != wsActor) {
         wsActor ! ErrorActorEvent(ErrorMessages.error_UnknownMessageType.errMsg)
-        if (null == jobActor) wsActor ! PoisonPill
+        if (null == jobActor) wsActor ! Status.Success
       }
   }
 

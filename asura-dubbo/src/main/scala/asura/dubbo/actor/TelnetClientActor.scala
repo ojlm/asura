@@ -19,6 +19,7 @@ class TelnetClientActor(remote: InetSocketAddress, listener: ActorRef) extends B
   override def receive: Receive = {
     case CommandFailed(_: Connect) =>
       listener ! ByteString(s"${TelnetClientActor.MSG_CONNECT_TO} ${remote.getAddress.getHostAddress}:${remote.getPort} ${TelnetClientActor.MSG_FAIL}\r\n")
+      context stop self
     case Connected(remote, local) =>
       log.debug(s"local address: ${local}, remote address: ${remote}")
       listener ! ByteString(s"${TelnetClientActor.MSG_CONNECT_TO} ${remote.getAddress.getHostAddress}:${remote.getPort} ${TelnetClientActor.MSG_SUCCESS}\r\n")
