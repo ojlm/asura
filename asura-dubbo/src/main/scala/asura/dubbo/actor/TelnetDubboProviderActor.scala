@@ -1,6 +1,6 @@
 package asura.dubbo.actor
 
-import akka.actor.{ActorRef, PoisonPill, Props, Status}
+import akka.actor.{ActorRef, Props, Status, Terminated}
 import akka.util.ByteString
 import asura.common.actor.{BaseActor, ErrorActorEvent, NotifyActorEvent, SenderMessage}
 import asura.common.util.LogUtils
@@ -10,6 +10,7 @@ class TelnetDubboProviderActor(address: String, port: Int) extends BaseActor {
   override def receive: Receive = {
     case SenderMessage(sender) =>
       val providerActor = context.actorOf(TelnetClientActor.props(address, port, self))
+      context.watch(providerActor)
       context.become(handleRequest(sender, providerActor))
   }
 
@@ -23,12 +24,14 @@ class TelnetDubboProviderActor(address: String, port: Int) extends BaseActor {
       }
     case data: ByteString =>
       wsActor ! NotifyActorEvent(data.utf8String)
+    case Terminated(_) =>
+      wsActor ! Status.Success
     case Status.Failure(t) =>
       val stackTrace = LogUtils.stackTraceToString(t)
       log.warning(stackTrace)
       wsActor ! ErrorActorEvent(t.getMessage)
       providerActor ! ByteString(TelnetClientActor.CMD_CLOSE)
-      wsActor ! PoisonPill
+      wsActor ! Status.Success
   }
 
   override def postStop(): Unit = {

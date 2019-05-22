@@ -26,7 +26,7 @@ class JobManualActor(jobId: String, user: String, out: ActorRef) extends BaseAct
       if (jobImplOpt.isEmpty) {
         wsActor ! s"Can't find job implementation of ${job.classAlias}"
         wsActor ! JobExecDesc.STATUS_FAIL
-        wsActor ! PoisonPill
+        wsActor ! Status.Success
       } else {
         val jobImpl = jobImplOpt.get
         val (isOk, errMsg) = jobImpl.checkJobData(job.jobData)
@@ -41,7 +41,7 @@ class JobManualActor(jobId: String, user: String, out: ActorRef) extends BaseAct
           }
         } else {
           wsActor ! errMsg
-          wsActor ! PoisonPill
+          wsActor ! Status.Success
         }
       }
     case jobId: String =>
@@ -49,7 +49,7 @@ class JobManualActor(jobId: String, user: String, out: ActorRef) extends BaseAct
         JobService.geJobById(jobId).pipeTo(self)
       } else {
         wsActor ! s"jobId is empty."
-        wsActor ! PoisonPill
+        wsActor ! Status.Success
       }
     case execDesc: JobExecDesc =>
       execDesc.prepareEnd()
@@ -58,7 +58,7 @@ class JobManualActor(jobId: String, user: String, out: ActorRef) extends BaseAct
         val reportUrl = s"view report: ${CoreConfig.reportBaseUrl}/${execDesc.reportId}"
         wsActor ! reportUrl
         wsActor ! execDesc.report.result
-        wsActor ! PoisonPill
+        wsActor ! Status.Success
       }.recover {
         case t: Throwable =>
           self ! Status.Failure(t)
@@ -68,7 +68,7 @@ class JobManualActor(jobId: String, user: String, out: ActorRef) extends BaseAct
       log.warning(stackTrace)
       wsActor ! t.getMessage
       wsActor ! JobExecDesc.STATUS_FAIL
-      wsActor ! PoisonPill
+      wsActor ! Status.Success
   }
 
   override def postStop(): Unit = {

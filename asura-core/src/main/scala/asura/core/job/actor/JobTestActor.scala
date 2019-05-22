@@ -28,7 +28,7 @@ class JobTestActor(user: String, out: ActorRef) extends BaseActor {
       val jobOpt = JobCenter.classAliasJobMap.get(jobMeta.getJobAlias())
       if (jobOpt.isEmpty) {
         wsActor ! ErrorActorEvent(s"Can't find job implementation of ${jobMeta.getJobAlias()}")
-        wsActor ! PoisonPill
+        wsActor ! Status.Success
       } else {
         val job = jobOpt.get
         val (isOk, errMsg) = job.checkJobData(jobData)
@@ -50,7 +50,7 @@ class JobTestActor(user: String, out: ActorRef) extends BaseActor {
           }
         } else {
           wsActor ! ErrorActorEvent(errMsg)
-          wsActor ! PoisonPill
+          wsActor ! Status.Success
         }
       }
     case execDesc: JobExecDesc =>
@@ -65,7 +65,7 @@ class JobTestActor(user: String, out: ActorRef) extends BaseActor {
         val reportUrl = s"[REPORT]: ${CoreConfig.reportBaseUrl}/${report.group}/${report.project}/${res.id}"
         wsActor ! NotifyActorEvent(reportUrl)
         wsActor ! OverActorEvent(report)
-        wsActor ! PoisonPill
+        wsActor ! Status.Success
       }.recover {
         case t: Throwable =>
           self ! Status.Failure(t)
@@ -76,7 +76,7 @@ class JobTestActor(user: String, out: ActorRef) extends BaseActor {
       val errLog = LogUtils.stackTraceToString(t)
       log.warning(errLog)
       wsActor ! ErrorActorEvent(t.getMessage)
-      wsActor ! PoisonPill
+      wsActor ! Status.Success
   }
 
   override def postStop(): Unit = {
