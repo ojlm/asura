@@ -4,17 +4,20 @@ import akka.actor.{ActorRef, Props, Status}
 import akka.pattern.pipe
 import akka.util.Timeout
 import asura.common.actor._
+import asura.common.exceptions.WithDataException
 import asura.common.util.{FutureUtils, LogUtils, StringUtils, XtermUtils}
 import asura.core.assertion.engine.Statistic
+import asura.core.dubbo.DubboReportModel.DubboRequestReportModel
 import asura.core.dubbo.{DubboResult, DubboRunner}
 import asura.core.es.model.JobReportData.{JobReportStepItemData, ReportStepItemStatus, ScenarioReportItemData}
 import asura.core.es.model._
 import asura.core.es.service.{DubboRequestService, HttpCaseRequestService, SqlRequestService}
-import asura.core.http.{HttpResult, HttpRunner}
+import asura.core.http.{HttpRequestReportModel, HttpResult, HttpRunner}
 import asura.core.job.actor.JobReportDataItemSaveActor.SaveReportDataHttpItemMessage
 import asura.core.job.{JobReportItemResultEvent, JobReportItemStoreDataHelper}
 import asura.core.runtime.{AbstractResult, ContextOptions, RuntimeContext}
 import asura.core.scenario.actor.ScenarioRunnerActor.{ScenarioTestData, ScenarioTestJobMessage, ScenarioTestWebMessage}
+import asura.core.sql.SqlReportModel.SqlRequestReportModel
 import asura.core.sql.{SqlResult, SqlRunner}
 import asura.core.{CoreConfig, ErrorMessages}
 
@@ -124,8 +127,14 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
           HttpRunner.test(step.id, httpRequest, this.runtimeContext)
             .map(httpResult => handleNormalResult(httpRequest.summary, httpResult, step, idx, httpRequest.exports))
             .recover {
+              case WithDataException(t, rendered) =>
+                handleExceptionalResult(
+                  httpRequest.summary,
+                  HttpResult.exceptionResult(step.id, rendered.asInstanceOf[HttpRequestReportModel], this.runtimeContext.rawContext),
+                  step, idx, t
+                )
               case t: Throwable =>
-                handleExceptionalResult(httpRequest.summary, HttpResult.failResult(step.id), step, idx, t)
+                handleExceptionalResult(httpRequest.summary, HttpResult.exceptionResult(step.id), step, idx, t)
             }
         } else {
           handleEmptyStepData(idx, ScenarioStep.TYPE_HTTP, step.id)
@@ -137,8 +146,13 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
           DubboRunner.test(step.id, dubboRequest, this.runtimeContext)
             .map(dubboResult => handleNormalResult(dubboRequest.summary, dubboResult, step, idx, dubboRequest.exports))
             .recover {
+              case WithDataException(t, rendered) =>
+                handleExceptionalResult(
+                  dubboRequest.summary,
+                  DubboResult.exceptionResult(step.id, rendered.asInstanceOf[DubboRequestReportModel], this.runtimeContext.rawContext),
+                  step, idx, t)
               case t: Throwable =>
-                handleExceptionalResult(dubboRequest.summary, DubboResult.failResult(step.id), step, idx, t)
+                handleExceptionalResult(dubboRequest.summary, DubboResult.exceptionResult(step.id), step, idx, t)
             }
         } else {
           handleEmptyStepData(idx, ScenarioStep.TYPE_DUBBO, step.id)
@@ -150,8 +164,13 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
           SqlRunner.test(step.id, sqlRequest, this.runtimeContext)
             .map(sqlResult => handleNormalResult(sqlRequest.summary, sqlResult, step, idx, sqlRequest.exports))
             .recover {
+              case WithDataException(t, rendered) =>
+                handleExceptionalResult(
+                  sqlRequest.summary,
+                  SqlResult.exceptionResult(step.id, rendered.asInstanceOf[SqlRequestReportModel], this.runtimeContext.rawContext),
+                  step, idx, t)
               case t: Throwable =>
-                handleExceptionalResult(sqlRequest.summary, SqlResult.failResult(step.id), step, idx, t)
+                handleExceptionalResult(sqlRequest.summary, SqlResult.exceptionResult(step.id), step, idx, t)
             }
         } else {
           handleEmptyStepData(idx, ScenarioStep.TYPE_SQL, step.id)
@@ -228,7 +247,7 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
       val statusText = s"${XtermUtils.redWrap(ReportStepItemStatus.STATUS_FAIL)}"
       wsActor ! NotifyActorEvent(s"${consoleLogPrefix(step.`type`, idx)}${title} ${statusText}")
       wsActor ! NotifyActorEvent(s"${consoleLogPrefix(step.`type`, idx)}${title} ${errorStack}")
-      wsActor ! ItemActorEvent(JobReportItemResultEvent(idx, stepItemData.status, errorStack, null))
+      wsActor ! ItemActorEvent(JobReportItemResultEvent(idx, stepItemData.status, errorStack, failResult))
     }
     this.scenarioReportItem.markFail()
     if (this.failFast) {

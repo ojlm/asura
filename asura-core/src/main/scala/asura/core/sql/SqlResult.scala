@@ -1,5 +1,7 @@
 package asura.core.sql
 
+import java.util
+
 import asura.common.util.StringUtils
 import asura.core.assertion.engine.{AssertionContext, Statistic}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
@@ -23,12 +25,16 @@ case class SqlResult(
 
 object SqlResult {
 
-  def failResult(docId: String): SqlResult = {
+  def exceptionResult(
+                       docId: String,
+                       rendered: SqlRequestReportModel = null,
+                       context: util.Map[Any, Any] = null,
+                     ): SqlResult = {
     val result = SqlResult(
       docId = docId,
       assert = null,
-      context = null,
-      request = null,
+      context = context,
+      request = rendered,
       response = null
     )
     result.statis.isSuccessful = false

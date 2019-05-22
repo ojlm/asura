@@ -1,5 +1,7 @@
 package asura.core.dubbo
 
+import java.util
+
 import asura.common.util.StringUtils
 import asura.core.assertion.engine.{AssertionContext, Statistic}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
@@ -23,12 +25,16 @@ case class DubboResult(
 
 object DubboResult {
 
-  def failResult(docId: String): DubboResult = {
+  def exceptionResult(
+                       docId: String,
+                       rendered: DubboRequestReportModel = null,
+                       context: util.Map[Any, Any] = null,
+                     ): DubboResult = {
     val result = DubboResult(
       docId = docId,
       assert = null,
-      context = null,
-      request = null,
+      context = context,
+      request = rendered,
       response = null
     )
     result.statis.isSuccessful = false
