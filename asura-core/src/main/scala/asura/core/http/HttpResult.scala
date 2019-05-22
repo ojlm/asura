@@ -1,5 +1,7 @@
 package asura.core.http
 
+import java.util
+
 import asura.common.util.StringUtils
 import asura.core.assertion.engine.{AssertionContext, Statistic}
 import asura.core.concurrent.ExecutionContextManager.cachedExecutor
@@ -22,12 +24,16 @@ case class HttpResult(
 
 object HttpResult {
 
-  def failResult(docId: String): HttpResult = {
+  def exceptionResult(
+                       docId: String,
+                       rendered: HttpRequestReportModel = null,
+                       context: util.Map[Any, Any] = null,
+                     ): HttpResult = {
     val result = HttpResult(
       docId = docId,
       assert = null,
-      context = null,
-      request = null,
+      context = context,
+      request = rendered,
       response = null
     )
     result.statis.isSuccessful = false

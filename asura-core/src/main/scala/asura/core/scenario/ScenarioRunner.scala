@@ -168,7 +168,7 @@ object ScenarioRunner {
                     log(s"[SCN][${summary}]: ${cs.summary} ${XtermUtils.redWrap(ReportStepItemStatus.STATUS_FAIL)}.")
                     log(s"[SCN][${summary}]: ${cs.summary} error : ${errorStack}.")
                   }
-                  val item = JobReportStepItemData.parse(cs.summary, HttpResult.failResult(id), msg = errorStack)
+                  val item = JobReportStepItemData.parse(cs.summary, HttpResult.exceptionResult(id), msg = errorStack)
                   scenarioReportItem.markFail()
                   if (null != logResult) logResult(ItemActorEvent(JobReportItemResultEvent(caseIndex, item.status, errorStack, null)))
                   item

@@ -2,7 +2,7 @@ package asura.core.dubbo
 
 import akka.pattern.ask
 import akka.util.Timeout
-import asura.common.exceptions.RequestFailException
+import asura.common.exceptions.{RequestFailException, WithDataException}
 import asura.common.util.{JsonUtils, StringUtils}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.dubbo.DubboReportModel.{DubboRequestReportModel, DubboResponseReportModel}
@@ -50,7 +50,9 @@ object DubboRunner {
               DubboRequestReportModel(genericRequest),
               DubboResponseReportModel(responseObj.asInstanceOf[Object])
             )
-          })
+          }).recover {
+            case t: Throwable => throw WithDataException(t, genericRequest)
+          }
         })
         .map(result => {
           metrics.evalAssertionEnd()

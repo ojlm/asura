@@ -2,6 +2,7 @@ package asura.core.sql
 
 import akka.pattern.ask
 import akka.util.Timeout
+import asura.common.exceptions.WithDataException
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.model.SqlRequest
 import asura.core.es.model.SqlRequest.SqlRequestBody
@@ -44,7 +45,9 @@ object SqlRunner {
               tuple._2,
               SqlResponseReportModel(responseObj.asInstanceOf[Object])
             )
-          })
+          }).recover {
+            case t: Throwable => throw WithDataException(t, tuple._2)
+          }
         })
         .map(result => {
           metrics.evalAssertionEnd()

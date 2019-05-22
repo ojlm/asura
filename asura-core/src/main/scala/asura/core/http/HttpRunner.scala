@@ -7,6 +7,7 @@ import akka.http.javadsl.model.ContentType
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.util.ByteString
+import asura.common.exceptions.WithDataException
 import asura.core.CoreConfig.materializer
 import asura.core.assertion.engine.HttpResponseAssert
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
@@ -37,7 +38,7 @@ object HttpRunner {
         .flatMap(toCaseRequestTuple)
         .flatMap(tuple => {
           val env = if (null != context.options) context.options.getUsedEnv() else null
-          if (null != env && env.enableProxy) {
+          val futureResult = if (null != env && env.enableProxy) {
             metrics.performRequestStart()
             val proxyServer = context.options.getUsedEnv().server
             HttpEngine.singleRequestWithProxy(tuple._1, proxyServer).flatMap(res => {
@@ -58,6 +59,9 @@ object HttpRunner {
                 )
               })
             })
+          }
+          futureResult.recover {
+            case t: Throwable => throw WithDataException(t, tuple._2)
           }
         })
     }).map(result => {
