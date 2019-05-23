@@ -202,17 +202,7 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
     }
     this.stepsReportItems += stepItemData
     val statis = stepItemData.statis
-    if (null != wsActor) {
-      val statusText = if (statis.isSuccessful) {
-        XtermUtils.greenWrap(ReportStepItemStatus.STATUS_PASS)
-      } else {
-        XtermUtils.redWrap(ReportStepItemStatus.STATUS_FAIL)
-      }
-      val msg = s"${consoleLogPrefix(step.`type`, idx)}${title} ${statusText}"
-      wsActor ! NotifyActorEvent(msg)
-      wsActor ! ItemActorEvent(JobReportItemResultEvent(idx, stepItemData.status, null, result))
-    }
-    if (statis.isSuccessful) {
+    val nextIdx = if (statis.isSuccessful) {
       if (this.failFast) {
         if (step.stored) {
           // extract all response data into the `_p` runtime context
@@ -231,6 +221,18 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
         idx + 1
       }
     }
+    // send back result after render exports value
+    if (null != wsActor) {
+      val statusText = if (statis.isSuccessful) {
+        XtermUtils.greenWrap(ReportStepItemStatus.STATUS_PASS)
+      } else {
+        XtermUtils.redWrap(ReportStepItemStatus.STATUS_FAIL)
+      }
+      val msg = s"${consoleLogPrefix(step.`type`, idx)}${title} ${statusText}"
+      wsActor ! NotifyActorEvent(msg)
+      wsActor ! ItemActorEvent(JobReportItemResultEvent(idx, stepItemData.status, null, result))
+    }
+    nextIdx
   }
 
   private def handleExceptionalResult(
