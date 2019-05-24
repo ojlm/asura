@@ -48,11 +48,6 @@ object Dependencies {
   private val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
   private val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.7.0"
 
-  // Selenium
-  private val seleniumJava = "org.seleniumhq.selenium" % "selenium-java" % "3.7.1"
-  private val jBrowserDriver = "com.machinepublishers" % "jbrowserdriver" % "0.17.10"
-  private val htmlunitDriver = "org.seleniumhq.selenium" % "htmlunit-driver" % "2.27"
-
   // Test dependencies
   private val akkaTestKit = "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test
   private val scalaTestDeps = Seq(
@@ -78,7 +73,6 @@ object Dependencies {
     elastic4sEmbedded, joddCore, jsonPath, swaggerParser, quartz, redisson
   ) ++ commonDependencies ++ httpDeps ++ databaseDeps
   val appDependencies = Seq(config, guava, commonsCodec) ++ loggingDeps ++ httpDeps ++ testDeps
-  val webDependencies = Seq(seleniumJava, jBrowserDriver, htmlunitDriver) ++ loggingDeps ++ httpDeps ++ testDeps
   val namerdDependencies = Seq(akkaStream, akkaHttp) ++ commonDependencies
   val dubboDependencies = Seq(dubbo, curator, dubboJavassist, dubboJbossNetty, dubboSpring, akkaStream) ++ commonDependencies
   val gatlingDependencies = Seq(gatling) ++ clusterDependencies
