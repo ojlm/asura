@@ -2,9 +2,9 @@ package asura.app.api
 
 import asura.app.api.BaseApi.OkApiRes
 import asura.common.model.ApiRes
-import asura.core.model.QueryHome
 import asura.core.es.model._
 import asura.core.es.service.HomeService
+import asura.core.model.QueryHome
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 
@@ -32,6 +32,8 @@ class HomeApi @Inject()(implicit exec: ExecutionContext, val controllerComponent
       case Project.Index => "project"
       case RestApi.Index => "rest"
       case HttpCaseRequest.Index => "case"
+      case DubboRequest.Index => "dubbo"
+      case SqlRequest.Index => "sql"
       case Environment.Index => "env"
       case Scenario.Index => "scenario"
       case Job.Index => "job"
