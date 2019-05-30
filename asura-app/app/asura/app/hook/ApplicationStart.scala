@@ -4,7 +4,7 @@ import java.util.Base64
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import asura.app.api.auth.BasicAuth
+import asura.app.api.auth.{BasicAuth, Reserved}
 import asura.app.notify.MailNotifier
 import asura.cluster.ClusterManager
 import asura.common.util.{LogUtils, StringUtils}
@@ -66,6 +66,9 @@ class ApplicationStart @Inject()(
     dispatcher = system.dispatcher,
     materializer = materializer
   )
+
+  // reserved
+  Reserved.initReservedData()
 
   // add auth
   AuthManager.register(BasicAuth)
