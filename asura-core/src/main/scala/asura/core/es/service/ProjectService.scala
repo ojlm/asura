@@ -4,11 +4,11 @@ import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.model.{QueryProject, TransferProject}
 import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig}
-import asura.core.util.{CommonValidator, JacksonSupport}
+import asura.core.model.{QueryProject, TransferProject}
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
+import asura.core.util.{CommonValidator, JacksonSupport}
 import com.sksamuel.elastic4s.http.ElasticDsl._
 import com.sksamuel.elastic4s.script.Script
 import com.sksamuel.elastic4s.searches.queries.Query
@@ -16,6 +16,7 @@ import com.sksamuel.elastic4s.searches.sort.FieldSort
 import com.sksamuel.elastic4s.update.UpdateByQueryRequest
 import com.sksamuel.elastic4s.{IndexesAndTypes, RefreshPolicy}
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
@@ -136,6 +137,30 @@ object ProjectService extends CommonService {
           search(Project.Index).query(boolQuery().must(esQueries)).size(1).sourceExclude(FieldKeys.FIELD_OPENAPI)
         }
       }
+    }
+  }
+
+  def getByIds(ids: Seq[String], source: Seq[String] = Nil): Future[Map[String, Project]] = {
+    if (null == ids || ids.isEmpty) {
+      Future.successful(Map.empty)
+    } else {
+      EsClient.esClient.execute {
+        search(Project.Index)
+          .query(idsQuery(ids))
+          .from(0)
+          .size(ids.length)
+          .sourceInclude(source)
+      }.map(res => {
+        if (res.isSuccess) {
+          val map = mutable.Map[String, Project]()
+          if (res.result.nonEmpty) {
+            res.result.hits.hits.foreach(hit => map += (hit.id -> JacksonSupport.parse(hit.sourceAsString, classOf[Project])))
+          }
+          map.toMap
+        } else {
+          throw ErrorMessages.error_EsRequestFail(res).toException
+        }
+      })
     }
   }
 
