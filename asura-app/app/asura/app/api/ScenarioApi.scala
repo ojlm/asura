@@ -5,11 +5,11 @@ import asura.app.AppErrorMessages
 import asura.app.api.BaseApi.OkApiRes
 import asura.common.model.ApiResError
 import asura.core.ErrorMessages
-import asura.core.model.QueryScenario
 import asura.core.es.EsResponse
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, FieldKeys, Scenario, ScenarioStep}
 import asura.core.es.service._
+import asura.core.model.QueryScenario
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 
@@ -98,6 +98,8 @@ class ScenarioApi @Inject()(
 
   def update(id: String) = Action(parse.byteString).async { implicit req =>
     val scenario = req.bodyAs(classOf[Scenario])
-    ScenarioService.updateScenario(id, scenario).toOkResult
+    ScenarioService.updateScenario(id, scenario).map(res => {
+      activityActor ! Activity(scenario.group, scenario.project, getProfileId(), Activity.TYPE_UPDATE_SCENARIO, id)
+    }).toOkResult
   }
 }

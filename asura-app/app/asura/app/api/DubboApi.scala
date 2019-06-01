@@ -92,7 +92,10 @@ class DubboApi @Inject()(
 
   def update(id: String) = Action(parse.byteString).async { implicit req =>
     val doc = req.bodyAs(classOf[DubboRequest])
-    DubboRequestService.updateDoc(id, doc).toOkResult
+    DubboRequestService.updateDoc(id, doc).map(res => {
+      activityActor ! Activity(doc.group, doc.project, getProfileId(), Activity.TYPE_UPDATE_DUBBO, id)
+      res
+    }).toOkResult
   }
 
   def aggsLabels(label: String) = Action(parse.byteString).async { implicit req =>

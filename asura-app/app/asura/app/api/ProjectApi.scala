@@ -4,10 +4,10 @@ import akka.actor.ActorSystem
 import asura.app.AppErrorMessages
 import asura.app.api.BaseApi.OkApiRes
 import asura.common.model.ApiResError
-import asura.core.model.{QueryProject, TransferProject}
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, Project}
 import asura.core.es.service.ProjectService
+import asura.core.model.{QueryProject, TransferProject}
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 import play.api.Configuration
@@ -32,8 +32,10 @@ class ProjectApi @Inject()(
 
   def delete(group: String, id: String) = Action.async { implicit req =>
     checkPrivilege { user =>
-      activityActor ! Activity(group, id, user, Activity.TYPE_NEW_PROJECT, Project.generateDocId(group, id))
-      ProjectService.deleteProject(group, id).toOkResult
+      ProjectService.deleteProject(group, id).map(res => {
+        activityActor ! Activity(group, id, user, Activity.TYPE_DELETE_PROJECT, Project.generateDocId(group, id))
+        res
+      }).toOkResult
     }
   }
 
