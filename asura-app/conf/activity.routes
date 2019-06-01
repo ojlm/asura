@@ -1,2 +1,3 @@
 POST        /aggs/trend        asura.app.api.ActivityApi.trend()
 POST        /aggs/terms        asura.app.api.ActivityApi.aggTerms()
+GET         /recent            asura.app.api.ActivityApi.recent(wd: String ?=null, discover: Boolean ?= false)
