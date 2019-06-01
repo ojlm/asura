@@ -69,7 +69,7 @@ class HttpCaseApi @Inject()(implicit system: ActorSystem,
     val user = getProfileId()
     cs.fillCommonFields(user)
     HttpCaseRequestService.index(cs).map(res => {
-      activityActor ! Activity(cs.group, cs.project, user, Activity.TYPE_UPDATE_CASE, res.id)
+      activityActor ! Activity(cs.group, cs.project, user, Activity.TYPE_NEW_CASE, res.id)
       toActionResultFromAny(res)
     })
   }

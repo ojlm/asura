@@ -71,7 +71,10 @@ class SqlApi @Inject()(
 
   def update(id: String) = Action(parse.byteString).async { implicit req =>
     val doc = req.bodyAs(classOf[SqlRequest])
-    SqlRequestService.updateDoc(id, doc).toOkResult
+    SqlRequestService.updateDoc(id, doc).map(res => {
+      activityActor ! Activity(doc.group, doc.project, getProfileId(), Activity.TYPE_UPDATE_SQL, id)
+      res
+    }).toOkResult
   }
 
   def aggsLabels(label: String) = Action(parse.byteString).async { implicit req =>

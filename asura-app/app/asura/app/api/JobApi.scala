@@ -72,6 +72,8 @@ class JobApi @Inject()(
   def update() = Action(parse.byteString).async { implicit req =>
     val job = req.bodyAs(classOf[UpdateJob])
     SchedulerManager.updateJob(job).map(res => {
+      val jobMeta = job.jobMeta
+      activityActor ! Activity(jobMeta.group, jobMeta.project, getProfileId(), Activity.TYPE_UPDATE_JOB, job.id)
       OkApiRes(ApiRes(msg = res))
     })
   }
