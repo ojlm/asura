@@ -5,9 +5,9 @@ import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.model.QueryJob
 import asura.core.es.model._
-import asura.core.es.{EsClient, EsConfig}
+import asura.core.es.{EsClient, EsConfig, EsResponse}
+import asura.core.model.QueryJob
 import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
@@ -15,18 +15,21 @@ import com.sksamuel.elastic4s.http.ElasticDsl._
 import com.sksamuel.elastic4s.searches.queries.{NestedQuery, Query}
 import com.sksamuel.elastic4s.searches.sort.FieldSort
 
+import scala.collection.Iterable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
 object JobService extends CommonService {
 
-  val queryIncludeFields = Seq(
+  val basicFields = Seq(
     FieldKeys.FIELD_SUMMARY,
     FieldKeys.FIELD_DESCRIPTION,
     FieldKeys.FIELD_CREATOR,
     FieldKeys.FIELD_CREATED_AT,
     FieldKeys.FIELD_GROUP,
     FieldKeys.FIELD_PROJECT,
+  )
+  val queryIncludeFields = basicFields ++ Seq(
     FieldKeys.FIELD_TRIGGER,
   )
 
@@ -193,6 +196,18 @@ object JobService extends CommonService {
       search(Job.Index).query(query)
         .sortByFieldAsc(FieldKeys.FIELD_CREATED_AT)
         .sourceInclude(defaultIncludeFields)
+    }
+  }
+
+  def getByIdsAsRawMap(ids: Iterable[String]) = {
+    if (null != ids && ids.nonEmpty) {
+      EsClient.esClient.execute {
+        search(Job.Index).query(idsQuery(ids)).size(ids.size).sourceInclude(basicFields)
+      }.map(res => {
+        if (res.isSuccess) EsResponse.toIdMap(res.result) else Map.empty
+      })
+    } else {
+      Future.successful(Map.empty)
     }
   }
 }

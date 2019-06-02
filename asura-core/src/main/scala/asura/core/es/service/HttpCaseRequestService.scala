@@ -19,13 +19,13 @@ import com.sksamuel.elastic4s.searches.DateHistogramInterval
 import com.sksamuel.elastic4s.searches.queries.Query
 import com.sksamuel.elastic4s.searches.sort.FieldSort
 
-import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.{Iterable, mutable}
 import scala.concurrent.{ExecutionContext, Future}
 
 object HttpCaseRequestService extends CommonService with BaseAggregationService {
 
-  val queryFields = Seq(
+  val basicFields = Seq(
     FieldKeys.FIELD_SUMMARY,
     FieldKeys.FIELD_DESCRIPTION,
     FieldKeys.FIELD_CREATOR,
@@ -33,10 +33,12 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
     FieldKeys.FIELD_GROUP,
     FieldKeys.FIELD_PROJECT,
     FieldKeys.FIELD_LABELS,
-    FieldKeys.FIELD_EXPORTS,
     FieldKeys.FIELD_OBJECT_REQUEST_HOST,
     FieldKeys.FIELD_OBJECT_REQUEST_URLPATH,
     FieldKeys.FIELD_OBJECT_REQUEST_METHOD,
+  )
+  val queryFields = basicFields ++ Seq(
+    FieldKeys.FIELD_EXPORTS,
   )
 
   def index(cs: HttpCaseRequest): Future[IndexDocResponse] = {
@@ -162,6 +164,17 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
     }
   }
 
+  def getByIdsAsRawMap(ids: Iterable[String]) = {
+    if (null != ids && ids.nonEmpty) {
+      EsClient.esClient.execute {
+        search(HttpCaseRequest.Index).query(idsQuery(ids)).size(ids.size).sourceInclude(basicFields)
+      }.map(res => {
+        if (res.isSuccess) EsResponse.toIdMap(res.result) else Map.empty
+      })
+    } else {
+      Future.successful(Map.empty)
+    }
+  }
 
   def getCasesByJobDataExtAsMap(group: String, project: String, ext: JobDataExt): Future[Map[String, HttpCaseRequest]] = {
     if (null != ext && StringUtils.isNotEmpty(group) && StringUtils.isNotEmpty(project)) {
@@ -205,7 +218,7 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
             idMap += (hit.id -> (sourceMap + (FieldKeys.FIELD__ID -> hit.id)))
           })
           if (userIds.nonEmpty && query.hasCreators) {
-            UserProfileService.getByIds(userIds).map(profiles => {
+            UserProfileService.getByIdsAsRawMap(userIds).map(profiles => {
               Map(
                 "total" -> res.result.hits.total,
                 "list" -> query.ids.filter(idMap.contains(_)).map(idMap(_)),

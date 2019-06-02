@@ -44,7 +44,7 @@ class ProjectApi @Inject()(
     val user = getProfileId()
     project.fillCommonFields(user)
     ProjectService.index(project).map(res => {
-      activityActor ! Activity(project.group, res.id, user, Activity.TYPE_NEW_PROJECT, res.id)
+      activityActor ! Activity(project.group, project.id, user, Activity.TYPE_NEW_PROJECT, res.id)
       toActionResultFromAny(res)
     })
   }

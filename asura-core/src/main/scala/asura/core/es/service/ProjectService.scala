@@ -5,7 +5,7 @@ import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.model._
-import asura.core.es.{EsClient, EsConfig}
+import asura.core.es.{EsClient, EsConfig, EsResponse}
 import asura.core.model.{QueryProject, TransferProject}
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import asura.core.util.{CommonValidator, JacksonSupport}
@@ -16,8 +16,8 @@ import com.sksamuel.elastic4s.searches.sort.FieldSort
 import com.sksamuel.elastic4s.update.UpdateByQueryRequest
 import com.sksamuel.elastic4s.{IndexesAndTypes, RefreshPolicy}
 
-import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.{Iterable, mutable}
 import scala.concurrent.Future
 
 object ProjectService extends CommonService {
@@ -248,5 +248,19 @@ object ProjectService extends CommonService {
         throw ErrorMessages.error_EsRequestFail(res).toException
       }
     })
+  }
+
+  def getByIdsAsRawMap(ids: Iterable[String]) = {
+    if (null != ids && ids.nonEmpty) {
+      EsClient.esClient.execute {
+        search(Project.Index).query(idsQuery(ids)).size(ids.size).sourceExclude(Seq(
+          FieldKeys.FIELD_OPENAPI, FieldKeys.FIELD_DOMAINS
+        ))
+      }.map(res => {
+        if (res.isSuccess) EsResponse.toIdMap(res.result) else Map.empty
+      })
+    } else {
+      Future.successful(Map.empty)
+    }
   }
 }

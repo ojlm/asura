@@ -22,7 +22,7 @@ trait CommonService {
     FieldKeys.FIELD_SUMMARY, FieldKeys.FIELD_DESCRIPTION,
     FieldKeys.FIELD_GROUP, FieldKeys.FIELD_PROJECT
   )
-  val defaultExcludeFields = Seq(FieldKeys.FIELD_CREATOR, FieldKeys.FIELD_CREATED_AT)
+  val defaultExcludeFields = Seq(FieldKeys.FIELD_CREATOR, FieldKeys.FIELD_CREATED_AT, FieldKeys.FIELD_UPDATED_AT)
 
   def toIndexDocResponse(response: Response[IndexResponse]): IndexDocResponse = {
     if (response.isSuccess) {
@@ -102,7 +102,7 @@ trait CommonService {
       userIds += sourceMap.getOrElse(FieldKeys.FIELD_CREATOR, StringUtils.EMPTY).asInstanceOf[String]
       sourceMap + (FieldKeys.FIELD__ID -> hit.id) + (FieldKeys.FIELD__SORT -> hit.sort.getOrElse(Nil))
     }))
-    UserProfileService.getByIds(userIds).map(users => {
+    UserProfileService.getByIdsAsRawMap(userIds).map(users => {
       dataMap + ("creators" -> users)
     })
   }
