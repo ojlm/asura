@@ -14,13 +14,13 @@ import com.sksamuel.elastic4s.http.ElasticDsl._
 import com.sksamuel.elastic4s.searches.queries.Query
 import com.sksamuel.elastic4s.searches.sort.FieldSort
 
-import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.{Iterable, mutable}
 import scala.concurrent.Future
 
 object DubboRequestService extends CommonService with BaseAggregationService {
 
-  val queryFields = Seq(
+  val basicFields = Seq(
     FieldKeys.FIELD_SUMMARY,
     FieldKeys.FIELD_DESCRIPTION,
     FieldKeys.FIELD_CREATOR,
@@ -28,10 +28,12 @@ object DubboRequestService extends CommonService with BaseAggregationService {
     FieldKeys.FIELD_GROUP,
     FieldKeys.FIELD_PROJECT,
     FieldKeys.FIELD_LABELS,
-    FieldKeys.FIELD_EXPORTS,
     FieldKeys.FIELD_OBJECT_REQUEST_INTERFACE,
     FieldKeys.FIELD_OBJECT_REQUEST_METHOD,
     FieldKeys.FIELD_OBJECT_REQUEST_PARAMETER_TYPES,
+  )
+  val queryFields = basicFields ++ Seq(
+    FieldKeys.FIELD_EXPORTS,
   )
 
   def index(doc: DubboRequest): Future[IndexDocResponse] = {
@@ -104,6 +106,18 @@ object DubboRequestService extends CommonService with BaseAggregationService {
         } else {
           throw ErrorMessages.error_EsRequestFail(res).toException
         }
+      })
+    } else {
+      Future.successful(Map.empty)
+    }
+  }
+
+  def getByIdsAsRawMap(ids: Iterable[String]) = {
+    if (null != ids && ids.nonEmpty) {
+      EsClient.esClient.execute {
+        search(DubboRequest.Index).query(idsQuery(ids)).size(ids.size).sourceInclude(basicFields)
+      }.map(res => {
+        if (res.isSuccess) EsResponse.toIdMap(res.result) else Map.empty
       })
     } else {
       Future.successful(Map.empty)

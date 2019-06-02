@@ -5,7 +5,7 @@ import asura.app.api.BaseApi.OkApiRes
 import asura.common.model.ApiRes
 import asura.core.es.model.Activity
 import asura.core.es.service._
-import asura.core.model.AggsQuery
+import asura.core.model.{AggsQuery, SearchAfterActivity}
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 
@@ -35,5 +35,13 @@ class ActivityApi @Inject()(implicit system: ActorSystem,
 
   def recent(wd: String = null, discover: Boolean = false) = Action(parse.byteString).async { implicit req =>
     RecommendService.getRecommendProjects(getProfileId(), wd, discover).toOkResult
+  }
+
+  def feed() = Action(parse.byteString).async { implicit req =>
+    val query = req.bodyAs(classOf[SearchAfterActivity])
+    if (query.onlyMe) {
+      query.user = getProfileId()
+    }
+    ActivityService.searchFeed(query).toOkResult
   }
 }

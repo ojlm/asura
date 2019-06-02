@@ -5,17 +5,18 @@ import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.model.QueryGroup
 import asura.core.es.model._
-import asura.core.es.{EsClient, EsConfig}
-import asura.core.util.{CommonValidator, JacksonSupport}
+import asura.core.es.{EsClient, EsConfig, EsResponse}
+import asura.core.model.QueryGroup
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
+import asura.core.util.{CommonValidator, JacksonSupport}
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
 import com.sksamuel.elastic4s.searches.queries.Query
 import com.sksamuel.elastic4s.searches.sort.FieldSort
 import com.typesafe.scalalogging.Logger
 
+import scala.collection.Iterable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
@@ -118,6 +119,18 @@ object GroupService extends CommonService {
         .size(query.pageSize)
         .sortBy(sortFields)
         .sourceInclude(defaultIncludeFields :+ FieldKeys.FIELD_ID :+ FieldKeys.FIELD_AVATAR)
+    }
+  }
+
+  def getByIdsAsRawMap(ids: Iterable[String]) = {
+    if (null != ids && ids.nonEmpty) {
+      EsClient.esClient.execute {
+        search(Group.Index).query(idsQuery(ids)).size(ids.size)
+      }.map(res => {
+        if (res.isSuccess) EsResponse.toIdMap(res.result) else Map.empty
+      })
+    } else {
+      Future.successful(Map.empty)
     }
   }
 }

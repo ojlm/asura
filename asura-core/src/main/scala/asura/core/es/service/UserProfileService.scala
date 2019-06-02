@@ -73,7 +73,7 @@ object UserProfileService extends CommonService {
     }
   }
 
-  def getByIds(ids: Iterable[String]) = {
+  def getByIdsAsRawMap(ids: Iterable[String]) = {
     if (null != ids && ids.nonEmpty) {
       EsClient.esClient.execute {
         search(UserProfile.Index).query(idsQuery(ids)).size(ids.size).sourceExclude(defaultExcludeFields)
