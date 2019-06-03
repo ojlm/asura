@@ -100,6 +100,7 @@ class ScenarioApi @Inject()(
     val scenario = req.bodyAs(classOf[Scenario])
     ScenarioService.updateScenario(id, scenario).map(res => {
       activityActor ! Activity(scenario.group, scenario.project, getProfileId(), Activity.TYPE_UPDATE_SCENARIO, id)
+      res
     }).toOkResult
   }
 }
