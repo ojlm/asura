@@ -1,0 +1,3 @@
+GET        /basics            asura.app.api.ConfigApi.getBasics()
+GET        /assertions        asura.app.api.ConfigApi.getAllAssertions()
+GET        /transforms        asura.app.api.ConfigApi.getAllTransforms()
