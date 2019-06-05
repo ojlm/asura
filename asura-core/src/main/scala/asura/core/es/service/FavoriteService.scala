@@ -18,7 +18,7 @@ object FavoriteService extends CommonService with BaseAggregationService {
 
   def index(item: Favorite): Future[IndexDocResponse] = {
     if (null == item && StringUtils.hasEmpty(item.group, item.project, item.user,
-      item.`type`, item.targetId, item.targetType)
+      item.`type`, item.targetId, item.targetType, item.summary)
     ) {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
@@ -38,6 +38,16 @@ object FavoriteService extends CommonService with BaseAggregationService {
       EsClient.esClient.execute {
         delete(id).from(Favorite.Index / EsConfig.DefaultType)
       }.map(toDeleteDocResponse(_))
+    }
+  }
+
+  def existDoc(id: String): Future[Boolean] = {
+    if (StringUtils.isEmpty(id)) {
+      FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
+    } else {
+      EsClient.esClient.execute {
+        exists(id, Favorite.Index, EsConfig.DefaultType)
+      }.map(res => res.result)
     }
   }
 

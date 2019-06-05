@@ -1,0 +1,4 @@
+PUT           /             asura.app.api.FavoriteApi.put()
+DELETE        /:id          asura.app.api.FavoriteApi.delete(id)
+POST          /query        asura.app.api.FavoriteApi.query()
+POST          /exist        asura.app.api.FavoriteApi.exist()
