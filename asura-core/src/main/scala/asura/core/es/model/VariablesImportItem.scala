@@ -17,7 +17,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 case class VariablesImportItem(
                                 name: String,
                                 scope: String,
-                                value: Any,
+                                value: Object,
                                 description: String,
                                 enabled: Boolean = true,
                                 function: String = null,

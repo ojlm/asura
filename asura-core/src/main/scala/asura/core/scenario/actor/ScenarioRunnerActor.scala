@@ -61,25 +61,27 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
     case ScenarioTestWebMessage(summary, steps, options, imports, exports) =>
       this.scenarioReportItem.title = summary
       this.runtimeContext = RuntimeContext(options = options)
-      this.runtimeContext.evaluateImportsVariables(imports)
       this.exports = exports
       this.steps = steps
-      getScenarioTestData(steps).map(stepsData => {
-        this.stepsData = stepsData
-        self ! 0
-      })
+      this.runtimeContext.evaluateImportsVariables(imports)
+        .flatMap(_ => getScenarioTestData(steps))
+        .map(stepsData => {
+          this.stepsData = stepsData
+          self ! 0
+        })
     case ScenarioTestJobMessage(summary, steps, storeHelper, runtimeContext, imports, exports) =>
       this.jobActor = sender()
       this.scenarioReportItem.title = summary
       this.runtimeContext = runtimeContext
-      this.runtimeContext.evaluateImportsVariables(imports)
       this.steps = steps
       this.storeHelper = storeHelper
       this.exports = exports
-      getScenarioTestData(steps).map(stepsData => {
-        this.stepsData = stepsData
-        self ! 0
-      })
+      this.runtimeContext.evaluateImportsVariables(imports)
+        .flatMap(_ => getScenarioTestData(steps))
+        .map(stepsData => {
+          this.stepsData = stepsData
+          self ! 0
+        })
     case idx: Int =>
       if (idx < this.steps.length) {
         executeStep(idx) pipeTo self
@@ -125,7 +127,7 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
         if (csOpt.nonEmpty) {
           val httpRequest = csOpt.get
           HttpRunner.test(step.id, httpRequest, this.runtimeContext)
-            .map(httpResult => handleNormalResult(httpRequest.summary, httpResult, step, idx, httpRequest.exports))
+            .flatMap(httpResult => handleNormalResult(httpRequest.summary, httpResult, step, idx, httpRequest.exports))
             .recover {
               case WithDataException(t, rendered) =>
                 handleExceptionalResult(
@@ -144,7 +146,7 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
         if (dubboOpt.nonEmpty) {
           val dubboRequest = dubboOpt.get
           DubboRunner.test(step.id, dubboRequest, this.runtimeContext)
-            .map(dubboResult => handleNormalResult(dubboRequest.summary, dubboResult, step, idx, dubboRequest.exports))
+            .flatMap(dubboResult => handleNormalResult(dubboRequest.summary, dubboResult, step, idx, dubboRequest.exports))
             .recover {
               case WithDataException(t, rendered) =>
                 handleExceptionalResult(
@@ -162,7 +164,7 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
         if (sqlOpt.nonEmpty) {
           val sqlRequest = sqlOpt.get
           SqlRunner.test(step.id, sqlRequest, this.runtimeContext)
-            .map(sqlResult => handleNormalResult(sqlRequest.summary, sqlResult, step, idx, sqlRequest.exports))
+            .flatMap(sqlResult => handleNormalResult(sqlRequest.summary, sqlResult, step, idx, sqlRequest.exports))
             .recover {
               case WithDataException(t, rendered) =>
                 handleExceptionalResult(
@@ -185,7 +187,7 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
                                   step: ScenarioStep,
                                   idx: Int,
                                   exports: Seq[VariablesExportItem]
-                                ): Int = {
+                                ): Future[Int] = {
     // assertion successful or failed
     val stepItemData = JobReportStepItemData.parse(title, result)
     if (null != storeHelper) {
@@ -217,20 +219,28 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
           // extract all response data into the `_p` runtime context
           runtimeContext.setPrevContext(RuntimeContext.extractSelfContext(result))
         }
-        // extract the exports into the runtime context
-        runtimeContext.evaluateExportsVariables(exports)
-      }
-      sendCurrentToWsActor(XtermUtils.greenWrap(ReportStepItemStatus.STATUS_PASS))
-      idx + 1
-    } else {
-      this.scenarioReportItem.markFail()
-      if (this.failFast) {
-        sendCurrentToWsActor(XtermUtils.redWrap(ReportStepItemStatus.STATUS_FAIL))
-        skipLeftSteps(idx + 1)
-        this.steps.length
+        // extract the exports into the runtime context asynchronously
+        runtimeContext.evaluateExportsVariables(exports).map(_ => {
+          sendCurrentToWsActor(XtermUtils.greenWrap(ReportStepItemStatus.STATUS_PASS))
+          idx + 1
+        })
       } else {
-        sendCurrentToWsActor(XtermUtils.redWrap(ReportStepItemStatus.STATUS_FAIL))
-        idx + 1
+        Future.successful {
+          sendCurrentToWsActor(XtermUtils.greenWrap(ReportStepItemStatus.STATUS_PASS))
+          idx + 1
+        }
+      }
+    } else {
+      Future.successful {
+        this.scenarioReportItem.markFail()
+        if (this.failFast) {
+          sendCurrentToWsActor(XtermUtils.redWrap(ReportStepItemStatus.STATUS_FAIL))
+          skipLeftSteps(idx + 1)
+          this.steps.length
+        } else {
+          sendCurrentToWsActor(XtermUtils.redWrap(ReportStepItemStatus.STATUS_FAIL))
+          idx + 1
+        }
       }
     }
   }

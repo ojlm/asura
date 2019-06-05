@@ -40,7 +40,7 @@ class JobRunnerActor(wsActor: ActorRef) extends BaseActor {
       this.resultReceiver = sender()
       this.runtimeContext.options = execDesc.options
       this.runtimeContext.evaluateImportsVariables(execDesc.imports)
-      runCases(execDesc)
+        .flatMap(_ => runCases(execDesc))
         .flatMap(_ => buildScenarioTestJobMessages(execDesc))
         .map(messages => {
           this.scenarioTestJobMessages = messages
