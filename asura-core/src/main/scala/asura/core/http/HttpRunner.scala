@@ -1,6 +1,7 @@
 package asura.core.http
 
 import java.nio.charset.StandardCharsets
+import java.util
 import java.util.Base64
 
 import akka.http.javadsl.model.ContentType
@@ -8,11 +9,13 @@ import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.util.ByteString
 import asura.common.exceptions.WithDataException
+import asura.common.util.StringUtils
 import asura.core.CoreConfig.materializer
 import asura.core.assertion.engine.HttpResponseAssert
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.model.HttpCaseRequest
 import asura.core.runtime._
+import asura.core.util.JsonPathUtils
 import com.typesafe.scalalogging.Logger
 
 import scala.concurrent.Future
@@ -35,7 +38,7 @@ object HttpRunner {
     metrics.renderRequestStart()
     context.evaluateOptions().flatMap(_ => {
       HttpParser.toHttpRequest(cs, context)
-        .flatMap(toCaseRequestTuple)
+        .flatMap(request => toCaseRequestTuple(request, context))
         .flatMap(tuple => {
           val env = if (null != context.options) context.options.getUsedEnv() else null
           val futureResult = if (null != env && env.enableProxy) {
@@ -72,13 +75,24 @@ object HttpRunner {
     })
   }
 
-  def toCaseRequestTuple(req: HttpRequest): Future[(HttpRequest, HttpRequestReportModel)] = {
+  def toCaseRequestTuple(req: HttpRequest, context: RuntimeContext): Future[(HttpRequest, HttpRequestReportModel)] = {
     Unmarshal(req.entity).to[String].map(reqBody => {
       val headers = scala.collection.mutable.HashMap[String, String]()
       req.headers.foreach(h => headers += (h.name() -> h.value()))
       val mediaType = req.entity.contentType.mediaType.value
       if (mediaType != "none/none") {
         headers += (HttpContentTypes.KEY_CONTENT_TYPE -> mediaType)
+      }
+      val reqMap = new util.HashMap[String, Object]()
+      context.setCurrentRequest(reqMap)
+      if (mediaType == HttpContentTypes.JSON && StringUtils.isNotEmpty(reqBody)) {
+        try {
+          reqMap.put("body", JsonPathUtils.parse(reqBody))
+        } catch {
+          case _: Throwable => reqMap.put("body", reqBody)
+        }
+      } else {
+        reqMap.put("body", reqBody)
       }
       (req, HttpRequestReportModel(req.method.value, req.getUri().toString, headers, reqBody))
     })
