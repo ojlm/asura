@@ -8,7 +8,7 @@ case class Favorite(
                      val group: String,
                      val project: String,
                      val summary: String,
-                     val user: String,
+                     var user: String,
                      var `type`: String,
                      var targetType: String, // target resource type
                      val targetId: String,
@@ -46,6 +46,8 @@ object Favorite extends IndexSetting {
   val TYPE_WATCH = "watch"
   // resource
   val TYPE_STAR = "star"
+  // people
+  val TYPE_FOLLOW = "follow"
 
 
   val TARGET_TYPE_SCENARIO = FieldKeys.FIELD_SCENARIO
