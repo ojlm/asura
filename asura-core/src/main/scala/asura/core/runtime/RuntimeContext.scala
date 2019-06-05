@@ -34,6 +34,8 @@ object RuntimeContext {
   val KEY_HEADERS = "headers"
   // current step response body, eg: http, dubbo, sql
   val KEY_ENTITY = "entity"
+  // current step request, only http step
+  val KEY__REQ = "_req"
   // alias for variable table of environment
   val KEY__ENV = "_env"
 
@@ -133,6 +135,7 @@ case class RuntimeContext(
 
   def rawContext = ctx
 
+  @deprecated(message = "use exports instead")
   def setPrevContext(prevContext: util.Map[Any, Any]): RuntimeContext = {
     if (null != prevContext && !prevContext.isEmpty) {
       ctx.put(RuntimeContext.KEY__P, prevContext)
@@ -223,6 +226,7 @@ case class RuntimeContext(
     ctx.remove(RuntimeContext.KEY_STATUS)
     ctx.remove(RuntimeContext.KEY_HEADERS)
     ctx.remove(RuntimeContext.KEY_ENTITY)
+    ctx.remove(RuntimeContext.KEY__REQ)
     this
   }
 
@@ -242,6 +246,10 @@ case class RuntimeContext(
   def setCurrentEntity(entity: Any): RuntimeContext = {
     ctx.put(RuntimeContext.KEY_ENTITY, entity)
     this
+  }
+
+  def setCurrentRequest(req: java.util.Map[String, Object]) = {
+    ctx.put(RuntimeContext.KEY__REQ, req)
   }
 
   def renderSingleMacroAsString(tpl: String): String = {
