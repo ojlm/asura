@@ -7,6 +7,7 @@ import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.model.{Environment, VariablesExportItem, VariablesImportItem}
 import asura.core.es.service.EnvironmentService
 import asura.core.script.JavaScriptEngine
+import asura.core.script.function.Functions
 import asura.core.util.{JsonPathUtils, StringTemplate}
 
 import scala.concurrent.Future
@@ -147,43 +148,74 @@ case class RuntimeContext(
     this
   }
 
-  def evaluateImportsVariables(imports: Seq[VariablesImportItem]): RuntimeContext = {
+  def evaluateImportsVariables(imports: Seq[VariablesImportItem]): Future[RuntimeContext] = {
     if (null != imports && imports.nonEmpty) {
-      imports.filter(item => null != item && item.isValid()).foreach(item => {
-        // usually do not need to check scope can only be one of `_g`, `_j`, `_s`
-        var scopeCtx = ctx.get(item.scope)
-        if (null == scopeCtx) {
-          // use a HashMap to allow null values, currently the step run in sequence one by one
-          // the should be no thread-safe problem
-          scopeCtx = new util.HashMap[Any, Any]()
-          ctx.put(item.scope, scopeCtx)
-        }
-        scopeCtx.asInstanceOf[util.Map[Any, Any]].put(item.name, item.value)
+      val items = imports.filter(item => null != item && item.isValid())
+      items.foldLeft(Future.successful(this))((futureRc, item) => {
+        for {
+          _ <- futureRc
+          next <- {
+            val futureValue = if (null != item.value && StringUtils.isNotEmpty(item.function)) {
+              evaluateValue(item.value, item.function)
+            } else {
+              Future.successful(item.value)
+            }
+            futureValue.map(value => putValueToScope(item.name, value, item.scope))
+          }
+        } yield next
       })
+    } else {
+      Future.successful(this)
     }
-    this
   }
 
-  def evaluateExportsVariables(exports: Seq[VariablesExportItem]): RuntimeContext = {
+  def evaluateExportsVariables(exports: Seq[VariablesExportItem]): Future[RuntimeContext] = {
     if (null != exports && exports.nonEmpty) {
-      exports.filter(item => null != item && item.isValid()).foreach(item => {
-        var value: Object = null
-        try {
-          value = JsonPathUtils.read[Object](ctx, item.srcPath)
-        } catch {
-          case t: Throwable =>
-            value = t.getMessage
-        }
-        // usually do not need to check scope can only be one of `_g`, `_j`, `_s`
-        var scopeCtx = ctx.get(item.scope)
-        if (null == scopeCtx) {
-          // use a HashMap to allow null values
-          scopeCtx = new util.HashMap[Any, Any]()
-          ctx.put(item.scope, scopeCtx)
-        }
-        scopeCtx.asInstanceOf[util.Map[Any, Any]].put(item.dstName, value)
+      val items = exports.filter(item => null != item && item.isValid())
+      items.foldLeft(Future.successful(this))((futureRc, item) => {
+        for {
+          _ <- futureRc
+          next <- {
+            val futureValue = try {
+              val tmpValue = JsonPathUtils.read[Object](ctx, item.srcPath)
+              if (null != tmpValue && StringUtils.isNotEmpty(item.function)) {
+                evaluateValue(tmpValue, item.function)
+              } else {
+                Future.successful(tmpValue)
+              }
+            } catch {
+              case t: Throwable => Future.successful(t.getMessage)
+            }
+            futureValue.map(value => putValueToScope(item.dstName, value, item.scope))
+          }
+        } yield next
       })
+    } else {
+      Future.successful(this)
     }
+  }
+
+  private def evaluateValue(value: Object, function: String): Future[Object] = {
+    val func = Functions.getTransform(function)
+    if (func.nonEmpty) {
+      func.get.apply(value).recover {
+        case t: Throwable => Future.successful(t.getMessage)
+      }
+    } else {
+      Future.successful(s"Function '${function}' not registered")
+    }
+  }
+
+  def putValueToScope(key: String, value: Object, scope: String): RuntimeContext = {
+    // usually do not need to check scope can only be one of `_g`, `_j`, `_s`
+    var scopeCtx = ctx.get(scope)
+    if (null == scopeCtx) {
+      // use a HashMap to allow null values, currently the step run in sequence one by one
+      // the should be no thread-safe problem
+      scopeCtx = new util.HashMap[Any, Any]()
+      ctx.put(scope, scopeCtx)
+    }
+    scopeCtx.asInstanceOf[util.Map[Any, Any]].put(key, value)
     this
   }
 
