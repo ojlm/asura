@@ -199,7 +199,7 @@ case class RuntimeContext(
     val func = Functions.getTransform(function)
     if (func.nonEmpty) {
       func.get.apply(value).recover {
-        case t: Throwable => Future.successful(t.getMessage)
+        case t: Throwable => t.getMessage
       }
     } else {
       Future.successful(s"Function '${function}' not registered")
