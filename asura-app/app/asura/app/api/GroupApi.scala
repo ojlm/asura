@@ -2,7 +2,6 @@ package asura.app.api
 
 import akka.actor.ActorSystem
 import asura.app.AppErrorMessages
-import asura.app.api.BaseApi.OkApiRes
 import asura.app.api.auth.Reserved
 import asura.common.model.ApiResError
 import asura.common.util.StringUtils
@@ -10,6 +9,7 @@ import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, Group}
 import asura.core.es.service.GroupService
 import asura.core.model.QueryGroup
+import asura.play.api.BaseApi.OkApiRes
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 import play.api.Configuration

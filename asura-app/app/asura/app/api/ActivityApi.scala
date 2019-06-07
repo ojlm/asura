@@ -1,11 +1,11 @@
 package asura.app.api
 
 import akka.actor.ActorSystem
-import asura.app.api.BaseApi.OkApiRes
 import asura.common.model.ApiRes
 import asura.core.es.model.Activity
 import asura.core.es.service._
 import asura.core.model.{AggsQuery, SearchAfterActivity}
+import asura.play.api.BaseApi.OkApiRes
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 

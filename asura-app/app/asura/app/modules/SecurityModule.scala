@@ -1,9 +1,8 @@
 package asura.app.modules
 
-import asura.app.api.actions.SecurityHttpActionAdapter
 import asura.app.api.auth._
+import asura.play.actions.SecurityHttpActionAdapter
 import com.google.inject.{AbstractModule, Provides}
-import org.pac4j.core.authorization.authorizer.RequireAnyRoleAuthorizer
 import org.pac4j.core.client.Clients
 import org.pac4j.core.config.Config
 import org.pac4j.http.client.direct.{DirectBasicAuthClient, DirectFormClient, HeaderClient}

@@ -2,7 +2,6 @@ package asura.app.api
 
 import akka.actor.ActorSystem
 import asura.app.AppErrorMessages
-import asura.app.api.BaseApi.OkApiRes
 import asura.common.model.ApiResError
 import asura.core.ErrorMessages
 import asura.core.es.EsResponse
@@ -10,6 +9,7 @@ import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, FieldKeys, Scenario, ScenarioStep}
 import asura.core.es.service._
 import asura.core.model.QueryScenario
+import asura.play.api.BaseApi.OkApiRes
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 

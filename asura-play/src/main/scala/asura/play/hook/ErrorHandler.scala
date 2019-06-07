@@ -1,10 +1,10 @@
-package asura.app.hook
+package asura.play.hook
 
-import asura.app.api.BaseApi.OkApiRes
+import asura.common.exceptions.ErrorMessages
+import asura.common.exceptions.ErrorMessages.ErrorMessageException
 import asura.common.model.{ApiCode, ApiRes, ApiResError}
 import asura.common.util.{LogUtils, StringUtils}
-import asura.core.ErrorMessages
-import asura.core.ErrorMessages.ErrorMessageException
+import asura.play.api.BaseApi.OkApiRes
 import javax.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
 import play.api.http.HttpErrorHandler
@@ -14,7 +14,7 @@ import play.api.mvc.{RequestHeader, Result}
 import scala.concurrent.Future
 
 @Singleton
-class ErrorHandler @Inject()(messagesApi: MessagesApi, langs: Langs) extends HttpErrorHandler {
+class ErrorHandler @Inject()(messagesApi: MessagesApi, langs: Langs) extends HttpErrorHandler with ErrorMessages {
 
   lazy val logger = LoggerFactory.getLogger(classOf[ErrorHandler])
 
@@ -40,7 +40,7 @@ class ErrorHandler @Inject()(messagesApi: MessagesApi, langs: Langs) extends Htt
         val message = if (StringUtils.isNotEmpty(exception.getMessage)) {
           exception.getMessage
         } else {
-          messagesApi(ErrorMessages.error_ServerError.name)
+          messagesApi(error_ServerError.name)
         }
         Future.successful(OkApiRes(ApiRes(code = ApiCode.ERROR, msg = message, data = logStack)))
     }

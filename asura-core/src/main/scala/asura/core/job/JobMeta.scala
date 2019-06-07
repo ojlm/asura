@@ -1,5 +1,6 @@
 package asura.core.job
 
+import asura.common.exceptions.ErrorMessages.ErrorMessage
 import asura.common.util.StringUtils
 import asura.core.ErrorMessages
 import asura.core.job.impl.RunCaseJob
@@ -15,7 +16,7 @@ case class JobMeta(
                     classAlias: String // the field can be null, use method instead
                   ) {
 
-  def toJobDetail(docId: String): (ErrorMessages.ErrorMessage, JobDetail) = {
+  def toJobDetail(docId: String): (ErrorMessage, JobDetail) = {
     val clazz = JobCenter.supportedJobClasses.get(getJobAlias())
     if (clazz.isEmpty) {
       (ErrorMessages.error_NoJobDefined(getJobAlias()), null)

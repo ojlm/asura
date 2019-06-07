@@ -4,11 +4,11 @@ import akka.actor.ActorSystem
 import akka.pattern.ask
 import akka.util.Timeout
 import asura.app.AppErrorMessages
-import asura.app.api.BaseApi.OkApiRes
 import asura.cluster.ClusterManager
 import asura.cluster.actor.MemberListenerActor.GetAllMembers
 import asura.common.model.ApiResError
 import asura.core.CoreConfig
+import asura.play.api.BaseApi.OkApiRes
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 import play.api.Configuration

@@ -1,9 +1,9 @@
 package asura.app.api.model
 
 import asura.app.api.model.Dtabs.DtabItem
+import asura.common.exceptions.ErrorMessages.ErrorMessage
 import asura.common.util.StringUtils
 import asura.core.ErrorMessages
-import asura.core.ErrorMessages.ErrorMessage
 
 case class Dtabs(dtabs: Seq[DtabItem])
 

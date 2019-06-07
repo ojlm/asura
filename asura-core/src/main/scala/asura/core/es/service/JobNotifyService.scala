@@ -1,12 +1,13 @@
 package asura.core.es.service
 
+import asura.common.exceptions.ErrorMessages.ErrorMessage
 import asura.common.util.{LogUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.model.QueryJobNotify
 import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.job.JobExecDesc
+import asura.core.model.QueryJobNotify
 import asura.core.notify.{JobNotifyManager, NotifyResponse, NotifyResponses}
 import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
@@ -35,7 +36,7 @@ object JobNotifyService extends CommonService {
   }
 
   def index(notifies: Seq[JobNotify]): Future[BulkDocResponse] = {
-    var errorMsg: ErrorMessages.ErrorMessage = null
+    var errorMsg: ErrorMessage = null
     val ret = notifies.forall(item => {
       errorMsg = validate(item, false)
       errorMsg == null
@@ -187,7 +188,7 @@ object JobNotifyService extends CommonService {
     })
   }
 
-  def validate(notify: JobNotify, checkJobId: Boolean = true): ErrorMessages.ErrorMessage = {
+  def validate(notify: JobNotify, checkJobId: Boolean = true): ErrorMessage = {
     if (StringUtils.isEmpty(notify.trigger)) {
       notify.trigger = JobNotify.TRIGGER_ALL
     }

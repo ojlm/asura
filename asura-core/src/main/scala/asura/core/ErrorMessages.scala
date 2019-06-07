@@ -1,10 +1,10 @@
 package asura.core
 
+import asura.common.exceptions.ErrorMessages.ErrorMessage
+import asura.common.exceptions.{ErrorMessages => CommonErrorMessages}
 import com.sksamuel.elastic4s.http.Response
 
-import scala.concurrent.Future
-
-object ErrorMessages {
+object ErrorMessages extends CommonErrorMessages {
 
   val error_IllegalGroupId = ErrorMessage("Illegal group id")("error_IllegalGroupId")
   val error_GroupExists = ErrorMessage("Group already exists")("error_GroupExists")
@@ -26,7 +26,6 @@ object ErrorMessages {
   val error_EmptyId = ErrorMessage("Empty id")("error_EmptyId")
   val error_IndexSuccess = ErrorMessage("Create success")("error_IndexSuccess")
   val error_UpdateSuccess = ErrorMessage("Update success")("error_UpdateSuccess")
-  val error_ServerError = ErrorMessage("Server Error")("error_ServerError")
   val error_EmptyEnv = ErrorMessage("Empty env")("error_EmptyEnv")
   val error_EmptyScenario = ErrorMessage("Empty scenario")("error_EmptyScenario")
   val error_EmptyJobName = ErrorMessage("Empty job name")("error_EmptyJobName")
@@ -42,7 +41,6 @@ object ErrorMessages {
   val error_EmptyNotifyType = ErrorMessage("Empty notify type")("error_EmptyNotifyType")
   val error_ProxyDisabled = ErrorMessage("Proxy is disabled")("error_ProxyDisabled")
   val error_EmptyDate = ErrorMessage("Empty date field")("error_EmptyDate")
-  val error_InvalidRequestParameters = ErrorMessage("Invalid request parameters")("error_InvalidRequestParameters")
 
   def error_EsRequestFail(response: Response[_]) = ErrorMessage(response.error.reason)("error_EsRequestFail")
 
@@ -60,27 +58,5 @@ object ErrorMessages {
 
   def error_DuplicateApi(msg: String) = ErrorMessage(s"Duplicate api: $msg")("error_DuplicateApi")
 
-  def error_Throwable(t: Throwable) = ErrorMessage(t.getMessage, t)("error_Throwable")
-
   def error_IdsNotFound(ids: Seq[String]) = ErrorMessage(ids.mkString(","))("error_IdsNotFound")
-
-  def error_Msgs(msgs: Seq[String]) = ErrorMessage(msgs.mkString(","))("error_Msgs")
-
-  def error_IllegalCharacter(msg: String) = ErrorMessage(msg)("error_IllegalCharacter")
-
-  case class ErrorMessage(val errMsg: String, val t: Throwable = null)(_name: String) {
-
-    def toException: ErrorMessageException = {
-      ErrorMessageException(this)
-    }
-
-    def toFutureFail: Future[Nothing] = {
-      Future.failed(ErrorMessageException(this))
-    }
-
-    val name = _name
-  }
-
-  case class ErrorMessageException(error: ErrorMessages.ErrorMessage) extends RuntimeException(error.errMsg)
-
 }

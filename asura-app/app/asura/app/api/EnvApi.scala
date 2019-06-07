@@ -1,14 +1,14 @@
 package asura.app.api
 
 import asura.app.AppErrorMessages
-import asura.app.api.BaseApi.OkApiRes
 import asura.common.model.{ApiRes, ApiResError}
 import asura.core.ErrorMessages
 import asura.core.auth.AuthManager
-import asura.core.model.QueryEnv
 import asura.core.es.EsResponse
 import asura.core.es.model.Environment
-import asura.core.es.service.{HttpCaseRequestService, EnvironmentService, JobService, ScenarioService}
+import asura.core.es.service.{EnvironmentService, HttpCaseRequestService, JobService, ScenarioService}
+import asura.core.model.QueryEnv
+import asura.play.api.BaseApi.OkApiRes
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 

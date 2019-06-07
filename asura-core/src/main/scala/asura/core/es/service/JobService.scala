@@ -1,5 +1,6 @@
 package asura.core.es.service
 
+import asura.common.exceptions.ErrorMessages.ErrorMessage
 import asura.common.exceptions.{IllegalRequestException, RequestFailException}
 import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
@@ -120,7 +121,7 @@ object JobService extends CommonService {
     }
   }
 
-  def validate(job: Job): ErrorMessages.ErrorMessage = {
+  def validate(job: Job): ErrorMessage = {
     if (StringUtils.isEmpty(job.summary)) {
       ErrorMessages.error_EmptyJobName
     } else if (StringUtils.isEmpty(job.classAlias)) {

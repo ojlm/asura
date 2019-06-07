@@ -1,7 +1,7 @@
-package asura.app.api.actions
+package asura.play.actions
 
-import asura.app.api.BaseApi
 import asura.common.model.{ApiCode, ApiRes}
+import asura.play.api.BaseApi
 import org.pac4j.core.context.HttpConstants
 import org.pac4j.play.PlayWebContext
 import org.pac4j.play.http.DefaultHttpActionAdapter

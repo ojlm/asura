@@ -1,12 +1,12 @@
 package asura.app.api
 
 import akka.actor.ActorSystem
-import asura.app.api.BaseApi.OkApiRes
 import asura.common.model.ApiRes
-import asura.core.model.QueryJobNotify
 import asura.core.es.model.JobNotify
 import asura.core.es.service.JobNotifyService
+import asura.core.model.QueryJobNotify
 import asura.core.notify.JobNotifyManager
+import asura.play.api.BaseApi.OkApiRes
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 

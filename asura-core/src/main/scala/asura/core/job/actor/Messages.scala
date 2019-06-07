@@ -1,5 +1,6 @@
 package asura.core.job.actor
 
+import asura.common.exceptions.ErrorMessages.ErrorMessage
 import asura.common.util.StringUtils
 import asura.core.ErrorMessages
 import asura.core.es.model.{JobData, JobNotify, JobReport, VariablesImportItem}
@@ -30,7 +31,7 @@ trait JobActionValidator {
   val project: String
   val id: String
 
-  def validate(): ErrorMessages.ErrorMessage = {
+  def validate(): ErrorMessage = {
     if (StringUtils.isEmpty(group)) {
       ErrorMessages.error_EmptyGroup
     } else if (StringUtils.isEmpty(project)) {

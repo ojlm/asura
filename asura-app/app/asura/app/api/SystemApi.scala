@@ -2,7 +2,6 @@ package asura.app.api
 
 import akka.actor.ActorSystem
 import asura.app.AppErrorMessages
-import asura.app.api.BaseApi.OkApiRes
 import asura.common.model.ApiResError
 import asura.core.ErrorMessages
 import asura.core.es.actor.ActivitySaveActor
@@ -10,6 +9,7 @@ import asura.core.es.service.{IndexService, JobReportDataItemService}
 import asura.core.job.SystemJobs
 import asura.core.job.SystemJobs.{ClearJobReportIndicesJobModel, SyncDomainAndApiJobModel}
 import asura.core.job.impl.{ClearJobReportDataIndicesJob, SyncOnlineDomainAndRestApiJob}
+import asura.play.api.BaseApi.OkApiRes
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 import play.api.Configuration

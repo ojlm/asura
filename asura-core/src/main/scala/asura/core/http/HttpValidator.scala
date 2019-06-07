@@ -1,12 +1,13 @@
 package asura.core.http
 
+import asura.common.exceptions.ErrorMessages.ErrorMessage
 import asura.common.util.StringUtils
 import asura.core.ErrorMessages
 import asura.core.es.model.HttpCaseRequest
 
 object HttpValidator {
 
-  def check(c: HttpCaseRequest, ns: String): ErrorMessages.ErrorMessage = {
+  def check(c: HttpCaseRequest, ns: String): ErrorMessage = {
     if (!StringUtils.isEmpty(ns)) {
       ErrorMessages.error_EmptyNamespace
     } else {
@@ -14,7 +15,7 @@ object HttpValidator {
     }
   }
 
-  def check(c: HttpCaseRequest): ErrorMessages.ErrorMessage = {
+  def check(c: HttpCaseRequest): ErrorMessage = {
     if (null == c) {
       ErrorMessages.error_EmptyCase
     } else if (StringUtils.isEmpty(c.summary)) {
@@ -43,8 +44,8 @@ object HttpValidator {
     }
   }
 
-  def check(cs: Seq[HttpCaseRequest]): ErrorMessages.ErrorMessage = {
-    var error: ErrorMessages.ErrorMessage = null
+  def check(cs: Seq[HttpCaseRequest]): ErrorMessage = {
+    var error: ErrorMessage = null
     var hasError = false
     for (c <- cs if !hasError) {
       error = check(c)

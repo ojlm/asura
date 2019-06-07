@@ -1,8 +1,8 @@
 package asura.app.api
 
-import asura.core.model.QueryApi
 import asura.core.es.model.RestApi
 import asura.core.es.service.ApiService
+import asura.core.model.QueryApi
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 
