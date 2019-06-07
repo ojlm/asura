@@ -1,5 +1,6 @@
 package asura.core.es.service
 
+import asura.common.exceptions.ErrorMessages.ErrorMessage
 import asura.common.util.{JsonUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
@@ -49,7 +50,7 @@ object UserProfileService extends CommonService {
     }
   }
 
-  def validate(profile: UserProfile): ErrorMessages.ErrorMessage = {
+  def validate(profile: UserProfile): ErrorMessage = {
     if (StringUtils.isEmpty(profile.username)) {
       ErrorMessages.error_EmptyUsername
     } else {

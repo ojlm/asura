@@ -1,5 +1,6 @@
 package asura.core.es.service
 
+import asura.common.exceptions.ErrorMessages.ErrorMessage
 import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.ErrorMessages
@@ -173,7 +174,7 @@ object DubboRequestService extends CommonService with BaseAggregationService {
     }
   }
 
-  def validate(doc: DubboRequest): ErrorMessages.ErrorMessage = {
+  def validate(doc: DubboRequest): ErrorMessage = {
     if (null == doc || null == doc.request) {
       ErrorMessages.error_EmptyRequestBody
     } else if (StringUtils.isEmpty(doc.group)) {

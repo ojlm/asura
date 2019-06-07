@@ -1,10 +1,10 @@
 package asura.app.api
 
 import akka.actor.ActorSystem
-import asura.app.api.BaseApi.OkApiRes
 import asura.common.model.ApiRes
 import asura.core.assertion.Assertions
 import asura.core.script.function.Functions
+import asura.play.api.BaseApi.OkApiRes
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 

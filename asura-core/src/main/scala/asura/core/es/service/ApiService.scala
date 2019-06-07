@@ -1,12 +1,13 @@
 package asura.core.es.service
 
+import asura.common.exceptions.ErrorMessages.ErrorMessage
 import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.model.QueryApi
 import asura.core.es.model.{BulkDocResponse, FieldKeys, IndexDocResponse, RestApi}
 import asura.core.es.{EsClient, EsConfig}
+import asura.core.model.QueryApi
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
@@ -198,7 +199,7 @@ object ApiService extends CommonService {
     }
   }
 
-  def validate(api: RestApi): ErrorMessages.ErrorMessage = {
+  def validate(api: RestApi): ErrorMessage = {
     if (StringUtils.isEmpty(api.path)) {
       ErrorMessages.error_EmptyPath
     } else if (StringUtils.isEmpty(api.method)) {
@@ -212,10 +213,10 @@ object ApiService extends CommonService {
     }
   }
 
-  def validate(apis: Seq[RestApi]): ErrorMessages.ErrorMessage = {
+  def validate(apis: Seq[RestApi]): ErrorMessage = {
     var isOk = true
     val apiSet = mutable.Set[RestApi]()
-    var errMsg: ErrorMessages.ErrorMessage = null
+    var errMsg: ErrorMessage = null
     for (i <- 0 until apis.length if isOk) {
       val api = apis(i)
       if (apiSet.contains(api)) {

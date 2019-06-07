@@ -2,13 +2,13 @@ package asura.app.api
 
 import akka.actor.ActorSystem
 import asura.app.AppErrorMessages
-import asura.app.api.BaseApi.OkApiRes
 import asura.app.api.model.UserProfile
 import asura.common.model.{ApiRes, ApiResError}
 import asura.common.util.StringUtils
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, BaseIndex, UserProfile => EsUserProfile}
 import asura.core.es.service.UserProfileService
+import asura.play.api.BaseApi.OkApiRes
 import javax.inject.{Inject, Singleton}
 import org.pac4j.core.profile.{CommonProfile, ProfileManager}
 import org.pac4j.ldap.profile.LdapProfile

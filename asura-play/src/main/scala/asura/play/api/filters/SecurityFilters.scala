@@ -1,4 +1,4 @@
-package asura.app.api.filters
+package asura.play.api.filters
 
 import javax.inject.Inject
 import org.pac4j.play.filters.SecurityFilter

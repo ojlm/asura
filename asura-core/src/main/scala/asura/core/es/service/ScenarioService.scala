@@ -1,5 +1,6 @@
 package asura.core.es.service
 
+import asura.common.exceptions.ErrorMessages.ErrorMessage
 import asura.common.util.{JsonUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
@@ -116,7 +117,7 @@ object ScenarioService extends CommonService {
     }
   }
 
-  def check(s: Scenario): ErrorMessages.ErrorMessage = {
+  def check(s: Scenario): ErrorMessage = {
     if (null == s) {
       ErrorMessages.error_EmptyScenario
     } else if (StringUtils.isEmpty(s.summary)) {

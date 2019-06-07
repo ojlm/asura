@@ -2,7 +2,6 @@ package asura.app.api
 
 import akka.actor.ActorSystem
 import asura.app.AppErrorMessages
-import asura.app.api.BaseApi.OkApiRes
 import asura.app.api.model.TestCase
 import asura.common.model.{ApiRes, ApiResError}
 import asura.common.util.StringUtils
@@ -17,6 +16,7 @@ import asura.core.model.BatchOperation.{BatchOperationLabels, BatchTransfer}
 import asura.core.model.{AggsQuery, QueryCase, SearchAfterCase}
 import asura.core.runtime.RuntimeContext
 import asura.core.util.{JacksonSupport, JsonPathUtils}
+import asura.play.api.BaseApi.OkApiRes
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 

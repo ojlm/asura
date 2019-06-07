@@ -15,21 +15,26 @@ def asuraProjects(id: String) = Project(id, file(id))
 
 lazy val app = asuraProjects("asura-app")
   .enablePlugins(PlayScala, SwaggerPlugin)
-  .settings(libraryDependencies ++= appPlayDeps)
   .settings(releaseSettings: _*)
   .settings(publishArtifact in Compile := true)
   .dependsOn(
+    play % "compile->compile;test->test",
     common % "compile->compile;test->test",
     cluster % "compile->compile;test->test",
     core % "compile->compile;test->test",
     namerd % "compile->compile;test->test",
     example % "compile->compile;test->test",
     dubbo % "compile->compile;test->test",
-  ).aggregate(common, cluster, core, dubbo, namerd, example)
+  ).aggregate(play, common, cluster, core, dubbo, namerd, example)
 
 lazy val example = asuraProjects("asura-example")
   .settings(libraryDependencies ++= Seq(guice))
   .dependsOn(core)
+
+lazy val play = asuraProjects("asura-play")
+  .settings(libraryDependencies ++= appPlayDeps)
+  .settings(publishSettings: _*)
+  .dependsOn(common % "compile->compile;test->test")
 
 lazy val common = asuraProjects("asura-common")
   .settings(libraryDependencies ++= commonDependencies)

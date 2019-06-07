@@ -1,10 +1,10 @@
 package asura.app.api
 
-import asura.app.api.BaseApi.OkApiRes
 import asura.common.model.ApiRes
 import asura.core.es.model._
 import asura.core.es.service.HomeService
 import asura.core.model.QueryHome
+import asura.play.api.BaseApi.OkApiRes
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 

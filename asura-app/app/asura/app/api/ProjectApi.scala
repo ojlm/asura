@@ -2,12 +2,12 @@ package asura.app.api
 
 import akka.actor.ActorSystem
 import asura.app.AppErrorMessages
-import asura.app.api.BaseApi.OkApiRes
 import asura.common.model.ApiResError
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, Project}
 import asura.core.es.service.ProjectService
 import asura.core.model.{QueryProject, TransferProject}
+import asura.play.api.BaseApi.OkApiRes
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 import play.api.Configuration

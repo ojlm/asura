@@ -1,5 +1,5 @@
 package asura.core.notify
 
-import asura.core.ErrorMessages
+import asura.common.exceptions.ErrorMessages.ErrorMessage
 
-case class NotifyResponse(isOk: Boolean, subscriber: String, error: ErrorMessages.ErrorMessage = null)
+case class NotifyResponse(isOk: Boolean, subscriber: String, error: ErrorMessage = null)

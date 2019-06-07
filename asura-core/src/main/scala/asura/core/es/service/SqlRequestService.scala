@@ -3,6 +3,7 @@ package asura.core.es.service
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 
+import asura.common.exceptions.ErrorMessages.ErrorMessage
 import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, RSAUtils, StringUtils}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
@@ -181,7 +182,7 @@ object SqlRequestService extends CommonService with BaseAggregationService {
     }
   }
 
-  def validate(doc: SqlRequest): ErrorMessages.ErrorMessage = {
+  def validate(doc: SqlRequest): ErrorMessage = {
     try {
       if (null == doc || null == doc.request) {
         ErrorMessages.error_EmptyRequestBody

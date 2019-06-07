@@ -5,6 +5,7 @@ import akka.stream.scaladsl.Source
 import akka.stream.{Materializer, OverflowStrategy}
 import asura.common.actor.SenderMessage
 import asura.core.job.actor.JobCiActor
+import asura.play.api.BaseApi
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 import play.api.http.ContentTypes

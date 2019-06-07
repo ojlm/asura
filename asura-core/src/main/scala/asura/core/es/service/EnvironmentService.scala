@@ -1,13 +1,14 @@
 package asura.core.es.service
 
+import asura.common.exceptions.ErrorMessages.ErrorMessage
 import asura.common.exceptions.RequestFailException
 import asura.common.util.StringUtils
 import asura.core.ErrorMessages
 import asura.core.auth.AuthManager
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.model.QueryEnv
 import asura.core.es.model.{DeleteDocResponse, Environment, FieldKeys, IndexDocResponse}
 import asura.core.es.{EsClient, EsConfig}
+import asura.core.model.QueryEnv
 import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
@@ -71,7 +72,7 @@ object EnvironmentService extends CommonService {
     }
   }
 
-  def validate(env: Environment): ErrorMessages.ErrorMessage = {
+  def validate(env: Environment): ErrorMessage = {
     if (StringUtils.isEmpty(env.summary)) {
       ErrorMessages.error_EmptySummary
     } else if (StringUtils.isEmpty(env.group)) {
@@ -97,7 +98,7 @@ object EnvironmentService extends CommonService {
     }
   }
 
-  private def validateEnvAuth(env: Environment): ErrorMessages.ErrorMessage = {
+  private def validateEnvAuth(env: Environment): ErrorMessage = {
     if (null != env.auth && env.auth.nonEmpty) {
       val errMsgs = ArrayBuffer[String]()
       val ret = env.auth.forall(auth => {

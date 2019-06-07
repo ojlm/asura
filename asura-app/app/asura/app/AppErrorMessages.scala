@@ -1,6 +1,5 @@
 package asura.app
 
-
 object AppErrorMessages {
   val error_EmptyProfile = "error_EmptyProfile"
   val error_TokenGeneratedError = "error_TokenGeneratedError"
