@@ -2,7 +2,7 @@ package asura.core.http
 
 import java.security.cert.X509Certificate
 
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
+import akka.http.scaladsl.model.{HttpRequest, HttpResponse, RequestTimeoutException}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.http.scaladsl.{Http, HttpsConnectionContext, UseHttp2}
 import asura.common.model.{ApiMsg, BoolErrorRes, BoolErrorTypeRes}
@@ -15,8 +15,8 @@ import com.typesafe.scalalogging.Logger
 import com.typesafe.sslconfig.akka.AkkaSSLConfig
 import javax.net.ssl.{KeyManager, SSLContext, X509TrustManager}
 
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
+import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.{Await, Future, Promise}
 
 object HttpEngine {
 
@@ -149,5 +149,31 @@ object HttpEngine {
     val context = SSLContext.getInstance("TLS")
     context.init(Array[KeyManager](), Array(NoCheckX509TrustManager), null)
     context
+  }
+
+  // code from: https://github.com/akka/akka-http/issues/622
+  def singleRequestWithTimeout(request: HttpRequest, responseTimeout: FiniteDuration): Future[HttpResponse] = {
+    val response = singleRequest(request)
+    val promise = Promise[HttpResponse]()
+    // stacktrace which point to here
+    val timeoutException = RequestTimeoutException(request, s"Response did not arrive within ${responseTimeout}")
+    val timeoutCancellable = system.scheduler.scheduleOnce(responseTimeout, new Runnable {
+      override def run(): Unit = promise.tryFailure(timeoutException)
+    })
+    response.onComplete {
+      case scala.util.Success(res) =>
+        timeoutCancellable.cancel()
+        try promise.success(res) catch {
+          case _: Throwable => res.discardEntityBytes()
+        }
+      case scala.util.Failure(t) =>
+        timeoutCancellable.cancel()
+        promise.tryFailure(t)
+    }
+    promise.completeWith(response.map { res =>
+      timeoutCancellable.cancel()
+      res
+    })
+    promise.future
   }
 }
