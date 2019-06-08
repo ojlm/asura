@@ -13,6 +13,20 @@ object ProcessUtils extends ProcessUtils {
 
   type ExecResult = (ExitValue, Stdout, Stderr)
 
+  trait AsyncIntResult {
+    def map[T](f: Int => T): Future[T]
+
+    def foreach(f: Int => Unit): Unit
+
+    def onComplete[T](pf: Try[Int] => T): Unit
+
+    def cancel: Cancelable
+
+    def isRunning: Boolean
+
+    def get: Future[Int]
+  }
+
   trait AsyncExecResult {
     def map[T](f: ExecResult => T): Future[T]
 
@@ -103,4 +117,42 @@ trait ProcessUtils {
     def get: String = sb.toString
   }
 
+  def execAsync(
+                 cmd: String,
+                 fout: String => Unit,
+                 ferr: String => Unit,
+               )(implicit ec: ExecutionContext): AsyncIntResult = {
+    val (fut, cancelable) = execAsync(cmd.split(" "), fout, ferr)
+
+    new AsyncIntResult {
+      override def map[T](f: Int => T): Future[T] = fut.map(f)
+
+      override def foreach(f: Int => Unit): Unit = fut.foreach(f)
+
+      override def onComplete[T](pf: Try[Int] => T): Unit = fut.onComplete(pf)
+
+      override def cancel: Cancelable = cancelable
+
+      override def isRunning: Boolean = !fut.isCompleted
+
+      override def get: Future[Int] = fut
+    }
+  }
+
+  def execAsync(
+                 cmd: Seq[String],
+                 fout: String => Unit,
+                 ferr: String => Unit,
+               )(implicit ec: ExecutionContext): (Future[Int], Cancelable) = {
+    val p = Promise[Int]
+
+    val process = Process(cmd).run(ProcessLogger(fout, ferr))
+    p.tryCompleteWith(Future(process.exitValue))
+
+    val cancelFunc = () => {
+      p.tryFailure(new ExecutionCanceled(s"Process: '${cmd.mkString(" ")}' canceled"))
+      process.destroy()
+    }
+    (p.future, cancelFunc)
+  }
 }
