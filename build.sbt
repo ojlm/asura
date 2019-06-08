@@ -14,7 +14,7 @@ def asuraProjects(id: String) = Project(id, file(id))
   .settings(commonSettings: _*)
 
 lazy val app = asuraProjects("asura-app")
-  .enablePlugins(PlayScala, SwaggerPlugin)
+  .enablePlugins(PlayScala)
   .settings(releaseSettings: _*)
   .settings(publishArtifact in Compile := true)
   .dependsOn(
@@ -65,12 +65,13 @@ lazy val namerd = asuraProjects("asura-namerd")
 
 lazy val gatling = asuraProjects("asura-gatling")
   .enablePlugins(PlayScala)
-  .settings(libraryDependencies ++= gatlingDependencies ++ commonPlayDeps)
+  .settings(libraryDependencies ++= gatlingDependencies)
   .dependsOn(
     common % "compile->compile;test->test",
     cluster % "compile->compile;test->test",
+    play % "compile->compile;test->test",
   )
-  .aggregate(common, cluster)
+  .aggregate(common, cluster, play)
 
 // release
 val username = "asura-pro"
