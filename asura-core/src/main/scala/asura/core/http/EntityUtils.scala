@@ -29,7 +29,7 @@ object EntityUtils {
             byteString = ByteString(context.renderBodyAsString(body.get.data))
           }
         case HttpContentTypes.X_WWW_FORM_URLENCODED =>
-          contentType = HttpContentTypes.`x-www-form-urlencoded(UTF-8)`
+          contentType = ContentTypes.`application/x-www-form-urlencoded`
           val body = request.body.find(_.contentType == HttpContentTypes.X_WWW_FORM_URLENCODED)
           if (body.nonEmpty) {
             var bodyStr: String = null
