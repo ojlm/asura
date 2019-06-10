@@ -14,6 +14,7 @@ case class AggsQuery(
                       interval: String = null,
                       termsField: String = null,
                       dateRange: String = null,
+                      `type`: String = null,
                       size: Int = 10,
                       var types: Seq[String] = null,
                     ) {
