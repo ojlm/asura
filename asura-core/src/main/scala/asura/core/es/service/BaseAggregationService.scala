@@ -106,6 +106,7 @@ trait BaseAggregationService {
         esQueries += termQuery(FieldKeys.FIELD_CREATOR, aggs.creator)
       }
     }
+    if (StringUtils.isNotEmpty(aggs.`type`)) esQueries += termQuery(FieldKeys.FIELD_TYPE, aggs.`type`)
     if (StringUtils.isNotEmpty(aggs.creatorPrefix)) {
       if (isActivity) {
         esQueries += wildcardQuery(FieldKeys.FIELD_USER, s"${aggs.creatorPrefix}*")
