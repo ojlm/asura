@@ -1,12 +1,15 @@
 package asura.core.es.service
 
+import asura.common.exceptions.ErrorMessages.ErrorMessage
 import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
+import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.model._
 import asura.core.es.service.BaseAggregationService._
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.model.{AggsItem, AggsQuery, QueryFavorite}
+import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
@@ -17,39 +20,63 @@ import scala.concurrent.Future
 
 object FavoriteService extends CommonService with BaseAggregationService {
 
+  def getById(id: String): Future[Favorite] = {
+    EsClient.esClient.execute {
+      search(Favorite.Index).query(idsQuery(id)).size(1)
+    }.map(res => {
+      if (res.isSuccess && res.result.nonEmpty) {
+        val hit = res.result.hits.hits(0)
+        JacksonSupport.parse(hit.sourceAsString, classOf[Favorite])
+      } else {
+        throw ErrorMessages.error_EmptyId.toException
+      }
+    })
+  }
+
   def index(item: Favorite): Future[IndexDocResponse] = {
-    if (null == item && StringUtils.hasEmpty(item.group, item.project, item.user,
-      item.`type`, item.targetId, item.targetType, item.summary)
-    ) {
-      FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
+    val error = validate(item)
+    if (null != error) {
+      error.toFutureFail
     } else {
+      item.id = item.generateLogicId()
       EsClient.esClient.execute {
         indexInto(Favorite.Index / EsConfig.DefaultType)
           .doc(item)
-          .id(item.generateDocId())
           .refresh(RefreshPolicy.WAIT_UNTIL)
       }.map(toIndexDocResponse(_))
     }
   }
 
-  def deleteDoc(id: String): Future[DeleteDocResponse] = {
-    if (StringUtils.isEmpty(id)) {
-      FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
+  def validate(item: Favorite): ErrorMessage = {
+    if (null == item || StringUtils.hasEmpty(item.group, item.project, item.user,
+      item.`type`, item.targetId, item.targetType, item.summary)) {
+      ErrorMessages.error_InvalidParams
     } else {
-      EsClient.esClient.execute {
-        delete(id).from(Favorite.Index / EsConfig.DefaultType)
-      }.map(toDeleteDocResponse(_))
+      null
     }
   }
 
-  def existDoc(id: String): Future[Boolean] = {
+  def getByLogicId(id: String) = {
     if (StringUtils.isEmpty(id)) {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
       EsClient.esClient.execute {
-        exists(id, Favorite.Index, EsConfig.DefaultType)
-      }.map(res => res.result)
+        search(Favorite.Index)
+          .query(boolQuery().must(termQuery(FieldKeys.FIELD_ID, id)))
+          .size(1)
+      }
     }
+  }
+
+  def check(docId: String, value: Boolean, summary: String = null) = {
+    EsClient.esClient.execute {
+      val m = if (value) {
+        Map(FieldKeys.FIELD_CHECKED -> value, FieldKeys.FIELD_SUMMARY -> summary)
+      } else {
+        Map(FieldKeys.FIELD_CHECKED -> value)
+      }
+      update(docId).in(Favorite.Index / EsConfig.DefaultType).doc(m)
+    }.map(toUpdateDocResponse(_))
   }
 
   def queryFavorite(query: QueryFavorite) = {

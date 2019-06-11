@@ -152,6 +152,7 @@ object FieldKeys {
   val FIELD_LB_ALGORITHM = "lbAlgorithm"
   val FIELD_TARGET_TYPE = "targetType"
   val FIELD_JOB = "job"
+  val FIELD_CHECKED = "checked"
 
   val FIELD_OBJECT_REQUEST_HOST = "request.host"
   val FIELD_OBJECT_REQUEST_PORT = "request.port"

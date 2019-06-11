@@ -5,6 +5,7 @@ import asura.core.es.EsConfig
 import com.sksamuel.elastic4s.mappings._
 
 case class Favorite(
+                     var id: String, // logic id for checking existence
                      val group: String,
                      val project: String,
                      val summary: String,
@@ -12,11 +13,19 @@ case class Favorite(
                      var `type`: String,
                      var targetType: String, // target resource type
                      val targetId: String,
+                     var checked: Boolean = false, // at once the doc is created it will not be deleted
                      var timestamp: String = DateUtils.nowDateTime,
                      var data: Map[String, Any] = null,
                    ) {
 
-  def generateDocId() = s"${group}_${project}_${user}_${`type`}_${targetType}_${targetId}"
+  def generateLogicId() = {
+    if (Favorite.TYPE_TOP_TOP.equals(`type`)) {
+      // this type is user irrelevant
+      s"${group}_${project}_${`type`}_${targetType}_${targetId}"
+    } else {
+      s"${group}_${project}_${user}_${`type`}_${targetType}_${targetId}"
+    }
+  }
 }
 
 object Favorite extends IndexSetting {
@@ -35,6 +44,8 @@ object Favorite extends IndexSetting {
       KeywordField(name = FieldKeys.FIELD_TYPE),
       KeywordField(name = FieldKeys.FIELD_TARGET_TYPE),
       KeywordField(name = FieldKeys.FIELD_TARGET_ID),
+      KeywordField(name = FieldKeys.FIELD_ID),
+      BasicField(name = FieldKeys.FIELD_CHECKED, `type` = "boolean"),
       BasicField(name = FieldKeys.FIELD_TIMESTAMP, `type` = "date", format = Some(EsConfig.DateFormat)),
       ObjectField(name = FieldKeys.FIELD_DATA, dynamic = Some("false")),
     )
