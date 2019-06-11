@@ -1,6 +1,6 @@
 POST          /test               asura.app.api.SqlApi.test()
 GET           /:id                asura.app.api.SqlApi.getById(id)
-DELETE        /:id                asura.app.api.SqlApi.delete(id)
+DELETE        /:id                asura.app.api.SqlApi.delete(id, preview: Option[Boolean])
 POST          /update/:id         asura.app.api.SqlApi.update(id)
 PUT           /                   asura.app.api.SqlApi.put()
 POST          /query              asura.app.api.SqlApi.query()

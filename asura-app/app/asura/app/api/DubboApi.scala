@@ -3,21 +3,27 @@ package asura.app.api
 import akka.actor.ActorSystem
 import akka.pattern.ask
 import akka.util.Timeout
+import asura.app.AppErrorMessages
+import asura.core.ErrorMessages
 import asura.app.api.model.TestDubbo
+import asura.common.model.ApiResError
 import asura.common.util.StringUtils
 import asura.core.dubbo.DubboRunner
+import asura.core.es.EsResponse
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, DubboRequest}
-import asura.core.es.service.DubboRequestService
+import asura.core.es.service.{DubboRequestService, JobService, ScenarioService}
 import asura.core.model.QueryDubboRequest
 import asura.core.runtime.RuntimeContext
 import asura.core.util.{JacksonSupport, JsonPathUtils}
 import asura.core.{CoreConfig, RunnerActors}
 import asura.dubbo.actor.GenericServiceInvokerActor.{GetInterfaceMethodParams, GetInterfacesMessage, GetProvidersMessage}
+import asura.play.api.BaseApi.OkApiRes
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 import play.api.Configuration
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.ExecutionContext
 
 @Singleton
@@ -71,8 +77,32 @@ class DubboApi @Inject()(
     })
   }
 
-  def delete(id: String) = Action.async { implicit req =>
-    DubboRequestService.deleteDoc(id).toOkResult
+  def delete(id: String, preview: Option[Boolean]) = Action.async { implicit req =>
+    val caseIds = Seq(id)
+    val res = for {
+      s <- ScenarioService.containCase(caseIds)
+      j <- JobService.containCase(caseIds)
+    } yield (s, j)
+    res.flatMap(resTuple => {
+      val (scenarioRes, jobRes) = resTuple
+      if (scenarioRes.isSuccess && jobRes.isSuccess) {
+        if (preview.nonEmpty && preview.get) {
+          Future.successful(toActionResultFromAny(Map(
+            "scenario" -> EsResponse.toApiData(scenarioRes.result),
+            "job" -> EsResponse.toApiData(jobRes.result)
+          )))
+        } else {
+          if (scenarioRes.result.isEmpty && jobRes.result.isEmpty) {
+            DubboRequestService.deleteDoc(id).toOkResult
+          } else {
+            Future.successful(OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_CantDeleteCase))))
+          }
+        }
+      } else {
+        val errorRes = if (!scenarioRes.isSuccess) scenarioRes else jobRes
+        ErrorMessages.error_EsRequestFail(errorRes).toFutureFail
+      }
+    })
   }
 
   def put() = Action(parse.byteString).async { implicit req =>
