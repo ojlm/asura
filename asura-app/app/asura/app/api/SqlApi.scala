@@ -7,8 +7,8 @@ import asura.common.model.ApiResError
 import asura.common.util.StringUtils
 import asura.core.es.EsResponse
 import asura.core.es.actor.ActivitySaveActor
-import asura.core.es.model.{Activity, SqlRequest}
-import asura.core.es.service.{JobService, ScenarioService, SqlRequestService}
+import asura.core.es.model.{Activity, ScenarioStep, SqlRequest}
+import asura.core.es.service.{DubboRequestService, JobService, ScenarioService, SqlRequestService}
 import asura.core.model.QuerySqlRequest
 import asura.core.runtime.RuntimeContext
 import asura.core.sql.SqlRunner
@@ -18,6 +18,7 @@ import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 import play.api.Configuration
 import asura.core.ErrorMessages
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.ExecutionContext
 
@@ -56,29 +57,21 @@ class SqlApi @Inject()(
   }
 
   def delete(id: String, preview: Option[Boolean]) = Action.async { implicit req =>
-    val caseIds = Seq(id)
-    val res = for {
-      s <- ScenarioService.containCase(caseIds)
-      j <- JobService.containCase(caseIds)
-    } yield (s, j)
-    res.flatMap(resTuple => {
-      val (scenarioRes, jobRes) = resTuple
-      if (scenarioRes.isSuccess && jobRes.isSuccess) {
+    ScenarioService.containSteps(Seq(id), ScenarioStep.TYPE_SQL).flatMap(res => {
+      if (res.isSuccess) {
         if (preview.nonEmpty && preview.get) {
           Future.successful(toActionResultFromAny(Map(
-            "scenario" -> EsResponse.toApiData(scenarioRes.result),
-            "job" -> EsResponse.toApiData(jobRes.result)
+            "scenario" -> EsResponse.toApiData(res.result)
           )))
         } else {
-          if (scenarioRes.result.isEmpty && jobRes.result.isEmpty) {
+          if (res.result.isEmpty) {
             SqlRequestService.deleteDoc(id).toOkResult
           } else {
             Future.successful(OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_CantDeleteCase))))
           }
         }
       } else {
-        val errorRes = if (!scenarioRes.isSuccess) scenarioRes else jobRes
-        ErrorMessages.error_EsRequestFail(errorRes).toFutureFail
+        ErrorMessages.error_EsRequestFail(res).toFutureFail
       }
     })
   }

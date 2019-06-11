@@ -9,7 +9,7 @@ import asura.core.ErrorMessages
 import asura.core.assertion.Assertions
 import asura.core.es.EsResponse
 import asura.core.es.actor.ActivitySaveActor
-import asura.core.es.model.{Activity, HttpCaseRequest}
+import asura.core.es.model.{Activity, HttpCaseRequest, ScenarioStep}
 import asura.core.es.service._
 import asura.core.http.HttpRunner
 import asura.core.model.BatchOperation.{BatchOperationLabels, BatchTransfer}
@@ -39,7 +39,7 @@ class HttpCaseApi @Inject()(implicit system: ActorSystem,
   def delete(id: String, preview: Option[Boolean]) = Action.async { implicit req =>
     val caseIds = Seq(id)
     val res = for {
-      s <- ScenarioService.containCase(caseIds)
+      s <- ScenarioService.containSteps(caseIds, ScenarioStep.TYPE_HTTP)
       j <- JobService.containCase(caseIds)
     } yield (s, j)
     res.flatMap(resTuple => {
