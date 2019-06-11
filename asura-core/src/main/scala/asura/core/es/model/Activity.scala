@@ -55,4 +55,6 @@ object Activity extends IndexSetting {
   val TYPE_NEW_SQL = "new-sql"
   val TYPE_TEST_SQL = "test-sql"
   val TYPE_UPDATE_SQL = "update-sql"
+  val TYPE_TOP_TOP_CHECK = "top-top-check"
+  val TYPE_TOP_TOP_UNCHECK = "top-top-uncheck"
 }

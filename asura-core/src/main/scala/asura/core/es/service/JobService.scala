@@ -211,4 +211,17 @@ object JobService extends CommonService {
       Future.successful(Map.empty)
     }
   }
+
+  def getRelativesById(id: String): Future[Map[String, Any]] = {
+    geJobById(id).flatMap(job => {
+      val scenarioIds = if (null != job.jobData.scenario) {
+        job.jobData.scenario.map(_.id)
+      } else {
+        Nil
+      }
+      ScenarioService.getByIdsAsRawMap(scenarioIds).map(m => {
+        Map("job" -> job, "scenarios" -> m)
+      })
+    })
+  }
 }

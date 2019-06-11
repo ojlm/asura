@@ -59,6 +59,42 @@ object ScenarioService extends CommonService {
     }
   }
 
+  def getRelativesById(id: String): Future[Map[String, Any]] = {
+    getById(id).flatMap(response => {
+      if (response.isSuccess) {
+        if (response.result.nonEmpty) {
+          val scenarioDoc = EsResponse.toSingleApiData(response.result, true)
+          val steps = scenarioDoc.getOrElse(FieldKeys.FIELD_STEPS, Nil).asInstanceOf[Seq[Map[String, Any]]]
+          val httpSeq = ArrayBuffer[String]()
+          val dubboSeq = ArrayBuffer[String]()
+          val sqlSeq = ArrayBuffer[String]()
+          steps.foreach(step => {
+            val ty = step.getOrElse(FieldKeys.FIELD_TYPE, null).asInstanceOf[String]
+            val id = step.getOrElse(FieldKeys.FIELD_ID, null).asInstanceOf[String]
+            ty match {
+              case ScenarioStep.TYPE_HTTP => httpSeq += id
+              case ScenarioStep.TYPE_DUBBO => dubboSeq += id
+              case ScenarioStep.TYPE_SQL => sqlSeq += id
+              case _ =>
+            }
+          })
+          val res = for {
+            cs <- HttpCaseRequestService.getByIdsAsMap(httpSeq, true)
+            dubbo <- DubboRequestService.getByIdsAsMap(dubboSeq, true)
+            sql <- SqlRequestService.getByIdsAsMap(sqlSeq, true)
+          } yield (cs, dubbo, sql)
+          res.map(triple => {
+            Map("scenario" -> scenarioDoc, "case" -> triple._1, "dubbo" -> triple._2, "sql" -> triple._3)
+          })
+        } else {
+          ErrorMessages.error_IdNonExists.toFutureFail
+        }
+      } else {
+        throw ErrorMessages.error_EsRequestFail(response).toException
+      }
+    })
+  }
+
   def getByIds(ids: Seq[String]) = {
     EsClient.esClient.execute {
       search(Scenario.Index)
