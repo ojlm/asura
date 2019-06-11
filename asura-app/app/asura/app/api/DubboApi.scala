@@ -11,7 +11,7 @@ import asura.common.util.StringUtils
 import asura.core.dubbo.DubboRunner
 import asura.core.es.EsResponse
 import asura.core.es.actor.ActivitySaveActor
-import asura.core.es.model.{Activity, DubboRequest}
+import asura.core.es.model.{Activity, DubboRequest, ScenarioStep}
 import asura.core.es.service.{DubboRequestService, JobService, ScenarioService}
 import asura.core.model.QueryDubboRequest
 import asura.core.runtime.RuntimeContext
@@ -78,29 +78,21 @@ class DubboApi @Inject()(
   }
 
   def delete(id: String, preview: Option[Boolean]) = Action.async { implicit req =>
-    val caseIds = Seq(id)
-    val res = for {
-      s <- ScenarioService.containCase(caseIds)
-      j <- JobService.containCase(caseIds)
-    } yield (s, j)
-    res.flatMap(resTuple => {
-      val (scenarioRes, jobRes) = resTuple
-      if (scenarioRes.isSuccess && jobRes.isSuccess) {
+    ScenarioService.containSteps(Seq(id), ScenarioStep.TYPE_DUBBO).flatMap(res => {
+      if (res.isSuccess) {
         if (preview.nonEmpty && preview.get) {
           Future.successful(toActionResultFromAny(Map(
-            "scenario" -> EsResponse.toApiData(scenarioRes.result),
-            "job" -> EsResponse.toApiData(jobRes.result)
+            "scenario" -> EsResponse.toApiData(res.result)
           )))
         } else {
-          if (scenarioRes.result.isEmpty && jobRes.result.isEmpty) {
+          if (res.result.isEmpty) {
             DubboRequestService.deleteDoc(id).toOkResult
           } else {
             Future.successful(OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_CantDeleteCase))))
           }
         }
       } else {
-        val errorRes = if (!scenarioRes.isSuccess) scenarioRes else jobRes
-        ErrorMessages.error_EsRequestFail(errorRes).toFutureFail
+        ErrorMessages.error_EsRequestFail(res).toFutureFail
       }
     })
   }
