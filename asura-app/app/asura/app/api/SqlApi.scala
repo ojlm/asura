@@ -1,19 +1,25 @@
 package asura.app.api
 
 import akka.actor.ActorSystem
+import asura.app.AppErrorMessages
 import asura.app.api.model.TestSql
+import asura.common.model.ApiResError
 import asura.common.util.StringUtils
+import asura.core.es.EsResponse
 import asura.core.es.actor.ActivitySaveActor
-import asura.core.es.model.{Activity, SqlRequest}
-import asura.core.es.service.SqlRequestService
+import asura.core.es.model.{Activity, ScenarioStep, SqlRequest}
+import asura.core.es.service.{DubboRequestService, JobService, ScenarioService, SqlRequestService}
 import asura.core.model.QuerySqlRequest
 import asura.core.runtime.RuntimeContext
 import asura.core.sql.SqlRunner
 import asura.core.util.{JacksonSupport, JsonPathUtils}
+import asura.play.api.BaseApi.OkApiRes
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 import play.api.Configuration
+import asura.core.ErrorMessages
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.ExecutionContext
 
 @Singleton
@@ -50,8 +56,24 @@ class SqlApi @Inject()(
     })
   }
 
-  def delete(id: String) = Action.async { implicit req =>
-    SqlRequestService.deleteDoc(id).toOkResult
+  def delete(id: String, preview: Option[Boolean]) = Action.async { implicit req =>
+    ScenarioService.containSteps(Seq(id), ScenarioStep.TYPE_SQL).flatMap(res => {
+      if (res.isSuccess) {
+        if (preview.nonEmpty && preview.get) {
+          Future.successful(toActionResultFromAny(Map(
+            "scenario" -> EsResponse.toApiData(res.result)
+          )))
+        } else {
+          if (res.result.isEmpty) {
+            SqlRequestService.deleteDoc(id).toOkResult
+          } else {
+            Future.successful(OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_CantDeleteCase))))
+          }
+        }
+      } else {
+        ErrorMessages.error_EsRequestFail(res).toFutureFail
+      }
+    })
   }
 
   def put() = Action(parse.byteString).async { implicit req =>
