@@ -154,6 +154,7 @@ object FieldKeys {
   val FIELD_JOB = "job"
   val FIELD_CHECKED = "checked"
 
+  val FIELD_OBJECT_REQUEST_PROTOCOL = "request.protocol"
   val FIELD_OBJECT_REQUEST_HOST = "request.host"
   val FIELD_OBJECT_REQUEST_PORT = "request.port"
   val FIELD_OBJECT_REQUEST_URLPATH = "request.urlPath"
