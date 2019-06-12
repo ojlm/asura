@@ -1,6 +1,7 @@
 package asura.core.es.model
 
 import asura.common.util.StringUtils
+import asura.core.es.model.VariablesImportItem.ExtraData
 import com.fasterxml.jackson.annotation.JsonIgnore
 
 /**
@@ -19,6 +20,8 @@ case class VariablesImportItem(
                                 scope: String,
                                 value: Object,
                                 description: String,
+                                `type`: String = null,
+                                extra: ExtraData = null,
                                 enabled: Boolean = true,
                                 function: String = null,
                               ) {
@@ -27,4 +30,16 @@ case class VariablesImportItem(
   def isValid(): Boolean = {
     !StringUtils.hasEmpty(name, scope) && null != value && enabled
   }
+}
+
+object VariablesImportItem {
+
+  val TYPE_ENUM = "enum"
+
+  /** data for type value
+    *
+    * @param options when the type is [[TYPE_ENUM]]
+    */
+  case class ExtraData(options: Seq[KeyValueObject])
+
 }

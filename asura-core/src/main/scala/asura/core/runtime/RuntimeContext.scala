@@ -158,8 +158,20 @@ case class RuntimeContext(
         for {
           _ <- futureRc
           next <- {
-            val futureValue = if (null != item.value && StringUtils.isNotEmpty(item.function)) {
-              evaluateValue(item.value, item.function)
+            val futureValue = if (null != item.value) {
+              val value = if (VariablesImportItem.TYPE_ENUM.equals(item.`type`)
+                && null != item.extra && null != item.extra.options
+              ) {
+                val kvOpt = item.extra.options.find(kv => item.value.equals(kv.key))
+                if (kvOpt.nonEmpty) kvOpt.get.value else item.value
+              } else {
+                item.value
+              }
+              if (StringUtils.isNotEmpty(item.function)) {
+                evaluateValue(value, item.function)
+              } else {
+                Future.successful(value)
+              }
             } else {
               Future.successful(item.value)
             }
