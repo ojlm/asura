@@ -53,7 +53,7 @@ object DubboRequestService extends CommonService with BaseAggregationService {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
       EsClient.esClient.execute {
-        delete(id).from(DubboRequest.Index).refresh(RefreshPolicy.WAIT_UNTIL)
+        delete(id).from(DubboRequest.Index / EsConfig.DefaultType).refresh(RefreshPolicy.WAIT_UNTIL)
       }.map(toDeleteDocResponse(_))
     }
   }

@@ -167,10 +167,10 @@ object ScenarioService extends CommonService {
     }
   }
 
-  def containCase(caseIds: Seq[String]) = {
+  def containSteps(docsIds: Seq[String], stepType: String) = {
     val query = NestedQuery(FieldKeys.FIELD_STEPS, boolQuery().must(
-      termsQuery(FieldKeys.FIELD_NESTED_STEPS_ID, caseIds),
-      termQuery(FieldKeys.FIELD_NESTED_STEPS_TYPE, ScenarioStep.TYPE_HTTP)
+      termsQuery(FieldKeys.FIELD_NESTED_STEPS_ID, docsIds),
+      termQuery(FieldKeys.FIELD_NESTED_STEPS_TYPE, stepType)
     ))
     EsClient.esClient.execute {
       search(Scenario.Index).query(query)
