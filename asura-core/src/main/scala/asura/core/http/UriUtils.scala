@@ -6,9 +6,9 @@ import java.nio.charset.StandardCharsets
 import akka.http.scaladsl.model.Uri
 import asura.common.exceptions.InvalidStatusException
 import asura.common.util.StringUtils
-import asura.core.runtime.RuntimeContext
 import asura.core.es.model.HttpCaseRequest
 import asura.core.protocols.Protocols
+import asura.core.runtime.RuntimeContext
 import asura.core.util.StringTemplate
 
 object UriUtils {
@@ -18,7 +18,7 @@ object UriUtils {
   def toUri(cs: HttpCaseRequest, context: RuntimeContext): Uri = {
     Uri.from(
       scheme = StringUtils.notEmptyElse(cs.request.protocol, Protocols.HTTP),
-      host = cs.request.host,
+      host = context.renderSingleMacroAsString(URLDecoder.decode(cs.request.host, StandardCharsets.UTF_8.name())),
       port = if (cs.request.port < 0 || cs.request.port > 65535) 80 else cs.request.port,
       path = renderPath(URLDecoder.decode(cs.request.urlPath, StandardCharsets.UTF_8.name()), cs, context),
       queryString = buildQueryString(cs, context)
