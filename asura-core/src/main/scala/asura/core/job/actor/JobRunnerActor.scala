@@ -4,13 +4,13 @@ import akka.actor.{ActorRef, PoisonPill, Props, Status}
 import akka.pattern.{ask, pipe}
 import akka.util.Timeout
 import asura.common.actor._
-import asura.common.util.LogUtils
+import asura.common.util.{LogUtils, XtermUtils}
 import asura.core.CoreConfig
-import asura.core.es.model.JobReportData.ScenarioReportItemData
+import asura.core.es.model.JobReportData.{ReportStepItemStatus, ScenarioReportItemData}
 import asura.core.es.service.ScenarioService
 import asura.core.job.impl.RunCaseJob
 import asura.core.job.{JobExecDesc, JobReportItemStoreDataHelper}
-import asura.core.runtime.RuntimeContext
+import asura.core.runtime.{ControllerOptions, RuntimeContext}
 import asura.core.scenario.actor.ScenarioRunnerActor
 import asura.core.scenario.actor.ScenarioRunnerActor.ScenarioTestJobMessage
 
@@ -21,9 +21,10 @@ import scala.concurrent.Future
 /** Created by [[asura.core.job.actor.JobTestActor]] or [[asura.core.job.impl.RunCaseJob]].
   * This receive a `JobExecDesc` message and send it back after this is finished.
   *
-  * @param wsActor receive WebSocket message event
+  * @param wsActor    receive WebSocket message event
+  * @param controller this value may be null
   */
-class JobRunnerActor(wsActor: ActorRef) extends BaseActor {
+class JobRunnerActor(wsActor: ActorRef, controller: ControllerOptions) extends BaseActor {
 
   implicit val ec = context.dispatcher
   implicit val timeout: Timeout = CoreConfig.DEFAULT_JOB_TIMEOUT
@@ -44,11 +45,21 @@ class JobRunnerActor(wsActor: ActorRef) extends BaseActor {
         .flatMap(_ => buildScenarioTestJobMessages(execDesc))
         .map(messages => {
           this.scenarioTestJobMessages = messages
-          self ! 0
+          if (null != controller && controller.from > 0) {
+            skipSteps(0, controller.from)
+            self ! controller.from
+          } else {
+            self ! 0
+          }
         })
     case idx: Int =>
       if (idx < this.scenarioTestJobMessages.length) {
-        runScenario(idx) pipeTo self
+        if (null != controller && idx > controller.to) {
+          skipSteps(idx, this.scenarioTestJobMessages.length)
+          self ! this.scenarioTestJobMessages.length
+        } else {
+          runScenario(idx) pipeTo self
+        }
       } else {
         this.resultReceiver ! this.execDesc
         self ! PoisonPill
@@ -83,6 +94,16 @@ class JobRunnerActor(wsActor: ActorRef) extends BaseActor {
     }
   }
 
+  private def skipSteps(idx: Int, until: Int): Unit = {
+    for (i <- idx.until(until)) {
+      val (_, message) = this.scenarioTestJobMessages(i)
+      val log = s"[JOB][${execDesc.report.jobName}][SCN] ${message.summary} ${
+        XtermUtils.yellowWrap(ReportStepItemStatus.STATUS_SKIPPED)
+      }"
+      if (null != wsActor) wsActor ! NotifyActorEvent(log)
+    }
+  }
+
   private def buildScenarioTestJobMessages(execDesc: JobExecDesc): Future[Seq[(String, ScenarioTestJobMessage)]] = {
     val job = execDesc.job
     val scenarioDocs = job.jobData.scenario
@@ -110,7 +131,7 @@ class JobRunnerActor(wsActor: ActorRef) extends BaseActor {
 
 object JobRunnerActor {
 
-  def props(wsActor: ActorRef) = Props(new JobRunnerActor(wsActor))
+  def props(wsActor: ActorRef, controller: ControllerOptions) = Props(new JobRunnerActor(wsActor, controller))
 
   val DEFAULT_SCENARIO_NAME = "INNER"
 

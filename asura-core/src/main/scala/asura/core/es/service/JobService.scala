@@ -220,7 +220,7 @@ object JobService extends CommonService {
         Nil
       }
       ScenarioService.getByIdsAsRawMap(scenarioIds).map(m => {
-        Map("job" -> job, "scenarios" -> m)
+        Map("job" -> job, "scenarios" -> m, "jobId" -> id)
       })
     })
   }
