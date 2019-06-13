@@ -18,9 +18,9 @@ object UriUtils {
   def toUri(cs: HttpCaseRequest, context: RuntimeContext): Uri = {
     Uri.from(
       scheme = StringUtils.notEmptyElse(cs.request.protocol, Protocols.HTTP),
-      host = context.renderSingleMacroAsString(URLDecoder.decode(cs.request.host, StandardCharsets.UTF_8.name())),
+      host = context.renderSingleMacroAsString(URLDecoder.decode(cs.request.host, UTF8)),
       port = if (cs.request.port < 0 || cs.request.port > 65535) 80 else cs.request.port,
-      path = renderPath(URLDecoder.decode(cs.request.urlPath, StandardCharsets.UTF_8.name()), cs, context),
+      path = renderPath(URLDecoder.decode(cs.request.urlPath, UTF8), cs, context),
       queryString = buildQueryString(cs, context)
     )
   }
@@ -68,12 +68,12 @@ object UriUtils {
         val sb = StringBuilder.newBuilder
         for (param <- params if param.enabled) {
           val key = if (StringUtils.isNotEmpty(param.key)) {
-            URLEncoder.encode(param.key, StandardCharsets.UTF_8.name())
+            URLEncoder.encode(param.key, UTF8)
           } else {
             StringUtils.EMPTY
           }
           val value = if (StringUtils.isNotEmpty(param.value)) {
-            URLEncoder.encode(context.renderSingleMacroAsString(param.value), StandardCharsets.UTF_8.name())
+            URLEncoder.encode(context.renderSingleMacroAsString(param.value), UTF8)
           } else {
             StringUtils.EMPTY
           }
