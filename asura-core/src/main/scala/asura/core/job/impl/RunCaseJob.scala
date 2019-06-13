@@ -49,7 +49,7 @@ object RunCaseJob extends JobBase {
     } yield execDesc
     */
     import CoreConfig.DEFAULT_JOB_TIMEOUT
-    val runner = CoreConfig.system.actorOf(JobRunnerActor.props(null))
+    val runner = CoreConfig.system.actorOf(JobRunnerActor.props(null, null))
     (runner ? execDesc).map(_ => execDesc)
   }
 

@@ -15,7 +15,7 @@ import asura.core.es.service.{DubboRequestService, HttpCaseRequestService, SqlRe
 import asura.core.http.{HttpRequestReportModel, HttpResult, HttpRunner}
 import asura.core.job.actor.JobReportDataItemSaveActor.SaveReportDataHttpItemMessage
 import asura.core.job.{JobReportItemResultEvent, JobReportItemStoreDataHelper}
-import asura.core.runtime.{AbstractResult, ContextOptions, RuntimeContext}
+import asura.core.runtime.{AbstractResult, ContextOptions, ControllerOptions, RuntimeContext}
 import asura.core.scenario.actor.ScenarioRunnerActor.{ScenarioTestData, ScenarioTestJobMessage, ScenarioTestWebMessage}
 import asura.core.sql.SqlReportModel.SqlRequestReportModel
 import asura.core.sql.{SqlResult, SqlRunner}
@@ -48,6 +48,7 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
   var jobActor: ActorRef = null
   var storeHelper: JobReportItemStoreDataHelper = null
 
+  var controller: ControllerOptions = null
   var exports: Seq[VariablesExportItem] = Nil
 
   override def receive: Receive = {
@@ -58,16 +59,22 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
   }
 
   private def doTheTest(): Receive = {
-    case ScenarioTestWebMessage(summary, steps, options, imports, exports) =>
+    case ScenarioTestWebMessage(summary, steps, options, imports, exports, controller) =>
       this.scenarioReportItem.title = summary
       this.runtimeContext = RuntimeContext(options = options)
+      this.controller = controller
       this.exports = exports
       this.steps = steps
       this.runtimeContext.evaluateImportsVariables(imports)
         .flatMap(_ => getScenarioTestData(steps))
         .map(stepsData => {
           this.stepsData = stepsData
-          self ! 0
+          if (null != controller && controller.from > 0) {
+            skipSteps(0, controller.from)
+            self ! controller.from
+          } else {
+            self ! 0
+          }
         })
     case ScenarioTestJobMessage(summary, steps, storeHelper, runtimeContext, imports, exports) =>
       this.jobActor = sender()
@@ -84,7 +91,12 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
         })
     case idx: Int =>
       if (idx < this.steps.length) {
-        executeStep(idx) pipeTo self
+        if (null != controller && idx > controller.to) {
+          skipSteps(idx, this.steps.length)
+          self ! this.steps.length
+        } else {
+          executeStep(idx) pipeTo self
+        }
       } else {
         if (null != wsActor) {
           val msg = s"[SCN][${this.scenarioReportItem.title}] ${
@@ -235,7 +247,7 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
         this.scenarioReportItem.markFail()
         if (this.failFast) {
           sendCurrentToWsActor(XtermUtils.redWrap(ReportStepItemStatus.STATUS_FAIL))
-          skipLeftSteps(idx + 1)
+          skipSteps(idx + 1, this.steps.length)
           this.steps.length
         } else {
           sendCurrentToWsActor(XtermUtils.redWrap(ReportStepItemStatus.STATUS_FAIL))
@@ -263,15 +275,15 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
     }
     this.scenarioReportItem.markFail()
     if (this.failFast) {
-      skipLeftSteps(idx + 1)
+      skipSteps(idx + 1, this.steps.length)
       this.steps.length
     } else {
       idx + 1
     }
   }
 
-  private def skipLeftSteps(idx: Int): Unit = {
-    for (i <- idx.until(this.steps.length)) {
+  private def skipSteps(idx: Int, until: Int): Unit = {
+    for (i <- idx.until(until)) {
       val step = this.steps(i)
       val title = step.`type` match {
         case ScenarioStep.TYPE_HTTP =>
@@ -367,6 +379,7 @@ object ScenarioRunnerActor {
                                      options: ContextOptions,
                                      imports: Seq[VariablesImportItem],
                                      exports: Seq[VariablesExportItem],
+                                     controller: ControllerOptions = null
                                    )
 
   // from job

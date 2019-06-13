@@ -1,6 +1,6 @@
 package asura.core.job.actor
 
-import akka.actor.{ActorRef, PoisonPill, Props, Status}
+import akka.actor.{ActorRef, Props, Status}
 import akka.pattern.{ask, pipe}
 import akka.util.Timeout
 import asura.common.actor._
@@ -10,7 +10,7 @@ import asura.core.es.model.{JobData, JobReport, VariablesImportItem}
 import asura.core.es.service.JobReportService
 import asura.core.job.actor.JobTestActor.JobTestMessage
 import asura.core.job.{JobCenter, JobExecDesc, JobMeta}
-import asura.core.runtime.ContextOptions
+import asura.core.runtime.{ContextOptions, ControllerOptions}
 
 class JobTestActor(user: String, out: ActorRef) extends BaseActor {
 
@@ -24,7 +24,7 @@ class JobTestActor(user: String, out: ActorRef) extends BaseActor {
   }
 
   def handleRequest(wsActor: ActorRef): Receive = {
-    case JobTestMessage(jobId, jobMeta, jobData, imports) =>
+    case JobTestMessage(jobId, jobMeta, jobData, imports, controller) =>
       val jobOpt = JobCenter.classAliasJobMap.get(jobMeta.getJobAlias())
       if (jobOpt.isEmpty) {
         wsActor ! ErrorActorEvent(s"Can't find job implementation of ${jobMeta.getJobAlias()}")
@@ -42,7 +42,7 @@ class JobTestActor(user: String, out: ActorRef) extends BaseActor {
             user,
             imports
           ).map(jobExecDesc => {
-            val runner = context.actorOf(JobRunnerActor.props(wsActor))
+            val runner = context.actorOf(JobRunnerActor.props(wsActor, controller))
             (runner.ask(jobExecDesc)(timeout, self)) pipeTo self
           }).recover {
             case t: Throwable =>
@@ -88,6 +88,12 @@ object JobTestActor {
 
   def props(user: String, out: ActorRef = null) = Props(new JobTestActor(user, out))
 
-  case class JobTestMessage(jobId: String, jobMeta: JobMeta, jobData: JobData, imports: Seq[VariablesImportItem])
+  case class JobTestMessage(
+                             jobId: String,
+                             jobMeta: JobMeta,
+                             jobData: JobData,
+                             imports: Seq[VariablesImportItem],
+                             controller: ControllerOptions,
+                           )
 
 }
