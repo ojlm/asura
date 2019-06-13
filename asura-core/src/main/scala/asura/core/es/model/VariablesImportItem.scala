@@ -13,6 +13,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
   * @param value       the value
   * @param description some description
   * @param enabled     enabled
+  * @param exposed     does exposed to toptop
   * @param function    transform function
   */
 case class VariablesImportItem(
@@ -23,6 +24,7 @@ case class VariablesImportItem(
                                 `type`: String = null,
                                 extra: ExtraData = null,
                                 enabled: Boolean = true,
+                                exposed: Boolean = true,
                                 function: String = null,
                               ) {
 
