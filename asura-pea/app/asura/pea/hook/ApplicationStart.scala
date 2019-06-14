@@ -1,7 +1,6 @@
-package asura.gatling.hook
+package asura.pea.hook
 
 import akka.actor.ActorSystem
-import asura.cluster.ClusterManager
 import javax.inject.{Inject, Singleton}
 import play.api.Configuration
 import play.api.inject.ApplicationLifecycle
@@ -15,12 +14,9 @@ class ApplicationStart @Inject()(
                                   configuration: Configuration,
                                 ) {
 
-  ClusterManager.init(config = configuration.underlying, actorSystem = system)
-
   // add stop hook
   lifecycle.addStopHook { () =>
     Future {
-      ClusterManager.shutdown()
     }(system.dispatcher)
   }
 }
