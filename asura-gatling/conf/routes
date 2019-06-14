@@ -1,2 +1,0 @@
-GET        /               asura.gatling.api.HomeApi.index()
-GET        /members        asura.gatling.api.HomeApi.getClusterMembers()

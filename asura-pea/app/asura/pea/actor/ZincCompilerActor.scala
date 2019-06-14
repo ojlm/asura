@@ -1,9 +1,9 @@
-package asura.gatling.actor
+package asura.pea.actor
 
 import akka.actor.Props
 import asura.common.actor.BaseActor
 import asura.common.util.ProcessUtils
-import asura.gatling.actor.ZincCompilerActor.CompileMessage
+import asura.pea.actor.ZincCompilerActor.CompileMessage
 
 import scala.concurrent.{ExecutionContext, Future}
 

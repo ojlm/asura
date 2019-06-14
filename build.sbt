@@ -6,8 +6,8 @@ import sbt._
 scalacOptions in ThisBuild ++= Seq("-feature", "-deprecation", "-language:postfixOps", "-language:higherKinds", "-language:implicitConversions")
 
 lazy val root = Project("asura-root", file("."))
-  .dependsOn(app, gatling)
-  .aggregate(app, gatling)
+  .dependsOn(app, pea)
+  .aggregate(app, pea)
 
 // Sub Projects
 def asuraProjects(id: String) = Project(id, file(id))
@@ -63,15 +63,14 @@ lazy val namerd = asuraProjects("asura-namerd")
   .settings(publishSettings: _*)
   .dependsOn(common % "compile->compile;test->test")
 
-lazy val gatling = asuraProjects("asura-gatling")
+lazy val pea = asuraProjects("asura-pea")
   .enablePlugins(PlayScala)
   .settings(libraryDependencies ++= gatlingDependencies)
   .dependsOn(
     common % "compile->compile;test->test",
-    cluster % "compile->compile;test->test",
     play % "compile->compile;test->test",
   )
-  .aggregate(common, cluster, play)
+  .aggregate(common, play)
 
 // release
 val username = "asura-pro"

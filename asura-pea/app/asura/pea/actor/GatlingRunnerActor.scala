@@ -1,8 +1,8 @@
-package asura.gatling.actor
+package asura.pea.actor
 
 import akka.actor.Props
 import asura.common.actor.BaseActor
-import asura.gatling.actor.GatlingRunnerActor.StartMessage
+import asura.pea.actor.GatlingRunnerActor.StartMessage
 import io.gatling.app.Gatling
 import io.gatling.core.config.GatlingPropertiesBuilder
 

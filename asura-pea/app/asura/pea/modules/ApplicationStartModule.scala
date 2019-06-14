@@ -1,6 +1,6 @@
-package asura.gatling.modules
+package asura.pea.modules
 
-import asura.gatling.hook.ApplicationStart
+import asura.pea.hook.ApplicationStart
 import com.google.inject.AbstractModule
 
 class ApplicationStartModule extends AbstractModule {
