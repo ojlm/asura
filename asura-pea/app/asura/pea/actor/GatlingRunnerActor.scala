@@ -3,7 +3,7 @@ package asura.pea.actor
 import akka.actor.Props
 import asura.common.actor.BaseActor
 import asura.pea.actor.GatlingRunnerActor.StartMessage
-import io.gatling.app.Gatling
+import io.gatling.app.PeaGatlingRunner
 import io.gatling.core.config.GatlingPropertiesBuilder
 
 import scala.collection.mutable
@@ -31,7 +31,7 @@ object GatlingRunnerActor {
   def props() = Props(new GatlingRunnerActor())
 
   def start(message: StartMessage): Int = {
-    Gatling.fromMap(message.toGatlingPropertiesMap)
+    PeaGatlingRunner.run(message.toGatlingPropertiesMap)
   }
 
 }
