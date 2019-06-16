@@ -6,7 +6,7 @@ import akka.util.Timeout
 import asura.common.actor._
 import asura.common.exceptions.WithDataException
 import asura.common.util.{FutureUtils, LogUtils, StringUtils, XtermUtils}
-import asura.core.assertion.engine.Statistic
+import asura.core.assertion.engine.{AssertionContext, Statistic}
 import asura.core.dubbo.DubboReportModel.DubboRequestReportModel
 import asura.core.dubbo.{DubboResult, DubboRunner}
 import asura.core.es.model.JobReportData.{JobReportStepItemData, ReportStepItemStatus, ScenarioReportItemData}
@@ -23,6 +23,7 @@ import asura.core.{CoreConfig, ErrorMessages}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 /** alive during a scenario
   *
@@ -90,7 +91,9 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
           self ! 0
         })
     case idx: Int =>
-      if (idx < this.steps.length) {
+      if (idx < 0) {
+        // do nothing, waiting for message which >= 0
+      } else if (idx < this.steps.length) {
         if (null != controller && idx > controller.to) {
           skipSteps(idx, this.steps.length)
           self ! this.steps.length
@@ -189,8 +192,78 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
         } else {
           handleEmptyStepData(idx, ScenarioStep.TYPE_SQL, step.id)
         }
+      case ScenarioStep.TYPE_DELAY => handleDelayStep(step, idx)
+      case ScenarioStep.TYPE_JUMP => handleJumpStep(step, idx)
       case _ => FutureUtils.requestFail(s"Unknown step type: ${step.`type`}")
     }
+  }
+
+  // jump to the target step when meet one of the conditions
+  private def handleJumpStep(step: ScenarioStep, idx: Int): Future[Int] = {
+    var next = idx + 1
+    if (null != step.data && null != step.data.jump && null != step.data.jump.conditions) {
+      val conditions = step.data.jump.conditions
+      if (conditions.nonEmpty) {
+        conditions.foldLeft(Future.successful(-1))((futureNum, condition) => {
+          for {
+            num <- futureNum
+            goNext <- {
+              if (num < 0 && null != condition && null != condition.assert &&
+                condition.assert.nonEmpty && condition.to > -1 && condition.to < this.steps.length
+              ) {
+                val statis = Statistic()
+                AssertionContext.eval(condition.assert, runtimeContext.rawContext, statis)
+                  .map(_ => if (statis.isSuccessful) {
+                    next = condition.to
+                    if (null != wsActor) {
+                      val jumpMsg = XtermUtils.blueWrap(s"jump to ${next}")
+                      val msg = s"${consoleLogPrefix(step.`type`, idx)} ${jumpMsg}"
+                      wsActor ! NotifyActorEvent(msg)
+                    }
+                    next
+                  } else {
+                    -1
+                  })
+              } else {
+                Future.successful(-1)
+              }
+            }
+          } yield goNext
+        }).map(_ => next)
+      } else {
+        Future.successful(next)
+      }
+    } else {
+      Future.successful(next)
+    }
+  }
+
+  // return -1 when need waiting
+  private def handleDelayStep(step: ScenarioStep, idx: Int): Future[Int] = {
+    var next = idx + 1
+    if (null != step.data && null != step.data.delay) {
+      val condition = step.data.delay
+      if (condition.value > 0) {
+        val duration = condition.timeUnit match {
+          case ScenarioStep.TIME_UNIT_MILLI => condition.value millis
+          case ScenarioStep.TIME_UNIT_SECOND => condition.value seconds
+          case ScenarioStep.TIME_UNIT_MINUTE => condition.value minutes
+          case _ => null
+        }
+        if (null != duration) {
+          next = -1
+          if (null != wsActor) {
+            val delayMsg = XtermUtils.blueWrap(s"delay ${duration.toString}")
+            val msg = s"${consoleLogPrefix(step.`type`, idx)} ${delayMsg}"
+            wsActor ! NotifyActorEvent(msg)
+          }
+          context.system.scheduler.scheduleOnce(duration, () => {
+            self ! (idx + 1)
+          })
+        }
+      }
+    }
+    Future.successful(next)
   }
 
   private def handleNormalResult(
@@ -353,6 +426,8 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
       case ScenarioStep.TYPE_HTTP => "HTTP "
       case ScenarioStep.TYPE_DUBBO => "DUBBO"
       case ScenarioStep.TYPE_SQL => "SQL  "
+      case ScenarioStep.TYPE_DELAY => "DELAY"
+      case ScenarioStep.TYPE_JUMP => "JUMP "
       case _ => stepType
     }
     val formattedIdx = if (-1 == idx) {
