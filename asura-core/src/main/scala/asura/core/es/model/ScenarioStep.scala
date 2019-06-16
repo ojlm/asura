@@ -26,11 +26,13 @@ object ScenarioStep {
 
   case class StepData(
                        delay: DelayCondition = null,
-                       jump: Seq[JumpCondition] = null,
+                       jump: JumpConditions = null,
                      )
 
   case class DelayCondition(value: Int, timeUnit: String)
 
   case class JumpCondition(assert: Map[String, Any] = null, to: Int = 0)
+
+  case class JumpConditions(conditions: Seq[JumpCondition])
 
 }
