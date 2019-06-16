@@ -31,7 +31,12 @@ object ScenarioStep {
 
   case class DelayCondition(value: Int, timeUnit: String)
 
-  case class JumpCondition(assert: Map[String, Any] = null, to: Int = 0)
+  case class JumpCondition(
+                            `type`: Int = 0, // 0: assert, 1 : script
+                            assert: Map[String, Any] = null,
+                            to: Int = 0,
+                            script: String = null, // which will return a integer
+                          )
 
   case class JumpConditions(conditions: Seq[JumpCondition])
 
