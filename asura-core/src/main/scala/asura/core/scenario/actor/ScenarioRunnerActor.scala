@@ -204,40 +204,37 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
   // jump to the target step when meet one of the conditions
   private def handleJumpStep(step: ScenarioStep, idx: Int): Future[Int] = {
     var jumpTo = idx + 1
-    if (null != step.data && null != step.data.jump && null != step.data.jump.conditions) {
-      val conditions = step.data.jump.conditions
-      if (conditions.nonEmpty) {
-        conditions.foldLeft(Future.successful(-1))((futureNum, condition) => {
+    if (null != step.data && null != step.data.jump) {
+      val jump = step.data.jump
+      if (jump.`type` == 0 && null != jump.conditions && jump.conditions.nonEmpty) {
+        step.data.jump.conditions.foldLeft(Future.successful(-1))((futureNum, condition) => {
           for {
             num <- futureNum
             goNext <- {
-              if (num < 0 && null != condition) {
-                if (condition.`type` == 0 && null != condition.assert && condition.assert.nonEmpty && condition.to > -1) {
-                  val statis = Statistic()
-                  AssertionContext.eval(condition.assert, runtimeContext.rawContext, statis)
-                    .map(_ => if (statis.isSuccessful) {
-                      jumpTo = sendJumpMsgAndGetJumpStep(condition.to, step, idx)
-                      jumpTo
-                    } else {
-                      -1
-                    })
-                } else if (condition.`type` == 1 && StringUtils.isNotEmpty(condition.script)) {
-                  Future.successful {
-                    val bindings = new util.HashMap[String, Any]()
-                    bindings.put(RuntimeContext.SELF_VARIABLE, runtimeContext.rawContext)
-                    val scriptResult = JavaScriptEngine.eval(condition.script, bindings).asInstanceOf[Integer]
-                    jumpTo = sendJumpMsgAndGetJumpStep(scriptResult, step, idx)
+              if (num < 0 && null != condition && null != condition.assert && condition.assert.nonEmpty && condition.to > -1) {
+                val statis = Statistic()
+                AssertionContext.eval(condition.assert, runtimeContext.rawContext, statis)
+                  .map(_ => if (statis.isSuccessful) {
+                    jumpTo = sendJumpMsgAndGetJumpStep(condition.to, step, idx)
                     jumpTo
-                  }
-                } else {
-                  Future.successful(-1)
-                }
+                  } else {
+                    -1
+                  })
               } else {
                 Future.successful(-1)
               }
             }
           } yield goNext
         }).map(_ => jumpTo)
+      } else if (jump.`type` == 1 && StringUtils.isNotEmpty(jump.script)) {
+        val script = jump.script
+        Future.successful {
+          val bindings = new util.HashMap[String, Any]()
+          bindings.put(RuntimeContext.SELF_VARIABLE, runtimeContext.rawContext)
+          val scriptResult = JavaScriptEngine.eval(script, bindings).asInstanceOf[Integer]
+          jumpTo = sendJumpMsgAndGetJumpStep(scriptResult, step, idx)
+          jumpTo
+        }
       } else {
         Future.successful(jumpTo)
       }
