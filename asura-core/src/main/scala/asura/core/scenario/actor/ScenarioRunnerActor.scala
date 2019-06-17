@@ -246,8 +246,9 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
   private def sendJumpMsgAndGetJumpStep(expect: Int, step: ScenarioStep, idx: Int): Int = {
     val jumpTo = if (expect < this.steps.length - 1) expect else this.steps.length - 1
     if (null != wsActor) {
-      val jumpMsg = XtermUtils.blueWrap(s"jump to ${jumpTo}")
-      val msg = s"${consoleLogPrefix(step.`type`, idx)} ${jumpMsg}"
+      val targetSummary = getStepSummary(this.steps(jumpTo))
+      val jumpMsg = XtermUtils.blueWrap(s"Jump to step [${jumpTo + 1}.${targetSummary}]")
+      val msg = s"${consoleLogPrefix(step.`type`, idx)}${jumpMsg}"
       wsActor ! NotifyActorEvent(msg)
     }
     jumpTo
@@ -268,8 +269,8 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
         if (null != duration) {
           next = -1
           if (null != wsActor) {
-            val delayMsg = XtermUtils.blueWrap(s"delay ${duration.toString}")
-            val msg = s"${consoleLogPrefix(step.`type`, idx)} ${delayMsg}"
+            val delayMsg = XtermUtils.blueWrap(s"Delay ${duration.toString} ...")
+            val msg = s"${consoleLogPrefix(step.`type`, idx)}${delayMsg}"
             wsActor ! NotifyActorEvent(msg)
           }
           context.system.scheduler.scheduleOnce(duration, () => {
@@ -451,6 +452,20 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
       s"[${idx + 1}] "
     }
     s"[SCN][${this.scenarioReportItem.title}][${XtermUtils.magentaWrap(formattedType)}]${formattedIdx}"
+  }
+
+  private def getStepSummary(step: ScenarioStep): String = {
+    val docOpt = step.`type` match {
+      case ScenarioStep.TYPE_HTTP => this.stepsData.http.get(step.id)
+      case ScenarioStep.TYPE_SQL => this.stepsData.sql.get(step.id)
+      case ScenarioStep.TYPE_DUBBO => this.stepsData.dubbo.get(step.id)
+      case _ => None
+    }
+    if (docOpt.nonEmpty) {
+      docOpt.get.summary
+    } else {
+      StringUtils.EMPTY
+    }
   }
 
   override def postStop(): Unit = {
