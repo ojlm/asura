@@ -87,6 +87,13 @@ object FavoriteService extends CommonService with BaseAggregationService {
     if (StringUtils.isNotEmpty(query.user)) esQueries += termQuery(FieldKeys.FIELD_USER, query.user)
     if (StringUtils.isNotEmpty(query.targetType)) esQueries += termQuery(FieldKeys.FIELD_TARGET_TYPE, query.targetType)
     if (StringUtils.isNotEmpty(query.targetId)) esQueries += termQuery(FieldKeys.FIELD_TARGET_ID, query.targetId)
+    if (StringUtils.isNotEmpty(query.checked)) {
+      query.checked match {
+        case "true" => esQueries += termQuery(FieldKeys.FIELD_CHECKED, true)
+        case "false" => esQueries += termQuery(FieldKeys.FIELD_CHECKED, false)
+        case _ =>
+      }
+    }
     EsClient.esClient.execute {
       search(Favorite.Index)
         .query(boolQuery().must(esQueries))
