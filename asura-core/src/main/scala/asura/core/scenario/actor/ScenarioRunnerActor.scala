@@ -1,14 +1,12 @@
 package asura.core.scenario.actor
 
-import java.util
-
 import akka.actor.{ActorRef, Props, Status}
 import akka.pattern.pipe
-import akka.util.Timeout
 import asura.common.actor._
 import asura.common.exceptions.WithDataException
 import asura.common.util.{FutureUtils, LogUtils, StringUtils, XtermUtils}
-import asura.core.assertion.engine.{AssertionContext, Statistic}
+import asura.core.ErrorMessages
+import asura.core.assertion.engine.Statistic
 import asura.core.dubbo.DubboReportModel.DubboRequestReportModel
 import asura.core.dubbo.{DubboResult, DubboRunner}
 import asura.core.es.model.JobReportData.{JobReportStepItemData, ReportStepItemStatus, ScenarioReportItemData}
@@ -19,35 +17,27 @@ import asura.core.job.actor.JobReportDataItemSaveActor.SaveReportDataHttpItemMes
 import asura.core.job.{JobReportItemResultEvent, JobReportItemStoreDataHelper}
 import asura.core.runtime.{AbstractResult, ContextOptions, ControllerOptions, RuntimeContext}
 import asura.core.scenario.actor.ScenarioRunnerActor.{ScenarioTestData, ScenarioTestJobMessage, ScenarioTestWebMessage}
-import asura.core.script.JavaScriptEngine
 import asura.core.sql.SqlReportModel.SqlRequestReportModel
 import asura.core.sql.{SqlResult, SqlRunner}
-import asura.core.{CoreConfig, ErrorMessages}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
-import scala.concurrent.duration._
 
 /** alive during a scenario
   *
   * @param scenarioId
   * @param failFast if `true`, when a step is failed the left steps will be skipped, steps are relative
   */
-class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends BaseActor {
+class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends ScenarioStepBasicActor {
 
-  implicit val timeout: Timeout = CoreConfig.DEFAULT_ACTOR_ASK_TIMEOUT
-  implicit val ec = context.dispatcher
+  var runtimeContext: RuntimeContext = null
+  var wsActor: ActorRef = null
 
   var steps: Seq[ScenarioStep] = Nil
   var stepsData: ScenarioTestData = null
-  var runtimeContext: RuntimeContext = null
   val stepsReportItems = ArrayBuffer[JobReportStepItemData]()
   var scenarioReportItem = ScenarioReportItemData(scenarioId, null, stepsReportItems)
 
-  // Actor which receive `asura.common.actor.ActorEvent` message.
-  // Console log and step result will be sent to this actor which will influence the web ui
-  // It should not be poisoned when running in a job
-  var wsActor: ActorRef = null
   // Parent actor if this is running in a job
   var jobActor: ActorRef = null
   var storeHelper: JobReportItemStoreDataHelper = null
@@ -201,85 +191,19 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
     }
   }
 
-  // jump to the target step when meet one of the conditions
-  private def handleJumpStep(step: ScenarioStep, idx: Int): Future[Int] = {
-    var jumpTo = idx + 1
-    if (null != step.data && null != step.data.jump) {
-      val jump = step.data.jump
-      if (jump.`type` == 0 && null != jump.conditions && jump.conditions.nonEmpty) {
-        step.data.jump.conditions.foldLeft(Future.successful(-1))((futureNum, condition) => {
-          for {
-            num <- futureNum
-            goNext <- {
-              if (num < 0 && null != condition && null != condition.assert && condition.assert.nonEmpty && condition.to > -1) {
-                val statis = Statistic()
-                AssertionContext.eval(condition.assert, runtimeContext.rawContext, statis)
-                  .map(_ => if (statis.isSuccessful) {
-                    jumpTo = sendJumpMsgAndGetJumpStep(condition.to, step, idx)
-                    jumpTo
-                  } else {
-                    -1
-                  })
-              } else {
-                Future.successful(-1)
-              }
-            }
-          } yield goNext
-        }).map(_ => jumpTo)
-      } else if (jump.`type` == 1 && StringUtils.isNotEmpty(jump.script)) {
-        val script = jump.script
-        Future.successful {
-          val bindings = new util.HashMap[String, Any]()
-          bindings.put(RuntimeContext.SELF_VARIABLE, runtimeContext.rawContext)
-          val scriptResult = JavaScriptEngine.eval(script, bindings).asInstanceOf[Integer]
-          jumpTo = sendJumpMsgAndGetJumpStep(scriptResult, step, idx)
-          jumpTo
-        }
-      } else {
-        Future.successful(jumpTo)
-      }
-    } else {
-      Future.successful(jumpTo)
-    }
-  }
 
-  private def sendJumpMsgAndGetJumpStep(expect: Int, step: ScenarioStep, idx: Int): Int = {
-    val jumpTo = if (expect < this.steps.length - 1) expect else this.steps.length - 1
+  override def sendJumpMsgAndGetJumpStep(expect: Int, step: ScenarioStep, idx: Int): Int = {
     if (null != wsActor) {
-      val targetSummary = getStepSummary(this.steps(jumpTo))
-      val jumpMsg = XtermUtils.blueWrap(s"Jump to step [${jumpTo + 1}.${targetSummary}]")
+      val jumpMsg = if (expect < 0 || expect > this.steps.length - 1) {
+        XtermUtils.redWrap(s"Can't jump to step [${expect}]")
+      } else {
+        val targetSummary = getStepSummary(this.steps(expect))
+        XtermUtils.blueWrap(s"Jump to step [${expect + 1}.${targetSummary}]")
+      }
       val msg = s"${consoleLogPrefix(step.`type`, idx)}${jumpMsg}"
       wsActor ! NotifyActorEvent(msg)
     }
-    jumpTo
-  }
-
-  // return -1 when need waiting
-  private def handleDelayStep(step: ScenarioStep, idx: Int): Future[Int] = {
-    var next = idx + 1
-    if (null != step.data && null != step.data.delay) {
-      val condition = step.data.delay
-      if (condition.value > 0) {
-        val duration = condition.timeUnit match {
-          case ScenarioStep.TIME_UNIT_MILLI => condition.value millis
-          case ScenarioStep.TIME_UNIT_SECOND => condition.value seconds
-          case ScenarioStep.TIME_UNIT_MINUTE => condition.value minutes
-          case _ => null
-        }
-        if (null != duration) {
-          next = -1
-          if (null != wsActor) {
-            val delayMsg = XtermUtils.blueWrap(s"Delay ${duration.toString} ...")
-            val msg = s"${consoleLogPrefix(step.`type`, idx)}${delayMsg}"
-            wsActor ! NotifyActorEvent(msg)
-          }
-          context.system.scheduler.scheduleOnce(duration, () => {
-            self ! (idx + 1)
-          })
-        }
-      }
-    }
-    Future.successful(next)
+    if (expect < 0 || expect > this.steps.length - 1) this.steps.length else expect
   }
 
   private def handleNormalResult(
@@ -292,7 +216,7 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
     // assertion successful or failed
     val stepItemData = JobReportStepItemData.parse(title, result)
     if (null != storeHelper) {
-      val itemDataId = s"${storeHelper.reportId}_${storeHelper.infix}_${idx}"
+      val itemDataId = storeHelper.generateItemId(idx, loopCount)
       stepItemData.itemId = itemDataId
       val dataItem = JobReportDataItem.parse(
         storeHelper.jobId,
@@ -437,7 +361,7 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
     })
   }
 
-  def consoleLogPrefix(stepType: String, idx: Int) = {
+  override def consoleLogPrefix(stepType: String, idx: Int) = {
     val formattedType = stepType match {
       case ScenarioStep.TYPE_HTTP => "HTTP "
       case ScenarioStep.TYPE_DUBBO => "DUBBO"

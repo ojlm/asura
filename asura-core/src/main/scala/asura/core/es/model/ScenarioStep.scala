@@ -1,6 +1,8 @@
 package asura.core.es.model
 
+import asura.common.util.StringUtils
 import asura.core.es.model.ScenarioStep.StepData
+import com.fasterxml.jackson.annotation.JsonIgnore
 
 case class ScenarioStep(
                          id: String,
@@ -8,7 +10,17 @@ case class ScenarioStep(
                          stored: Boolean = false, // do need to store in context
                          enabled: Boolean = true,
                          data: StepData = null,
-                       )
+                       ) {
+
+  @JsonIgnore
+  def isScenarioStep(): Boolean = {
+    if (StringUtils.isNotEmpty(id)) {
+      StringUtils.isEmpty(`type`) || ScenarioStep.TYPE_SCENARIO.equals(`type`)
+    } else {
+      false
+    }
+  }
+}
 
 object ScenarioStep {
 

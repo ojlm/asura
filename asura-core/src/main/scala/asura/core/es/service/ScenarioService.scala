@@ -14,8 +14,8 @@ import com.sksamuel.elastic4s.http.ElasticDsl.{bulk, delete, indexInto, _}
 import com.sksamuel.elastic4s.searches.queries.{NestedQuery, Query}
 import com.sksamuel.elastic4s.searches.sort.FieldSort
 
-import scala.collection.Iterable
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.{Iterable, mutable}
 import scala.concurrent.Future
 
 object ScenarioService extends CommonService {
@@ -126,6 +126,22 @@ object ScenarioService extends CommonService {
         } else {
           res.result.hits.hits.map(hit => (hit.id, JacksonSupport.parse(hit.sourceAsString, classOf[Scenario])))
         }
+      } else {
+        throw ErrorMessages.error_EsRequestFail(res).toException
+      }
+    })
+  }
+
+  def getScenariosByIdsAsMap(ids: Seq[String]): Future[Map[String, Scenario]] = {
+    getByIds(ids).map(res => {
+      val map = mutable.Map[String, Scenario]()
+      if (res.isSuccess) {
+        if (res.result.nonEmpty) {
+          res.result.hits.hits.foreach(hit =>
+            map += (hit.id -> JacksonSupport.parse(hit.sourceAsString, classOf[Scenario]))
+          )
+        }
+        map.toMap
       } else {
         throw ErrorMessages.error_EsRequestFail(res).toException
       }

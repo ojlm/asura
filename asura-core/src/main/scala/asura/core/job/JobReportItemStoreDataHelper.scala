@@ -2,7 +2,18 @@ package asura.core.job
 
 import akka.actor.ActorRef
 
-/**
-  * id = `${reportId}_${infix}_${array_index}`
-  */
-case class JobReportItemStoreDataHelper(reportId: String, infix: String, actorRef: ActorRef, jobId: String)
+case class JobReportItemStoreDataHelper(
+                                         reportId: String,
+                                         infix: String,
+                                         actorRef: ActorRef,
+                                         jobId: String
+                                       ) {
+  var jobLoopCount: Int = 0
+
+  /**
+    * id = `${reportId}_s${stepIndex}_${scenarioIndex}_${jobLoopCount}_{scenarioLoopCount}`
+    */
+  def generateItemId(scenarioIdx: Int, scenarioLoopCount: Int): String = {
+    s"${reportId}_${infix}_${scenarioIdx}_${jobLoopCount}_${scenarioLoopCount}"
+  }
+}
