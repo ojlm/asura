@@ -7,4 +7,5 @@ case class QueryFavorite(
                           user: String,
                           targetType: String,
                           targetId: String,
+                          checked: String,
                         ) extends QueryPage
