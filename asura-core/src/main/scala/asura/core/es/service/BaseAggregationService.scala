@@ -124,6 +124,13 @@ trait BaseAggregationService {
     }
     if (StringUtils.isNotEmpty(aggs.namePrefix)) esQueries += wildcardQuery(FieldKeys.FIELD_NAME, s"${aggs.namePrefix}*")
     if (StringUtils.isNotEmpty(aggs.date)) esQueries += termQuery(FieldKeys.FIELD_DATE, aggs.date)
+    if (StringUtils.isNotEmpty(aggs.checked)) {
+      aggs.checked match {
+        case "true" => esQueries += termQuery(FieldKeys.FIELD_CHECKED, true)
+        case "false" => esQueries += termQuery(FieldKeys.FIELD_CHECKED, false)
+        case _ =>
+      }
+    }
     esQueries
   }
 }

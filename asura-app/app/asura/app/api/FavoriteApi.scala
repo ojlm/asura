@@ -75,6 +75,7 @@ class FavoriteApi @Inject()(implicit system: ActorSystem,
 
   def groupAggs() = Action(parse.byteString).async { implicit req =>
     val q = AggsQuery(`type` = Favorite.TYPE_TOP_TOP, size = 100, termsField = FieldKeys.FIELD_GROUP)
+    q.checked = "true"
     FavoriteService.termsAggs(q)
       .flatMap(aggsItems => {
         GroupService.getByIdsAsRawMap(aggsItems.map(_.id)).map(map => {
