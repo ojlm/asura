@@ -19,6 +19,8 @@ case class AggsQuery(
                       var types: Seq[String] = null,
                     ) {
 
+  var checked: String = null
+
   def pageSize(): Int = if (Option(size).isDefined && size > 0) size else EsConfig.MaxCount
 
   def aggInterval(): String = {
