@@ -5,9 +5,9 @@ import java.net.URLEncoder
 import akka.http.scaladsl.model.{ContentType, ContentTypes, HttpEntity, RequestEntity}
 import akka.util.ByteString
 import asura.common.util.{LogUtils, StringUtils}
-import asura.core.runtime.RuntimeContext
 import asura.core.es.model.{HttpCaseRequest, KeyValueObject}
 import asura.core.http.UriUtils.UTF8
+import asura.core.runtime.RuntimeContext
 import asura.core.util.JacksonSupport
 import com.fasterxml.jackson.core.`type`.TypeReference
 import com.typesafe.scalalogging.Logger
@@ -35,9 +35,10 @@ object EntityUtils {
             var bodyStr: String = null
             try {
               val sb = StringBuilder.newBuilder
-              val params = JacksonSupport.parse(context.renderBodyAsString(body.get.data), new TypeReference[Seq[KeyValueObject]]() {})
+              val params = JacksonSupport.parse(body.get.data, new TypeReference[Seq[KeyValueObject]]() {})
               for (pair <- params if (pair.enabled && StringUtils.isNotEmpty(pair.key))) {
-                sb.append(pair.key).append("=").append(URLEncoder.encode(pair.value, UTF8)).append("&")
+                val rendered = context.renderBodyAsString(pair.value)
+                sb.append(pair.key).append("=").append(URLEncoder.encode(rendered, UTF8)).append("&")
               }
               if (sb.nonEmpty) {
                 sb.deleteCharAt(sb.length - 1)
@@ -45,8 +46,9 @@ object EntityUtils {
               bodyStr = sb.toString
             } catch {
               case t: Throwable =>
-                logger.warn(LogUtils.stackTraceToString(t))
-                bodyStr = body.get.data
+                val errLog = LogUtils.stackTraceToString(t)
+                logger.warn(errLog)
+                bodyStr = errLog
             }
             byteString = ByteString(bodyStr)
           }
