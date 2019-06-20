@@ -65,7 +65,7 @@ lazy val namerd = asuraProjects("asura-namerd")
 
 lazy val pea = asuraProjects("asura-pea")
   .enablePlugins(PlayScala)
-  .settings(libraryDependencies ++= gatlingDependencies)
+  .settings(libraryDependencies ++= peaDependencies)
   .dependsOn(
     common % "compile->compile;test->test",
     play % "compile->compile;test->test",
