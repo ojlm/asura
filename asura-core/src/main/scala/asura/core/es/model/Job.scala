@@ -14,7 +14,7 @@ case class Job(
                 val project: String,
                 val scheduler: String,
                 val classAlias: String,
-                val trigger: Seq[JobTrigger],
+                var trigger: Seq[JobTrigger],
                 val jobData: JobData,
                 val env: String = StringUtils.EMPTY,
                 val imports: Seq[VariablesImportItem] = Nil,

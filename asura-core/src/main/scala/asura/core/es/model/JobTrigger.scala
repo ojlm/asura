@@ -1,15 +1,13 @@
 package asura.core.es.model
 
-import asura.common.util.StringUtils
-
 case class JobTrigger(
                        group: String,
                        project: String,
-                       cron: String,
+                       cron: String = null,
                        triggerType: String = JobTrigger.TYPE_MANUAL,
                        startNow: Boolean = true,
-                       startDate: String = StringUtils.EMPTY,
-                       endDate: String = StringUtils.EMPTY,
+                       startDate: String = null,
+                       endDate: String = null,
                        repeatCount: Int = 1,
                        interval: Int = 0
                      )

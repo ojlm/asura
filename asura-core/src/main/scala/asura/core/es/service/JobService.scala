@@ -139,7 +139,7 @@ object JobService extends CommonService {
     getById(id).map(res => {
       if (res.isSuccess) {
         if (res.result.isEmpty) {
-          throw IllegalRequestException(s"Api: ${id} not found.")
+          throw ErrorMessages.error_IdNonExists.toException
         } else {
           val hit = res.result.hits.hits(0)
           JacksonSupport.parse(hit.sourceAsString, classOf[Job])
