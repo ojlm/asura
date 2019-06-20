@@ -1,7 +1,7 @@
 package asura.core.script
 
 import asura.common.util.LogUtils
-import asura.core.script.builtin.StringGenerator
+import asura.core.script.builtin.{Functions, StringGenerator}
 import com.typesafe.scalalogging.Logger
 import javax.script.{CompiledScript, ScriptContext, ScriptEngineManager, SimpleScriptContext}
 import jdk.nashorn.api.scripting.NashornScriptEngine
@@ -22,9 +22,9 @@ object JavaScriptEngine {
 
   private val baseLibs: CompiledScript = {
     logger.info("initialize base javascript libraries")
-    engine.compile(StringGenerator.exports)
+    engine.compile(StringGenerator.exports + Functions.exports)
   }
-  private val localContext: ThreadLocal[ScriptContext] = ThreadLocal.withInitial(() => initScriptContext())
+  val localContext: ThreadLocal[ScriptContext] = ThreadLocal.withInitial(() => initScriptContext())
 
   def eval(script: String, bindingsData: java.util.Map[String, Any] = null): Any = {
     if (null != bindingsData) {
@@ -52,6 +52,7 @@ object JavaScriptEngine {
   private def initScriptContext(): ScriptContext = {
     val context = new SimpleScriptContext()
     try {
+      context.setWriter(new CustomWriter())
       baseLibs.eval(context)
     } catch {
       case t: Throwable =>
