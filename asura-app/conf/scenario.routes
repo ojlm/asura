@@ -3,3 +3,4 @@ DELETE        /:id               asura.app.api.ScenarioApi.delete(id, preview: O
 PUT           /                  asura.app.api.ScenarioApi.put()
 POST          /query             asura.app.api.ScenarioApi.query()
 POST          /update/:id        asura.app.api.ScenarioApi.update(id)
+GET           /copy/:id          asura.app.api.ScenarioApi.copyById(id)

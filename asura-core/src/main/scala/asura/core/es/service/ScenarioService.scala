@@ -59,6 +59,16 @@ object ScenarioService extends CommonService {
     }
   }
 
+  def getScenarioById(id: String): Future[Scenario] = {
+    getById(id).map(res => {
+      if (res.isSuccess && res.result.nonEmpty) {
+        JacksonSupport.parse(res.result.hits.hits(0).sourceAsString, classOf[Scenario])
+      } else {
+        throw ErrorMessages.error_IdNonExists.toException
+      }
+    })
+  }
+
   def getRelativesById(id: String): Future[Map[String, Any]] = {
     getById(id).flatMap(response => {
       if (response.isSuccess) {

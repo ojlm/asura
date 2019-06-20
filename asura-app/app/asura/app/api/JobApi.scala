@@ -9,7 +9,7 @@ import asura.common.exceptions.ErrorMessages.ErrorMessage
 import asura.common.model.{ApiRes, ApiResError}
 import asura.common.util.StringUtils
 import asura.core.es.actor.ActivitySaveActor
-import asura.core.es.model.Activity
+import asura.core.es.model.{Activity, JobTrigger}
 import asura.core.es.service._
 import asura.core.job.actor._
 import asura.core.job.{JobCenter, JobUtils, SchedulerManager}
@@ -153,5 +153,13 @@ class JobApi @Inject()(
     } else {
       Future.successful(OkApiRes(ApiRes(data = Map.empty)))
     }
+  }
+
+  def copyById(id: String) = Action(parse.byteString).async { implicit req =>
+    JobService.geJobById(id).flatMap(job => {
+      job.fillCommonFields(getProfileId())
+      job.trigger = Seq(JobTrigger(job.group, job.project))
+      JobService.index(job)
+    }).toOkResult
   }
 }
