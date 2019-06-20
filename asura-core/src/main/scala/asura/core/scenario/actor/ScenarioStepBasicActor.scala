@@ -10,7 +10,7 @@ import asura.core.CoreConfig
 import asura.core.assertion.engine.{AssertionContext, Statistic}
 import asura.core.es.model.ScenarioStep
 import asura.core.runtime.RuntimeContext
-import asura.core.script.JavaScriptEngine
+import asura.core.script.{CustomWriter, JavaScriptEngine}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -68,8 +68,20 @@ trait ScenarioStepBasicActor extends BaseActor {
         Future.successful {
           val bindings = new util.HashMap[String, Any]()
           bindings.put(RuntimeContext.SELF_VARIABLE, runtimeContext.rawContext)
+          if (null != wsActor) {
+            JavaScriptEngine.localContext.get().getWriter.asInstanceOf[CustomWriter].log = (output) => {
+              val msg = s"${consoleLogPrefix(step.`type`, idx)}${XtermUtils.blueWrap(output.toString)}"
+              wsActor ! NotifyActorEvent(msg)
+            }
+          }
           val scriptResult = JavaScriptEngine.eval(script, bindings).asInstanceOf[Integer]
-          jumpTo = sendJumpMsgAndGetJumpStep(scriptResult, step, idx)
+          if (null != scriptResult) {
+            jumpTo = sendJumpMsgAndGetJumpStep(scriptResult, step, idx)
+          } else {
+            val jumpMsg = XtermUtils.blueWrap(s"Null script result, will continue ...")
+            val msg = s"${consoleLogPrefix(step.`type`, idx)}${jumpMsg}"
+            wsActor ! NotifyActorEvent(msg)
+          }
           jumpTo
         }
       } else {
