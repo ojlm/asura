@@ -29,8 +29,8 @@ case class CoreConfig(
 object CoreConfig {
 
   val DEFAULT_WS_ACTOR_BUFFER_SIZE = 10000
-  implicit val DEFAULT_ACTOR_ASK_TIMEOUT: Timeout = 30.seconds
-  implicit val DEFAULT_JOB_TIMEOUT: Timeout = 10.minutes
+  implicit val DEFAULT_ACTOR_ASK_TIMEOUT: Timeout = 10.minutes
+  implicit val DEFAULT_JOB_TIMEOUT: Timeout = 30.minutes
   implicit var system: ActorSystem = _
   implicit var dispatcher: ExecutionContext = _
   implicit var materializer: ActorMaterializer = _
