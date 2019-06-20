@@ -1,7 +1,7 @@
 package asura.core.es.service
 
 import asura.common.exceptions.ErrorMessages.ErrorMessage
-import asura.common.exceptions.{IllegalRequestException, RequestFailException}
+import asura.common.exceptions.RequestFailException
 import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.ErrorMessages
@@ -215,7 +215,7 @@ object JobService extends CommonService {
   def getRelativesById(id: String): Future[Map[String, Any]] = {
     geJobById(id).flatMap(job => {
       val scenarioIds = if (null != job.jobData.scenario) {
-        job.jobData.scenario.map(_.id)
+        job.jobData.scenario.filter(_.isScenarioStep()).map(_.id)
       } else {
         Nil
       }
