@@ -76,7 +76,7 @@ object Dependencies {
   val appDependencies = Seq(config, guava, commonsCodec) ++ loggingDeps ++ httpDeps ++ testDeps
   val namerdDependencies = Seq(akkaStream, akkaHttp) ++ commonDependencies
   val dubboDependencies = Seq(dubbo, curator, dubboJavassist, dubboJbossNetty, dubboSpring, akkaStream) ++ commonDependencies
-  val gatlingDependencies = Seq(gatling, gatlingCompiler)
+  val peaDependencies = Seq(gatling, gatlingCompiler, curator)
 
   val commonPlayDeps = Seq(
     guice,
