@@ -39,7 +39,8 @@ class DubboReferenceCacheActor extends BaseActor {
       }
       if (null != service) {
         // https://github.com/apache/incubator-dubbo/issues/3163
-        service.$invoke(request.method, request.getParameterTypes(), request.getArgs())
+        val args = request.getArgs()
+        service.$invoke(request.method, request.getParameterTypes(), args)
       } else {
         new RuntimeException("Null dubbo generic service from reference config")
       }

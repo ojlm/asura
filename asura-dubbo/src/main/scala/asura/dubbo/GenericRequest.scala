@@ -1,6 +1,6 @@
 package asura.dubbo
 
-import asura.common.util.StringUtils
+import asura.common.util.{JavaJsonUtils, JsonUtils, StringUtils}
 import com.alibaba.dubbo.config.ReferenceConfig
 import com.alibaba.dubbo.rpc.service.GenericService
 
@@ -21,17 +21,7 @@ case class GenericRequest(
 
   def getArgs(): Array[Object] = {
     if (null != args) {
-      args.map(arg => {
-        arg match {
-          case map: Map[_, _] =>
-            val hashMap = new java.util.HashMap[Any, Any]()
-            map.foreach(entry => {
-              hashMap.put(entry._1, entry._2)
-            })
-            hashMap
-          case _ => arg
-        }
-      })
+      args.map(typeConvert)
     } else {
       Array.empty[Object]
     }
@@ -68,6 +58,17 @@ case class GenericRequest(
       false
     } else {
       true
+    }
+  }
+
+  // convert to java types
+  def typeConvert(arg: Object): Object = {
+    arg match {
+      case _: Map[_, _] =>
+        JavaJsonUtils.parse(JsonUtils.stringify(arg), classOf[Object])
+      case _: Seq[_] =>
+        JavaJsonUtils.parse(JsonUtils.stringify(arg), classOf[Object])
+      case _ => arg
     }
   }
 }
