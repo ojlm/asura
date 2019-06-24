@@ -15,3 +15,5 @@ _book/
 target/
 docs/_build/
 .vscode/
+!asura-app/dist/
+!asura-pea/dist/
