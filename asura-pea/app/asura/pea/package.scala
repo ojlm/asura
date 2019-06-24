@@ -1,8 +1,8 @@
 package asura
 
-import asura.pea.model.SingleHttpScenario
+import asura.pea.actor.PeaManagerActor.SingleHttpScenarioMessage
 
 package object pea {
 
-  var singleHttpScenario: SingleHttpScenario = null
+  var singleHttpScenario: SingleHttpScenarioMessage = null
 }

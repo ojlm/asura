@@ -28,6 +28,7 @@ class ApplicationStart @Inject()(
   PeaConfig.system = system
   PeaConfig.dispatcher = system.dispatcher
   PeaConfig.materializer = ActorMaterializer()(system)
+  PeaConfig.resultsFolder = configuration.get[String]("pea.results.folder")
   registerToZK()
 
   // add stop hook

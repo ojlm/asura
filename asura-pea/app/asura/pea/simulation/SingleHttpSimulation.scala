@@ -1,5 +1,6 @@
 package asura.pea.simulation
 
+import asura.common.util.StringUtils
 import asura.pea.model.{During, Injection, SingleRequest}
 import asura.pea.singleHttpScenario
 import io.gatling.core.Predef._
@@ -11,8 +12,12 @@ import scala.concurrent.duration._
 
 class SingleHttpSimulation extends Simulation {
 
-  val scn = scenario(singleHttpScenario.name)
-    .exec(toAction(singleHttpScenario.request))
+  val scnName = StringUtils.notEmptyElse(
+    singleHttpScenario.name,
+    classOf[SingleHttpSimulation].getSimpleName
+  )
+
+  val scn = scenario(scnName).exec(toAction(singleHttpScenario.request))
 
   setUp(
     scn.inject(
@@ -42,7 +47,7 @@ class SingleHttpSimulation extends Simulation {
   }
 
   def toAction(request: SingleRequest): HttpRequestBuilder = {
-    http(request.name)
+    http(StringUtils.notEmptyElse(request.name, "REQUEST"))
       .httpRequest(request.method, request.url)
       .headers(request.getHeaders())
       .body(StringBody(request.getBody()))
