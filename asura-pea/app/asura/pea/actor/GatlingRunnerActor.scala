@@ -10,9 +10,11 @@ import io.gatling.app.PeaGatlingRunner
 import io.gatling.core.config.GatlingPropertiesBuilder
 
 import scala.collection.mutable
+import scala.concurrent.{ExecutionContext, Future}
 
 class GatlingRunnerActor extends BaseActor {
 
+  implicit val ec = context.dispatcher
   val innerClassPath = getClass.getResource("/").getPath
   val singleHttpSimulationRef = classOf[SingleHttpSimulation].getCanonicalName
 
@@ -40,7 +42,10 @@ object GatlingRunnerActor {
 
   def props() = Props(new GatlingRunnerActor())
 
-  def start(message: StartMessage): Int = {
+  def start(message: StartMessage)(implicit ec: ExecutionContext): PeaGatlingRunResult = {
     PeaGatlingRunner.run(message.toGatlingPropertiesMap)
   }
+
+  case class PeaGatlingRunResult(runId: String, code: Future[Int])
+
 }

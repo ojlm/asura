@@ -5,6 +5,7 @@ package io.gatling.app
 
 import akka.actor.ActorSystem
 import akka.pattern.ask
+import asura.pea.actor.GatlingRunnerActor.PeaGatlingRunResult
 import asura.pea.gatling.StatsEngines
 import com.typesafe.scalalogging.StrictLogging
 import io.gatling.commons.util.DefaultClock
@@ -19,7 +20,7 @@ import io.gatling.core.stats.writer.RunMessage
 
 import scala.collection.mutable
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Try}
 
@@ -32,19 +33,20 @@ class PeaGatlingRunner(config: mutable.Map[String, _]) extends StrictLogging {
   io.gatling.core.Predef.clock = clock
   io.gatling.core.Predef._configuration = configuration
 
-  def run(): Int = {
-    val runResult =
-      try {
-        val selection = Selection(None, configuration)
-        val simulation = selection.simulationClass.getDeclaredConstructor().newInstance()
-        logger.info("Simulation instantiated")
-        val simulationParams = simulation.params(configuration)
-        logger.info("Simulation params built")
+  def run()(implicit ec: ExecutionContext): PeaGatlingRunResult = {
+    val selection = Selection(None, configuration)
+    val simulation = selection.simulationClass.getDeclaredConstructor().newInstance()
+    logger.info("Simulation instantiated")
+    val simulationParams = simulation.params(configuration)
+    logger.info("Simulation params built")
 
-        simulation.executeBefore()
-        logger.info("Before hooks executed")
+    simulation.executeBefore()
+    logger.info("Before hooks executed")
 
-        val runMessage = RunMessage(simulationParams.name, selection.simulationId, clock.nowMillis, selection.description, configuration.core.version)
+    val runMessage = RunMessage(simulationParams.name, selection.simulationId, clock.nowMillis, selection.description, configuration.core.version)
+
+    val code = Future {
+      val runResult = try {
         val statsEngine = StatsEngines.newStatsEngine(simulationParams, runMessage, system, clock, configuration)
         val throttler = Throttler(system, simulationParams)
         val injector = Injector(system, statsEngine, clock)
@@ -52,9 +54,7 @@ class PeaGatlingRunner(config: mutable.Map[String, _]) extends StrictLogging {
         val exit = new Exit(injector, clock)
         val coreComponents = CoreComponents(system, controller, throttler, statsEngine, clock, exit, configuration)
         logger.info("CoreComponents instantiated")
-
         val scenarios = simulationParams.scenarios(coreComponents)
-
         start(simulationParams, scenarios, coreComponents) match {
           case Failure(t) => throw t
           case _ =>
@@ -62,6 +62,7 @@ class PeaGatlingRunner(config: mutable.Map[String, _]) extends StrictLogging {
             logger.info("After hooks executed")
             RunResult(runMessage.runId, simulationParams.assertions.nonEmpty)
         }
+
       } catch {
         case t: Throwable =>
           logger.error("Run crashed", t)
@@ -69,7 +70,9 @@ class PeaGatlingRunner(config: mutable.Map[String, _]) extends StrictLogging {
       } finally {
         terminateActorSystem()
       }
-    new RunResultProcessor(configuration).processRunResult(runResult).code
+      new RunResultProcessor(configuration).processRunResult(runResult).code
+    }
+    PeaGatlingRunResult(runMessage.runId, code)
   }
 
   private def start(simulationParams: SimulationParams, scenarios: List[Scenario], coreComponents: CoreComponents): Try[_] = {
@@ -99,7 +102,7 @@ object PeaGatlingRunner extends StrictLogging {
 
   def apply(config: mutable.Map[String, _]): PeaGatlingRunner = new PeaGatlingRunner(config)
 
-  def run(config: mutable.Map[String, _]): Int = {
+  def run(config: mutable.Map[String, _])(implicit ec: ExecutionContext): PeaGatlingRunResult = {
     PeaGatlingRunner(config).run()
   }
 }
