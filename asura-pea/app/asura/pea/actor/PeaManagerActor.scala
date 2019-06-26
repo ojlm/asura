@@ -50,7 +50,7 @@ object PeaManagerActor {
   case class SingleHttpScenarioMessage(
                                         var name: String,
                                         var request: SingleRequest,
-                                        var injection: Injection,
+                                        var injections: Seq[Injection],
                                       )
 
 }
