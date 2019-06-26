@@ -5,6 +5,7 @@ import akka.pattern.{ask, pipe}
 import asura.common.actor.BaseActor
 import asura.pea.ErrorMessages
 import asura.pea.PeaConfig.DEFAULT_ACTOR_ASK_TIMEOUT
+import asura.pea.actor.GatlingRunnerActor.PeaGatlingRunResult
 import asura.pea.actor.PeaManagerActor.{GetNodeStatusMessage, SingleHttpScenarioMessage}
 import asura.pea.model.{Injection, SingleRequest}
 
@@ -24,16 +25,17 @@ class PeaManagerActor extends BaseActor {
     case _ => ErrorMessages.error_InvalidRequestParameters.toFutureFail pipeTo sender()
   }
 
-  def doSingleHttpScenario(message: SingleHttpScenarioMessage): Future[Int] = {
+  def doSingleHttpScenario(message: SingleHttpScenarioMessage): Future[String] = {
     if (PeaManagerActor.NODE_STATUS_IDLE.equals(status)) {
       asura.pea.singleHttpScenario = message
       status = PeaManagerActor.NODE_STATUS_BUSY
-      (gatlingRunnerActor ? message).asInstanceOf[Future[Int]].map(code => {
-        status = PeaManagerActor.NODE_STATUS_IDLE
-        code
+      val futureRunResult = (gatlingRunnerActor ? message).asInstanceOf[Future[PeaGatlingRunResult]]
+      futureRunResult.map(runResult => {
+        runResult.code.map(_ => status = PeaManagerActor.NODE_STATUS_IDLE)
+        runResult.runId
       })
     } else {
-      ErrorMessages.error_BusyStatus.toFutureFail
+      throw ErrorMessages.error_BusyStatus.toException
     }
   }
 }
