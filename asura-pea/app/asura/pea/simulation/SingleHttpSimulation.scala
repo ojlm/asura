@@ -21,19 +21,25 @@ class SingleHttpSimulation extends Simulation {
 
   setUp(
     scn.inject(
-      getInjectionStep()
+      getInjectionSteps()
     ).protocols(http)
   )
 
-  def getInjectionStep(): OpenInjectionStep = {
-    val injection = singleHttpScenario.injection
-    val during = injection.during
-    injection.`type` match {
-      case Injection.TYPE_RAMP_USERS => rampUsers(injection.users) during (toFiniteDuration(during))
-      case Injection.TYPE_HEAVISIDE_USERS => heavisideUsers(injection.users) during (toFiniteDuration(during))
-      case Injection.TYPE_AT_ONCE_USERS => atOnceUsers(injection.users)
-      case Injection.TYPE_CONSTANT_USERS_PER_SEC => constantUsersPerSec(injection.users) during (toFiniteDuration(during))
-      case Injection.TYPE_RAMP_USERS_PER_SEC => rampUsersPerSec(injection.users) to injection.to during (toFiniteDuration(during))
+  def getInjectionSteps(): Seq[OpenInjectionStep] = {
+    val injections = singleHttpScenario.injections
+    if (null != injections && injections.nonEmpty) {
+      injections.map(injection => {
+        val during = injection.during
+        injection.`type` match {
+          case Injection.TYPE_RAMP_USERS => rampUsers(injection.users) during (toFiniteDuration(during))
+          case Injection.TYPE_HEAVISIDE_USERS => heavisideUsers(injection.users) during (toFiniteDuration(during))
+          case Injection.TYPE_AT_ONCE_USERS => atOnceUsers(injection.users)
+          case Injection.TYPE_CONSTANT_USERS_PER_SEC => constantUsersPerSec(injection.users) during (toFiniteDuration(during))
+          case Injection.TYPE_RAMP_USERS_PER_SEC => rampUsersPerSec(injection.users) to injection.to during (toFiniteDuration(during))
+        }
+      })
+    } else {
+      Nil
     }
   }
 
