@@ -36,6 +36,7 @@ class JobRunnerActor(var wsActor: ActorRef, controller: ControllerOptions) exten
       this.execDesc = execDesc
       this.execDesc.report.data.scenarios = scenarioReports
       this.resultReceiver = sender()
+      if (null != execDesc.overrideRuntime) this.runtimeContext = execDesc.overrideRuntime
       this.runtimeContext.options = execDesc.options
       this.runtimeContext.evaluateImportsVariables(execDesc.imports)
         .flatMap(_ => runCases(execDesc))
@@ -79,6 +80,7 @@ class JobRunnerActor(var wsActor: ActorRef, controller: ControllerOptions) exten
   }
 
   private def runScenarioStep(idx: Int): Future[Int] = {
+    this.runtimeContext.eraseScenarioData()
     val (step, message) = this.scenarioTestJobMessages(idx)
     step.`type` match {
       case ScenarioStep.TYPE_DELAY => handleDelayStep(step, idx)

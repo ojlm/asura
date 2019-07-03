@@ -242,6 +242,14 @@ case class RuntimeContext(
     this
   }
 
+  def eraseScenarioData(): RuntimeContext = {
+    val value = ctx.get(RuntimeContext.KEY__S)
+    if (null != value && value.isInstanceOf[util.Map[_, _]]) {
+      value.asInstanceOf[util.Map[_, _]].clear()
+    }
+    this
+  }
+
   def setCurrentStatus(status: Int): RuntimeContext = {
     ctx.put(RuntimeContext.KEY_STATUS, status)
     this
@@ -309,5 +317,12 @@ case class RuntimeContext(
     } else {
       Future.successful(true)
     }
+  }
+
+  def getGlobalAndJobMap(): Map[Any, Any] = {
+    Map(
+      RuntimeContext.KEY__G -> ctx.get(RuntimeContext.KEY__G),
+      RuntimeContext.KEY__J -> ctx.get(RuntimeContext.KEY__J)
+    )
   }
 }

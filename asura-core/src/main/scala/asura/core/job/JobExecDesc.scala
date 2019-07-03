@@ -9,7 +9,7 @@ import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.model._
 import asura.core.es.service.JobReportService
 import asura.core.job.actor.JobReportDataItemSaveActor
-import asura.core.runtime.ContextOptions
+import asura.core.runtime.{ContextOptions, RuntimeContext}
 
 import scala.concurrent.Future
 
@@ -26,6 +26,8 @@ case class JobExecDesc(
                         val imports: Seq[VariablesImportItem] = Nil
                       ) {
 
+  // for web debug
+  var overrideRuntime: RuntimeContext = null
   private var jobWorkDir: String = null
   private var stdLogWriter: PrintWriter = null
   private var currentJobFolder: String = null
