@@ -24,23 +24,29 @@ object GroupService extends CommonService {
 
   val logger = Logger("GroupService")
 
-  def index(group: Group): Future[IndexDocResponse] = {
+  def index(group: Group, checkExists: Boolean = true): Future[IndexDocResponse] = {
     if (!CommonValidator.isIdLegal(group.id)) {
       ErrorMessages.error_IllegalGroupId.toFutureFail
     } else {
-      docExists(group.id).flatMap(isExist => {
-        if (isExist.isSuccess) {
-          if (isExist.result) {
-            ErrorMessages.error_GroupExists.toFutureFail
+      if (checkExists) {
+        docExists(group.id).flatMap(isExist => {
+          if (isExist.isSuccess) {
+            if (isExist.result) {
+              ErrorMessages.error_GroupExists.toFutureFail
+            } else {
+              EsClient.esClient.execute {
+                indexInto(Group.Index / EsConfig.DefaultType).doc(group).id(group.id).refresh(RefreshPolicy.WAIT_UNTIL)
+              }.map(toIndexDocResponse(_))
+            }
           } else {
-            EsClient.esClient.execute {
-              indexInto(Group.Index / EsConfig.DefaultType).doc(group).id(group.id).refresh(RefreshPolicy.WAIT_UNTIL)
-            }.map(toIndexDocResponse(_))
+            ErrorMessages.error_EsRequestFail(isExist).toFutureFail
           }
-        } else {
-          ErrorMessages.error_EsRequestFail(isExist).toFutureFail
-        }
-      })
+        })
+      } else {
+        EsClient.esClient.execute {
+          indexInto(Group.Index / EsConfig.DefaultType).doc(group).id(group.id).refresh(RefreshPolicy.WAIT_UNTIL)
+        }.map(toIndexDocResponse(_))
+      }
     }
   }
 

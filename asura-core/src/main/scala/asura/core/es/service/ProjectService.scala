@@ -28,28 +28,37 @@ object ProjectService extends CommonService {
     ProjectApiCoverage.Index
   )
 
-  def index(project: Project): Future[IndexDocResponse] = {
+  def index(project: Project, checkExists: Boolean = true): Future[IndexDocResponse] = {
     if (null == project || StringUtils.isEmpty(project.group)) {
       ErrorMessages.error_IllegalGroupId.toFutureFail
     } else if (!CommonValidator.isIdLegal(project.id)) {
       ErrorMessages.error_IllegalProjectId.toFutureFail
     } else {
-      docCount(project.group, project.id).flatMap(res => {
-        if (res.isSuccess) {
-          if (res.result.count > 0) {
-            ErrorMessages.error_ProjectExists.toFutureFail
+      if (checkExists) {
+        docCount(project.group, project.id).flatMap(res => {
+          if (res.isSuccess) {
+            if (res.result.count > 0) {
+              ErrorMessages.error_ProjectExists.toFutureFail
+            } else {
+              EsClient.esClient.execute {
+                indexInto(Project.Index / EsConfig.DefaultType)
+                  .doc(project)
+                  .id(project.generateDocId())
+                  .refresh(RefreshPolicy.WAIT_UNTIL)
+              }.map(toIndexDocResponse(_))
+            }
           } else {
-            EsClient.esClient.execute {
-              indexInto(Project.Index / EsConfig.DefaultType)
-                .doc(project)
-                .id(project.generateDocId())
-                .refresh(RefreshPolicy.WAIT_UNTIL)
-            }.map(toIndexDocResponse(_))
+            ErrorMessages.error_EsRequestFail(res).toFutureFail
           }
-        } else {
-          ErrorMessages.error_EsRequestFail(res).toFutureFail
-        }
-      })
+        })
+      } else {
+        EsClient.esClient.execute {
+          indexInto(Project.Index / EsConfig.DefaultType)
+            .doc(project)
+            .id(project.generateDocId())
+            .refresh(RefreshPolicy.WAIT_UNTIL)
+        }.map(toIndexDocResponse(_))
+      }
     }
   }
 
