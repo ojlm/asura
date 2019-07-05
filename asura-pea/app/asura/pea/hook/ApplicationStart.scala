@@ -2,16 +2,19 @@ package asura.pea.hook
 
 import java.net.{InetAddress, NetworkInterface, URLEncoder}
 import java.nio.charset.StandardCharsets
+import java.util
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import asura.common.util.LogUtils
+import asura.common.util.{LogUtils, StringUtils}
 import asura.pea.PeaConfig
 import com.typesafe.scalalogging.StrictLogging
 import javax.inject.{Inject, Singleton}
 import org.apache.curator.framework.CuratorFrameworkFactory
+import org.apache.curator.framework.api.ACLProvider
 import org.apache.curator.retry.ExponentialBackoffRetry
-import org.apache.zookeeper.CreateMode
+import org.apache.zookeeper.data.ACL
+import org.apache.zookeeper.{CreateMode, ZooDefs}
 import play.api.Configuration
 import play.api.inject.ApplicationLifecycle
 
@@ -63,7 +66,22 @@ class ApplicationStart @Inject()(
     val uri = s"pea://${address}:${portOpt.getOrElse(9000)}?hostname=${hostname}"
     PeaConfig.zkPath = configuration.getOptional[String]("pea.zk.path").get
     val connectString = configuration.get[String]("pea.zk.connectString")
-    PeaConfig.zkClient = CuratorFrameworkFactory.newClient(connectString, new ExponentialBackoffRetry(1000, 3))
+    val builder = CuratorFrameworkFactory.builder()
+    builder.connectString(connectString)
+      .retryPolicy(new ExponentialBackoffRetry(1000, 3))
+    val usernameOpt = configuration.getOptional[String]("pea.zk.username")
+    val passwordOpt = configuration.getOptional[String]("pea.zk.password")
+    if (usernameOpt.nonEmpty && passwordOpt.nonEmpty
+      && StringUtils.isNotEmpty(usernameOpt.get) && StringUtils.isNotEmpty(passwordOpt.get)
+    ) {
+      builder.authorization("digest", s"${usernameOpt.get}:${passwordOpt.get}".getBytes)
+        .aclProvider(new ACLProvider {
+          override def getDefaultAcl: util.List[ACL] = ZooDefs.Ids.CREATOR_ALL_ACL
+
+          override def getAclForPath(path: String): util.List[ACL] = ZooDefs.Ids.CREATOR_ALL_ACL
+        })
+    }
+    PeaConfig.zkClient = builder.build()
     PeaConfig.zkClient.start()
     try {
       PeaConfig.zkClient.create()
