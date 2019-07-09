@@ -1,0 +1,3 @@
+GET        /                  asura.app.api.ci.CiApi.home()
+GET        /job/:id           asura.app.api.ci.CiApi.jobSSE(id)
+GET        /ws/job/:id        asura.app.api.ci.CiApi.jobWS(id)

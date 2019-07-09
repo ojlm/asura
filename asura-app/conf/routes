@@ -19,8 +19,7 @@ GET         /openapi/editor                      asura.app.api.SwaggerApi.editor
 GET         /openapi/editor/                     asura.app.api.SwaggerApi.editor(url: Option[String])
 
 POST        /api/home                            asura.app.api.HomeApi.query()
-->          /api/v1                              v1.Routes
-->          /api/v2                              v2.Routes
+->          /api/ci                              ci.Routes
 ->          /api/user                            user.Routes
 ->          /api/group                           group.Routes
 ->          /api/project                         project.Routes
