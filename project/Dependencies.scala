@@ -32,6 +32,9 @@ object Dependencies {
   private val gatling = "io.gatling.highcharts" % "gatling-charts-highcharts" % "3.1.2" exclude("io.gatling", "gatling-app")
   private val gatlingCompiler = "io.gatling" % "gatling-compiler" % "3.1.2"
 
+  // kafka
+  private val akkaKafka = "com.typesafe.akka" %% "akka-stream-kafka" % "1.0.4"
+
   // dubbo, specify javassist and jbossnetty deps because of coursier dep resolve problems
   private val dubbo = "com.alibaba" % "dubbo" % "2.6.5" excludeAll(ExclusionRule(organization = "org.springframework"), ExclusionRule(organization = "org.javassist"), ExclusionRule(organization = "org.jboss.netty"))
   private val dubboJavassist = "org.javassist" % "javassist" % "3.21.0-GA"
@@ -77,6 +80,7 @@ object Dependencies {
   val namerdDependencies = Seq(akkaStream, akkaHttp) ++ commonDependencies
   val dubboDependencies = Seq(dubbo, curator, dubboJavassist, dubboJbossNetty, dubboSpring, akkaStream) ++ commonDependencies
   val peaDependencies = Seq(gatling, gatlingCompiler, curator)
+  val kafkaDependencies = Seq(akkaStream, akkaKafka) ++ commonDependencies
 
   val commonPlayDeps = Seq(
     guice,

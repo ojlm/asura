@@ -25,7 +25,8 @@ lazy val app = asuraProjects("asura-app")
     namerd % "compile->compile;test->test",
     example % "compile->compile;test->test",
     dubbo % "compile->compile;test->test",
-  ).aggregate(play, common, cluster, core, dubbo, namerd, example)
+    kafka % "compile->compile;test->test",
+  ).aggregate(play, common, cluster, core, namerd, dubbo, kafka, example)
 
 lazy val example = asuraProjects("asura-example")
   .settings(libraryDependencies ++= Seq(guice))
@@ -51,15 +52,21 @@ lazy val core = asuraProjects("asura-core")
   .dependsOn(
     common % "compile->compile;test->test",
     dubbo % "compile->compile;test->test",
+    kafka % "compile->compile;test->test",
   )
+
+lazy val namerd = asuraProjects("asura-namerd")
+  .settings(libraryDependencies ++= namerdDependencies)
+  .settings(publishSettings: _*)
+  .dependsOn(common % "compile->compile;test->test")
 
 lazy val dubbo = asuraProjects("asura-dubbo")
   .settings(libraryDependencies ++= dubboDependencies)
   .settings(publishSettings: _*)
   .dependsOn(common % "compile->compile;test->test")
 
-lazy val namerd = asuraProjects("asura-namerd")
-  .settings(libraryDependencies ++= namerdDependencies)
+lazy val kafka = asuraProjects("asura-kafka")
+  .settings(libraryDependencies ++= kafkaDependencies)
   .settings(publishSettings: _*)
   .dependsOn(common % "compile->compile;test->test")
 
