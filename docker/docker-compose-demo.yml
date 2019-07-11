@@ -35,8 +35,8 @@ services:
     environment:
       PHPLDAPADMIN_HTTPS: "false"
       PHPLDAPADMIN_LDAP_HOSTS: "ldap-service"
-  indigo-api:
-    image: asurapro/indigo-api:latest
+  asura:
+    image: asurapro/asura:latest
     ports:
       - "9000:9000"
     links:

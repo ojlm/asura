@@ -10,5 +10,5 @@ _tag=$1
 if [ -z "${_tag}" ]; then
     _tag=latest
 fi
-docker build --file ./asura-app.dockerfile -t "asurapro/indigo-api:${_tag}" ../
-docker push asurapro/indigo-api
+docker build --file ./asura-app.dockerfile -t "asurapro/asura:${_tag}" ../
+docker push asurapro/asura

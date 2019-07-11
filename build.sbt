@@ -81,7 +81,7 @@ lazy val pea = asuraProjects("asura-pea")
 
 // release
 val username = "asura-pro"
-val repo = "indigo-api"
+val repo = "asura"
 
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
