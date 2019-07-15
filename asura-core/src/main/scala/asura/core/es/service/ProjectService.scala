@@ -78,7 +78,8 @@ object ProjectService extends CommonService {
   def transferProject(op: TransferProject) = {
     if (
       StringUtils.isNotEmpty(op.oldGroup) && StringUtils.isNotEmpty(op.newGroup) &&
-        StringUtils.isNotEmpty(op.oldId) && StringUtils.isNotEmpty(op.newId)
+        StringUtils.isNotEmpty(op.oldId) && StringUtils.isNotEmpty(op.newId) &&
+        CommonValidator.isIdLegal(op.newGroup) && CommonValidator.isIdLegal(op.newId)
     ) {
       docCount(op.newGroup, op.newId).flatMap(res => {
         if (res.isSuccess) {
