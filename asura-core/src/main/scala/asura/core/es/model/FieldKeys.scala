@@ -153,6 +153,7 @@ object FieldKeys {
   val FIELD_TARGET_TYPE = "targetType"
   val FIELD_JOB = "job"
   val FIELD_CHECKED = "checked"
+  val FIELD_FAIl_FAST = "failFast"
 
   val FIELD_OBJECT_REQUEST_PROTOCOL = "request.protocol"
   val FIELD_OBJECT_REQUEST_HOST = "request.host"
