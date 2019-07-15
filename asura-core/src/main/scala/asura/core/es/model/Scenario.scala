@@ -13,6 +13,7 @@ case class Scenario(
                      val group: String,
                      val project: String,
                      val steps: Seq[ScenarioStep],
+                     val failFast: Boolean = true,
                      val env: String = StringUtils.EMPTY,
                      val labels: Seq[LabelRef] = Nil,
                      val imports: Seq[VariablesImportItem] = Nil,
@@ -40,6 +41,7 @@ case class Scenario(
     if (null != exports) {
       m += (FieldKeys.FIELD_EXPORTS -> exports)
     }
+    m += (FieldKeys.FIELD_FAIl_FAST -> failFast)
     m.toMap
   }
 }
@@ -61,6 +63,7 @@ object Scenario extends IndexSetting {
       NestedField(name = FieldKeys.FIELD_LABELS, fields = Seq(
         KeywordField(name = FieldKeys.FIELD_NAME),
       )),
+      BasicField(name = FieldKeys.FIELD_FAIl_FAST, `type` = "boolean"),
       KeywordField(name = FieldKeys.FIELD_ENV),
       NestedField(name = FieldKeys.FIELD_IMPORTS, dynamic = Some("false")),
       NestedField(name = FieldKeys.FIELD_EXPORTS, dynamic = Some("false")),

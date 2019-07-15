@@ -23,13 +23,10 @@ import asura.core.sql.{SqlResult, SqlRunner}
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
-/** alive during a scenario
-  *
-  * @param scenarioId
-  * @param failFast if `true`, when a step is failed the left steps will be skipped, steps are relative
-  */
-class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends ScenarioStepBasicActor {
+/** alive during a scenario */
+class ScenarioRunnerActor(scenarioId: String) extends ScenarioStepBasicActor {
 
+  var failFast = true
   var runtimeContext: RuntimeContext = null
   var wsActor: ActorRef = null
 
@@ -53,12 +50,13 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
   }
 
   private def doTheTest(): Receive = {
-    case ScenarioTestWebMessage(summary, steps, options, imports, exports, controller) =>
+    case ScenarioTestWebMessage(summary, steps, options, imports, exports, failFast, controller) =>
       this.scenarioReportItem.title = summary
       this.runtimeContext = RuntimeContext(options = options)
       this.controller = controller
       this.exports = exports
       this.steps = steps
+      this.failFast = failFast
       this.runtimeContext.evaluateImportsVariables(imports)
         .flatMap(_ => getScenarioTestData(steps))
         .map(stepsData => {
@@ -70,13 +68,14 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
             self ! 0
           }
         })
-    case ScenarioTestJobMessage(summary, steps, storeHelper, runtimeContext, imports, exports) =>
+    case ScenarioTestJobMessage(summary, steps, storeHelper, runtimeContext, imports, exports, failFast) =>
       this.jobActor = sender()
       this.scenarioReportItem.title = summary
       this.runtimeContext = runtimeContext
       this.steps = steps
       this.storeHelper = storeHelper
       this.exports = exports
+      this.failFast = failFast
       this.runtimeContext.evaluateImportsVariables(imports)
         .flatMap(_ => getScenarioTestData(steps))
         .map(stepsData => {
@@ -399,7 +398,7 @@ class ScenarioRunnerActor(scenarioId: String, failFast: Boolean = true) extends 
 
 object ScenarioRunnerActor {
 
-  def props(scenarioId: String, failFast: Boolean = true) = Props(new ScenarioRunnerActor(scenarioId, failFast))
+  def props(scenarioId: String) = Props(new ScenarioRunnerActor(scenarioId))
 
   // from web
   case class ScenarioTestWebMessage(
@@ -408,6 +407,7 @@ object ScenarioRunnerActor {
                                      options: ContextOptions,
                                      imports: Seq[VariablesImportItem],
                                      exports: Seq[VariablesExportItem],
+                                     failFast: Boolean = true,
                                      controller: ControllerOptions = null
                                    )
 
@@ -419,6 +419,7 @@ object ScenarioRunnerActor {
                                      runtimeContext: RuntimeContext,
                                      imports: Seq[VariablesImportItem],
                                      exports: Seq[VariablesExportItem],
+                                     failFast: Boolean = true,
                                    )
 
   case class ScenarioTestData(

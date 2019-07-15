@@ -87,7 +87,7 @@ class JobRunnerActor(var wsActor: ActorRef, controller: ControllerOptions) exten
       case ScenarioStep.TYPE_JUMP => handleJumpStep(step, idx)
       case _ =>
         if (message.steps.nonEmpty) {
-          val scenarioActor = context.actorOf(ScenarioRunnerActor.props(step.id, true))
+          val scenarioActor = context.actorOf(ScenarioRunnerActor.props(step.id))
           scenarioActor ! SenderMessage(wsActor)
           message.storeHelper.jobLoopCount = this.loopCount
           val future = (scenarioActor ? message).asInstanceOf[Future[ScenarioReportItemData]]
@@ -155,8 +155,21 @@ class JobRunnerActor(var wsActor: ActorRef, controller: ControllerOptions) exten
           val step = scenarioSteps(i)
           if (step.isScenarioStep()) {
             val scenario = scenarioMap.get(step.id).get
-            val storeDataHelper = JobReportItemStoreDataHelper(execDesc.reportId, s"s${i.toString}", execDesc.reportItemSaveActor, execDesc.jobId)
-            val message = ScenarioTestJobMessage(scenario.summary, scenario.steps, storeDataHelper, this.runtimeContext, scenario.imports, scenario.exports)
+            val storeDataHelper = JobReportItemStoreDataHelper(
+              execDesc.reportId,
+              s"s${i.toString}",
+              execDesc.reportItemSaveActor,
+              execDesc.jobId,
+            )
+            val message = ScenarioTestJobMessage(
+              scenario.summary,
+              scenario.steps,
+              storeDataHelper,
+              this.runtimeContext,
+              scenario.imports,
+              scenario.exports,
+              scenario.failFast,
+            )
             messages += ((step, message))
           } else {
             messages += ((step, null))
