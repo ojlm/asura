@@ -39,3 +39,4 @@ POST        /api/home                            asura.app.api.HomeApi.query()
 ->          /api/cluster                         cluster.Routes
 ->          /api/config                          config.Routes
 ->          /api/favorite                        favorite.Routes
+->          /api/count                           count.Routes

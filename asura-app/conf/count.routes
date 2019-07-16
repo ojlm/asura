@@ -1,0 +1,1 @@
+GET        /all        asura.app.api.CountApi.all()
