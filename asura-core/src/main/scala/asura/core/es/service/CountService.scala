@@ -3,11 +3,49 @@ package asura.core.es.service
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.EsClient
 import asura.core.es.model.{Activity, FieldKeys, JobReport}
+import asura.core.model.AggsItem
 import com.sksamuel.elastic4s.http.ElasticDsl._
+import com.sksamuel.elastic4s.searches.DateHistogramInterval
 
 import scala.concurrent.Future
 
-object CountService extends CommonService {
+object CountService extends CommonService with BaseAggregationService {
+
+  def dateHistogram(index: String): Future[Seq[AggsItem]] = {
+    val dateHistogram = dateHistogramAgg(BaseAggregationService.aggsTermsName, FieldKeys.FIELD_CREATED_AT)
+      .interval(DateHistogramInterval.fromString("1M")) // one month
+      .format("yyyy-MM-dd")
+    EsClient.esClient.execute {
+      search(index)
+        .query(matchAllQuery())
+        .size(0)
+        .aggregations(dateHistogram)
+    }.map(toAggItems(_, null, null))
+  }
+
+  def activityDateHistogram(`type`: String): Future[Seq[AggsItem]] = {
+    val dateHistogram = dateHistogramAgg(BaseAggregationService.aggsTermsName, FieldKeys.FIELD_TIMESTAMP)
+      .interval(DateHistogramInterval.fromString("1M")) // one month
+      .format("yyyy-MM-dd")
+    EsClient.esClient.execute {
+      search(Activity.Index)
+        .query(termQuery(FieldKeys.FIELD_TYPE, `type`))
+        .size(0)
+        .aggregations(dateHistogram)
+    }.map(toAggItems(_, null, null))
+  }
+
+  def jobDateHistogram(`type`: String): Future[Seq[AggsItem]] = {
+    val dateHistogram = dateHistogramAgg(BaseAggregationService.aggsTermsName, FieldKeys.FIELD_CREATED_AT)
+      .interval(DateHistogramInterval.fromString("1M")) // one month
+      .format("yyyy-MM-dd")
+    EsClient.esClient.execute {
+      search(JobReport.Index)
+        .query(termQuery(FieldKeys.FIELD_TYPE, `type`))
+        .size(0)
+        .aggregations(dateHistogram)
+    }.map(toAggItems(_, null, null))
+  }
 
   def countIndex(index: String): Future[Long] = {
     EsClient.esClient.execute {
