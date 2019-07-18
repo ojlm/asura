@@ -1,6 +1,7 @@
 resolvers += Resolver.mavenLocal
 resolvers += "Aliyun" at "http://maven.aliyun.com/nexus/content/groups/public/"
 resolvers += Resolver.DefaultMavenRepository
+resolvers += "Confluent Maven Repository" at "https://packages.confluent.io/maven/"
 externalResolvers := resolvers.value
 
 // Pure Scala Artifact Fetching https://github.com/coursier/coursier

@@ -34,6 +34,7 @@ object Dependencies {
 
   // kafka
   private val akkaKafka = "com.typesafe.akka" %% "akka-stream-kafka" % "1.0.4"
+  private val kafkaAvroSerializer = "io.confluent" % "kafka-avro-serializer" % "4.0.0"
 
   // dubbo, specify javassist and jbossnetty deps because of coursier dep resolve problems
   private val dubbo = "com.alibaba" % "dubbo" % "2.6.5" excludeAll(ExclusionRule(organization = "org.springframework"), ExclusionRule(organization = "org.javassist"), ExclusionRule(organization = "org.jboss.netty"))
@@ -80,7 +81,7 @@ object Dependencies {
   val namerdDependencies = Seq(akkaStream, akkaHttp) ++ commonDependencies
   val dubboDependencies = Seq(dubbo, curator, dubboJavassist, dubboJbossNetty, dubboSpring, akkaStream) ++ commonDependencies
   val peaDependencies = Seq(gatling, gatlingCompiler, curator)
-  val kafkaDependencies = Seq(akkaStream, akkaKafka) ++ commonDependencies
+  val kafkaDependencies = Seq(akkaStream, akkaKafka, kafkaAvroSerializer) ++ commonDependencies
 
   val commonPlayDeps = Seq(
     guice,
