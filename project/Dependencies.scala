@@ -34,7 +34,7 @@ object Dependencies {
 
   // kafka
   private val akkaKafka = "com.typesafe.akka" %% "akka-stream-kafka" % "1.0.4"
-  private val kafkaAvroSerializer = "io.confluent" % "kafka-avro-serializer" % "4.0.0"
+  private val kafkaAvroSerializer = "io.confluent" % "kafka-avro-serializer" % "4.0.0" excludeAll (ExclusionRule(organization = "org.slf4j", name = "*"))
 
   // dubbo, specify javassist and jbossnetty deps because of coursier dep resolve problems
   private val dubbo = "com.alibaba" % "dubbo" % "2.6.5" excludeAll(ExclusionRule(organization = "org.springframework"), ExclusionRule(organization = "org.javassist"), ExclusionRule(organization = "org.jboss.netty"))
