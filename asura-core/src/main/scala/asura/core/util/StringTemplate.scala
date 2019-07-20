@@ -15,7 +15,7 @@ object StringTemplate {
     .setMacroStart("{{")
     .setMacroEnd("}}")
 
-  /** wrapped by "${" and "}" */
+  /** wrapped by `${` and `}` */
   val templateLiteralsParser = StringTemplateParser.create()
     .setMacroPrefix(null)
     .setMacroStart("${")

@@ -17,7 +17,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
 
 /** Dtab format
-  * /svc/${group}/${project}/${namespace} => /$/inet/${host}/${port}
+  * `/svc/${group}/${project}/${namespace} => /$/inet/${host}/${port}`
   */
 @Singleton
 class LinkerdApi @Inject()(
