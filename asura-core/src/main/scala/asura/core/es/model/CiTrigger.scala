@@ -13,6 +13,8 @@ case class CiTrigger(
                       val project: String,
                       val targetType: String,
                       val targetId: String,
+                      val env: String,
+                      val service: String,
                       val readiness: ReadinessCheck = null,
                       var creator: String = null,
                       var createdAt: String = null,
@@ -28,6 +30,12 @@ case class CiTrigger(
     if (null != targetId) {
       m += (FieldKeys.FIELD_TARGET_ID -> targetId)
     }
+    if (null != env) {
+      m += (FieldKeys.FIELD_ENV -> env)
+    }
+    if (null != service) {
+      m += (FieldKeys.FIELD_SERVICE -> service)
+    }
     if (null != readiness) {
       m += (FieldKeys.FIELD_READINESS -> readiness)
     }
@@ -36,6 +44,7 @@ case class CiTrigger(
 }
 
 object CiTrigger extends IndexSetting {
+
   override val Index: String = s"${EsConfig.IndexPrefix}ci-trigger"
   override val mappings: MappingDefinition = MappingDefinition(
     `type` = EsConfig.DefaultType,
@@ -44,11 +53,14 @@ object CiTrigger extends IndexSetting {
       KeywordField(name = FieldKeys.FIELD_PROJECT),
       KeywordField(name = FieldKeys.FIELD_TARGET_TYPE),
       KeywordField(name = FieldKeys.FIELD_TARGET_ID),
+      KeywordField(name = FieldKeys.FIELD_ENV),
+      KeywordField(name = FieldKeys.FIELD_SERVICE),
       ObjectField(name = FieldKeys.FIELD_READINESS, dynamic = Option("false")),
     )
   )
 
   case class ReadinessCheck(
+                             val enabled: Boolean,
                              val targetType: String,
                              val targetId: String,
                              val delay: Int,
