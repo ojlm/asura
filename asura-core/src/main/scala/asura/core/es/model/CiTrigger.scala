@@ -61,7 +61,7 @@ object CiTrigger extends IndexSetting {
 
   case class ReadinessCheck(
                              val enabled: Boolean,
-                             val targetType: String,
+                             val targetType: String, // same with asura.core.es.model.ScenarioStep
                              val targetId: String,
                              val delay: Int,
                              val interval: Int,
