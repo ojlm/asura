@@ -29,6 +29,7 @@ object ScenarioStep {
   val TYPE_SQL = "sql"
   val TYPE_DUBBO = "dubbo"
   val TYPE_SCENARIO = "scenario"
+  val TYPE_JOB = "job"
   val TYPE_DELAY = "delay"
   val TYPE_JUMP = "jump"
 
