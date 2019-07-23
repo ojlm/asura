@@ -11,6 +11,7 @@ import scala.concurrent.duration._
 object PeaConfig {
 
   val DEFAULT_WS_ACTOR_BUFFER_SIZE = 10000
+  val PATH_MEMBERS = "members"
   implicit val DEFAULT_ACTOR_ASK_TIMEOUT: Timeout = 1 minutes
   implicit var system: ActorSystem = _
   implicit var dispatcher: ExecutionContext = _

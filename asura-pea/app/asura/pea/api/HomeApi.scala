@@ -24,7 +24,7 @@ class HomeApi @Inject()(
   }
 
   def members() = Action.async { implicit req =>
-    val children = PeaConfig.zkClient.getChildren.forPath(PeaConfig.zkPath)
+    val children = PeaConfig.zkClient.getChildren.forPath(s"${PeaConfig.zkPath}/${PeaConfig.PATH_MEMBERS}")
     Future.successful(children.asScala.map(PeaMember(_)).filter(m => null != m)).toOkResult
   }
 }
