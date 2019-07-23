@@ -63,7 +63,8 @@ class ApplicationStart @Inject()(
     } catch {
       case _: Throwable => "Unknown"
     }
-    val uri = s"pea://${address}:${portOpt.getOrElse(9000)}?hostname=${hostname}"
+    val port = portOpt.getOrElse(9000)
+    val uri = s"pea://${address}:${port}?hostname=${hostname}"
     PeaConfig.zkPath = configuration.getOptional[String]("pea.zk.path").get
     val connectString = configuration.get[String]("pea.zk.connectString")
     val builder = CuratorFrameworkFactory.builder()
@@ -87,9 +88,11 @@ class ApplicationStart @Inject()(
       PeaConfig.zkClient.create()
         .creatingParentsIfNeeded()
         .withMode(CreateMode.EPHEMERAL)
-        .forPath(s"${PeaConfig.zkPath}/${URLEncoder.encode(uri, StandardCharsets.UTF_8.name())}", null)
+        .forPath(s"${PeaConfig.zkPath}/${PeaConfig.PATH_MEMBERS}/${URLEncoder.encode(uri, StandardCharsets.UTF_8.name())}", null)
     } catch {
-      case t: Throwable => logger.warn(LogUtils.stackTraceToString(t))
+      case t: Throwable =>
+        logger.error(LogUtils.stackTraceToString(t))
+        System.exit(1)
     }
   }
 }
