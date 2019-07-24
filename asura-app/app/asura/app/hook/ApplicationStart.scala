@@ -10,6 +10,7 @@ import asura.cluster.ClusterManager
 import asura.common.util.{LogUtils, StringUtils}
 import asura.core.CoreConfig.{EsOnlineLogConfig, LinkerdConfig, LinkerdConfigServer}
 import asura.core.auth.AuthManager
+import asura.core.ci.CiManager
 import asura.core.es.EsClient
 import asura.core.job.JobCenter
 import asura.core.job.actor.SchedulerActor
@@ -72,6 +73,9 @@ class ApplicationStart @Inject()(
 
   // add auth
   AuthManager.register(BasicAuth)
+
+  // CI Events
+  CiManager.init(system)
 
   // add notify
   JobNotifyManager.register(MailNotifier(mailerClient))
