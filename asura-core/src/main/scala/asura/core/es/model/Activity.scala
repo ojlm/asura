@@ -57,4 +57,6 @@ object Activity extends IndexSetting {
   val TYPE_UPDATE_SQL = "update-sql"
   val TYPE_TOP_TOP_CHECK = "top-top-check"
   val TYPE_TOP_TOP_UNCHECK = "top-top-uncheck"
+  val TYPE_NEW_TRIGGER = "new-trigger"
+  val TYPE_UPDATE_TRIGGER = "update-trigger"
 }

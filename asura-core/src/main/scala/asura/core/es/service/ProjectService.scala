@@ -25,7 +25,7 @@ object ProjectService extends CommonService {
   val projectRelatedIndexes = Seq(
     HttpCaseRequest.Index, RestApi.Index, Job.Index, Environment.Index,
     JobReport.Index, JobNotify.Index, Scenario.Index, Activity.Index,
-    ProjectApiCoverage.Index
+    ProjectApiCoverage.Index, DubboRequest.Index, SqlRequest.Index, CiTrigger.Index
   )
 
   def index(project: Project, checkExists: Boolean = true): Future[IndexDocResponse] = {

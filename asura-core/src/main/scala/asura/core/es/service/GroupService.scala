@@ -56,7 +56,8 @@ object GroupService extends CommonService {
     } else {
       IndexService.deleteByGroupOrProject(Seq(
         HttpCaseRequest.Index, RestApi.Index, Job.Index, Environment.Index,
-        JobReport.Index, JobNotify.Index, Project.Index, Scenario.Index, Activity.Index
+        JobReport.Index, JobNotify.Index, Project.Index, Scenario.Index, Activity.Index,
+        ProjectApiCoverage.Index, DubboRequest.Index, SqlRequest.Index, CiTrigger.Index
       ), id, null).flatMap(idxRes => {
         EsClient.esClient.execute {
           delete(id).from(Group.Index / EsConfig.DefaultType).refresh(RefreshPolicy.WAIT_UNTIL)
