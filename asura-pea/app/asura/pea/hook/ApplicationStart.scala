@@ -1,7 +1,6 @@
 package asura.pea.hook
 
-import java.net.{InetAddress, NetworkInterface, URLEncoder}
-import java.nio.charset.StandardCharsets
+import java.net.{InetAddress, NetworkInterface}
 import java.util
 
 import akka.actor.ActorSystem
@@ -64,12 +63,12 @@ class ApplicationStart @Inject()(
       case _: Throwable => "Unknown"
     }
     val port = portOpt.getOrElse(9000)
-    val uri = s"pea://${address}:${port}?hostname=${hostname}"
-    PeaConfig.zkPath = configuration.getOptional[String]("pea.zk.path").get
+    PeaConfig.zkCurrNode = s"${address}:${port}?hostname=${hostname}"
+    PeaConfig.zkRootPath = configuration.getOptional[String]("pea.zk.path").get
     val connectString = configuration.get[String]("pea.zk.connectString")
     val builder = CuratorFrameworkFactory.builder()
     builder.connectString(connectString)
-      .retryPolicy(new ExponentialBackoffRetry(1000, 3))
+      .retryPolicy(new ExponentialBackoffRetry(1000, 10))
     val usernameOpt = configuration.getOptional[String]("pea.zk.username")
     val passwordOpt = configuration.getOptional[String]("pea.zk.password")
     if (usernameOpt.nonEmpty && passwordOpt.nonEmpty
@@ -88,7 +87,7 @@ class ApplicationStart @Inject()(
       PeaConfig.zkClient.create()
         .creatingParentsIfNeeded()
         .withMode(CreateMode.EPHEMERAL)
-        .forPath(s"${PeaConfig.zkPath}/${PeaConfig.PATH_MEMBERS}/${URLEncoder.encode(uri, StandardCharsets.UTF_8.name())}", null)
+        .forPath(s"${PeaConfig.zkRootPath}/${PeaConfig.PATH_MEMBERS}/${PeaConfig.zkCurrNode}", null)
     } catch {
       case t: Throwable =>
         logger.error(LogUtils.stackTraceToString(t))

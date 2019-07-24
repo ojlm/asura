@@ -1,9 +1,10 @@
 package asura.pea.model
 
-import java.net.{URI, URLDecoder}
-import java.nio.charset.StandardCharsets
+import java.net.URI
 
-import asura.common.util.StringUtils
+import asura.common.util.{LogUtils, StringUtils}
+import asura.pea.PeaConfig
+import com.typesafe.scalalogging.Logger
 
 import scala.collection.mutable
 
@@ -15,9 +16,11 @@ case class PeaMember(
 
 object PeaMember {
 
-  def apply(uriStr: String): PeaMember = {
+  val logger = Logger("PeaMember")
+
+  def apply(uriWithoutScheme: String): PeaMember = {
     try {
-      val uri = URI.create(URLDecoder.decode(uriStr, StandardCharsets.UTF_8.name()))
+      val uri = URI.create(s"${PeaConfig.DEFAULT_SCHEME}://${uriWithoutScheme}")
       val queryMap = mutable.Map[String, String]()
       uri.getQuery.split("&").foreach(paramStr => {
         val param = paramStr.split("=")
@@ -27,7 +30,9 @@ object PeaMember {
       })
       PeaMember(uri.getHost, uri.getPort, queryMap.getOrElse("hostname", StringUtils.EMPTY))
     } catch {
-      case _: Throwable => null
+      case t: Throwable =>
+        logger.warn(LogUtils.stackTraceToString(t))
+        null
     }
   }
 }

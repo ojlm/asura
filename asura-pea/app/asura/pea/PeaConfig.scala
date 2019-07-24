@@ -10,6 +10,7 @@ import scala.concurrent.duration._
 
 object PeaConfig {
 
+  val DEFAULT_SCHEME = "pea"
   val DEFAULT_WS_ACTOR_BUFFER_SIZE = 10000
   val PATH_MEMBERS = "members"
   implicit val DEFAULT_ACTOR_ASK_TIMEOUT: Timeout = 1 minutes
@@ -18,6 +19,7 @@ object PeaConfig {
   implicit var materializer: ActorMaterializer = _
 
   var zkClient: CuratorFramework = null
-  var zkPath: String = null
+  var zkRootPath: String = null
+  var zkCurrNode: String = null
   var resultsFolder: String = null
 }
