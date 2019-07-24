@@ -15,6 +15,7 @@ case class CiTrigger(
                       val targetId: String,
                       val env: String,
                       val service: String,
+                      val debounce: Long = 1000L,
                       val readiness: ReadinessCheck = null,
                       var creator: String = null,
                       var createdAt: String = null,
@@ -36,6 +37,7 @@ case class CiTrigger(
     if (null != service) {
       m += (FieldKeys.FIELD_SERVICE -> service)
     }
+    m += (FieldKeys.FIELD_DEBOUNCE -> debounce)
     if (null != readiness) {
       m += (FieldKeys.FIELD_READINESS -> readiness)
     }
@@ -55,6 +57,7 @@ object CiTrigger extends IndexSetting {
       KeywordField(name = FieldKeys.FIELD_TARGET_ID),
       KeywordField(name = FieldKeys.FIELD_ENV),
       KeywordField(name = FieldKeys.FIELD_SERVICE),
+      BasicField(name = FieldKeys.FIELD_DEBOUNCE, `type` = "long"),
       ObjectField(name = FieldKeys.FIELD_READINESS, dynamic = Option("false")),
     )
   )

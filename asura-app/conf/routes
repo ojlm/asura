@@ -40,3 +40,4 @@ POST        /api/home                            asura.app.api.HomeApi.query()
 ->          /api/config                          config.Routes
 ->          /api/favorite                        favorite.Routes
 ->          /api/count                           count.Routes
+->          /api/trigger                         trigger.Routes
