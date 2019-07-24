@@ -80,6 +80,7 @@ object FieldKeys {
   val FIELD_SUBSCRIBER = "subscriber"
   val FIELD_STEPS = "steps"
   val FIELD_REPORT_ID = "reportId"
+  val FIELD_TRIGGER_ID = "triggerId"
   val FIELD_SCENARIO_ID = "scenarioId"
   val FIELD_CASE_ID = "caseId"
   val FIELD_METRICS = "metrics"
@@ -156,6 +157,7 @@ object FieldKeys {
   val FIELD_FAIl_FAST = "failFast"
   val FIELD_READINESS = "readiness"
   val FIELD_DEBOUNCE = "debounce"
+  val FIELD_AUTHOR = "author"
 
   val FIELD_OBJECT_REQUEST_PROTOCOL = "request.protocol"
   val FIELD_OBJECT_REQUEST_HOST = "request.host"
