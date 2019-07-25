@@ -6,7 +6,7 @@ import asura.core.es.EsResponse
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, CiTrigger, ScenarioStep}
 import asura.core.es.service._
-import asura.core.model.QueryTrigger
+import asura.core.model.{QueryCiEvents, QueryTrigger}
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 import play.api.Configuration
@@ -62,6 +62,11 @@ class TriggerApi @Inject()(
       activityActor ! Activity(doc.group, doc.project, getProfileId(), Activity.TYPE_UPDATE_TRIGGER, id)
       res
     }).toOkResult
+  }
+
+  def events() = Action(parse.byteString).async { implicit req =>
+    val q = req.bodyAs(classOf[QueryCiEvents])
+    TriggerEventLogService.queryEvents(q).toOkResultByEsList(true)
   }
 
   def getReadiness(trigger: CiTrigger): Future[Any] = {
