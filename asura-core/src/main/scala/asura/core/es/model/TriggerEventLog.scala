@@ -2,7 +2,9 @@ package asura.core.es.model
 
 import asura.common.util.{DateUtils, StringUtils}
 import asura.core.es.EsConfig
-import com.sksamuel.elastic4s.mappings.{BasicField, KeywordField, MappingDefinition}
+import asura.core.es.model.TriggerEventLog.ExtData
+import asura.core.job.JobExecDesc
+import com.sksamuel.elastic4s.mappings.{BasicField, KeywordField, MappingDefinition, ObjectField}
 
 case class TriggerEventLog(
                             group: String,
@@ -12,10 +14,13 @@ case class TriggerEventLog(
                             service: String,
                             `type`: String,
                             timestamp: String,
+                            result: String,
                             triggerId: String = StringUtils.EMPTY,
-                            jobId: String = StringUtils.EMPTY,
+                            targetType: String = StringUtils.EMPTY,
+                            targetId: String = StringUtils.EMPTY,
                             reportId: String = StringUtils.EMPTY,
-                            createdAt: String = DateUtils.nowDateTime
+                            createdAt: String = DateUtils.nowDateTime,
+                            ext: ExtData = null,
                           )
 
 object TriggerEventLog extends IndexSetting {
@@ -32,11 +37,28 @@ object TriggerEventLog extends IndexSetting {
       KeywordField(name = FieldKeys.FIELD_AUTHOR),
       KeywordField(name = FieldKeys.FIELD_SERVICE),
       KeywordField(name = FieldKeys.FIELD_TYPE),
+      KeywordField(name = FieldKeys.FIELD_RESULT),
       KeywordField(name = FieldKeys.FIELD_TRIGGER_ID),
-      KeywordField(name = FieldKeys.FIELD_JOB_ID),
+      KeywordField(name = FieldKeys.FIELD_TARGET_TYPE),
+      KeywordField(name = FieldKeys.FIELD_TARGET_ID),
       KeywordField(name = FieldKeys.FIELD_REPORT_ID),
       BasicField(name = FieldKeys.FIELD_TIMESTAMP, `type` = "date", format = Some(EsConfig.DateFormat)),
       BasicField(name = FieldKeys.FIELD_CREATED_AT, `type` = "date", format = Some(EsConfig.DateFormat)),
+      ObjectField(name = FieldKeys.FIELD_EXT, dynamic = Option("false")),
     )
   )
+
+  /** no triggers match */
+  val RESULT_MISS = "miss"
+  /** is debounced */
+  val RESULT_DEBOUNCE = "debounce"
+  /** readiness check failed */
+  val RESULT_ILL = "ill"
+  /** report success */
+  val RESULT_SUCCESS = JobExecDesc.STATUS_SUCCESS
+  /** report fail */
+  val RESULT_FAIL = JobExecDesc.STATUS_FAIL
+
+  case class ExtData(errMsg: String)
+
 }

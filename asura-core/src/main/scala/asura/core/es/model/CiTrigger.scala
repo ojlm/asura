@@ -5,19 +5,20 @@ import asura.core.es.model.CiTrigger.ReadinessCheck
 import com.sksamuel.elastic4s.mappings._
 
 import scala.collection.mutable
+import scala.concurrent.duration._
 
 case class CiTrigger(
-                      val summary: String,
-                      val description: String,
-                      val group: String,
-                      val project: String,
-                      val targetType: String,
-                      val targetId: String,
-                      val env: String,
-                      val service: String,
-                      val enabled: Boolean = false,
-                      val debounce: Long = 1000L,
-                      val readiness: ReadinessCheck = null,
+                      summary: String,
+                      description: String,
+                      group: String,
+                      project: String,
+                      targetType: String,
+                      targetId: String,
+                      env: String,
+                      service: String,
+                      enabled: Boolean = false,
+                      debounce: Long = 1000L,
+                      readiness: ReadinessCheck = null,
                       var creator: String = null,
                       var createdAt: String = null,
                       var updatedAt: String = null,
@@ -66,13 +67,18 @@ object CiTrigger extends IndexSetting {
   )
 
   case class ReadinessCheck(
-                             val enabled: Boolean,
-                             val targetType: String, // same with asura.core.es.model.ScenarioStep
-                             val targetId: String,
-                             val delay: Int,
-                             val interval: Int,
-                             val timeout: Int,
-                             val retries: Int,
-                           )
+                             enabled: Boolean,
+                             targetType: String, // same with asura.core.es.model.ScenarioStep
+                             targetId: String,
+                             delay: Int, // s
+                             interval: Int, // s
+                             timeout: Int, // s
+                             retries: Int,
+                           ) {
+
+    def totalTimeout: FiniteDuration = {
+      (delay + (interval + timeout) * retries) seconds
+    }
+  }
 
 }
