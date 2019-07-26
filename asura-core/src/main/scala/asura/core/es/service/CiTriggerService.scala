@@ -16,6 +16,7 @@ import com.sksamuel.elastic4s.searches.queries.Query
 import com.sksamuel.elastic4s.searches.sort.FieldSort
 import com.typesafe.scalalogging.Logger
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
@@ -58,19 +59,49 @@ object CiTriggerService extends CommonService {
 
   def queryTrigger(query: QueryTrigger) = {
     var sortFields = Seq(FieldSort(FieldKeys.FIELD_CREATED_AT).desc())
-    val esQueries = ArrayBuffer[Query]()
-    if (StringUtils.isNotEmpty(query.text)) {
-      esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
-      sortFields = Nil
-    }
-    if (StringUtils.isNotEmpty(query.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, query.group)
-    if (StringUtils.isNotEmpty(query.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, query.project)
+    if (StringUtils.isNotEmpty(query.text)) sortFields = Nil
     EsClient.esClient.execute {
-      search(CiTrigger.Index).query(boolQuery().must(esQueries))
+      search(CiTrigger.Index).query(boolQuery().must(buildEsQueries(query)))
         .from(query.pageFrom)
         .size(query.pageSize)
         .sortBy(sortFields)
     }
+  }
+
+  def getTriggersAsMap(query: QueryTrigger): Future[Map[String, CiTrigger]] = {
+    val map = mutable.HashMap[String, CiTrigger]()
+    EsClient.esClient.execute {
+      search(CiTrigger.Index).query(boolQuery().must(buildEsQueries(query)))
+        .from(query.pageFrom)
+        .size(query.pageSize)
+        .sortByFieldDesc(FieldKeys.FIELD_CREATED_AT)
+    }.map(res => {
+      if (res.isSuccess) {
+        if (res.result.nonEmpty) {
+          res.result.hits.hits.foreach(hit => map += (hit.id -> JacksonSupport.parse(hit.sourceAsString, classOf[CiTrigger])))
+        }
+        map.toMap
+      } else {
+        throw CoreErrorMessages.error_EsRequestFail(res).toException
+      }
+    })
+  }
+
+  private def buildEsQueries(query: QueryTrigger): Seq[Query] = {
+    val esQueries = ArrayBuffer[Query]()
+    if (StringUtils.isNotEmpty(query.text)) {
+      esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
+    }
+    query.enabled match {
+      case "true" => esQueries += termQuery(FieldKeys.FIELD_ENABLED, true)
+      case "false" => esQueries += termQuery(FieldKeys.FIELD_ENABLED, false)
+      case _ =>
+    }
+    if (StringUtils.isNotEmpty(query.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, query.group)
+    if (StringUtils.isNotEmpty(query.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, query.project)
+    if (StringUtils.isNotEmpty(query.env)) esQueries += termQuery(FieldKeys.FIELD_ENV, query.env)
+    if (StringUtils.isNotEmpty(query.service)) esQueries += termQuery(FieldKeys.FIELD_SERVICE, query.service)
+    esQueries
   }
 
   def updateDoc(id: String, doc: CiTrigger) = {

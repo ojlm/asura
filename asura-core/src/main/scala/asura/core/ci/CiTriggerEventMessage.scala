@@ -14,9 +14,10 @@ case class CiTriggerEventMessage(
 
   def eventKey = {
     val sb = StringBuilder.newBuilder
-    sb.append(group).append(":").append(project)
-    if (StringUtils.isNotEmpty(service)) sb.append(":").append(service)
-    if (StringUtils.isNotEmpty(env)) sb.append(":").append(env)
+    sb.append(group).append(":").append(project).append(":")
+    if (StringUtils.isNotEmpty(env)) sb.append(env)
+    sb.append(":")
+    if (StringUtils.isNotEmpty(service)) sb.append(service)
     sb.toString()
   }
 }
