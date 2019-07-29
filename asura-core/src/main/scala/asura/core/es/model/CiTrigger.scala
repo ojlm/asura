@@ -5,7 +5,6 @@ import asura.core.es.model.CiTrigger.ReadinessCheck
 import com.sksamuel.elastic4s.mappings._
 
 import scala.collection.mutable
-import scala.concurrent.duration._
 
 case class CiTrigger(
                       summary: String,
@@ -74,11 +73,6 @@ object CiTrigger extends IndexSetting {
                              interval: Int, // s
                              timeout: Int, // s
                              retries: Int,
-                           ) {
-
-    def totalTimeout: FiniteDuration = {
-      (delay + (interval + timeout) * retries) seconds
-    }
-  }
+                           )
 
 }

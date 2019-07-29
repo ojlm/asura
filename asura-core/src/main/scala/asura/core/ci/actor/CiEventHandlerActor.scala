@@ -5,6 +5,7 @@ import akka.actor.{ActorRef, Props}
 import akka.pattern.{ask, pipe}
 import asura.common.actor.BaseActor
 import asura.common.util.{DateUtils, LogUtils, StringUtils}
+import asura.core.CoreConfig
 import asura.core.ci.CiTriggerEventMessage
 import asura.core.es.model.TriggerEventLog.ExtData
 import asura.core.es.model.{CiTrigger, TriggerEventLog}
@@ -25,6 +26,7 @@ class CiEventHandlerActor(eventsSave: ActorRef) extends BaseActor {
   var triggers: Map[String, CiTrigger] = null
   val triggerLastTime = mutable.Map[String, Long]()
 
+  // TODO: when to stop self
   override def receive: Receive = {
     case msg: CiTriggerEventMessage =>
       this.stage match {
@@ -57,7 +59,7 @@ class CiEventHandlerActor(eventsSave: ActorRef) extends BaseActor {
           val readiness = trigger.readiness
           val serviceReady = if (null != readiness && readiness.enabled) {
             context.actorOf(ReadinessCheckActor.props(readiness))
-              .ask(ReadinessCheckActor.DoCheck)(readiness.totalTimeout)
+              .ask(ReadinessCheckActor.DoCheck)(CoreConfig.DEFAULT_ACTOR_ASK_TIMEOUT)
               .asInstanceOf[Future[(Boolean, String)]]
           } else {
             Future.successful((true, StringUtils.EMPTY))
@@ -70,7 +72,7 @@ class CiEventHandlerActor(eventsSave: ActorRef) extends BaseActor {
           }.map(serviceStatus => {
             serviceStatus match {
               case (true, _) => // service is running
-              // TODO: do the job
+              // TODO run job
               case (false, errMsg) => // something wrong
                 sendLog(msg, docId, trigger, TriggerEventLog.RESULT_ILL, ExtData(errMsg))
             }
@@ -92,9 +94,12 @@ class CiEventHandlerActor(eventsSave: ActorRef) extends BaseActor {
         timestamp = DateUtils.parse(msg.timestamp),
         result = TriggerEventLog.RESULT_MISS,
       )
-      // stop self immediately, stay for more executions ？
-      context.stop(self)
     }
+  }
+
+  private def stopSelf(): Unit = {
+    // stop self immediately, stay for more executions ？
+    context.stop(self)
   }
 
   private def sendLog(
