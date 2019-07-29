@@ -78,6 +78,18 @@ object DubboRequestService extends CommonService with BaseAggregationService {
     }
   }
 
+  def getRequestById(id: String): Future[DubboRequest] = {
+    EsClient.esClient.execute {
+      search(DubboRequest.Index).query(idsQuery(id)).size(1)
+    }.map(res => {
+      if (res.isSuccess && res.result.nonEmpty) {
+        JacksonSupport.parse(res.result.hits.hits(0).sourceAsString, classOf[DubboRequest])
+      } else {
+        null
+      }
+    })
+  }
+
   private def getByIds(ids: Seq[String], filterFields: Boolean = false) = {
     if (null != ids) {
       EsClient.esClient.execute {
