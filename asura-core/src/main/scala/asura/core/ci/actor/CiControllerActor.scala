@@ -17,7 +17,7 @@ class CiControllerActor extends BaseActor {
         val key = msg.eventKey
         val worker = context
           .child(key)
-          .getOrElse(context.actorOf(CiEventHandlerActor.props(eventsSave), key))
+          .getOrElse(context.actorOf(CiEventHandlerActor.props(eventsSave, msg.service), key))
         worker ! msg
       }
   }
