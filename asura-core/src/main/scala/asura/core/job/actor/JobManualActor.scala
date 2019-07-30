@@ -46,7 +46,7 @@ class JobManualActor(jobId: String, user: String, out: ActorRef) extends BaseAct
       }
     case jobId: String =>
       if (StringUtils.isNotEmpty(jobId)) {
-        JobService.geJobById(jobId).pipeTo(self)
+        JobService.getJobById(jobId).pipeTo(self)
       } else {
         wsActor ! s"jobId is empty."
         wsActor ! Status.Success

@@ -33,7 +33,7 @@ abstract class AbstractJob extends Job {
   private def beforeRun(context: JobExecutionContext): JobExecDesc = {
     val jobKey = context.getJobDetail.getKey
     val jobId = jobKey.getName
-    val job = JobService.geJobById(jobId).await
+    val job = JobService.getJobById(jobId).await
     JobExecDesc.from(jobId, job, JobReport.TYPE_QUARTZ, ContextOptions(jobEnv = job.env), BaseIndex.CREATOR_QUARTZ).await
   }
 
