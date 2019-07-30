@@ -156,7 +156,7 @@ class JobApi @Inject()(
   }
 
   def copyById(id: String) = Action(parse.byteString).async { implicit req =>
-    JobService.geJobById(id).flatMap(job => {
+    JobService.getJobById(id).flatMap(job => {
       job.fillCommonFields(getProfileId())
       job.trigger = Seq(JobTrigger(job.group, job.project))
       JobService.index(job)

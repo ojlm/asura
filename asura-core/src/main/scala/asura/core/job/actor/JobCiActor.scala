@@ -23,7 +23,7 @@ class JobCiActor(id: String, wsActor: ActorRef, options: ContextOptions) extends
       sseActor = sender
       self ! id
     case jobId: String =>
-      JobService.geJobById(jobId).pipeTo(self)
+      JobService.getJobById(jobId).pipeTo(self)
     case wsEvent: ActorEvent => // replay to sse actor, from JobRunnerActor
       if (null != sseActor && ActorEvent.TYPE_NOTIFY.equals(wsEvent.`type`)) {
         sseActor ! wsEvent.msg
