@@ -15,7 +15,7 @@ case class CiTrigger(
                       targetId: String,
                       env: String,
                       service: String,
-                      enabled: Boolean = false,
+                      enabled: Boolean = true,
                       debounce: Long = 1000L,
                       readiness: ReadinessCheck = null,
                       var creator: String = null,

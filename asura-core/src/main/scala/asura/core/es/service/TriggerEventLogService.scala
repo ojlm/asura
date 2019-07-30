@@ -38,7 +38,7 @@ object TriggerEventLogService extends CommonService with BaseAggregationService 
       search(TriggerEventLog.Index).query(boolQuery().must(esQueries))
         .from(query.pageFrom)
         .size(query.pageSize)
-        .sortByFieldDesc(FieldKeys.FIELD_TIMESTAMP)
+        .sortByFieldDesc(FieldKeys.FIELD_CREATED_AT)
     }
   }
 }
