@@ -7,9 +7,12 @@ import asura.common.actor.BaseActor
 import asura.common.util.{DateUtils, LogUtils, StringUtils}
 import asura.core.CoreConfig
 import asura.core.ci.CiTriggerEventMessage
+import asura.core.ci.actor.CiEventHandlerActor.DecreaseTrigger
 import asura.core.es.model.TriggerEventLog.ExtData
-import asura.core.es.model.{CiTrigger, TriggerEventLog}
-import asura.core.es.service.CiTriggerService
+import asura.core.es.model._
+import asura.core.es.service.{CiTriggerService, JobNotifyService, JobReportService, JobService}
+import asura.core.job.actor.JobRunnerActor
+import asura.core.job.{JobCenter, JobExecDesc}
 import asura.core.model.QueryTrigger
 
 import scala.collection.mutable
@@ -17,35 +20,40 @@ import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
 // one key, one actor
-class CiEventHandlerActor(eventsSave: ActorRef) extends BaseActor {
+class CiEventHandlerActor(eventsSave: ActorRef, service: String) extends BaseActor {
 
   implicit val ec = context.dispatcher
 
   var stage = CiEventHandlerActor.STAGE_INIT
   var initialMessages = ArrayBuffer[CiTriggerEventMessage]() // buffers when triggers are not ready
-  var triggers: Map[String, CiTrigger] = null
+  var triggers: Map[String, CiTrigger] = Map.empty
   val triggerLastTime = mutable.Map[String, Long]()
+  var leftTriggerCount = 0 // control when to stop
 
-  // TODO: when to stop self
   override def receive: Receive = {
     case msg: CiTriggerEventMessage =>
       this.stage match {
         case CiEventHandlerActor.STAGE_INIT =>
           this.initialMessages += msg
-          val q = QueryTrigger(msg.group, msg.project, msg.env, msg.service, true.toString, null)
+          val q = QueryTrigger(msg.group, msg.project, msg.env, null, true.toString, null)
           q.size = CiEventHandlerActor.MAX_COUNT
           this.stage = CiEventHandlerActor.STAGE_FETCHING
           CiTriggerService.getTriggersAsMap(q) pipeTo self
         case CiEventHandlerActor.STAGE_FETCHING =>
           this.initialMessages += msg
         case CiEventHandlerActor.STAGE_READY =>
+          this.leftTriggerCount = this.leftTriggerCount + this.triggers.size
           consume(msg)
       }
     case triggers: Map[String, CiTrigger] =>
-      this.triggers = triggers
       this.stage = CiEventHandlerActor.STAGE_READY
+      this.triggers = triggers.filter(tuple => filterTrigger(tuple._2))
+      this.leftTriggerCount = this.triggers.size * this.initialMessages.size
       this.initialMessages.foreach(consume)
       this.initialMessages = null // clear
+    case DecreaseTrigger =>
+      this.leftTriggerCount = this.leftTriggerCount - 1
+      this.tryStopSelf()
     case Failure(t) =>
       log.warning(LogUtils.stackTraceToString(t))
       context.stop(self)
@@ -72,14 +80,14 @@ class CiEventHandlerActor(eventsSave: ActorRef) extends BaseActor {
           }.map(serviceStatus => {
             serviceStatus match {
               case (true, _) => // service is running
-              // TODO run job
+                doJobSendLogAndDecrease(msg, docId, trigger)
               case (false, errMsg) => // something wrong
-                sendLog(msg, docId, trigger, TriggerEventLog.RESULT_ILL, ExtData(errMsg))
+                sendLogAndDecrease(msg, docId, trigger, TriggerEventLog.RESULT_ILL, ext = ExtData(errMsg))
             }
           })
         } else {
           // debounce
-          sendLog(msg, docId, trigger, TriggerEventLog.RESULT_DEBOUNCE)
+          sendLogAndDecrease(msg, docId, trigger, TriggerEventLog.RESULT_DEBOUNCE)
         }
       })
     } else {
@@ -94,21 +102,104 @@ class CiEventHandlerActor(eventsSave: ActorRef) extends BaseActor {
         timestamp = DateUtils.parse(msg.timestamp),
         result = TriggerEventLog.RESULT_MISS,
       )
+      decreaseAndTryStop()
     }
   }
 
-  private def stopSelf(): Unit = {
-    // stop self immediately, stay for more executions ？
-    context.stop(self)
+  private def doJobSendLogAndDecrease(
+                                       msg: CiTriggerEventMessage,
+                                       docId: String,
+                                       trigger: CiTrigger
+                                     ): Unit = {
+    trigger.targetType match {
+      case ScenarioStep.TYPE_JOB =>
+        JobService.getJobById(trigger.targetId).onComplete {
+          case scala.util.Success(job) =>
+            try {
+              val jobImpl = JobCenter.classAliasJobMap.get(job.classAlias).get
+              val (isOk, errMsg) = jobImpl.checkJobData(job.jobData)
+              if (isOk) {
+                JobExecDesc.from(trigger.targetId, job, JobReport.TYPE_CI, null, BaseIndex.CREATOR_CI)
+                  .flatMap(jobExecDesc => {
+                    context.actorOf(JobRunnerActor.props(null, null))
+                      .ask(jobExecDesc)(CoreConfig.DEFAULT_JOB_TIMEOUT)
+                  })
+                  .flatMap(answer => {
+                    val execDesc = answer.asInstanceOf[JobExecDesc]
+                    execDesc.prepareEnd()
+                    val report = execDesc.report
+                    JobReportService.indexReport(execDesc.reportId, report).map(_ => {
+                      JobNotifyService.notifySubscribers(execDesc)
+                      execDesc
+                    })
+                  })
+                  .onComplete {
+                    case scala.util.Success(execDesc) =>
+                      sendLogAndDecrease(msg, docId, trigger, execDesc.report.result, execDesc.reportId)
+                    case util.Failure(t) =>
+                      sendLogAndDecreaseWithError(msg, docId, trigger, t)
+                  }
+              } else {
+                sendLogAndDecrease(
+                  msg,
+                  docId,
+                  trigger,
+                  TriggerEventLog.RESULT_ERROR,
+                  ext = ExtData(errMsg)
+                )
+              }
+            } catch {
+              case t: Throwable => sendLogAndDecreaseWithError(msg, docId, trigger, t)
+            }
+          case util.Failure(t) => sendLogAndDecreaseWithError(msg, docId, trigger, t)
+        }
+      case _ =>
+        sendLogAndDecrease(
+          msg,
+          docId,
+          trigger,
+          TriggerEventLog.RESULT_UNKNOWN,
+          ext = ExtData(trigger.targetType)
+        )
+    }
   }
 
-  private def sendLog(
-                       msg: CiTriggerEventMessage,
-                       docId: String,
-                       trigger: CiTrigger,
-                       result: String,
-                       ext: ExtData = null,
-                     ): Unit = {
+  @inline
+  private def sendLogAndDecreaseWithError(
+                                           msg: CiTriggerEventMessage,
+                                           docId: String,
+                                           trigger: CiTrigger,
+                                           t: Throwable
+                                         ): Unit = {
+    sendLogAndDecrease(
+      msg,
+      docId,
+      trigger,
+      TriggerEventLog.RESULT_ERROR,
+      ext = ExtData(LogUtils.stackTraceToString(t))
+    )
+  }
+
+  @inline
+  private def decreaseAndTryStop(): Unit = {
+    self ! DecreaseTrigger
+  }
+
+  private def tryStopSelf(): Unit = {
+    // stop self immediately, stay for more executions ?
+    if (this.leftTriggerCount < 1) {
+      context.stop(self)
+    }
+  }
+
+  private def sendLogAndDecrease(
+                                  msg: CiTriggerEventMessage,
+                                  docId: String,
+                                  trigger: CiTrigger,
+                                  result: String,
+                                  reportId: String = StringUtils.EMPTY,
+                                  ext: ExtData = null,
+                                ): Unit = {
     eventsSave ! TriggerEventLog(
       group = msg.group,
       project = msg.project,
@@ -121,8 +212,10 @@ class CiEventHandlerActor(eventsSave: ActorRef) extends BaseActor {
       triggerId = docId,
       targetType = trigger.targetType,
       targetId = trigger.targetId,
+      reportId = reportId,
       ext = ext,
     )
+    decreaseAndTryStop()
   }
 
   private def debounce(docId: String, trigger: CiTrigger): Boolean = {
@@ -138,14 +231,26 @@ class CiEventHandlerActor(eventsSave: ActorRef) extends BaseActor {
       false
     }
   }
+
+  // If the trigger set a service value, then it must be the prefix of the same field in event
+  private def filterTrigger(trigger: CiTrigger): Boolean = {
+    if (StringUtils.isNotEmpty(trigger.service) && StringUtils.isNotEmpty(service)) {
+      service.startsWith(trigger.service)
+    } else {
+      true
+    }
+  }
 }
 
 object CiEventHandlerActor {
 
-  def props(eventsSave: ActorRef) = Props(new CiEventHandlerActor(eventsSave))
+  def props(eventsSave: ActorRef, service: String) = Props(new CiEventHandlerActor(eventsSave, service))
 
   val MAX_COUNT = 100
   val STAGE_INIT = 0 // initial state
   val STAGE_FETCHING = 1 // get trigger data from es
   val STAGE_READY = 2 // trigger data
+
+  final object DecreaseTrigger
+
 }

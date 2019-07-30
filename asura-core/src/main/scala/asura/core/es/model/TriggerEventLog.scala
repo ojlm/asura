@@ -54,6 +54,10 @@ object TriggerEventLog extends IndexSetting {
   val RESULT_DEBOUNCE = "debounce"
   /** readiness check failed */
   val RESULT_ILL = "ill"
+  /** unknown target type */
+  val RESULT_UNKNOWN = "unknown"
+  /** error happened */
+  val RESULT_ERROR = "error"
   /** report success */
   val RESULT_SUCCESS = JobExecDesc.STATUS_SUCCESS
   /** report fail */

@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.scaladsl.Source
 import akka.stream.{Materializer, OverflowStrategy}
 import asura.common.actor.SenderMessage
+import asura.core.ci.{CiManager, CiTriggerEventMessage}
 import asura.core.job.actor.JobCiActor
 import asura.play.api.BaseApi
 import javax.inject.{Inject, Singleton}
@@ -13,7 +14,7 @@ import play.api.libs.EventSource
 import play.api.libs.streams.ActorFlow
 import play.api.mvc.{Codec, WebSocket}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class CiApi @Inject()(
@@ -26,7 +27,13 @@ class CiApi @Inject()(
   implicit val codec = Codec.utf_8
 
   def home() = Action {
-    Ok("ci")
+    Ok("CI")
+  }
+
+  def trigger() = Action(parse.byteString).async { implicit req =>
+    val msg = req.bodyAs(classOf[CiTriggerEventMessage])
+    CiManager.eventSource(msg)
+    Future.successful(Ok("OK"))
   }
 
   def jobWS(id: String) = WebSocket.accept[String, String] { implicit req =>
