@@ -75,10 +75,10 @@ class ReadinessCheckActor(readiness: ReadinessCheck) extends BaseActor {
       futureResult.onComplete {
         case scala.util.Success(result) =>
           timeoutCancellable.cancel()
-          promiseResult.success(result)
+          promiseResult.trySuccess(result)
         case scala.util.Failure(t) =>
           timeoutCancellable.cancel()
-          promiseResult.failure(t)
+          promiseResult.tryFailure(t)
       }
       promiseResult.future.onComplete {
         case scala.util.Success(result) =>
