@@ -21,6 +21,7 @@ case class VariablesExportItem(
                                 description: String,
                                 enabled: Boolean = true,
                                 function: String = null,
+                                extra: VariablesItemExtraData = null,
                               ) {
 
   @JsonIgnore
