@@ -4,10 +4,10 @@ import java.util
 
 import asura.common.util.StringUtils
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.es.model.{Environment, VariablesExportItem, VariablesImportItem}
+import asura.core.es.model.{Environment, VariablesExportItem, VariablesImportItem, VariablesItemExtraData}
 import asura.core.es.service.EnvironmentService
 import asura.core.script.JavaScriptEngine
-import asura.core.script.function.Functions
+import asura.core.script.function.{ArgWithExtraData, Functions}
 import asura.core.util.{JsonPathUtils, StringTemplate}
 
 import scala.concurrent.Future
@@ -174,7 +174,7 @@ case class RuntimeContext(
                 item.value
               }
               if (StringUtils.isNotEmpty(item.function)) {
-                evaluateValue(value, item.function)
+                evaluateValue(value, item.function, item.extra)
               } else {
                 Future.successful(value)
               }
@@ -200,7 +200,7 @@ case class RuntimeContext(
             val futureValue = try {
               val tmpValue = JsonPathUtils.read[Object](ctx, item.srcPath)
               if (null != tmpValue && StringUtils.isNotEmpty(item.function)) {
-                evaluateValue(tmpValue, item.function)
+                evaluateValue(tmpValue, item.function, item.extra)
               } else {
                 Future.successful(tmpValue)
               }
@@ -216,10 +216,11 @@ case class RuntimeContext(
     }
   }
 
-  private def evaluateValue(value: Object, function: String): Future[Object] = {
+  private def evaluateValue(value: Object, function: String, extra: VariablesItemExtraData): Future[Object] = {
     val func = Functions.getTransform(function)
     if (func.nonEmpty) {
-      func.get.apply(value).recover {
+      val arg = if (null != extra) ArgWithExtraData(value, extra) else value
+      func.get.apply(arg).recover {
         case t: Throwable => t.getMessage
       }
     } else {

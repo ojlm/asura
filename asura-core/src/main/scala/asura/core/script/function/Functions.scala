@@ -6,7 +6,7 @@ object Functions {
 
   private val transforms = mutable.HashMap[String, TransformFunction]()
 
-  val buildIn = Seq(ToInteger, ToLong, ToMap, ToString, Atob, Btoa)
+  val buildIn = Seq(ToInteger, ToLong, ToMap, ToString, Atob, Btoa, Script)
 
   buildIn.foreach(register(_))
 
