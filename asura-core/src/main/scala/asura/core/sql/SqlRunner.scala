@@ -38,6 +38,7 @@ object SqlRunner {
           (sqlInvoker ? tuple._1).flatMap(responseObj => {
             context.setCurrentEntity(responseObj.asInstanceOf[Object])
             metrics.evalAssertionBegin()
+            context.setCurrentMetrics(metrics)
             SqlResult.evaluate(
               docId,
               request.assert,

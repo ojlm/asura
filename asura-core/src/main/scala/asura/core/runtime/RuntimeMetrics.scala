@@ -69,6 +69,10 @@ class RuntimeMetrics {
       totalTime = Math.round((_theEnd - _start).toDouble / scale)
     )
   }
+
+  def getRequestTime(): Int = {
+    Math.round((_evalAssertionStart - _performRequestStart).toDouble / scale).toInt
+  }
 }
 
 object RuntimeMetrics {

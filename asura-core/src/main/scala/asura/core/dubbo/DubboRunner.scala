@@ -43,6 +43,7 @@ object DubboRunner {
           (dubboInvoker ? genericRequest).flatMap(responseObj => {
             context.setCurrentEntity(responseObj.asInstanceOf[Object])
             metrics.evalAssertionBegin()
+            context.setCurrentMetrics(metrics)
             DubboResult.evaluate(
               docId,
               request.assert,
