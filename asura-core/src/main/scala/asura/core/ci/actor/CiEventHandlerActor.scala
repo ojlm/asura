@@ -135,7 +135,7 @@ class CiEventHandlerActor(eventsSave: ActorRef, service: String) extends BaseAct
                   })
                   .onComplete {
                     case scala.util.Success(execDesc) =>
-                      sendLogAndDecrease(msg, docId, trigger, execDesc.report.result, execDesc.reportId)
+                      sendLogAndDecrease(msg, docId, trigger, execDesc.report.result, job.group, job.project, execDesc.reportId)
                     case util.Failure(t) =>
                       sendLogAndDecreaseWithError(msg, docId, trigger, t)
                   }
@@ -197,6 +197,8 @@ class CiEventHandlerActor(eventsSave: ActorRef, service: String) extends BaseAct
                                   docId: String,
                                   trigger: CiTrigger,
                                   result: String,
+                                  targetGroup: String = StringUtils.EMPTY,
+                                  targetProject: String = StringUtils.EMPTY,
                                   reportId: String = StringUtils.EMPTY,
                                   ext: ExtData = null,
                                 ): Unit = {
@@ -211,6 +213,8 @@ class CiEventHandlerActor(eventsSave: ActorRef, service: String) extends BaseAct
       result = result,
       triggerId = docId,
       targetType = trigger.targetType,
+      targetGroup = targetGroup,
+      targetProject = targetProject,
       targetId = trigger.targetId,
       reportId = reportId,
       ext = ext,
