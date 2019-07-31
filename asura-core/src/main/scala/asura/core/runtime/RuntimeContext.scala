@@ -25,8 +25,10 @@ object RuntimeContext {
   // alias for scenario scope
   val KEY__S = "_s"
   // alias for all steps
+  @deprecated
   val KEY__C = "_c"
   // alias for prev step
+  @deprecated
   val KEY__P = "_p"
   // current step status, now only http step
   val KEY_STATUS = "status"
@@ -34,6 +36,10 @@ object RuntimeContext {
   val KEY_HEADERS = "headers"
   // current step response body, eg: http, dubbo, sql
   val KEY_ENTITY = "entity"
+  // current step time metrics
+  val KEY_TIME = "time"
+  // same with `asura.core.es.model.JobReportData.JobReportStepItemMetrics.requestTime`
+  val KEY_REQUEST = "request"
   // current step request, only http step
   val KEY__REQ = "_req"
   // alias for variable table of environment
@@ -239,6 +245,7 @@ case class RuntimeContext(
     ctx.remove(RuntimeContext.KEY_HEADERS)
     ctx.remove(RuntimeContext.KEY_ENTITY)
     ctx.remove(RuntimeContext.KEY__REQ)
+    ctx.remove(RuntimeContext.KEY_TIME)
     this
   }
 
@@ -252,6 +259,13 @@ case class RuntimeContext(
 
   def setCurrentStatus(status: Int): RuntimeContext = {
     ctx.put(RuntimeContext.KEY_STATUS, status)
+    this
+  }
+
+  def setCurrentMetrics(metrics: RuntimeMetrics): RuntimeContext = {
+    val map = new util.HashMap[String, Int]()
+    map.put(RuntimeContext.KEY_REQUEST, metrics.getRequestTime())
+    ctx.put(RuntimeContext.KEY_TIME, map)
     this
   }
 

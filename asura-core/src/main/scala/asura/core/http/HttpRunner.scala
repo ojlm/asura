@@ -47,6 +47,7 @@ object HttpRunner {
             HttpEngine.singleRequestWithProxy(tuple._1, proxyServer).flatMap(res => {
               Unmarshal(res.entity).to[ByteString].flatMap(resBody => {
                 metrics.evalAssertionBegin()
+                context.setCurrentMetrics(metrics)
                 HttpResponseAssert.generateHttpReport(docId, cs.assert, res,
                   byteStringToString(resBody, res.entity.getContentType()), tuple._2, context
                 )
@@ -57,6 +58,7 @@ object HttpRunner {
             HttpEngine.singleRequest(tuple._1).flatMap(res => {
               Unmarshal(res.entity).to[ByteString].flatMap(resBody => {
                 metrics.evalAssertionBegin()
+                context.setCurrentMetrics(metrics)
                 HttpResponseAssert.generateHttpReport(docId, cs.assert, res,
                   byteStringToString(resBody, res.entity.getContentType()), tuple._2, context
                 )
