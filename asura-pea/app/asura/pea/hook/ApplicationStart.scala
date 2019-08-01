@@ -1,16 +1,20 @@
 package asura.pea.hook
 
 import java.net.{InetAddress, NetworkInterface}
+import java.nio.charset.StandardCharsets
 import java.util
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import asura.common.util.{LogUtils, StringUtils}
+import asura.common.util.{JsonUtils, LogUtils, StringUtils}
 import asura.pea.PeaConfig
+import asura.pea.actor.PeaManagerActor
+import asura.pea.model.MemberStatus
 import com.typesafe.scalalogging.StrictLogging
 import javax.inject.{Inject, Singleton}
 import org.apache.curator.framework.CuratorFrameworkFactory
 import org.apache.curator.framework.api.ACLProvider
+import org.apache.curator.framework.recipes.cache.{NodeCache, NodeCacheListener}
 import org.apache.curator.retry.ExponentialBackoffRetry
 import org.apache.zookeeper.data.ACL
 import org.apache.zookeeper.{CreateMode, ZooDefs}
@@ -31,6 +35,7 @@ class ApplicationStart @Inject()(
   PeaConfig.dispatcher = system.dispatcher
   PeaConfig.materializer = ActorMaterializer()(system)
   PeaConfig.resultsFolder = configuration.get[String]("pea.results.folder")
+  PeaConfig.managerActor = system.actorOf(PeaManagerActor.props())
   registerToZK()
 
   // add stop hook
@@ -84,10 +89,23 @@ class ApplicationStart @Inject()(
     PeaConfig.zkClient = builder.build()
     PeaConfig.zkClient.start()
     try {
+      PeaConfig.zkCurrPath = s"${PeaConfig.zkRootPath}/${PeaConfig.PATH_MEMBERS}/${PeaConfig.zkCurrNode}"
+      val nodeData = JsonUtils.stringify(MemberStatus()).getBytes(StandardCharsets.UTF_8)
       PeaConfig.zkClient.create()
         .creatingParentsIfNeeded()
         .withMode(CreateMode.EPHEMERAL)
-        .forPath(s"${PeaConfig.zkRootPath}/${PeaConfig.PATH_MEMBERS}/${PeaConfig.zkCurrNode}", null)
+        .forPath(PeaConfig.zkCurrPath, nodeData)
+      val nodeCache = new NodeCache(PeaConfig.zkClient, PeaConfig.zkCurrPath)
+      nodeCache.start()
+      nodeCache.getListenable.addListener(new NodeCacheListener {
+        override def nodeChanged(): Unit = {
+          val memberStatus = JsonUtils.parse(
+            new String(nodeCache.getCurrentData.getData, StandardCharsets.UTF_8),
+            classOf[MemberStatus]
+          )
+          PeaConfig.managerActor ! memberStatus
+        }
+      })
     } catch {
       case t: Throwable =>
         logger.error(LogUtils.stackTraceToString(t))

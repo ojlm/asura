@@ -1,6 +1,6 @@
 package asura.pea
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import org.apache.curator.framework.CuratorFramework
@@ -21,5 +21,7 @@ object PeaConfig {
   var zkClient: CuratorFramework = null
   var zkRootPath: String = null
   var zkCurrNode: String = null
+  var zkCurrPath: String = null
   var resultsFolder: String = null
+  var managerActor: ActorRef = null
 }
