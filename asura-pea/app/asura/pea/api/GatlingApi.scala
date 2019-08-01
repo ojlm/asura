@@ -3,8 +3,8 @@ package asura.pea.api
 import akka.actor.ActorSystem
 import akka.pattern.ask
 import akka.stream.Materializer
+import asura.pea.PeaConfig
 import asura.pea.PeaConfig.DEFAULT_ACTOR_ASK_TIMEOUT
-import asura.pea.actor.PeaManagerActor
 import asura.pea.actor.PeaManagerActor.{GetNodeStatusMessage, SingleHttpScenarioMessage}
 import asura.play.api.BaseApi
 import javax.inject.{Inject, Singleton}
@@ -20,7 +20,7 @@ class GatlingApi @Inject()(
                             val controllerComponents: SecurityComponents
                           ) extends BaseApi {
 
-  val peaManager = system.actorOf(PeaManagerActor.props())
+  val peaManager = PeaConfig.managerActor
 
   def status() = Action.async { implicit req =>
     (peaManager ? GetNodeStatusMessage).toOkResult
