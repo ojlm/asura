@@ -6,7 +6,7 @@ package io.gatling.app
 import akka.actor.ActorSystem
 import akka.pattern.ask
 import asura.pea.actor.GatlingRunnerActor.PeaGatlingRunResult
-import asura.pea.gatling.StatsEngines
+import asura.pea.gatling.PeaDataWritersStatsEngine
 import com.typesafe.scalalogging.StrictLogging
 import io.gatling.commons.util.DefaultClock
 import io.gatling.core.CoreComponents
@@ -47,7 +47,7 @@ class PeaGatlingRunner(config: mutable.Map[String, _]) extends StrictLogging {
 
     val code = Future {
       val runResult = try {
-        val statsEngine = StatsEngines.newStatsEngine(simulationParams, runMessage, system, clock, configuration)
+        val statsEngine = PeaDataWritersStatsEngine(simulationParams, runMessage, system, clock, configuration)
         val throttler = Throttler(system, simulationParams)
         val injector = Injector(system, statsEngine, clock)
         val controller = system.actorOf(Controller.props(statsEngine, injector, throttler, simulationParams, configuration), Controller.ControllerActorName)
