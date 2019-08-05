@@ -43,6 +43,27 @@ case class GenericRequest(
     referenceConfig
   }
 
+  /**
+    * reference to [[com.alibaba.dubbo.config.utils.ReferenceConfigCache.DEFAULT_KEY_GENERATOR]]
+    * key example: `group1/com.alibaba.foo.FooService:1.0.0@127.0.0.1:20880`.
+    */
+  def generateCacheKey(): String = {
+    val sb = StringBuilder.newBuilder
+    if (StringUtils.isNotEmpty(dubboGroup)) {
+      sb.append(dubboGroup).append("/")
+    }
+    if (StringUtils.isNotEmpty(interface)) {
+      sb.append(interface)
+    }
+    if (StringUtils.isNotEmpty(version)) {
+      sb.append(":").append(version)
+    }
+    if (StringUtils.isNotEmpty(address)) {
+      sb.append("@").append(address).append(":").append(port)
+    }
+    sb.toString()
+  }
+
   def toDubboUrl() = {
     val portStr = if (port > 0) port.toString else DubboConfig.DEFAULT_PORT.toString
     s"${DubboConfig.DEFAULT_PROTOCOL}${address}:${portStr}"

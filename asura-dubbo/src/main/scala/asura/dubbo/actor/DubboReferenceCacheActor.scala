@@ -6,7 +6,6 @@ import asura.common.actor.BaseActor
 import asura.common.cache.LRUCache
 import asura.dubbo.{DubboConfig, GenericRequest}
 import com.alibaba.dubbo.config.ReferenceConfig
-import com.alibaba.dubbo.config.utils.ReferenceConfigCache
 import com.alibaba.dubbo.rpc.service.GenericService
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -28,7 +27,7 @@ class DubboReferenceCacheActor extends BaseActor {
   def test(request: GenericRequest): Future[Object] = {
     Future {
       val refConfig = request.toReferenceConfig()
-      val cacheKey = ReferenceConfigCache.DEFAULT_KEY_GENERATOR.generateKey(refConfig)
+      val cacheKey = request.generateCacheKey()
       val value = lruCache.get(cacheKey)
       val service = if (null == value) {
         val newService = refConfig.get()
