@@ -3,7 +3,7 @@
   */
 package io.gatling.app
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorSystem, Cancellable}
 import akka.pattern.ask
 import asura.pea.actor.GatlingRunnerActor.{GatlingResult, PeaGatlingRunResult}
 import asura.pea.gatling.PeaDataWritersStatsEngine
@@ -29,9 +29,19 @@ class PeaGatlingRunner(config: mutable.Map[String, _]) extends StrictLogging {
   val clock = new DefaultClock
   val configuration = GatlingConfiguration.load(config)
   val system = ActorSystem("GatlingSystem", GatlingConfiguration.loadActorSystemConfiguration())
+  var cancelled = false
 
   io.gatling.core.Predef.clock = clock
   io.gatling.core.Predef._configuration = configuration
+
+  val cancel = new Cancellable {
+    override def cancel(): Boolean = {
+      cancelled = terminateActorSystem()
+      cancelled
+    }
+
+    override def isCancelled: Boolean = cancelled
+  }
 
   def run()(implicit ec: ExecutionContext): PeaGatlingRunResult = {
     val selection = Selection(None, configuration)
@@ -77,7 +87,7 @@ class PeaGatlingRunner(config: mutable.Map[String, _]) extends StrictLogging {
         GatlingResult(-1, errMsg)
       }
     }
-    PeaGatlingRunResult(runMessage.runId, result)
+    PeaGatlingRunResult(runMessage.runId, result, cancel)
   }
 
   private def start(simulationParams: SimulationParams, scenarios: List[Scenario], coreComponents: CoreComponents): Try[_] = {
@@ -91,13 +101,15 @@ class PeaGatlingRunner(config: mutable.Map[String, _]) extends StrictLogging {
     runDone
   }
 
-  private def terminateActorSystem(): Unit = {
+  private def terminateActorSystem(): Boolean = {
     try {
       val whenTerminated = system.terminate()
       Await.result(whenTerminated, configuration.core.shutdownTimeout milliseconds)
+      true
     } catch {
       case NonFatal(e) =>
         logger.debug("Could not terminate ActorSystem", e)
+        false
     }
   }
 

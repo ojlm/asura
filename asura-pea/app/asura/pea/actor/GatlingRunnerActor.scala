@@ -1,6 +1,6 @@
 package asura.pea.actor
 
-import akka.actor.Props
+import akka.actor.{Cancellable, Props}
 import asura.common.actor.BaseActor
 import asura.pea.PeaConfig
 import asura.pea.actor.GatlingRunnerActor.StartMessage
@@ -46,7 +46,7 @@ object GatlingRunnerActor {
     PeaGatlingRunner.run(message.toGatlingPropertiesMap)
   }
 
-  case class PeaGatlingRunResult(runId: String, result: Future[GatlingResult])
+  case class PeaGatlingRunResult(runId: String, result: Future[GatlingResult], cancel: Cancellable)
 
   case class GatlingResult(code: Int, errMsg: String = null)
 

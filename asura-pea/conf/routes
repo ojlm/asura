@@ -1,5 +1,6 @@
 GET         /                           asura.pea.api.HomeApi.index()
 GET         /api/members                asura.pea.api.HomeApi.members()
+GET         /api/gatling/stop           asura.pea.api.GatlingApi.stop()
 GET         /api/gatling/status         asura.pea.api.GatlingApi.status()
 POST        /api/gatling/single         asura.pea.api.GatlingApi.single()
 GET         /api/gatling/monitor        asura.pea.api.GatlingApi.monitor()
