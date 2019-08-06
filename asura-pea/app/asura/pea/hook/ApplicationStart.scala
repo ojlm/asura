@@ -8,7 +8,7 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import asura.common.util.{JsonUtils, LogUtils, StringUtils}
 import asura.pea.PeaConfig
-import asura.pea.actor.PeaManagerActor
+import asura.pea.actor.{PeaManagerActor, PeaMonitorActor}
 import asura.pea.model.MemberStatus
 import com.typesafe.scalalogging.StrictLogging
 import javax.inject.{Inject, Singleton}
@@ -36,6 +36,7 @@ class ApplicationStart @Inject()(
   PeaConfig.materializer = ActorMaterializer()(system)
   PeaConfig.resultsFolder = configuration.get[String]("pea.results.folder")
   PeaConfig.managerActor = system.actorOf(PeaManagerActor.props())
+  PeaConfig.monitorActor = system.actorOf(PeaMonitorActor.props())
   registerToZK()
 
   // add stop hook

@@ -5,7 +5,7 @@ package io.gatling.app
 
 import akka.actor.ActorSystem
 import akka.pattern.ask
-import asura.pea.actor.GatlingRunnerActor.PeaGatlingRunResult
+import asura.pea.actor.GatlingRunnerActor.{GatlingResult, PeaGatlingRunResult}
 import asura.pea.gatling.PeaDataWritersStatsEngine
 import com.typesafe.scalalogging.StrictLogging
 import io.gatling.commons.util.DefaultClock
@@ -45,7 +45,8 @@ class PeaGatlingRunner(config: mutable.Map[String, _]) extends StrictLogging {
 
     val runMessage = RunMessage(simulationParams.name, selection.simulationId, clock.nowMillis, selection.description, configuration.core.version)
 
-    val code = Future {
+    val result = Future {
+      var errMsg: String = null
       val runResult = try {
         val statsEngine = PeaDataWritersStatsEngine(simulationParams, runMessage, system, clock, configuration)
         val throttler = Throttler(system, simulationParams)
@@ -62,17 +63,21 @@ class PeaGatlingRunner(config: mutable.Map[String, _]) extends StrictLogging {
             logger.info("After hooks executed")
             RunResult(runMessage.runId, simulationParams.assertions.nonEmpty)
         }
-
       } catch {
         case t: Throwable =>
           logger.error("Run crashed", t)
-          throw t
+          errMsg = t.getMessage
+          null
       } finally {
         terminateActorSystem()
       }
-      new RunResultProcessor(configuration).processRunResult(runResult).code
+      if (null != runResult) {
+        GatlingResult(new RunResultProcessor(configuration).processRunResult(runResult).code)
+      } else {
+        GatlingResult(-1, errMsg)
+      }
     }
-    PeaGatlingRunResult(runMessage.runId, code)
+    PeaGatlingRunResult(runMessage.runId, result)
   }
 
   private def start(simulationParams: SimulationParams, scenarios: List[Scenario], coreComponents: CoreComponents): Try[_] = {

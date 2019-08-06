@@ -39,7 +39,11 @@ class PeaManagerActor extends BaseActor {
       asura.pea.singleHttpScenario = message
       val futureRunResult = (gatlingRunnerActor ? message).asInstanceOf[Future[PeaGatlingRunResult]]
       futureRunResult.map(runResult => {
-        runResult.code.map(_ => updateEndStatus())
+        runResult.result.map(result => {
+          memberStatus.code = result.code
+          memberStatus.errMsg = result.errMsg
+          updateEndStatus()
+        })
         updateRunningStatus(runResult.runId)
         runResult.runId
       })
