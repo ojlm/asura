@@ -9,7 +9,7 @@ import asura.common.actor.{ActorEvent, SenderMessage}
 import asura.common.util.{JsonUtils, StringUtils}
 import asura.pea.PeaConfig
 import asura.pea.PeaConfig.DEFAULT_ACTOR_ASK_TIMEOUT
-import asura.pea.actor.PeaManagerActor.{GetNodeStatusMessage, SingleHttpScenarioMessage}
+import asura.pea.actor.PeaManagerActor.{GetNodeStatusMessage, SingleHttpScenarioMessage, StopEngine}
 import asura.pea.actor.PeaWebMonitorActor
 import asura.pea.actor.PeaWebMonitorActor.WebMonitorController
 import asura.play.api.BaseApi
@@ -31,6 +31,10 @@ class GatlingApi @Inject()(
   val DEFAULT_BUFFER_SIZE = 10000
   val KEEP_ALIVE_INTERVAL = 2
   val peaManager = PeaConfig.managerActor
+
+  def stop() = Action.async { implicit req =>
+    (peaManager ? StopEngine).toOkResult
+  }
 
   def status() = Action.async { implicit req =>
     (peaManager ? GetNodeStatusMessage).toOkResult
