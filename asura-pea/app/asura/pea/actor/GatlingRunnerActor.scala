@@ -46,6 +46,8 @@ object GatlingRunnerActor {
     PeaGatlingRunner.run(message.toGatlingPropertiesMap)
   }
 
-  case class PeaGatlingRunResult(runId: String, code: Future[Int])
+  case class PeaGatlingRunResult(runId: String, result: Future[GatlingResult])
+
+  case class GatlingResult(code: Int, errMsg: String = null)
 
 }

@@ -1,12 +1,17 @@
 package asura.pea.gatling
 
+import asura.pea.PeaConfig
+import asura.pea.gatling.PeaDataWriter.{MonitorData, TotalCounters}
 import io.gatling.commons.stats.{KO, OK}
 import io.gatling.commons.util.Clock
+import io.gatling.commons.util.Collections._
 import io.gatling.core.config.GatlingConfiguration
 import io.gatling.core.stats.message.{End, Start}
 import io.gatling.core.stats.writer._
 
+import scala.collection.mutable
 import scala.concurrent.duration._
+import scala.math.floor
 
 class PeaDataWriter(clock: Clock, configuration: GatlingConfiguration) extends DataWriter[ConsoleData] {
 
@@ -23,8 +28,22 @@ class PeaDataWriter(clock: Clock, configuration: GatlingConfiguration) extends D
   override def onFlush(data: ConsoleData): Unit = {
     import data._
     val runDuration = (clock.nowMillis - startUpTime) / 1000
-    // TODO
-    println(s"runDuration: ${runDuration}")
+    val totalWaiting = usersCounters.values.sumBy(_.waitingCount)
+    val totalRunning = usersCounters.values.sumBy(_.activeCount)
+    complete = (totalWaiting == 0L) && (totalRunning == 0L)
+    if (null != PeaConfig.monitorActor) {
+      val totalCount = usersCounters.values.sumBy(_.totalUserCount.getOrElse(0L))
+      PeaConfig.monitorActor ! MonitorData(
+        start = startUpTime,
+        run = runDuration,
+        complete = complete,
+        total = TotalCounters(totalCount, totalWaiting, totalRunning),
+        users = PeaDataWriter.getPeaUserCounters(usersCounters),
+        requests = requestsCounters,
+        global = globalRequestCounters,
+        errors = errorsCounters,
+      )
+    }
   }
 
   override def onMessage(message: LoadEventMessage, data: ConsoleData): Unit = message match {
@@ -86,4 +105,47 @@ class PeaDataWriter(clock: Clock, configuration: GatlingConfiguration) extends D
 
 object PeaDataWriter {
 
+  case class TotalCounters(
+                            total: Long,
+                            waiting: Long,
+                            active: Long,
+                          )
+
+  case class MonitorData(
+                          start: Long,
+                          run: Long,
+                          complete: Boolean,
+                          total: TotalCounters,
+                          users: mutable.Map[String, PeaUserCounters],
+                          requests: mutable.Map[String, RequestCounters],
+                          global: RequestCounters,
+                          errors: mutable.Map[String, Int],
+                        )
+
+  case class PeaUserCounters(
+                              total: Long,
+                              active: Long,
+                              done: Long,
+                              waiting: Long,
+                              percent: Int,
+                            )
+
+  def getPeaUserCounters(usersCounters: mutable.Map[String, UserCounters]): mutable.Map[String, PeaUserCounters] = {
+    val counters = mutable.Map[String, PeaUserCounters]()
+    usersCounters.map {
+      case (scenarioName, userCounters) => userCounters.totalUserCount match {
+        case Some(total) if total > userCounters.doneCount + userCounters.activeCount =>
+          val donePercent = floor(100 * userCounters.doneCount.toDouble / total).toInt
+          counters += (scenarioName -> PeaUserCounters(
+            userCounters.totalUserCount.getOrElse(0),
+            userCounters.activeCount,
+            userCounters.doneCount,
+            userCounters.waitingCount,
+            donePercent
+          ))
+        case _ =>
+      }
+    }
+    counters
+  }
 }

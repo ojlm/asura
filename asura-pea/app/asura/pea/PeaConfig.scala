@@ -24,4 +24,5 @@ object PeaConfig {
   var zkCurrPath: String = null
   var resultsFolder: String = null
   var managerActor: ActorRef = null
+  var monitorActor: ActorRef = null
 }
