@@ -6,10 +6,10 @@ import java.util.Date
 import akka.actor.{Cancellable, Props}
 import akka.pattern.{ask, pipe}
 import asura.common.actor.BaseActor
-import asura.common.util.JsonUtils
+import asura.common.util.{JsonUtils, StringUtils}
 import asura.pea.PeaConfig.DEFAULT_ACTOR_ASK_TIMEOUT
 import asura.pea.actor.GatlingRunnerActor.PeaGatlingRunResult
-import asura.pea.actor.PeaManagerActor.{GetNodeStatusMessage, SingleHttpScenarioMessage, StopEngine}
+import asura.pea.actor.PeaManagerActor._
 import asura.pea.model.{Injection, MemberStatus, SingleRequest}
 import asura.pea.{ErrorMessages, PeaConfig}
 
@@ -33,6 +33,12 @@ class PeaManagerActor extends BaseActor {
       doSingleHttpScenario(msg) pipeTo sender()
     case StopEngine =>
       sender() ! tryStopEngine()
+    case UpdateRunningStatus(runId) =>
+      updateRunningStatus(runId)
+    case UpdateCodeStatus(code, errMsg) =>
+      updateCodeStatus(code, errMsg)
+    case UpdateEndStatus(code, errMsg) =>
+      updateEndStatus(code, errMsg)
     case _ =>
       ErrorMessages.error_InvalidRequestParameters.toFutureFail pipeTo sender()
   }
@@ -42,12 +48,11 @@ class PeaManagerActor extends BaseActor {
     if (null != engineCancelable && !PeaManagerActor.NODE_STATUS_IDLE.equals(memberStatus.status)) {
       if (!engineCancelable.isCancelled) {
         if (engineCancelable.cancel()) {
-          memberStatus.errMsg = "canceled"
+          self ! UpdateEndStatus(-1, "canceled")
         } else {
-          memberStatus.errMsg = "cancel failed"
           result = false
+          self ! UpdateCodeStatus(-1, "cancel failed")
         }
-        updateEndStatus()
       }
     }
     result
@@ -59,12 +64,12 @@ class PeaManagerActor extends BaseActor {
       val futureRunResult = (gatlingRunnerActor ? message).asInstanceOf[Future[PeaGatlingRunResult]]
       futureRunResult.map(runResult => {
         engineCancelable = runResult.cancel
+        self ! UpdateRunningStatus(runResult.runId)
         runResult.result.map(result => {
-          memberStatus.code = result.code
-          memberStatus.errMsg = result.errMsg
-          updateEndStatus()
+          if (!result.isByCanceled) { // stop not by hand
+            self ! UpdateEndStatus(result.code, result.errMsg)
+          }
         })
-        updateRunningStatus(runResult.runId)
         runResult.runId
       })
     } else {
@@ -72,9 +77,17 @@ class PeaManagerActor extends BaseActor {
     }
   }
 
-  private def updateEndStatus(): Unit = {
+  private def updateCodeStatus(code: Int, errMsg: String): Unit = {
+    memberStatus.code = code
+    memberStatus.errMsg = errMsg
+    pushToZk()
+  }
+
+  private def updateEndStatus(code: Int, errMsg: String): Unit = {
     memberStatus.status = PeaManagerActor.NODE_STATUS_IDLE
     memberStatus.end = new Date().getTime
+    memberStatus.code = code
+    memberStatus.errMsg = errMsg
     pushToZk()
   }
 
@@ -82,6 +95,9 @@ class PeaManagerActor extends BaseActor {
     memberStatus.status = PeaManagerActor.NODE_STATUS_RUNNING
     memberStatus.runId = runId
     memberStatus.start = new Date().getTime
+    memberStatus.end = 0L
+    memberStatus.code = 0
+    memberStatus.errMsg = StringUtils.EMPTY
     pushToZk()
   }
 
@@ -103,6 +119,12 @@ object PeaManagerActor {
 
   case object StopEngine
 
+  case class UpdateCodeStatus(code: Int, errMsg: String)
+
+  case class UpdateRunningStatus(runId: String)
+
+  case class UpdateEndStatus(code: Int, errMsg: String)
+
   case class SingleHttpScenarioMessage(
                                         var name: String,
                                         var request: SingleRequest,
@@ -110,4 +132,3 @@ object PeaManagerActor {
                                       )
 
 }
-
