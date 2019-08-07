@@ -2,6 +2,7 @@ package asura.dubbo.actor
 
 import java.net.{URI, URLDecoder}
 import java.nio.charset.StandardCharsets
+import java.util
 
 import akka.actor.Props
 import akka.pattern.pipe
@@ -11,8 +12,11 @@ import asura.common.util.StringUtils
 import asura.dubbo.DubboConfig
 import asura.dubbo.actor.GenericServiceInvokerActor.{GetInterfacesMessage, GetProvidersMessage}
 import asura.dubbo.model.{DubboInterface, DubboProvider}
+import org.apache.curator.framework.api.ACLProvider
 import org.apache.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
 import org.apache.curator.retry.RetryNTimes
+import org.apache.zookeeper.ZooDefs
+import org.apache.zookeeper.data.ACL
 
 import scala.collection.{JavaConverters, mutable}
 import scala.concurrent.{ExecutionContext, Future}
@@ -25,28 +29,46 @@ class CuratorClientCacheActor extends BaseActor {
   implicit val actorEC: ExecutionContext = context.dispatcher
 
   override def receive: Receive = {
-    case GetInterfacesMessage(zkConnectString, path) =>
-      getInterfaces(zkConnectString, StringUtils.notEmptyElse(path, DubboConfig.DEFAULT_ROOT_DUBBO_PATH)) pipeTo sender()
-    case GetProvidersMessage(zkConnectString, path, ref) =>
+    case GetInterfacesMessage(zkConnectString, path, zkUsername, zkPassword) =>
+      getInterfaces(
+        zkConnectString,
+        StringUtils.notEmptyElse(path, DubboConfig.DEFAULT_ROOT_DUBBO_PATH),
+        zkUsername,
+        zkPassword,
+      ) pipeTo sender()
+    case GetProvidersMessage(zkConnectString, path, ref, zkUsername, zkPassword) =>
       getInterfaceProviders(
         zkConnectString,
         ref,
-        StringUtils.notEmptyElse(path, DubboConfig.DEFAULT_ROOT_DUBBO_PATH)
+        StringUtils.notEmptyElse(path, DubboConfig.DEFAULT_ROOT_DUBBO_PATH),
+        zkUsername,
+        zkPassword,
       ) pipeTo sender()
     case _ =>
       Future.failed(new RuntimeException("Unknown message type")) pipeTo sender()
   }
 
-  def getInterfaces(zkConnectString: String, path: String): Future[Seq[DubboInterface]] = {
-    getClient(zkConnectString)
+  def getInterfaces(
+                     zkConnectString: String,
+                     path: String,
+                     zkUsername: String = null,
+                     zkPassword: String = null,
+                   ): Future[Seq[DubboInterface]] = {
+    getClient(zkConnectString, path, zkUsername, zkPassword)
       .map(client => {
         JavaConverters.asScalaBuffer(client.getChildren().forPath(path))
           .map(DubboInterface(zkConnectString, path, _))
       })
   }
 
-  def getInterfaceProviders(zkConnectString: String, ref: String, path: String): Future[Seq[DubboProvider]] = {
-    getClient(zkConnectString).map(client => {
+  def getInterfaceProviders(
+                             zkConnectString: String,
+                             ref: String,
+                             path: String,
+                             zkUsername: String = null,
+                             zkPassword: String = null,
+                           ): Future[Seq[DubboProvider]] = {
+    getClient(zkConnectString, path, zkUsername, zkPassword).map(client => {
       val strings = client.getChildren().forPath(s"${path}/${ref}/providers")
       JavaConverters.asScalaBuffer(strings)
         .map(item => URLDecoder.decode(item, StandardCharsets.UTF_8.name()))
@@ -73,13 +95,30 @@ class CuratorClientCacheActor extends BaseActor {
     })
   }
 
-  def getClient(connectString: String): Future[CuratorFramework] = {
+  def getClient(
+                 connectString: String,
+                 path: String,
+                 zkUsername: String = null,
+                 zkPassword: String = null,
+               ): Future[CuratorFramework] = {
     Future {
-      val client = lruCache.get(connectString)
+      val cacheKey = s"${connectString}/${path}"
+      val client = lruCache.get(cacheKey)
       if (null == client) {
-        val newClient = CuratorFrameworkFactory.newClient(connectString, new RetryNTimes(0, 0))
+        val builder = CuratorFrameworkFactory.builder()
+        builder.connectString(connectString)
+          .retryPolicy(new RetryNTimes(0, 0))
+        if (StringUtils.isNotEmpty(zkUsername) && StringUtils.isNotEmpty(zkPassword)) {
+          builder.authorization("digest", s"${zkUsername}:${zkPassword}".getBytes)
+            .aclProvider(new ACLProvider {
+              override def getDefaultAcl: util.List[ACL] = ZooDefs.Ids.CREATOR_ALL_ACL
+
+              override def getAclForPath(path: String): util.List[ACL] = ZooDefs.Ids.CREATOR_ALL_ACL
+            })
+        }
+        val newClient = builder.build()
         newClient.start()
-        lruCache.put(connectString, newClient)
+        lruCache.put(cacheKey, newClient)
         newClient
       } else {
         client

@@ -43,9 +43,20 @@ object GenericServiceInvokerActor {
 
   def props() = Props(new GenericServiceInvokerActor())
 
-  case class GetInterfacesMessage(zkConnectString: String, path: String)
+  case class GetInterfacesMessage(
+                                   zkConnectString: String,
+                                   path: String,
+                                   zkUsername: String = null,
+                                   zkPassword: String = null,
+                                 )
 
-  case class GetProvidersMessage(zkConnectString: String, path: String, ref: String)
+  case class GetProvidersMessage(
+                                  zkConnectString: String,
+                                  path: String,
+                                  ref: String,
+                                  zkUsername: String = null,
+                                  zkPassword: String = null,
+                                )
 
   case class GetInterfaceMethodParams(address: String, port: Int, ref: String)
 

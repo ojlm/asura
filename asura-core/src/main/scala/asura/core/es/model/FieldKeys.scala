@@ -141,6 +141,8 @@ object FieldKeys {
   val FIELD_ARGS = "args"
   val FIELD_ADDRESS = "address"
   val FIELD_ZK_CONNECT_STRING = "zkConnectString"
+  val FIELD_ZK_USERNAME = "zkUsername"
+  val FIELD_ZK_PASSWORD = "zkPassword"
   val FIELD_PASSWORD = "password"
   val FIELD_ENCRYPTED_PASS = "encryptedPass"
   val FIELD_DATABASE = "database"
