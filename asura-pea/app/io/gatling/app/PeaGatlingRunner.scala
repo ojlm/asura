@@ -5,6 +5,7 @@ package io.gatling.app
 
 import akka.actor.{ActorSystem, Cancellable}
 import akka.pattern.ask
+import asura.common.util.StringUtils
 import asura.pea.actor.GatlingRunnerActor.{GatlingResult, PeaGatlingRunResult}
 import asura.pea.gatling.PeaDataWritersStatsEngine
 import com.typesafe.scalalogging.StrictLogging
@@ -56,7 +57,7 @@ class PeaGatlingRunner(config: mutable.Map[String, _]) extends StrictLogging {
     val runMessage = RunMessage(simulationParams.name, selection.simulationId, clock.nowMillis, selection.description, configuration.core.version)
 
     val result = Future {
-      var errMsg: String = null
+      var errMsg: String = StringUtils.EMPTY
       val runResult = try {
         val statsEngine = PeaDataWritersStatsEngine(simulationParams, runMessage, system, clock, configuration)
         val throttler = Throttler(system, simulationParams)
@@ -75,8 +76,10 @@ class PeaGatlingRunner(config: mutable.Map[String, _]) extends StrictLogging {
         }
       } catch {
         case t: Throwable =>
-          logger.error("Run crashed", t)
-          errMsg = t.getMessage
+          if (cancelled) { // if the engine is stopped by hand, ignore the exception
+            logger.error("Run crashed", t)
+            errMsg = t.getMessage
+          }
           null
       } finally {
         terminateActorSystem()
@@ -84,7 +87,7 @@ class PeaGatlingRunner(config: mutable.Map[String, _]) extends StrictLogging {
       if (null != runResult) {
         GatlingResult(new RunResultProcessor(configuration).processRunResult(runResult).code)
       } else {
-        GatlingResult(-1, errMsg)
+        GatlingResult(-1, errMsg, cancelled)
       }
     }
     PeaGatlingRunResult(runMessage.runId, result, cancel)
