@@ -35,6 +35,15 @@ class ApplicationStart @Inject()(
   PeaConfig.dispatcher = system.dispatcher
   PeaConfig.materializer = ActorMaterializer()(system)
   PeaConfig.resultsFolder = configuration.get[String]("pea.results.folder")
+  PeaConfig.reportLogoHref = configuration
+    .getOptional[String]("pea.results.report.logo.href")
+    .getOrElse(null)
+  PeaConfig.reportDescHref = configuration
+    .getOptional[String]("pea.results.report.desc.href")
+    .getOrElse(null)
+  PeaConfig.reportDescContent = configuration
+    .getOptional[String]("pea.results.report.desc.content")
+    .getOrElse(null)
   PeaConfig.managerActor = system.actorOf(PeaManagerActor.props())
   PeaConfig.monitorActor = system.actorOf(PeaMonitorActor.props())
   registerToZK()

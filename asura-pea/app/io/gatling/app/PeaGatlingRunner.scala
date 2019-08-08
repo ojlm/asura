@@ -3,16 +3,20 @@
   */
 package io.gatling.app
 
+import java.io.{File, PrintWriter}
+
 import akka.actor.{ActorSystem, Cancellable}
 import akka.pattern.ask
-import asura.common.util.StringUtils
+import asura.common.util.{LogUtils, StringUtils}
+import asura.pea.PeaConfig
 import asura.pea.actor.GatlingRunnerActor.{GatlingResult, PeaGatlingRunResult}
 import asura.pea.gatling.PeaDataWritersStatsEngine
 import com.typesafe.scalalogging.StrictLogging
 import io.gatling.commons.util.DefaultClock
+import io.gatling.commons.util.PathHelper._
 import io.gatling.core.CoreComponents
 import io.gatling.core.action.Exit
-import io.gatling.core.config.GatlingConfiguration
+import io.gatling.core.config.{GatlingConfiguration, GatlingFiles}
 import io.gatling.core.controller.inject.Injector
 import io.gatling.core.controller.throttle.Throttler
 import io.gatling.core.controller.{Controller, ControllerCommand}
@@ -22,6 +26,7 @@ import io.gatling.core.stats.writer.RunMessage
 import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.io.Source
 import scala.util.control.NonFatal
 import scala.util.{Failure, Try}
 
@@ -89,7 +94,9 @@ class PeaGatlingRunner(config: mutable.Map[String, _], onlyReport: Boolean = fal
         terminateActorSystem()
       }
       if (null != runResult) {
-        GatlingResult(new RunResultProcessor(configuration).processRunResult(runResult).code)
+        val code = new RunResultProcessor(configuration).processRunResult(runResult).code
+        replaceReportLogo(runResult.runId)
+        GatlingResult(code)
       } else {
         GatlingResult(-1, errMsg, cancelled)
       }
@@ -99,7 +106,43 @@ class PeaGatlingRunner(config: mutable.Map[String, _], onlyReport: Boolean = fal
 
   def generateReport(runId: String)(implicit ec: ExecutionContext): Future[Int] = {
     Future {
-      new RunResultProcessor(configuration).processRunResult(RunResult(runId, true)).code
+      val code = new RunResultProcessor(configuration).processRunResult(RunResult(runId, true)).code
+      replaceReportLogo(runId)
+      code
+    }
+  }
+
+  private val originLogoHref = """href="https://gatling.io""""
+  private val originLogoTitle = """title="Gatling Home Page""""
+  private val descHref = """href="https://gatling.io/gatling-frontline/?report""""
+  private val descContent = """Get more features with Gatling FrontLine"""
+
+  def replaceReportLogo(runId: String): Unit = {
+    try {
+      val indexFile = (GatlingFiles.resultDirectory(runId)(configuration) / "index.html").toFile
+      if (indexFile.exists()) {
+        val tmpFile = new File(s"${indexFile.getParent}/${indexFile.getName}.tmp")
+        val writer = new PrintWriter(tmpFile)
+        Source.fromFile(indexFile).getLines
+          .map { line =>
+            if (line.contains(originLogoHref) && StringUtils.isNotEmpty(PeaConfig.reportLogoHref)) {
+              line
+                .replace(originLogoHref, s"""href="${PeaConfig.reportLogoHref}"""")
+                .replace(originLogoTitle, s"""title=${PeaConfig.reportLogoHref}"""")
+            } else if (line.contains(descHref) && StringUtils.isNotEmpty(PeaConfig.reportDescHref)) {
+              line
+                .replace(descHref, s"""href="${PeaConfig.reportDescHref}"""")
+                .replace(descContent, PeaConfig.reportDescContent)
+            } else {
+              line
+            }
+          }
+          .foreach(writer.println)
+        writer.close()
+        tmpFile.renameTo(indexFile)
+      }
+    } catch {
+      case t: Throwable => logger.warn(LogUtils.stackTraceToString(t))
     }
   }
 

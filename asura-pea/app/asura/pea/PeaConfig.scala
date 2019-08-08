@@ -25,4 +25,7 @@ object PeaConfig {
   var resultsFolder: String = null
   var managerActor: ActorRef = null
   var monitorActor: ActorRef = null
+  var reportLogoHref: String = null
+  var reportDescHref: String = null
+  var reportDescContent: String = null
 }
