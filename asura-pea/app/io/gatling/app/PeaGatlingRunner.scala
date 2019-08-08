@@ -25,11 +25,15 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Try}
 
-class PeaGatlingRunner(config: mutable.Map[String, _]) extends StrictLogging {
+class PeaGatlingRunner(config: mutable.Map[String, _], onlyReport: Boolean = false) extends StrictLogging {
 
   val clock = new DefaultClock
   val configuration = GatlingConfiguration.load(config)
-  val system = ActorSystem("GatlingSystem", GatlingConfiguration.loadActorSystemConfiguration())
+  val system = if (!onlyReport) {
+    ActorSystem("GatlingSystem", GatlingConfiguration.loadActorSystemConfiguration())
+  } else {
+    null
+  }
   var cancelled = false
 
   io.gatling.core.Predef.clock = clock
@@ -93,6 +97,12 @@ class PeaGatlingRunner(config: mutable.Map[String, _]) extends StrictLogging {
     PeaGatlingRunResult(runMessage.runId, result, cancel)
   }
 
+  def generateReport(runId: String)(implicit ec: ExecutionContext): Future[Int] = {
+    Future {
+      new RunResultProcessor(configuration).processRunResult(RunResult(runId, true)).code
+    }
+  }
+
   private def start(simulationParams: SimulationParams, scenarios: List[Scenario], coreComponents: CoreComponents): Try[_] = {
     val timeout = Int.MaxValue.milliseconds - 10.seconds
     val start = coreComponents.clock.nowMillis
@@ -124,5 +134,9 @@ object PeaGatlingRunner extends StrictLogging {
 
   def run(config: mutable.Map[String, _])(implicit ec: ExecutionContext): PeaGatlingRunResult = {
     PeaGatlingRunner(config).run()
+  }
+
+  def generateReport(config: mutable.Map[String, _], runId: String)(implicit ec: ExecutionContext): Future[Int] = {
+    new PeaGatlingRunner(config, true).generateReport(runId)
   }
 }
