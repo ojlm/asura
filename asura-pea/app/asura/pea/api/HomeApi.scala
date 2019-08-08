@@ -23,8 +23,13 @@ class HomeApi @Inject()(
     Future.successful(Ok("asura-pea"))
   }
 
-  def members() = Action.async { implicit req =>
-    val children = PeaConfig.zkClient.getChildren.forPath(s"${PeaConfig.zkRootPath}/${PeaConfig.PATH_MEMBERS}")
+  def workers() = Action.async { implicit req =>
+    val children = PeaConfig.zkClient.getChildren.forPath(s"${PeaConfig.zkRootPath}/${PeaConfig.PATH_WORKERS}")
+    Future.successful(children.asScala.map(PeaMember(_)).filter(m => null != m)).toOkResult
+  }
+
+  def reporters() = Action.async { implicit req =>
+    val children = PeaConfig.zkClient.getChildren.forPath(s"${PeaConfig.zkRootPath}/${PeaConfig.PATH_REPORTERS}")
     Future.successful(children.asScala.map(PeaMember(_)).filter(m => null != m)).toOkResult
   }
 }

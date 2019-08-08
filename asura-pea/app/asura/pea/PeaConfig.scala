@@ -12,7 +12,10 @@ object PeaConfig {
 
   val DEFAULT_SCHEME = "pea"
   val DEFAULT_WS_ACTOR_BUFFER_SIZE = 10000
-  val PATH_MEMBERS = "members"
+  val KEEP_ALIVE_INTERVAL = 2
+  val PATH_WORKERS = "workers"
+  val PATH_REPORTERS = "reporters"
+
   implicit val DEFAULT_ACTOR_ASK_TIMEOUT: Timeout = 1 minutes
   implicit var system: ActorSystem = _
   implicit var dispatcher: ExecutionContext = _
@@ -21,9 +24,10 @@ object PeaConfig {
   var zkClient: CuratorFramework = null
   var zkRootPath: String = null
   var zkCurrNode: String = null
-  var zkCurrPath: String = null
+  var zkCurrWorkerPath: String = null
+  var zkCurrReporterPath: String = null
   var resultsFolder: String = null
-  var managerActor: ActorRef = null
+  var workerActor: ActorRef = null
   var monitorActor: ActorRef = null
   var reportLogoHref: String = null
   var reportDescHref: String = null
