@@ -129,6 +129,7 @@ object PeaManagerActor {
                                         var name: String,
                                         var request: SingleRequest,
                                         var injections: Seq[Injection],
+                                        report: Boolean = true,
                                       )
 
 }
