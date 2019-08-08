@@ -9,15 +9,15 @@ import asura.common.actor.BaseActor
 import asura.common.util.{JsonUtils, StringUtils}
 import asura.pea.PeaConfig.DEFAULT_ACTOR_ASK_TIMEOUT
 import asura.pea.actor.GatlingRunnerActor.PeaGatlingRunResult
-import asura.pea.actor.PeaManagerActor._
+import asura.pea.actor.PeaWorkerActor._
 import asura.pea.model.{Injection, MemberStatus, SingleRequest}
 import asura.pea.{ErrorMessages, PeaConfig}
 
 import scala.concurrent.Future
 
-class PeaManagerActor extends BaseActor {
+class PeaWorkerActor extends BaseActor {
 
-  var memberStatus = MemberStatus(PeaManagerActor.NODE_STATUS_IDLE)
+  var memberStatus = MemberStatus(PeaWorkerActor.NODE_STATUS_IDLE)
 
   implicit val ec = context.dispatcher
   val zincCompilerActor = context.actorOf(ZincCompilerActor.props())
@@ -45,7 +45,7 @@ class PeaManagerActor extends BaseActor {
 
   def tryStopEngine(): Boolean = {
     var result = true
-    if (null != engineCancelable && !PeaManagerActor.NODE_STATUS_IDLE.equals(memberStatus.status)) {
+    if (null != engineCancelable && !PeaWorkerActor.NODE_STATUS_IDLE.equals(memberStatus.status)) {
       if (!engineCancelable.isCancelled) {
         if (engineCancelable.cancel()) {
           self ! UpdateEndStatus(-1, "canceled")
@@ -59,7 +59,7 @@ class PeaManagerActor extends BaseActor {
   }
 
   def doSingleHttpScenario(message: SingleHttpScenarioMessage): Future[String] = {
-    if (PeaManagerActor.NODE_STATUS_IDLE.equals(memberStatus.status)) {
+    if (PeaWorkerActor.NODE_STATUS_IDLE.equals(memberStatus.status)) {
       asura.pea.singleHttpScenario = message
       val futureRunResult = (gatlingRunnerActor ? message).asInstanceOf[Future[PeaGatlingRunResult]]
       futureRunResult.map(runResult => {
@@ -84,7 +84,7 @@ class PeaManagerActor extends BaseActor {
   }
 
   private def updateEndStatus(code: Int, errMsg: String): Unit = {
-    memberStatus.status = PeaManagerActor.NODE_STATUS_IDLE
+    memberStatus.status = PeaWorkerActor.NODE_STATUS_IDLE
     memberStatus.end = new Date().getTime
     memberStatus.code = code
     memberStatus.errMsg = errMsg
@@ -92,7 +92,7 @@ class PeaManagerActor extends BaseActor {
   }
 
   private def updateRunningStatus(runId: String): Unit = {
-    memberStatus.status = PeaManagerActor.NODE_STATUS_RUNNING
+    memberStatus.status = PeaWorkerActor.NODE_STATUS_RUNNING
     memberStatus.runId = runId
     memberStatus.start = new Date().getTime
     memberStatus.end = 0L
@@ -104,16 +104,16 @@ class PeaManagerActor extends BaseActor {
   private def pushToZk(): Unit = {
     PeaConfig.zkClient
       .setData()
-      .forPath(PeaConfig.zkCurrPath, JsonUtils.stringify(memberStatus).getBytes(StandardCharsets.UTF_8))
+      .forPath(PeaConfig.zkCurrWorkerPath, JsonUtils.stringify(memberStatus).getBytes(StandardCharsets.UTF_8))
   }
 }
 
-object PeaManagerActor {
+object PeaWorkerActor {
 
   val NODE_STATUS_IDLE = "idle"
   val NODE_STATUS_RUNNING = "running"
 
-  def props() = Props(new PeaManagerActor())
+  def props() = Props(new PeaWorkerActor())
 
   case object GetNodeStatusMessage
 

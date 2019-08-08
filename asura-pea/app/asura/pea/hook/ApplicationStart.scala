@@ -8,7 +8,7 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import asura.common.util.{JsonUtils, LogUtils, StringUtils}
 import asura.pea.PeaConfig
-import asura.pea.actor.{PeaManagerActor, PeaMonitorActor}
+import asura.pea.actor.{PeaMonitorActor, PeaWorkerActor}
 import asura.pea.model.MemberStatus
 import com.typesafe.scalalogging.StrictLogging
 import javax.inject.{Inject, Singleton}
@@ -44,9 +44,13 @@ class ApplicationStart @Inject()(
   PeaConfig.reportDescContent = configuration
     .getOptional[String]("pea.results.report.desc.content")
     .getOrElse(null)
-  PeaConfig.managerActor = system.actorOf(PeaManagerActor.props())
+  PeaConfig.workerActor = system.actorOf(PeaWorkerActor.props())
   PeaConfig.monitorActor = system.actorOf(PeaMonitorActor.props())
-  registerToZK()
+
+  val enableZk = configuration.getOptional[Boolean]("pea.zk.enabled").getOrElse(false)
+  if (enableZk) {
+    registerToZK()
+  }
 
   // add stop hook
   lifecycle.addStopHook { () =>
@@ -99,23 +103,32 @@ class ApplicationStart @Inject()(
     PeaConfig.zkClient = builder.build()
     PeaConfig.zkClient.start()
     try {
-      PeaConfig.zkCurrPath = s"${PeaConfig.zkRootPath}/${PeaConfig.PATH_MEMBERS}/${PeaConfig.zkCurrNode}"
-      val nodeData = JsonUtils.stringify(MemberStatus()).getBytes(StandardCharsets.UTF_8)
-      PeaConfig.zkClient.create()
-        .creatingParentsIfNeeded()
-        .withMode(CreateMode.EPHEMERAL)
-        .forPath(PeaConfig.zkCurrPath, nodeData)
-      val nodeCache = new NodeCache(PeaConfig.zkClient, PeaConfig.zkCurrPath)
-      nodeCache.start()
-      nodeCache.getListenable.addListener(new NodeCacheListener {
-        override def nodeChanged(): Unit = {
-          val memberStatus = JsonUtils.parse(
-            new String(nodeCache.getCurrentData.getData, StandardCharsets.UTF_8),
-            classOf[MemberStatus]
-          )
-          PeaConfig.managerActor ! memberStatus
-        }
-      })
+      if (configuration.getOptional[Boolean]("pea.zk.role.worker").getOrElse(true)) {
+        PeaConfig.zkCurrWorkerPath = s"${PeaConfig.zkRootPath}/${PeaConfig.PATH_WORKERS}/${PeaConfig.zkCurrNode}"
+        val nodeData = JsonUtils.stringify(MemberStatus()).getBytes(StandardCharsets.UTF_8)
+        PeaConfig.zkClient.create()
+          .creatingParentsIfNeeded()
+          .withMode(CreateMode.EPHEMERAL)
+          .forPath(PeaConfig.zkCurrWorkerPath, nodeData)
+        val nodeCache = new NodeCache(PeaConfig.zkClient, PeaConfig.zkCurrWorkerPath)
+        nodeCache.start()
+        nodeCache.getListenable.addListener(new NodeCacheListener {
+          override def nodeChanged(): Unit = {
+            val memberStatus = JsonUtils.parse(
+              new String(nodeCache.getCurrentData.getData, StandardCharsets.UTF_8),
+              classOf[MemberStatus]
+            )
+            PeaConfig.workerActor ! memberStatus
+          }
+        })
+      }
+      if (configuration.getOptional[Boolean]("pea.zk.role.reporter").getOrElse(false)) {
+        PeaConfig.zkCurrReporterPath = s"${PeaConfig.zkRootPath}/${PeaConfig.PATH_REPORTERS}/${PeaConfig.zkCurrNode}"
+        PeaConfig.zkClient.create()
+          .creatingParentsIfNeeded()
+          .withMode(CreateMode.EPHEMERAL)
+          .forPath(PeaConfig.zkCurrReporterPath, null)
+      }
     } catch {
       case t: Throwable =>
         logger.error(LogUtils.stackTraceToString(t))
