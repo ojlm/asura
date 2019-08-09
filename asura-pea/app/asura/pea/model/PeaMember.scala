@@ -12,7 +12,10 @@ case class PeaMember(
                       address: String,
                       port: Int,
                       hostname: String,
-                    )
+                    ) {
+
+  def toNodeName: String = PeaMember.toNodeName(address, port, hostname)
+}
 
 object PeaMember {
 
@@ -34,5 +37,9 @@ object PeaMember {
         logger.warn(LogUtils.stackTraceToString(t))
         null
     }
+  }
+
+  def toNodeName(address: String, port: Int, hostname: String): String = {
+    s"${address}:${port}?hostname=${hostname}"
   }
 }

@@ -9,7 +9,7 @@ import akka.stream.ActorMaterializer
 import asura.common.util.{JsonUtils, LogUtils, StringUtils}
 import asura.pea.PeaConfig
 import asura.pea.actor.{PeaMonitorActor, PeaWorkerActor}
-import asura.pea.model.MemberStatus
+import asura.pea.model.{MemberStatus, PeaMember}
 import com.typesafe.scalalogging.StrictLogging
 import javax.inject.{Inject, Singleton}
 import org.apache.curator.framework.CuratorFrameworkFactory
@@ -82,7 +82,7 @@ class ApplicationStart @Inject()(
       case _: Throwable => "Unknown"
     }
     val port = portOpt.getOrElse(9000)
-    PeaConfig.zkCurrNode = s"${address}:${port}?hostname=${hostname}"
+    PeaConfig.zkCurrNode = PeaMember.toNodeName(address, port, hostname)
     PeaConfig.zkRootPath = configuration.getOptional[String]("pea.zk.path").get
     val connectString = configuration.get[String]("pea.zk.connectString")
     val builder = CuratorFrameworkFactory.builder()
