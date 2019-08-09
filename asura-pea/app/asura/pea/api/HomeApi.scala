@@ -1,8 +1,11 @@
 package asura.pea.api
 
 import akka.actor.ActorSystem
+import akka.pattern.ask
 import akka.stream.Materializer
 import asura.pea.PeaConfig
+import asura.pea.PeaConfig.DEFAULT_ACTOR_ASK_TIMEOUT
+import asura.pea.actor.PeaReporterActor.SingleHttpScenarioJob
 import asura.pea.model.PeaMember
 import asura.play.api.BaseApi
 import javax.inject.{Inject, Singleton}
@@ -19,6 +22,8 @@ class HomeApi @Inject()(
                          val controllerComponents: SecurityComponents
                        ) extends BaseApi {
 
+  val peaReporter = PeaConfig.reporterActor
+
   def index() = Action.async { implicit req =>
     Future.successful(Ok("asura-pea"))
   }
@@ -31,5 +36,10 @@ class HomeApi @Inject()(
   def reporters() = Action.async { implicit req =>
     val children = PeaConfig.zkClient.getChildren.forPath(s"${PeaConfig.zkRootPath}/${PeaConfig.PATH_REPORTERS}")
     Future.successful(children.asScala.map(PeaMember(_)).filter(m => null != m)).toOkResult
+  }
+
+  def single() = Action(parse.byteString).async { implicit req =>
+    val message = req.bodyAs(classOf[SingleHttpScenarioJob])
+    (peaReporter ? message).toOkResult
   }
 }

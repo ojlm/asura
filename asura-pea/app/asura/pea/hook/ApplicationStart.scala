@@ -8,7 +8,7 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import asura.common.util.{JsonUtils, LogUtils, StringUtils}
 import asura.pea.PeaConfig
-import asura.pea.actor.{PeaMonitorActor, PeaWorkerActor}
+import asura.pea.actor.{PeaMonitorActor, PeaReporterActor, PeaWorkerActor}
 import asura.pea.model.{MemberStatus, PeaMember}
 import com.typesafe.scalalogging.StrictLogging
 import javax.inject.{Inject, Singleton}
@@ -44,6 +44,7 @@ class ApplicationStart @Inject()(
   PeaConfig.reportDescContent = configuration
     .getOptional[String]("pea.results.report.desc.content")
     .getOrElse(null)
+  PeaConfig.reporterActor = system.actorOf(PeaReporterActor.props())
   PeaConfig.workerActor = system.actorOf(PeaWorkerActor.props())
   PeaConfig.monitorActor = system.actorOf(PeaMonitorActor.props())
 
