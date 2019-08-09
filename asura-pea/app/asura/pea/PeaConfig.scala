@@ -28,6 +28,7 @@ object PeaConfig {
   var zkCurrReporterPath: String = null
   var resultsFolder: String = null
   var workerActor: ActorRef = null
+  var reporterActor: ActorRef = null
   var monitorActor: ActorRef = null
   var reportLogoHref: String = null
   var reportDescHref: String = null
