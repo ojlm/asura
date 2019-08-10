@@ -5,9 +5,9 @@ import sbt._
 
 scalacOptions in ThisBuild ++= Seq("-feature", "-deprecation", "-language:postfixOps", "-language:higherKinds", "-language:implicitConversions")
 
-lazy val root = Project("asura-root", file("."))
-  .dependsOn(app, pea)
-  .aggregate(app, pea)
+lazy val root = Project("asura", file("."))
+  .dependsOn(app)
+  .aggregate(app)
 
 // Sub Projects
 def asuraProjects(id: String) = Project(id, file(id))
@@ -69,15 +69,6 @@ lazy val kafka = asuraProjects("asura-kafka")
   .settings(libraryDependencies ++= kafkaDependencies)
   .settings(publishSettings: _*)
   .dependsOn(common % "compile->compile;test->test")
-
-lazy val pea = asuraProjects("asura-pea")
-  .enablePlugins(PlayScala)
-  .settings(libraryDependencies ++= peaDependencies)
-  .dependsOn(
-    common % "compile->compile;test->test",
-    play % "compile->compile;test->test",
-  )
-  .aggregate(common, play)
 
 // release
 val username = "asura-pro"
