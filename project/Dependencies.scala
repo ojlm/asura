@@ -6,8 +6,6 @@ object Dependencies {
   val akkaVersion = "2.5.23"
   val akkaHttpVersion = "10.1.8"
   val elastic4sVersion = "6.3.7"
-  val playPac4jVersion = "6.0.0"
-  val pac4jVersion = "3.0.1"
 
   private val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
   private val akkaStream = "com.typesafe.akka" %% "akka-stream" % akkaVersion
@@ -64,11 +62,6 @@ object Dependencies {
   private val databaseDeps = Seq(mysqlConnector)
   private val testDeps = Seq(akkaTestKit, akkaHttpTestkit) ++ scalaTestDeps
 
-  val pac4jDeps = Seq(
-    "org.pac4j" %% "play-pac4j" % playPac4jVersion,
-    "org.pac4j" % "pac4j-ldap" % pac4jVersion
-  )
-
   val commonDependencies = Seq(akkaTestKit, config, akkaActor, jackson) ++ scalaTestDeps ++ loggingDeps
   val clusterDependencies = Seq(akkaCluster, akkaMetrics, akkaClusterTools) ++ commonDependencies
   val coreDependencies = Seq(
@@ -88,15 +81,17 @@ object Dependencies {
     "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test,
   )
 
+  val playPac4jVersion = "8.0.0"
+  val pac4jVersion = "3.7.0"
   val appPlayDeps = Seq(
     "org.webjars" % "swagger-ui" % "3.17.4",
     "org.webjars.npm" % "swagger-editor-dist" % "3.1.16",
-    "org.pac4j" %% "play-pac4j" % "6.0.0",
-    "org.pac4j" % "pac4j-http" % "3.0.1",
-    "org.pac4j" % "pac4j-ldap" % "3.0.1",
-    "org.pac4j" % "pac4j-jwt" % "3.0.1",
-    "com.typesafe.play" %% "play-mailer" % "6.0.1",
-    "com.typesafe.play" %% "play-mailer-guice" % "6.0.1",
-    "com.typesafe.play" %% "play-json" % "2.7.1",
+    "org.pac4j" %% "play-pac4j" % playPac4jVersion,
+    "org.pac4j" % "pac4j-http" % pac4jVersion,
+    "org.pac4j" % "pac4j-ldap" % pac4jVersion,
+    "org.pac4j" % "pac4j-jwt" % pac4jVersion,
+    "com.typesafe.play" %% "play-mailer" % "7.0.1",
+    "com.typesafe.play" %% "play-mailer-guice" % "7.0.1",
+    "com.typesafe.play" %% "play-json" % "2.7.4",
   ) ++ commonPlayDeps
 }
