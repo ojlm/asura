@@ -2,7 +2,6 @@ package asura.app.api
 
 import akka.actor.ActorSystem
 import asura.app.AppErrorMessages
-import asura.app.api.model.TestCase
 import asura.common.model.{ApiRes, ApiResError}
 import asura.common.util.StringUtils
 import asura.core.ErrorMessages
@@ -12,6 +11,7 @@ import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, HttpCaseRequest, ScenarioStep}
 import asura.core.es.service._
 import asura.core.http.HttpRunner
+import asura.core.http.actor.HttpRunnerActor.TestCaseMessage
 import asura.core.model.BatchOperation.{BatchOperationLabels, BatchTransfer}
 import asura.core.model.{AggsQuery, QueryCase, SearchAfterCase}
 import asura.core.runtime.RuntimeContext
@@ -87,7 +87,7 @@ class HttpCaseApi @Inject()(implicit system: ActorSystem,
   }
 
   def test() = Action(parse.byteString).async { implicit req =>
-    val testCase = req.bodyAs(classOf[TestCase])
+    val testCase = req.bodyAs(classOf[TestCaseMessage])
     val cs = testCase.cs
     val user = getProfileId()
     activityActor ! Activity(cs.group, cs.project, user, Activity.TYPE_TEST_CASE, StringUtils.notEmptyElse(testCase.id, StringUtils.EMPTY))
