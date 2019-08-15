@@ -6,6 +6,8 @@ import asura.common.util.StringUtils
 import asura.core.actor.flow.WebSocketMessageHandler
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.Activity
+import asura.core.http.actor.HttpRunnerActor
+import asura.core.http.actor.HttpRunnerActor.TestCaseMessage
 import asura.core.job.actor.JobTestActor.JobTestMessage
 import asura.core.job.actor.{JobManualActor, JobTestActor}
 import asura.core.scenario.actor.ScenarioRunnerActor
@@ -30,6 +32,23 @@ class WsApi @Inject()(
 
   val activityActor = system.actorOf(ActivitySaveActor.props())
   val auth: JwtAuthenticator = client.getAuthenticator().asInstanceOf[JwtAuthenticator]
+
+  def testHttp(group: String, project: String, id: Option[String]) = WebSocket.acceptOrResult[String, String] { implicit req =>
+    Future.successful {
+      val profile = getWsProfile(auth)
+      if (null == profile) {
+        Left(Forbidden)
+      } else {
+        Right {
+          val user = profile.getId
+          val docId = id.getOrElse(StringUtils.EMPTY)
+          activityActor ! Activity(group, project, user, Activity.TYPE_TEST_CASE, docId)
+          val testActor = system.actorOf(HttpRunnerActor.props())
+          WebSocketMessageHandler.stringToActorEventFlow(testActor, classOf[TestCaseMessage])
+        }
+      }
+    }
+  }
 
   def testScenario(group: String, project: String, id: Option[String]) = WebSocket.acceptOrResult[String, String] { implicit req =>
     Future.successful {

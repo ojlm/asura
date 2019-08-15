@@ -1,3 +1,4 @@
+GET        /http/test/:group/:project             asura.app.api.WsApi.testHttp(group, project, id: Option[String])
 GET        /scenario/test/:group/:project         asura.app.api.WsApi.testScenario(group, project, id: Option[String])
 GET        /job/test/:group/:project              asura.app.api.WsApi.testJob(group, project, id: Option[String])
 GET        /job/manual/:group/:project/:id        asura.app.api.WsApi.manualTestJob(group, project, id)
