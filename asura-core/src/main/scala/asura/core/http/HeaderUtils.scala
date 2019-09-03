@@ -4,8 +4,8 @@ import akka.http.scaladsl.model.HttpHeader.ParsingResult.{Error, Ok}
 import akka.http.scaladsl.model.headers.{Cookie, RawHeader}
 import akka.http.scaladsl.model.{ErrorInfo, HttpHeader}
 import asura.common.util.StringUtils
+import asura.core.es.model.{Environment, HttpCaseRequest}
 import asura.core.runtime.RuntimeContext
-import asura.core.es.model.{HttpCaseRequest, Environment}
 import asura.core.{CoreConfig, ErrorMessages}
 import com.typesafe.scalalogging.Logger
 
@@ -35,9 +35,11 @@ object HeaderUtils {
       }
       val cookieSeq = request.cookie
       if (null != cookieSeq) {
+        val cookies = ArrayBuffer[(String, String)]()
         for (c <- cookieSeq if (c.enabled && StringUtils.isNotEmpty(c.key))) {
-          headers += Cookie(c.key, context.renderSingleMacroAsString(c.value))
+          cookies += ((c.key, context.renderSingleMacroAsString(c.value)))
         }
+        if (cookies.nonEmpty) headers += Cookie(cookies: _*)
       }
     }
     if (null != env && null != env.headers && env.headers.nonEmpty) {
