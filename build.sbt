@@ -12,6 +12,7 @@ lazy val root = Project("asura", file("."))
 // Sub Projects
 def asuraProjects(id: String) = Project(id, file(id))
   .settings(commonSettings: _*)
+  .settings(publishSettings: _*)
 
 lazy val app = asuraProjects("asura-app")
   .enablePlugins(PlayScala)
@@ -34,21 +35,17 @@ lazy val example = asuraProjects("asura-example")
 
 lazy val play = asuraProjects("asura-play")
   .settings(libraryDependencies ++= appPlayDeps)
-  .settings(publishSettings: _*)
   .dependsOn(common % "compile->compile;test->test")
 
 lazy val common = asuraProjects("asura-common")
   .settings(libraryDependencies ++= commonDependencies)
-  .settings(publishSettings: _*)
 
 lazy val cluster = asuraProjects("asura-cluster")
   .settings(libraryDependencies ++= clusterDependencies)
-  .settings(publishSettings: _*)
   .dependsOn(common % "compile->compile;test->test")
 
 lazy val core = asuraProjects("asura-core")
   .settings(libraryDependencies ++= coreDependencies)
-  .settings(publishSettings: _*)
   .dependsOn(
     common % "compile->compile;test->test",
     dubbo % "compile->compile;test->test",
@@ -57,17 +54,14 @@ lazy val core = asuraProjects("asura-core")
 
 lazy val namerd = asuraProjects("asura-namerd")
   .settings(libraryDependencies ++= namerdDependencies)
-  .settings(publishSettings: _*)
   .dependsOn(common % "compile->compile;test->test")
 
 lazy val dubbo = asuraProjects("asura-dubbo")
   .settings(libraryDependencies ++= dubboDependencies)
-  .settings(publishSettings: _*)
   .dependsOn(common % "compile->compile;test->test")
 
 lazy val kafka = asuraProjects("asura-kafka")
   .settings(libraryDependencies ++= kafkaDependencies)
-  .settings(publishSettings: _*)
   .dependsOn(common % "compile->compile;test->test")
 
 // release
