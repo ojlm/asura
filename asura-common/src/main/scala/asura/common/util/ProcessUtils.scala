@@ -51,18 +51,19 @@ trait ProcessUtils {
 
   import ProcessUtils._
 
-  def exec(cmd: Seq[String], cwd: File, fn: String => Unit = null): Int = {
-    if (null != fn) Process(cmd, cwd).!(ProcessLogger(fn)) else Process(cmd, cwd).!
+  def exec(cmd: Seq[String], fn: String => Unit, cwd: Option[File], extraEnv: (String, String)*): Int = {
+    if (null != fn) Process(cmd, cwd, extraEnv: _*).!(ProcessLogger(fn)) else Process(cmd, cwd).!
   }
 
-  def exec(cmd: String): ExecResult = exec(cmd.split(" "))
+  def exec(cmd: String, cwd: Option[File], extraEnv: (String, String)*): ExecResult =
+    exec(cmd.split(" "), cwd, extraEnv: _*)
 
-  def exec(cmd: Seq[String]): ExecResult = {
+  def exec(cmd: Seq[String], cwd: Option[File], extraEnv: (String, String)*): ExecResult = {
     val stdout = new OutputBuffer
     val stderr = new OutputBuffer
 
     Try {
-      val process = Process(cmd).run(ProcessLogger(stdout.appendLine, stderr.appendLine))
+      val process = Process(cmd, cwd, extraEnv: _*).run(ProcessLogger(stdout.appendLine, stderr.appendLine))
       process.exitValue()
     }.map((_, stdout.get, stderr.get))
       .recover {
@@ -70,12 +71,21 @@ trait ProcessUtils {
       }.get
   }
 
-  def execAsync(cmd: String)(implicit ec: ExecutionContext): AsyncExecResult = execAsync(cmd.split(" "))
+  def execAsync(
+                 cmd: String,
+                 cwd: Option[File],
+                 extraEnv: (String, String)*,
+               )(implicit ec: ExecutionContext): AsyncExecResult =
+    execAsync(cmd.split(" "), cwd, extraEnv: _*)
 
-  def execAsync(cmd: Seq[String])(implicit ec: ExecutionContext): AsyncExecResult = {
+  def execAsync(
+                 cmd: Seq[String],
+                 cwd: Option[File],
+                 extraEnv: (String, String)*,
+               )(implicit ec: ExecutionContext): AsyncExecResult = {
     new AsyncExecResult {
 
-      val (fut, cancelable) = runAsync(cmd)
+      val (fut, cancelable) = runAsync(cmd, cwd)
 
       override def cancel: Cancelable = cancelable
 
@@ -91,13 +101,17 @@ trait ProcessUtils {
     }
   }
 
-  private def runAsync(cmd: Seq[String])(implicit ec: ExecutionContext): (Future[ExecResult], Cancelable) = {
+  private def runAsync(
+                        cmd: Seq[String],
+                        cwd: Option[File],
+                        extraEnv: (String, String)*,
+                      )(implicit ec: ExecutionContext): (Future[ExecResult], Cancelable) = {
     val p = Promise[ExecResult]
 
     val stdout = new OutputBuffer
     val stderr = new OutputBuffer
 
-    val process = Process(cmd).run(ProcessLogger(stdout.appendLine, stderr.appendLine))
+    val process = Process(cmd, cwd, extraEnv: _*).run(ProcessLogger(stdout.appendLine, stderr.appendLine))
     p.tryCompleteWith(Future(process.exitValue).map(c => (c, stdout.get, stderr.get)))
 
     val cancelFunc = () => {
@@ -121,8 +135,10 @@ trait ProcessUtils {
                  cmd: String,
                  fout: String => Unit,
                  ferr: String => Unit,
+                 cwd: Option[File],
+                 extraEnv: (String, String)*,
                )(implicit ec: ExecutionContext): AsyncIntResult = {
-    val (fut, cancelable) = execAsync(cmd.split(" "), fout, ferr)
+    val (fut, cancelable) = execAsync(cmd.split(" "), fout, ferr, cwd, extraEnv: _*)
 
     new AsyncIntResult {
       override def map[T](f: Int => T): Future[T] = fut.map(f)
@@ -143,10 +159,12 @@ trait ProcessUtils {
                  cmd: Seq[String],
                  fout: String => Unit,
                  ferr: String => Unit,
+                 cwd: Option[File],
+                 extraEnv: (String, String)*,
                )(implicit ec: ExecutionContext): (Future[Int], Cancelable) = {
     val p = Promise[Int]
 
-    val process = Process(cmd).run(ProcessLogger(fout, ferr))
+    val process = Process(cmd, cwd, extraEnv: _*).run(ProcessLogger(fout, ferr))
     p.tryCompleteWith(Future(process.exitValue))
 
     val cancelFunc = () => {
