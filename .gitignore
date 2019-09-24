@@ -17,3 +17,5 @@ docs/_build/
 .vscode/
 !asura-app/dist/
 !asura-pea/dist/
+asura-app/public/
+!asura-app/public/.gitkeep
