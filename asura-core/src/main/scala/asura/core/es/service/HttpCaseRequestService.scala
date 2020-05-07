@@ -13,11 +13,11 @@ import asura.core.model.BatchOperation.{BatchOperationLabels, BatchTransfer}
 import asura.core.model._
 import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
-import com.sksamuel.elastic4s.RefreshPolicy
-import com.sksamuel.elastic4s.http.ElasticDsl.{bulk, delete, indexInto, nestedQuery, _}
-import com.sksamuel.elastic4s.searches.DateHistogramInterval
-import com.sksamuel.elastic4s.searches.queries.Query
-import com.sksamuel.elastic4s.searches.sort.FieldSort
+import com.sksamuel.elastic4s.ElasticDsl.{bulk, delete, indexInto, nestedQuery, _}
+import com.sksamuel.elastic4s.requests.common.RefreshPolicy
+import com.sksamuel.elastic4s.requests.searches.DateHistogramInterval
+import com.sksamuel.elastic4s.requests.searches.queries.Query
+import com.sksamuel.elastic4s.requests.searches.sort.FieldSort
 
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{Iterable, mutable}
@@ -46,7 +46,7 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
     if (null == error) {
       cs.calcGeneratorCount()
       EsClient.esClient.execute {
-        indexInto(HttpCaseRequest.Index / EsConfig.DefaultType).doc(cs).refresh(RefreshPolicy.WAIT_UNTIL)
+        indexInto(HttpCaseRequest.Index).doc(cs).refresh(RefreshPolicy.WAIT_UNTIL)
       }.map(toIndexDocResponse(_))
     } else {
       error.toFutureFail
@@ -62,7 +62,7 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
         bulk(
           css.map(cs => {
             cs.calcGeneratorCount()
-            indexInto(HttpCaseRequest.Index / EsConfig.DefaultType).doc(cs)
+            indexInto(HttpCaseRequest.Index).doc(cs)
           })
         )
       }.map(toBulkDocResponse(_))
@@ -71,13 +71,13 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
 
   def deleteDoc(id: String): Future[DeleteDocResponse] = {
     EsClient.esClient.execute {
-      delete(id).from(HttpCaseRequest.Index / EsConfig.DefaultType).refresh(RefreshPolicy.WAIT_UNTIL)
+      delete(id).from(HttpCaseRequest.Index).refresh(RefreshPolicy.WAIT_UNTIL)
     }.map(toDeleteDocResponse(_))
   }
 
   def deleteDoc(ids: Seq[String]): Future[DeleteDocResponse] = {
     EsClient.esClient.execute {
-      bulk(ids.map(id => delete(id).from(HttpCaseRequest.Index / EsConfig.DefaultType)))
+      bulk(ids.map(id => delete(id).from(HttpCaseRequest.Index)))
     }.map(toDeleteDocResponseFromBulk(_))
   }
 
@@ -123,7 +123,7 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
         cs.calcGeneratorCount()
         EsClient.esClient.execute {
           val (src, params) = cs.toUpdateScriptParams
-          update(id).in(HttpCaseRequest.Index / EsConfig.DefaultType).script {
+          update(id).in(HttpCaseRequest.Index).script {
             script(src).params(params)
           }
         }.map(toUpdateDocResponse(_))
@@ -134,10 +134,10 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
   }
 
   /**
-    * Seq({id->case})
-    *
-    * @param filterFields if false return all fields of doc, other only return filed in [[queryFields]]
-    */
+   * Seq({id->case})
+   *
+   * @param filterFields if false return all fields of doc, other only return filed in [[queryFields]]
+   */
   def getCasesByIds(ids: Seq[String], filterFields: Boolean = false)(implicit executor: ExecutionContext): Future[Seq[(String, HttpCaseRequest)]] = {
     if (null != ids && ids.nonEmpty) {
       getByIds(ids, filterFields).map(res => {
@@ -216,8 +216,8 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
   }
 
   /**
-    * return Map("total" -> total , "list" -> list), used by api action
-    */
+   * return Map("total" -> total , "list" -> list), used by api action
+   */
   def queryCase(query: QueryCase): Future[Map[String, Any]] = {
     if (null != query.ids && query.ids.nonEmpty) {
       getByIds(query.ids, true).flatMap(res => {
@@ -346,9 +346,9 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
       EsClient.esClient.execute(bulk {
         batch.labels.filter(item => null != item.labels).map(item => {
           val labels = item.labels.map(label => Map(FieldKeys.FIELD_NAME -> label.name))
-          update(item.id).in(HttpCaseRequest.Index / EsConfig.DefaultType).doc(Map(FieldKeys.FIELD_LABELS -> labels))
+          update(item.id).in(HttpCaseRequest.Index).doc(Map(FieldKeys.FIELD_LABELS -> labels))
         })
-      }.refresh(RefreshPolicy.WAIT_UNTIL)).map(toBulkDocResponse(_))
+      }.refresh(RefreshPolicy.WAIT_FOR)).map(toBulkDocResponse(_))
     } else {
       ErrorMessages.error_EmptyRequestBody.toFutureFail
     }
@@ -363,9 +363,9 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
             FieldKeys.FIELD_PROJECT -> batch.project,
             FieldKeys.FIELD_ENV -> StringUtils.EMPTY
           )
-          update(csId).in(HttpCaseRequest.Index / EsConfig.DefaultType).doc(docMap)
+          update(csId).in(HttpCaseRequest.Index).doc(docMap)
         })
-      }.refresh(RefreshPolicy.WAIT_UNTIL)).map(toBulkDocResponse(_))
+      }.refresh(RefreshPolicy.WAIT_FOR)).map(toBulkDocResponse(_))
     } else {
       ErrorMessages.error_InvalidRequestParameters.toFutureFail
     }

@@ -4,16 +4,16 @@ import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
+import asura.core.es.EsClient
 import asura.core.es.model._
 import asura.core.es.service.BaseAggregationService._
-import asura.core.es.{EsClient, EsConfig}
 import asura.core.model.{AggsItem, AggsQuery, SearchAfterActivity}
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
-import com.sksamuel.elastic4s.http.ElasticDsl._
-import com.sksamuel.elastic4s.script.Script
-import com.sksamuel.elastic4s.searches.DateHistogramInterval
-import com.sksamuel.elastic4s.searches.queries.Query
-import com.sksamuel.elastic4s.searches.sort.FieldSort
+import com.sksamuel.elastic4s.ElasticDsl._
+import com.sksamuel.elastic4s.requests.script.Script
+import com.sksamuel.elastic4s.requests.searches.DateHistogramInterval
+import com.sksamuel.elastic4s.requests.searches.queries.Query
+import com.sksamuel.elastic4s.requests.searches.sort.FieldSort
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -35,7 +35,7 @@ object ActivityService extends CommonService with BaseAggregationService {
     } else {
       EsClient.esClient.execute {
         bulk(
-          items.map(item => indexInto(Activity.Index / EsConfig.DefaultType).doc(item))
+          items.map(item => indexInto(Activity.Index).doc(item))
         )
       }.map(toBulkDocResponse(_))
     }
@@ -45,7 +45,7 @@ object ActivityService extends CommonService with BaseAggregationService {
     val esQueries = buildEsQueryFromAggQuery(aggs, true)
     val termsField = aggs.aggTermsField()
     val dateHistogram = dateHistogramAgg(aggsTermsName, FieldKeys.FIELD_TIMESTAMP)
-      .interval(DateHistogramInterval.fromString(aggs.aggInterval()))
+      .fixedInterval(DateHistogramInterval.fromString(aggs.aggInterval()))
       .format("yyyy-MM-dd")
       .subAggregations(termsAgg(aggsTermsName, if (termsField.equals("creator")) FieldKeys.FIELD_USER else termsField).size(aggs.pageSize()))
     EsClient.esClient.execute {
@@ -127,7 +127,7 @@ object ActivityService extends CommonService with BaseAggregationService {
         val scnIds = mutable.HashSet[String]()
         val jobIds = mutable.HashSet[String]()
         val list = ArrayBuffer[Any]()
-        val dataMap = mutable.Map("total" -> hits.total, "list" -> list)
+        val dataMap = mutable.Map[String, Any]("total" -> hits.total, "list" -> list)
         for (i <- 0 until hits.hits.length) {
           val hit = hits.hits(i)
           val sourceMap = hit.sourceAsMap

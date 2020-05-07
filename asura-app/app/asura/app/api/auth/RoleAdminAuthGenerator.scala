@@ -1,15 +1,17 @@
 package asura.app.api.auth
 
+import java.util.Optional
+
 import org.pac4j.core.authorization.generator.AuthorizationGenerator
 import org.pac4j.core.context.WebContext
-import org.pac4j.core.profile.CommonProfile
+import org.pac4j.core.profile.UserProfile
 
-case class RoleAdminAuthGenerator(administrators: Seq[String]) extends AuthorizationGenerator[CommonProfile] {
+case class RoleAdminAuthGenerator(administrators: Seq[String]) extends AuthorizationGenerator {
 
-  override def generate(context: WebContext, profile: CommonProfile): CommonProfile = {
+  override def generate(context: WebContext, profile: UserProfile): Optional[UserProfile] = {
     if (administrators.contains(profile.getId)) {
       profile.addRole(Role.ADMIN)
     }
-    profile
+    Optional.of(profile)
   }
 }

@@ -5,7 +5,7 @@ import asura.core.es.EsConfig
 import asura.core.es.model.JobReportData.JobReportStepItemMetrics
 import asura.core.es.model.JobReportDataItem.{ReportDataItemRequest, ReportDataItemResponse}
 import asura.core.runtime.AbstractResult
-import com.sksamuel.elastic4s.mappings._
+import com.sksamuel.elastic4s.requests.mappings._
 
 // save all type results, eg: http, sql, dubbo
 case class JobReportDataItem(
@@ -31,8 +31,7 @@ object JobReportDataItem extends IndexSetting {
   override val shards: Int = 5
   override val replicas: Int = 0
   val mappings: MappingDefinition = MappingDefinition(
-    `type` = EsConfig.DefaultType,
-    fields = Seq(
+    Seq(
       KeywordField(name = FieldKeys.FIELD_REPORT_ID),
       KeywordField(name = FieldKeys.FIELD_JOB_ID),
       KeywordField(name = FieldKeys.FIELD_CASE_ID),

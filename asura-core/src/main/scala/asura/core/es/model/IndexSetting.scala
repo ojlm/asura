@@ -1,6 +1,6 @@
 package asura.core.es.model
 
-import com.sksamuel.elastic4s.mappings.MappingDefinition
+import com.sksamuel.elastic4s.requests.mappings.MappingDefinition
 
 trait IndexSetting {
 

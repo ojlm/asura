@@ -4,18 +4,17 @@ import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.model.QueryOnlineApi
+import asura.core.es.EsClient
 import asura.core.es.model.{BulkDocResponse, FieldKeys, RestApiOnlineLog}
 import asura.core.es.service.CommonService.CustomCatIndices
-import asura.core.es.{EsClient, EsConfig}
+import asura.core.model.QueryOnlineApi
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
-import com.sksamuel.elastic4s.http.ElasticDsl.{termQuery, _}
-import com.sksamuel.elastic4s.searches.queries.Query
-import com.sksamuel.elastic4s.searches.sort.FieldSort
+import com.sksamuel.elastic4s.ElasticDsl._
+import com.sksamuel.elastic4s.requests.searches.queries.Query
+import com.sksamuel.elastic4s.requests.searches.sort.FieldSort
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
-
 
 object RestApiOnlineLogService extends CommonService {
 
@@ -25,7 +24,7 @@ object RestApiOnlineLogService extends CommonService {
     } else {
       EsClient.esClient.execute {
         bulk(
-          items.map(item => indexInto(s"${RestApiOnlineLog.Index}-${day}" / EsConfig.DefaultType).doc(item))
+          items.map(item => indexInto(s"${RestApiOnlineLog.Index}-${day}").doc(item))
         )
       }.map(toBulkDocResponse(_))
     }

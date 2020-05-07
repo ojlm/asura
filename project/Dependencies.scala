@@ -3,9 +3,8 @@ import sbt._
 
 object Dependencies {
 
-  val akkaVersion = "2.5.23"
-  val akkaHttpVersion = "10.1.8"
-  val elastic4sVersion = "6.3.7"
+  val akkaVersion = "2.6.5"
+  val akkaHttpVersion = "10.1.11"
 
   private val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
   private val akkaStream = "com.typesafe.akka" %% "akka-stream" % akkaVersion
@@ -14,17 +13,14 @@ object Dependencies {
   private val akkaClusterTools = "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion excludeAll (ExclusionRule(organization = "io.netty", name = "netty"))
   private val akkaHttp = "com.typesafe.akka" %% "akka-http" % akkaHttpVersion
   private val akkaHttpXml = "com.typesafe.akka" %% "akka-http-xml" % akkaHttpVersion
-  private val config = "com.typesafe" % "config" % "1.3.2"
-  private val jackson = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.1"
+  private val config = "com.typesafe" % "config" % "1.4.0"
+  private val jackson = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.11.0"
   private val guava = "com.google.guava" % "guava" % "23.6-jre"
   private val commonsCodec = "commons-codec" % "commons-codec" % "1.10"
   private val commonsLang3 = "org.apache.commons" % "commons-lang3" % "3.7"
   private val quartz = "org.quartz-scheduler" % "quartz" % "2.3.0" excludeAll(ExclusionRule(organization = "com.mchange", name = "c3p0"), ExclusionRule(organization = "com.mchange", name = "mchange-commons-java"))
   private val swaggerParser = "io.swagger" % "swagger-parser" % "1.0.33"
-  private val faststring = "com.dongxiguo" %% "fastring" % "0.3.1"
-  private val elastic4sCore = "com.sksamuel.elastic4s" %% "elastic4s-core" % elastic4sVersion
-  private val elastic4sHttp = "com.sksamuel.elastic4s" %% "elastic4s-http" % elastic4sVersion
-  private val elastic4sEmbedded = "com.sksamuel.elastic4s" %% "elastic4s-embedded" % elastic4sVersion excludeAll (ExclusionRule(organization = "org.apache.logging.log4j", name = "log4j-slf4j-impl"))
+  private val elastic4s = "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % "7.5.0"
   private val joddCore = "org.jodd" % "jodd-core" % "3.9.1"
   private val jsonPath = "com.jayway.jsonpath" % "json-path" % "2.4.0"
 
@@ -47,13 +43,13 @@ object Dependencies {
   // Log dependencies
   private val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.25"
   private val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
-  private val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.7.0"
+  private val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
 
   // Test dependencies
   private val akkaTestKit = "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test
   private val scalaTestDeps = Seq(
-    "org.scalactic" %% "scalactic" % "3.0.5",
-    "org.scalatest" %% "scalatest" % "3.0.5" % Test
+    "org.scalactic" %% "scalactic" % "3.1.1",
+    "org.scalatest" %% "scalatest" % "3.1.1" % Test
   )
   private val akkaHttpTestkit = "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test
 
@@ -65,8 +61,8 @@ object Dependencies {
   val commonDependencies = Seq(akkaTestKit, config, akkaActor, jackson) ++ scalaTestDeps ++ loggingDeps
   val clusterDependencies = Seq(akkaCluster, akkaMetrics, akkaClusterTools) ++ commonDependencies
   val coreDependencies = Seq(
-    commonsLang3, jackson, faststring, elastic4sCore, elastic4sHttp, druid,
-    elastic4sEmbedded, joddCore, jsonPath, swaggerParser, quartz, redisson
+    commonsLang3, jackson, elastic4s, druid,
+     joddCore, jsonPath, swaggerParser, quartz, redisson
   ) ++ commonDependencies ++ httpDeps ++ databaseDeps
   val appDependencies = Seq(config, guava, commonsCodec) ++ loggingDeps ++ httpDeps ++ testDeps
   val namerdDependencies = Seq(akkaStream, akkaHttp) ++ commonDependencies
@@ -78,11 +74,10 @@ object Dependencies {
     ehcache,
     ws,
     filters,
-    "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test,
   )
 
-  val playPac4jVersion = "8.0.0"
-  val pac4jVersion = "3.7.0"
+  val playPac4jVersion = "10.0.0"
+  val pac4jVersion = "4.0.0"
   val appPlayDeps = Seq(
     "org.webjars" % "swagger-ui" % "3.17.4",
     "org.webjars.npm" % "swagger-editor-dist" % "3.1.16",

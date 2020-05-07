@@ -2,7 +2,7 @@ package asura.core.es.model
 
 import asura.common.util.StringUtils
 import asura.core.es.EsConfig
-import com.sksamuel.elastic4s.mappings.{BasicField, KeywordField, MappingDefinition}
+import com.sksamuel.elastic4s.requests.mappings.{BasicField, KeywordField, MappingDefinition}
 
 case class DomainOnlineLog(
                             val name: String,
@@ -22,8 +22,7 @@ object DomainOnlineLog extends IndexSetting {
   override val replicas: Int = 1
 
   val mappings: MappingDefinition = MappingDefinition(
-    `type` = EsConfig.DefaultType,
-    fields = Seq(
+    Seq(
       KeywordField(name = FieldKeys.FIELD_NAME),
       KeywordField(name = FieldKeys.FIELD_TAG),
       BasicField(name = FieldKeys.FIELD_COUNT, `type` = "long"),

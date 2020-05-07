@@ -6,14 +6,14 @@ import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.model._
-import asura.core.es.{EsClient, EsConfig, EsResponse}
+import asura.core.es.{EsClient, EsResponse}
 import asura.core.model.QueryDubboRequest
 import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
-import com.sksamuel.elastic4s.RefreshPolicy
-import com.sksamuel.elastic4s.http.ElasticDsl._
-import com.sksamuel.elastic4s.searches.queries.Query
-import com.sksamuel.elastic4s.searches.sort.FieldSort
+import com.sksamuel.elastic4s.ElasticDsl._
+import com.sksamuel.elastic4s.requests.common.RefreshPolicy
+import com.sksamuel.elastic4s.requests.searches.queries.Query
+import com.sksamuel.elastic4s.requests.searches.sort.FieldSort
 
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{Iterable, mutable}
@@ -41,7 +41,7 @@ object DubboRequestService extends CommonService with BaseAggregationService {
     val error = validate(doc)
     if (null == error) {
       EsClient.esClient.execute {
-        indexInto(DubboRequest.Index / EsConfig.DefaultType).doc(doc).refresh(RefreshPolicy.WAIT_UNTIL)
+        indexInto(DubboRequest.Index).doc(doc).refresh(RefreshPolicy.WAIT_FOR)
       }.map(toIndexDocResponse(_))
     } else {
       error.toFutureFail
@@ -53,7 +53,7 @@ object DubboRequestService extends CommonService with BaseAggregationService {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
       EsClient.esClient.execute {
-        delete(id).from(DubboRequest.Index / EsConfig.DefaultType).refresh(RefreshPolicy.WAIT_UNTIL)
+        delete(id).from(DubboRequest.Index).refresh(RefreshPolicy.WAIT_FOR)
       }.map(toDeleteDocResponse(_))
     }
   }
@@ -177,7 +177,7 @@ object DubboRequestService extends CommonService with BaseAggregationService {
       } else {
         EsClient.esClient.execute {
           val (src, params) = doc.toUpdateScriptParams
-          update(id).in(DubboRequest.Index / EsConfig.DefaultType)
+          update(id).in(DubboRequest.Index)
             .script {
               script(src).params(params)
             }

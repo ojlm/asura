@@ -6,15 +6,15 @@ import asura.common.util.StringUtils
 import asura.core.ErrorMessages
 import asura.core.auth.AuthManager
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
+import asura.core.es.EsClient
 import asura.core.es.model.{DeleteDocResponse, Environment, FieldKeys, IndexDocResponse}
-import asura.core.es.{EsClient, EsConfig}
 import asura.core.model.QueryEnv
 import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
-import com.sksamuel.elastic4s.RefreshPolicy
-import com.sksamuel.elastic4s.http.ElasticDsl._
-import com.sksamuel.elastic4s.searches.queries.Query
-import com.sksamuel.elastic4s.searches.sort.FieldSort
+import com.sksamuel.elastic4s.ElasticDsl._
+import com.sksamuel.elastic4s.requests.common.RefreshPolicy
+import com.sksamuel.elastic4s.requests.searches.queries.Query
+import com.sksamuel.elastic4s.requests.searches.sort.FieldSort
 import com.typesafe.scalalogging.Logger
 
 import scala.collection.mutable.ArrayBuffer
@@ -30,7 +30,7 @@ object EnvironmentService extends CommonService {
       error.toFutureFail
     } else {
       EsClient.esClient.execute {
-        indexInto(Environment.Index / EsConfig.DefaultType).doc(env).refresh(RefreshPolicy.WAIT_UNTIL)
+        indexInto(Environment.Index).doc(env).refresh(RefreshPolicy.WAIT_FOR)
       }.map(toIndexDocResponse(_))
     }
   }
@@ -40,7 +40,7 @@ object EnvironmentService extends CommonService {
       ErrorMessages.error_EmptyId.toFutureFail
     } else {
       EsClient.esClient.execute {
-        delete(id).from(Environment.Index / EsConfig.DefaultType).refresh(RefreshPolicy.WAIT_UNTIL)
+        delete(id).from(Environment.Index).refresh(RefreshPolicy.WAIT_FOR)
       }.map(toDeleteDocResponse(_))
     }
   }
@@ -64,9 +64,9 @@ object EnvironmentService extends CommonService {
         error.toFutureFail
       } else {
         EsClient.esClient.execute {
-          update(id).in(Environment.Index / EsConfig.DefaultType)
+          update(id).in(Environment.Index)
             .doc(JacksonSupport.stringify(env.toUpdateMap))
-            .refresh(RefreshPolicy.WAIT_UNTIL)
+            .refresh(RefreshPolicy.WAIT_FOR)
         }.map(toUpdateDocResponse(_))
       }
     }

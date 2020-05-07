@@ -4,7 +4,7 @@ import asura.common.util.{DateUtils, StringUtils}
 import asura.core.es.EsConfig
 import asura.core.es.model.TriggerEventLog.ExtData
 import asura.core.job.JobExecDesc
-import com.sksamuel.elastic4s.mappings.{BasicField, KeywordField, MappingDefinition, ObjectField}
+import com.sksamuel.elastic4s.requests.mappings.{BasicField, KeywordField, MappingDefinition, ObjectField}
 
 case class TriggerEventLog(
                             group: String,
@@ -31,8 +31,7 @@ object TriggerEventLog extends IndexSetting {
   override val shards: Int = 5
   override val replicas: Int = 1
   val mappings: MappingDefinition = MappingDefinition(
-    `type` = EsConfig.DefaultType,
-    fields = Seq(
+    Seq(
       KeywordField(name = FieldKeys.FIELD_GROUP),
       KeywordField(name = FieldKeys.FIELD_PROJECT),
       KeywordField(name = FieldKeys.FIELD_ENV),

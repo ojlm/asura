@@ -1,7 +1,5 @@
 package asura.core.assertion.engine
 
-import com.dongxiguo.fastring.Fastring.Implicits._
-
 /** single operator result */
 case class AssertReport(passed: Boolean, msg: String)
 
@@ -22,21 +20,21 @@ object AssertResult {
   val KEY_REPORT_MSG = "msg"
 
   def msgIncomparableSourceType(src: Any): String = {
-    fast"$MSG_INCOMPARABLE, src:${src.getClass.getName}".toString
+    "$MSG_INCOMPARABLE, src:${src.getClass.getName}"
   }
 
   def msgIncomparableTargetType(target: Any): String = {
-    fast"$MSG_INCOMPARABLE, target:${target.getClass.getName}".toString
+    "$MSG_INCOMPARABLE, target:${target.getClass.getName}"
   }
 
   def msgIncomparableType(src: Any, target: Any): String = {
-    fast"$MSG_INCOMPARABLE, src:${src.getClass.getName}, target:${target.getClass.getName}".toString
+    "$MSG_INCOMPARABLE, src:${src.getClass.getName}, target:${target.getClass.getName}"
   }
 
-  def pathNotFound(path: String) = fast"$MSG_PATH_NOT_FOUND: $path".toString
+  def pathNotFound(path: String) = "$MSG_PATH_NOT_FOUND: $path"
 
   def msgNotSameType(src: Any, target: Any): String = {
-    fast"Incompatible type, src:${src.getClass.getName}, target:${target.getClass.getName}".toString
+    "Incompatible type, src:${src.getClass.getName}, target:${target.getClass.getName}"
   }
 }
 

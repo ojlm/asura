@@ -3,7 +3,7 @@ package asura.app.hook
 import java.util.Base64
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import asura.app.api.auth.{BasicAuth, Reserved}
 import asura.app.notify.MailNotifier
 import asura.cluster.ClusterManager
@@ -47,14 +47,12 @@ class ApplicationStart @Inject()(
     import asura.common.config.PropertiesConversions.toProperties
     system.actorOf(SchedulerActor.props(toProperties(quartzCommon, defaultSchedulerConfig), toProperties(quartzCommon, systemSchedulerConfig)), "JobScheduler")
   }
-  private val materializer = ActorMaterializer()(system)
+  private val materializer = Materializer(system)
   CoreConfig.init(CoreConfig(
     system = system,
     dispatcher = system.dispatcher,
     materializer = materializer,
     redisServers = Nil,
-    useLocalEsNode = configuration.getOptional[Boolean]("asura.es.useLocalNode").getOrElse(false),
-    localEsDataDir = configuration.getOptional[String]("asura.es.localEsDataDir").getOrElse("./data"),
     esIndexPrefix = configuration.getOptional[String]("asura.es.indexPrefix"),
     esUrl = configuration.get[String]("asura.es.url"),
     linkerdConfig = toLinkerdConfig(configuration),

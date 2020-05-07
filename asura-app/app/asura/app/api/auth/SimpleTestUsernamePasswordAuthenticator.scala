@@ -3,12 +3,12 @@ package asura.app.api.auth
 import java.time.{LocalDate, ZoneId}
 import java.util.Date
 
-import org.pac4j.core.context.{Pac4jConstants, WebContext}
+import org.pac4j.core.context.WebContext
 import org.pac4j.core.credentials.UsernamePasswordCredentials
 import org.pac4j.core.credentials.authenticator.Authenticator
 import org.pac4j.core.exception.CredentialsException
 import org.pac4j.core.profile.CommonProfile
-import org.pac4j.core.util.CommonHelper
+import org.pac4j.core.util.{CommonHelper, Pac4jConstants}
 import org.pac4j.jwt.config.signature.SecretSignatureConfiguration
 import org.pac4j.jwt.profile.JwtGenerator
 import play.api.Configuration

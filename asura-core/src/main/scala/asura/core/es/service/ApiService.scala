@@ -9,10 +9,10 @@ import asura.core.es.model.{BulkDocResponse, FieldKeys, IndexDocResponse, RestAp
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.model.QueryApi
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
-import com.sksamuel.elastic4s.RefreshPolicy
-import com.sksamuel.elastic4s.http.ElasticDsl._
-import com.sksamuel.elastic4s.searches.queries.Query
-import com.sksamuel.elastic4s.searches.sort.FieldSort
+import com.sksamuel.elastic4s.ElasticDsl._
+import com.sksamuel.elastic4s.requests.common.RefreshPolicy
+import com.sksamuel.elastic4s.requests.searches.queries.Query
+import com.sksamuel.elastic4s.requests.searches.sort.FieldSort
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -30,9 +30,9 @@ object ApiService extends CommonService {
       } else {
         api.id = api.generateId()
         EsClient.esClient.execute {
-          indexInto(RestApi.Index / EsConfig.DefaultType)
+          indexInto(RestApi.Index)
             .doc(api)
-            .refresh(RefreshPolicy.WAIT_UNTIL)
+            .refresh(RefreshPolicy.WAIT_FOR)
         }.map(toIndexDocResponse(_))
       }
     }
@@ -50,9 +50,9 @@ object ApiService extends CommonService {
           bulk {
             apis.map(api => {
               api.id = api.generateId()
-              indexInto(RestApi.Index / EsConfig.DefaultType).doc(api)
+              indexInto(RestApi.Index).doc(api)
             })
-          }.refresh(RefreshPolicy.WAIT_UNTIL)
+          }.refresh(RefreshPolicy.WAIT_FOR)
         }.map(toBulkDocResponse(_))
       }
     }
@@ -104,7 +104,7 @@ object ApiService extends CommonService {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
       EsClient.esClient.execute {
-        delete(id).from(RestApi.Index / EsConfig.DefaultType).refresh(RefreshPolicy.WAIT_UNTIL)
+        delete(id).from(RestApi.Index).refresh(RefreshPolicy.WAIT_UNTIL)
       }
     }
   }
@@ -114,7 +114,7 @@ object ApiService extends CommonService {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
       EsClient.esClient.execute {
-        bulk(ids.map(id => delete(id).from(RestApi.Index / EsConfig.DefaultType)))
+        bulk(ids.map(id => delete(id).from(RestApi.Index)))
       }
     }
   }
@@ -167,7 +167,7 @@ object ApiService extends CommonService {
       val error = validate(api)
       if (null == error) {
         EsClient.esClient.execute {
-          update(apiUpdate.id).in(RestApi.Index / EsConfig.DefaultType).doc(api.toUpdateMap)
+          update(apiUpdate.id).in(RestApi.Index).doc(api.toUpdateMap)
         }
       } else {
         error.toFutureFail
