@@ -1,29 +1,27 @@
 package asura.core
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import akka.util.Timeout
 import asura.common.util.StringUtils
 import asura.core.CoreConfig.{EsOnlineLogConfig, LinkerdConfig}
 import asura.core.es.{EsClient, EsConfig}
-import com.sksamuel.elastic4s.http.ElasticClient
+import com.sksamuel.elastic4s.ElasticClient
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 case class CoreConfig(
-                       val system: ActorSystem,
-                       val dispatcher: ExecutionContext,
-                       val materializer: ActorMaterializer,
-                       val redisServers: Seq[String],
-                       val esIndexPrefix: Option[String] = None,
-                       val esUrl: String,
-                       val linkerdConfig: LinkerdConfig,
-                       val useLocalEsNode: Boolean = true,
-                       val localEsDataDir: String = StringUtils.EMPTY,
-                       val reportBaseUrl: String = StringUtils.EMPTY,
-                       val onlineConfigs: Seq[EsOnlineLogConfig] = Nil,
-                       val securityConfig: SecurityConfig = SecurityConfig(),
+                       system: ActorSystem,
+                       dispatcher: ExecutionContext,
+                       materializer: Materializer,
+                       redisServers: Seq[String],
+                       esIndexPrefix: Option[String] = None,
+                       esUrl: String,
+                       linkerdConfig: LinkerdConfig,
+                       reportBaseUrl: String = StringUtils.EMPTY,
+                       onlineConfigs: Seq[EsOnlineLogConfig] = Nil,
+                       securityConfig: SecurityConfig = SecurityConfig(),
                      )
 
 object CoreConfig {
@@ -33,7 +31,7 @@ object CoreConfig {
   implicit val DEFAULT_JOB_TIMEOUT: Timeout = 30.minutes
   implicit var system: ActorSystem = _
   implicit var dispatcher: ExecutionContext = _
-  implicit var materializer: ActorMaterializer = _
+  implicit var materializer: Materializer = _
   var reportBaseUrl: String = StringUtils.EMPTY
   var linkerdConfig: LinkerdConfig = _
   var securityConfig: SecurityConfig = _
@@ -49,7 +47,7 @@ object CoreConfig {
     if (config.esIndexPrefix.nonEmpty) {
       EsConfig.IndexPrefix = config.esIndexPrefix.get
     }
-    EsClient.init(config.useLocalEsNode, config.esUrl, config.localEsDataDir)
+    EsClient.init(config.esUrl)
     EsClient.initOnlineLogClient(config.onlineConfigs)
     RunnerActors.init(system)
   }

@@ -2,7 +2,7 @@ package asura.core.es.model
 
 import asura.common.util.StringUtils
 import asura.core.es.EsConfig
-import com.sksamuel.elastic4s.mappings.{BasicField, KeywordField, MappingDefinition}
+import com.sksamuel.elastic4s.requests.mappings.{BasicField, KeywordField, MappingDefinition}
 
 case class ProjectApiCoverage(
                                val group: String,
@@ -23,8 +23,7 @@ object ProjectApiCoverage extends IndexSetting {
   override val replicas: Int = 1
 
   val mappings: MappingDefinition = MappingDefinition(
-    `type` = EsConfig.DefaultType,
-    fields = Seq(
+    Seq(
       KeywordField(name = FieldKeys.FIELD_GROUP),
       KeywordField(name = FieldKeys.FIELD_PROJECT),
       KeywordField(name = FieldKeys.FIELD_DOMAIN),

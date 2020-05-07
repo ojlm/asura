@@ -10,10 +10,10 @@ import asura.core.es.{EsClient, EsConfig, EsResponse}
 import asura.core.model.QueryGroup
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import asura.core.util.{CommonValidator, JacksonSupport}
-import com.sksamuel.elastic4s.RefreshPolicy
-import com.sksamuel.elastic4s.http.ElasticDsl._
-import com.sksamuel.elastic4s.searches.queries.Query
-import com.sksamuel.elastic4s.searches.sort.FieldSort
+import com.sksamuel.elastic4s.ElasticDsl._
+import com.sksamuel.elastic4s.requests.common.RefreshPolicy
+import com.sksamuel.elastic4s.requests.searches.queries.Query
+import com.sksamuel.elastic4s.requests.searches.sort.FieldSort
 import com.typesafe.scalalogging.Logger
 
 import scala.collection.Iterable
@@ -35,7 +35,7 @@ object GroupService extends CommonService {
               ErrorMessages.error_GroupExists.toFutureFail
             } else {
               EsClient.esClient.execute {
-                indexInto(Group.Index / EsConfig.DefaultType).doc(group).id(group.id).refresh(RefreshPolicy.WAIT_UNTIL)
+                indexInto(Group.Index).doc(group).id(group.id).refresh(RefreshPolicy.WAIT_FOR)
               }.map(toIndexDocResponse(_))
             }
           } else {
@@ -44,7 +44,7 @@ object GroupService extends CommonService {
         })
       } else {
         EsClient.esClient.execute {
-          indexInto(Group.Index / EsConfig.DefaultType).doc(group).id(group.id).refresh(RefreshPolicy.WAIT_UNTIL)
+          indexInto(Group.Index).doc(group).id(group.id).refresh(RefreshPolicy.WAIT_FOR)
         }.map(toIndexDocResponse(_))
       }
     }
@@ -60,7 +60,7 @@ object GroupService extends CommonService {
         ProjectApiCoverage.Index, DubboRequest.Index, SqlRequest.Index, CiTrigger.Index
       ), id, null).flatMap(idxRes => {
         EsClient.esClient.execute {
-          delete(id).from(Group.Index / EsConfig.DefaultType).refresh(RefreshPolicy.WAIT_UNTIL)
+          delete(id).from(Group.Index).refresh(RefreshPolicy.WAIT_FOR)
         }.map(_ => idxRes)
       })
     }
@@ -101,14 +101,14 @@ object GroupService extends CommonService {
       ErrorMessages.error_EmptyId.toFutureFail
     } else {
       EsClient.esClient.execute {
-        update(group.id).in(Group.Index / EsConfig.DefaultType).doc(group.toUpdateMap)
+        update(group.id).in(Group.Index).doc(group.toUpdateMap)
       }
     }.map(toUpdateDocResponse(_))
   }
 
   def docExists(id: String) = {
     EsClient.esClient.execute {
-      exists(id, Group.Index, EsConfig.DefaultType)
+      exists(id, Group.Index)
     }
   }
 

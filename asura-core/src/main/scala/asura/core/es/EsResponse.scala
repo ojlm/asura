@@ -1,7 +1,7 @@
 package asura.core.es
 
 import asura.core.es.model.FieldKeys
-import com.sksamuel.elastic4s.http.search.SearchResponse
+import com.sksamuel.elastic4s.requests.searches.SearchResponse
 
 import scala.collection.mutable
 

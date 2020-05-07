@@ -5,11 +5,11 @@ import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.EsClient
 import asura.core.es.model.FieldKeys
 import asura.core.model.{AggsItem, AggsQuery}
-import com.sksamuel.elastic4s.http.ElasticDsl.{rangeQuery, termQuery, termsQuery, wildcardQuery, _}
-import com.sksamuel.elastic4s.http.Response
-import com.sksamuel.elastic4s.http.search.SearchResponse
-import com.sksamuel.elastic4s.searches.aggs.AbstractAggregation
-import com.sksamuel.elastic4s.searches.queries.Query
+import com.sksamuel.elastic4s.ElasticDsl.{rangeQuery, termQuery, termsQuery, wildcardQuery, _}
+import com.sksamuel.elastic4s.Response
+import com.sksamuel.elastic4s.requests.searches.SearchResponse
+import com.sksamuel.elastic4s.requests.searches.aggs.AbstractAggregation
+import com.sksamuel.elastic4s.requests.searches.queries.Query
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future

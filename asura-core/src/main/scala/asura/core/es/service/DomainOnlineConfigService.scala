@@ -3,11 +3,11 @@ package asura.core.es.service
 import asura.common.util.StringUtils
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
+import asura.core.es.EsClient
 import asura.core.es.model._
-import asura.core.es.{EsClient, EsConfig}
 import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
-import com.sksamuel.elastic4s.http.ElasticDsl._
+import com.sksamuel.elastic4s.ElasticDsl._
 
 import scala.concurrent.Future
 
@@ -18,7 +18,7 @@ object DomainOnlineConfigService extends CommonService {
       ErrorMessages.error_EmptyId.toFutureFail
     } else {
       EsClient.esClient.execute {
-        indexInto(DomainOnlineConfig.Index / EsConfig.DefaultType).doc(item).id(item.domain)
+        indexInto(DomainOnlineConfig.Index).doc(item).id(item.domain)
       }.map(toIndexDocResponse(_))
     }
   }

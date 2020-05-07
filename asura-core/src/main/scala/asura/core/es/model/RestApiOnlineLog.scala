@@ -1,9 +1,9 @@
 package asura.core.es.model
 
-import asura.core.model.AggsItem.Metrics
 import asura.core.es.EsConfig
 import asura.core.es.model.RestApiOnlineLog.GroupProject
-import com.sksamuel.elastic4s.mappings._
+import asura.core.model.AggsItem.Metrics
+import com.sksamuel.elastic4s.requests.mappings._
 
 case class RestApiOnlineLog(
                              val domain: String,
@@ -24,8 +24,7 @@ object RestApiOnlineLog extends IndexSetting {
   override val replicas: Int = 0
 
   val mappings: MappingDefinition = MappingDefinition(
-    `type` = EsConfig.DefaultType,
-    fields = Seq(
+    Seq(
       KeywordField(name = FieldKeys.FIELD_DOMAIN),
       KeywordField(name = FieldKeys.FIELD_TAG),
       KeywordField(name = FieldKeys.FIELD_METHOD),

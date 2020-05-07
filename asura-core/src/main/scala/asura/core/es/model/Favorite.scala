@@ -2,7 +2,7 @@ package asura.core.es.model
 
 import asura.common.util.DateUtils
 import asura.core.es.EsConfig
-import com.sksamuel.elastic4s.mappings._
+import com.sksamuel.elastic4s.requests.mappings._
 
 case class Favorite(
                      var id: String, // logic id for checking existence
@@ -34,8 +34,7 @@ object Favorite extends IndexSetting {
   override val shards: Int = 5
   override val replicas: Int = 1
   val mappings: MappingDefinition = MappingDefinition(
-    `type` = EsConfig.DefaultType,
-    fields = Seq(
+    Seq(
       TextField(name = FieldKeys.FIELD_SUMMARY, copyTo = Seq(FieldKeys.FIELD__TEXT), analysis = EsConfig.IK_ANALYZER),
       TextField(name = FieldKeys.FIELD__TEXT, analysis = EsConfig.IK_ANALYZER),
       KeywordField(name = FieldKeys.FIELD_GROUP),

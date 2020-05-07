@@ -4,13 +4,13 @@ import asura.common.util.StringUtils
 import asura.core.es.EsConfig
 import asura.core.es.model.Label.LabelRef
 import asura.core.util.JacksonSupport
-import com.sksamuel.elastic4s.mappings.{BasicField, _}
+import com.sksamuel.elastic4s.requests.mappings.{BasicField, _}
 
 import scala.collection.mutable
 
 /**
-  * is useProxy is `true`, then use `namespace` in env first then can fall back to `namespace`
-  */
+ * is useProxy is `true`, then use `namespace` in env first then can fall back to `namespace`
+ */
 case class HttpCaseRequest(
                             val summary: String,
                             val description: String,
@@ -69,8 +69,7 @@ object HttpCaseRequest extends IndexSetting {
 
   val Index: String = s"${EsConfig.IndexPrefix}case"
   val mappings: MappingDefinition = MappingDefinition(
-    `type` = EsConfig.DefaultType,
-    fields = BaseIndex.fieldDefinitions ++ Seq(
+    BaseIndex.fieldDefinitions ++ Seq(
       KeywordField(name = FieldKeys.FIELD_GROUP),
       KeywordField(name = FieldKeys.FIELD_PROJECT),
       KeywordField(name = FieldKeys.FIELD_ENV),

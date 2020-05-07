@@ -5,10 +5,10 @@ import asura.common.util.{JsonUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.model.{DeleteDocResponse, IndexDocResponse, UpdateDocResponse, UserProfile}
-import asura.core.es.{EsClient, EsConfig, EsResponse}
+import asura.core.es.{EsClient, EsResponse}
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
-import com.sksamuel.elastic4s.RefreshPolicy
-import com.sksamuel.elastic4s.http.ElasticDsl._
+import com.sksamuel.elastic4s.ElasticDsl._
+import com.sksamuel.elastic4s.requests.common.RefreshPolicy
 
 import scala.collection.Iterable
 import scala.concurrent.Future
@@ -24,7 +24,7 @@ object UserProfileService extends CommonService {
         error.toFutureFail
       } else {
         EsClient.esClient.execute {
-          indexInto(UserProfile.Index / EsConfig.DefaultType).doc(profile).id(profile.username).refresh(RefreshPolicy.WAIT_UNTIL)
+          indexInto(UserProfile.Index).doc(profile).id(profile.username).refresh(RefreshPolicy.WAIT_FOR)
         }.map(toIndexDocResponse(_))
       }
     }
@@ -35,7 +35,7 @@ object UserProfileService extends CommonService {
       ErrorMessages.error_EmptyId.toFutureFail
     } else {
       EsClient.esClient.execute {
-        delete(id).from(UserProfile.Index / EsConfig.DefaultType).refresh(RefreshPolicy.WAIT_UNTIL)
+        delete(id).from(UserProfile.Index).refresh(RefreshPolicy.WAIT_FOR)
       }.map(toDeleteDocResponse(_))
     }
   }
@@ -45,7 +45,7 @@ object UserProfileService extends CommonService {
       ErrorMessages.error_EmptyUsername.toFutureFail
     } else {
       EsClient.esClient.execute {
-        update(profile.username).in(UserProfile.Index / EsConfig.DefaultType).doc(profile.toUpdateMap)
+        update(profile.username).in(UserProfile.Index).doc(profile.toUpdateMap)
       }.map(toUpdateDocResponse(_))
     }
   }

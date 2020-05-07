@@ -3,7 +3,7 @@ package asura.core.es.model
 import asura.common.util.StringUtils
 import asura.core.es.EsConfig
 import asura.core.es.model.Label.LabelRef
-import com.sksamuel.elastic4s.mappings._
+import com.sksamuel.elastic4s.requests.mappings._
 
 import scala.collection.mutable
 
@@ -49,8 +49,7 @@ case class Scenario(
 object Scenario extends IndexSetting {
   val Index: String = s"${EsConfig.IndexPrefix}scenario"
   val mappings: MappingDefinition = MappingDefinition(
-    `type` = EsConfig.DefaultType,
-    fields = BaseIndex.fieldDefinitions ++ Seq(
+    BaseIndex.fieldDefinitions ++ Seq(
       KeywordField(name = FieldKeys.FIELD_GROUP),
       KeywordField(name = FieldKeys.FIELD_PROJECT),
       NestedField(name = FieldKeys.FIELD_STEPS, fields = Seq(

@@ -2,12 +2,12 @@ package asura.core.es.service
 
 import asura.common.util.StringUtils
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
+import asura.core.es.EsClient
 import asura.core.es.model.{FieldKeys, IndexSetting, JobReportDataItem, RestApiOnlineLog}
-import asura.core.es.{EsClient, EsConfig}
-import com.sksamuel.elastic4s.IndexesAndTypes
-import com.sksamuel.elastic4s.delete.DeleteByQueryRequest
-import com.sksamuel.elastic4s.http.ElasticDsl._
-import com.sksamuel.elastic4s.searches.queries.Query
+import com.sksamuel.elastic4s.ElasticDsl._
+import com.sksamuel.elastic4s.Indexes
+import com.sksamuel.elastic4s.requests.delete.DeleteByQueryRequest
+import com.sksamuel.elastic4s.requests.searches.queries.Query
 import com.typesafe.scalalogging.Logger
 
 import scala.collection.mutable.ArrayBuffer
@@ -29,7 +29,7 @@ object IndexService extends CommonService {
           createIndex(idx.Index)
             .shards(idx.shards)
             .replicas(idx.replicas)
-            .mappings(idx.mappings)
+            .mapping(idx.mappings)
         }.await
         if (res2.isSuccess) {
           true
@@ -87,7 +87,7 @@ object IndexService extends CommonService {
     if (StringUtils.isNotEmpty(project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, project)
     EsClient.esClient.execute {
       DeleteByQueryRequest(
-        IndexesAndTypes(indices, Seq(EsConfig.DefaultType)),
+        Indexes(indices),
         boolQuery().must(esQueries)
       ).refreshImmediately
     }.map(toDeleteByQueryResponse(_))

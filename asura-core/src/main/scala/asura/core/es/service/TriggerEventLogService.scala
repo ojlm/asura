@@ -3,12 +3,12 @@ package asura.core.es.service
 import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
+import asura.core.es.EsClient
 import asura.core.es.model._
-import asura.core.es.{EsClient, EsConfig}
 import asura.core.model.QueryCiEvents
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
-import com.sksamuel.elastic4s.http.ElasticDsl._
-import com.sksamuel.elastic4s.searches.queries.Query
+import com.sksamuel.elastic4s.ElasticDsl._
+import com.sksamuel.elastic4s.requests.searches.queries.Query
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
@@ -21,7 +21,7 @@ object TriggerEventLogService extends CommonService with BaseAggregationService 
     } else {
       EsClient.esClient.execute {
         bulk(
-          items.map(item => indexInto(TriggerEventLog.Index / EsConfig.DefaultType).doc(item))
+          items.map(item => indexInto(TriggerEventLog.Index).doc(item))
         )
       }.map(toBulkDocResponse(_))
     }

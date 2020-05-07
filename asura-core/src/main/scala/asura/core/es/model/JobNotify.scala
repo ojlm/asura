@@ -2,7 +2,7 @@ package asura.core.es.model
 
 import asura.common.util.{DateUtils, StringUtils}
 import asura.core.es.EsConfig
-import com.sksamuel.elastic4s.mappings._
+import com.sksamuel.elastic4s.requests.mappings._
 
 import scala.collection.mutable
 
@@ -54,8 +54,7 @@ object JobNotify extends IndexSetting {
   override val shards: Int = 3
   override val replicas: Int = 1
   val mappings: MappingDefinition = MappingDefinition(
-    `type` = EsConfig.DefaultType,
-    fields = BaseIndex.fieldDefinitions ++ Seq(
+    BaseIndex.fieldDefinitions ++ Seq(
       KeywordField(name = FieldKeys.FIELD_GROUP),
       KeywordField(name = FieldKeys.FIELD_PROJECT),
       KeywordField(name = FieldKeys.FIELD_JOB_ID),

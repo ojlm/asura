@@ -4,16 +4,16 @@ import asura.common.exceptions.ErrorMessages.ErrorMessage
 import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, JsonUtils, StringUtils}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
+import asura.core.es.EsClient
 import asura.core.es.model._
-import asura.core.es.{EsClient, EsConfig}
 import asura.core.model.QueryTrigger
 import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import asura.core.{ErrorMessages => CoreErrorMessages}
-import com.sksamuel.elastic4s.RefreshPolicy
-import com.sksamuel.elastic4s.http.ElasticDsl._
-import com.sksamuel.elastic4s.searches.queries.Query
-import com.sksamuel.elastic4s.searches.sort.FieldSort
+import com.sksamuel.elastic4s.ElasticDsl._
+import com.sksamuel.elastic4s.requests.common.RefreshPolicy
+import com.sksamuel.elastic4s.requests.searches.queries.Query
+import com.sksamuel.elastic4s.requests.searches.sort.FieldSort
 import com.typesafe.scalalogging.Logger
 
 import scala.collection.mutable
@@ -28,7 +28,7 @@ object CiTriggerService extends CommonService {
     val errorMsg = validate(doc)
     if (null == errorMsg) {
       EsClient.esClient.execute {
-        indexInto(CiTrigger.Index / EsConfig.DefaultType).doc(doc).refresh(RefreshPolicy.WAIT_UNTIL)
+        indexInto(CiTrigger.Index).doc(doc).refresh(RefreshPolicy.WAIT_FOR)
       }.map(toIndexDocResponse(_))
     } else {
       errorMsg.toFutureFail
@@ -37,7 +37,7 @@ object CiTriggerService extends CommonService {
 
   def deleteTrigger(id: String): Future[DeleteDocResponse] = {
     EsClient.esClient.execute {
-      delete(id).from(CiTrigger.Index / EsConfig.DefaultType).refresh(RefreshPolicy.WAIT_UNTIL)
+      delete(id).from(CiTrigger.Index).refresh(RefreshPolicy.WAIT_FOR)
     }.map(toDeleteDocResponse)
   }
 
@@ -113,7 +113,7 @@ object CiTriggerService extends CommonService {
         error.toFutureFail
       } else {
         EsClient.esClient.execute {
-          update(id).in(CiTrigger.Index / EsConfig.DefaultType).doc(JsonUtils.stringify(doc.toUpdateMap))
+          update(id).in(CiTrigger.Index).doc(JsonUtils.stringify(doc.toUpdateMap))
         }.map(toUpdateDocResponse(_))
       }
     }

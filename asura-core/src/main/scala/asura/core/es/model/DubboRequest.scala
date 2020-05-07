@@ -6,7 +6,7 @@ import asura.core.es.model.DubboRequest.DubboRequestBody
 import asura.core.es.model.Label.LabelRef
 import asura.core.util.JacksonSupport
 import asura.dubbo.GenericRequest
-import com.sksamuel.elastic4s.mappings._
+import com.sksamuel.elastic4s.requests.mappings._
 
 import scala.collection.mutable
 
@@ -62,8 +62,7 @@ object DubboRequest extends IndexSetting {
 
   val Index: String = s"${EsConfig.IndexPrefix}dubbo-request"
   val mappings: MappingDefinition = MappingDefinition(
-    `type` = EsConfig.DefaultType,
-    fields = BaseIndex.fieldDefinitions ++ Seq(
+    BaseIndex.fieldDefinitions ++ Seq(
       KeywordField(name = FieldKeys.FIELD_GROUP),
       KeywordField(name = FieldKeys.FIELD_PROJECT),
       KeywordField(name = FieldKeys.FIELD_ENV),

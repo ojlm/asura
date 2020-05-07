@@ -8,8 +8,8 @@ import asura.core.es.model.FieldKeys
 import asura.core.es.service.UserProfileService
 import asura.play.api.BaseApi.OkApiRes
 import asura.play.api.{BaseApi => PlayBaseApi}
-import com.sksamuel.elastic4s.http.Response
-import com.sksamuel.elastic4s.http.search.SearchResponse
+import com.sksamuel.elastic4s.Response
+import com.sksamuel.elastic4s.requests.searches.SearchResponse
 import play.api.mvc._
 
 import scala.concurrent.{ExecutionContext, Future}

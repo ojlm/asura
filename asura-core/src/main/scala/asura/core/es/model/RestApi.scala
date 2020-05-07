@@ -4,7 +4,7 @@ import asura.common.model.ApiType
 import asura.common.util.StringUtils
 import asura.core.es.EsConfig
 import asura.core.es.model.Label.LabelRef
-import com.sksamuel.elastic4s.mappings._
+import com.sksamuel.elastic4s.requests.mappings._
 
 import scala.collection.mutable
 
@@ -65,8 +65,8 @@ case class RestApi(
   }
 
   /** id for check if the api exists,
-    * not use _id because the if _id can be used in url and path has ambiguity character
-    */
+   * not use _id because the if _id can be used in url and path has ambiguity character
+   */
   def generateId(): String = s"${group}_${project}_${method}_${path}"
 
 }
@@ -75,8 +75,7 @@ object RestApi extends IndexSetting {
 
   val Index: String = s"${EsConfig.IndexPrefix}api"
   val mappings: MappingDefinition = MappingDefinition(
-    `type` = EsConfig.DefaultType,
-    fields = BaseIndex.fieldDefinitions ++ Seq(
+    BaseIndex.fieldDefinitions ++ Seq(
       KeywordField(name = FieldKeys.FIELD_ID),
       KeywordField(name = FieldKeys.FIELD_PATH, copyTo = Seq(FieldKeys.FIELD__TEXT)),
       KeywordField(name = FieldKeys.FIELD_METHOD),

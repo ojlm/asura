@@ -1,13 +1,13 @@
 package asura.core.es.model
 
 import asura.core.es.EsConfig
-import com.sksamuel.elastic4s.mappings._
+import com.sksamuel.elastic4s.requests.mappings._
 
 import scala.collection.mutable
 
 /**
-  * there should be only one `Environment` in a whole job/scenario/case runtime
-  */
+ * there should be only one `Environment` in a whole job/scenario/case runtime
+ */
 case class Environment(
                         val summary: String,
                         val description: String,
@@ -55,8 +55,7 @@ object Environment extends IndexSetting {
   override val shards: Int = 1
   override val replicas: Int = 1
   val mappings: MappingDefinition = MappingDefinition(
-    `type` = EsConfig.DefaultType,
-    fields = BaseIndex.fieldDefinitions ++ Seq(
+    BaseIndex.fieldDefinitions ++ Seq(
       KeywordField(name = FieldKeys.FIELD_GROUP),
       KeywordField(name = FieldKeys.FIELD_PROJECT),
       KeywordField(name = FieldKeys.FIELD_PROTOCOL),

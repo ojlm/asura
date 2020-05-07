@@ -3,15 +3,15 @@ package asura.core.es.service
 import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.model.{AggsItem, AggsQuery, QueryJobReport}
+import asura.core.es.EsClient
 import asura.core.es.model._
 import asura.core.es.service.BaseAggregationService._
-import asura.core.es.{EsClient, EsConfig}
+import asura.core.model.{AggsItem, AggsQuery, QueryJobReport}
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
-import com.sksamuel.elastic4s.RefreshPolicy
-import com.sksamuel.elastic4s.http.ElasticDsl._
-import com.sksamuel.elastic4s.searches.DateHistogramInterval
-import com.sksamuel.elastic4s.searches.queries.Query
+import com.sksamuel.elastic4s.ElasticDsl._
+import com.sksamuel.elastic4s.requests.common.RefreshPolicy
+import com.sksamuel.elastic4s.requests.searches.DateHistogramInterval
+import com.sksamuel.elastic4s.requests.searches.queries.Query
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
@@ -34,7 +34,7 @@ object JobReportService extends CommonService with BaseAggregationService {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
       EsClient.esClient.execute {
-        indexInto(JobReport.Index / EsConfig.DefaultType).doc(report).refresh(RefreshPolicy.WAIT_UNTIL)
+        indexInto(JobReport.Index).doc(report).refresh(RefreshPolicy.WAIT_UNTIL)
       }.map(toIndexDocResponse(_))
     }
   }
@@ -78,7 +78,7 @@ object JobReportService extends CommonService with BaseAggregationService {
         jobReport.statis = JobReportDataStatistic(jobReport.data)
       }
       EsClient.esClient.execute {
-        indexInto(JobReport.Index / EsConfig.DefaultType).doc(jobReport).id(id)
+        indexInto(JobReport.Index).doc(jobReport).id(id)
       }.map(toIndexDocResponse(_))
     }
   }
