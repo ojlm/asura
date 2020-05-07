@@ -3,7 +3,7 @@ import sbt._
 
 object Dependencies {
 
-  val akkaVersion = "2.6.5"
+  val akkaVersion = "2.6.3"
   val akkaHttpVersion = "10.1.11"
 
   private val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
@@ -62,7 +62,7 @@ object Dependencies {
   val clusterDependencies = Seq(akkaCluster, akkaMetrics, akkaClusterTools) ++ commonDependencies
   val coreDependencies = Seq(
     commonsLang3, jackson, elastic4s, druid,
-     joddCore, jsonPath, swaggerParser, quartz, redisson
+    joddCore, jsonPath, swaggerParser, quartz, redisson
   ) ++ commonDependencies ++ httpDeps ++ databaseDeps
   val appDependencies = Seq(config, guava, commonsCodec) ++ loggingDeps ++ httpDeps ++ testDeps
   val namerdDependencies = Seq(akkaStream, akkaHttp) ++ commonDependencies
