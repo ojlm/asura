@@ -5,7 +5,7 @@ PID_FILE=./asura-app.pid
 
 # ***********************************************
 # ***********************************************
-ARGS="-Dconfig.resource=application.conf"
+ARGS="-Dfile.encoding=UTF-8 -Dconfig.resource=application.conf"
 DAEMON=$START_SCRIPT
 
 # colors

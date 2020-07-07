@@ -36,7 +36,7 @@ object Dependencies {
   private val curator = "org.apache.curator" % "curator-recipes" % "2.12.0"
 
   // Database
-  private val mysqlConnector = "mysql" % "mysql-connector-java" % "5.1.23"
+  private val mysqlConnector = "mysql" % "mysql-connector-java" % "8.0.20"
   private val redisson = "org.redisson" % "redisson" % "3.5.7"
   private val druid = "com.alibaba" % "druid" % "1.1.16"
 
