@@ -84,6 +84,7 @@ object Dependencies {
     "org.pac4j" %% "play-pac4j" % playPac4jVersion,
     "org.pac4j" % "pac4j-http" % pac4jVersion,
     "org.pac4j" % "pac4j-ldap" % pac4jVersion,
+    "org.pac4j" % "pac4j-cas" % pac4jVersion,
     "org.pac4j" % "pac4j-jwt" % pac4jVersion,
     "com.typesafe.play" %% "play-mailer" % "7.0.1",
     "com.typesafe.play" %% "play-mailer-guice" % "7.0.1",
