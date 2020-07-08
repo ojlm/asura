@@ -87,7 +87,7 @@ object JobNotifyService extends CommonService {
         .from(query.pageFrom)
         .size(query.pageSize)
         .searchAfter(if (null != query.sort) query.sort else Nil)
-        .sortBy(FieldSort(FieldKeys.FIELD_CREATED_AT).asc(), FieldSort(FieldKeys.FIELD__ID).desc())
+        .sortBy(FieldSort(FieldKeys.FIELD_CREATED_AT).asc())
         .sourceExclude(FieldKeys.FIELD_CREATOR, FieldKeys.FIELD_CREATED_AT, FieldKeys.FIELD_SUMMARY, FieldKeys.FIELD_DESCRIPTION)
     }
   }

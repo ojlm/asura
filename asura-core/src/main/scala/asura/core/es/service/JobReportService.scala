@@ -34,7 +34,7 @@ object JobReportService extends CommonService with BaseAggregationService {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
       EsClient.esClient.execute {
-        indexInto(JobReport.Index).doc(report).refresh(RefreshPolicy.WAIT_UNTIL)
+        indexInto(JobReport.Index).doc(report).refresh(RefreshPolicy.WAIT_FOR)
       }.map(toIndexDocResponse(_))
     }
   }
@@ -44,7 +44,7 @@ object JobReportService extends CommonService with BaseAggregationService {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
       EsClient.esClient.execute {
-        delete(id).from(JobReport.Index).refresh(RefreshPolicy.WAIT_UNTIL)
+        delete(id).from(JobReport.Index).refresh(RefreshPolicy.WAIT_FOR)
       }.map(toDeleteDocResponse(_))
     }
   }
@@ -120,7 +120,7 @@ object JobReportService extends CommonService with BaseAggregationService {
     val esQueries = buildEsQueryFromAggQuery(aggs, false)
     val termsField = aggs.aggTermsField()
     val dateHistogram = dateHistogramAgg(aggsTermsName, FieldKeys.FIELD_CREATED_AT)
-      .interval(DateHistogramInterval.fromString(aggs.aggInterval()))
+      .fixedInterval(DateHistogramInterval.fromString(aggs.aggInterval()))
       .format("yyyy-MM-dd")
       .subAggregations(termsAgg(aggsTermsName, termsField).size(aggs.pageSize()))
     EsClient.esClient.execute {

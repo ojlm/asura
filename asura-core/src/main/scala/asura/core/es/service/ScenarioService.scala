@@ -34,7 +34,7 @@ object ScenarioService extends CommonService {
     val error = check(s)
     if (null == error) {
       EsClient.esClient.execute {
-        indexInto(Scenario.Index).doc(s).refresh(RefreshPolicy.WAIT_UNTIL)
+        indexInto(Scenario.Index).doc(s).refresh(RefreshPolicy.WAIT_FOR)
       }.map(toIndexDocResponse(_))
     } else {
       error.toFutureFail
@@ -43,7 +43,7 @@ object ScenarioService extends CommonService {
 
   def deleteDoc(id: String): Future[DeleteDocResponse] = {
     EsClient.esClient.execute {
-      delete(id).from(Scenario.Index).refresh(RefreshPolicy.WAIT_UNTIL)
+      delete(id).from(Scenario.Index).refresh(RefreshPolicy.WAIT_FOR)
     }.map(toDeleteDocResponse(_))
   }
 

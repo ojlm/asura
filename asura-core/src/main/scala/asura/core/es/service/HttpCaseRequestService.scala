@@ -46,7 +46,7 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
     if (null == error) {
       cs.calcGeneratorCount()
       EsClient.esClient.execute {
-        indexInto(HttpCaseRequest.Index).doc(cs).refresh(RefreshPolicy.WAIT_UNTIL)
+        indexInto(HttpCaseRequest.Index).doc(cs).refresh(RefreshPolicy.WAIT_FOR)
       }.map(toIndexDocResponse(_))
     } else {
       error.toFutureFail
@@ -71,7 +71,7 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
 
   def deleteDoc(id: String): Future[DeleteDocResponse] = {
     EsClient.esClient.execute {
-      delete(id).from(HttpCaseRequest.Index).refresh(RefreshPolicy.WAIT_UNTIL)
+      delete(id).from(HttpCaseRequest.Index).refresh(RefreshPolicy.WAIT_FOR)
     }.map(toDeleteDocResponse(_))
   }
 
@@ -280,14 +280,14 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
   }
 
   def searchAfter(query: SearchAfterCase) = {
-    var sortFields = Seq(FieldSort(FieldKeys.FIELD_CREATED_AT).desc(), FieldSort(FieldKeys.FIELD__ID).desc())
+    var sortFields = Seq(FieldSort(FieldKeys.FIELD_CREATED_AT).desc())
     val esQueries = ArrayBuffer[Query]()
     if (StringUtils.isNotEmpty(query.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, query.group)
     if (StringUtils.isNotEmpty(query.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, query.project)
     if (StringUtils.isNotEmpty(query.creator)) esQueries += termQuery(FieldKeys.FIELD_CREATOR, query.creator)
     if (StringUtils.isNotEmpty(query.text)) {
       esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
-      sortFields = Seq(FieldSort(FieldKeys.FIELD__SCORE).desc(), FieldSort(FieldKeys.FIELD__ID).desc())
+      sortFields = Seq(FieldSort(FieldKeys.FIELD__SCORE).desc())
     }
     EsClient.esClient.execute {
       search(HttpCaseRequest.Index)
@@ -321,7 +321,7 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
     val esQueries = buildEsQueryFromAggQuery(query, false)
     val termsField = query.aggTermsField()
     val dateHistogram = dateHistogramAgg(aggsTermsName, FieldKeys.FIELD_CREATED_AT)
-      .interval(DateHistogramInterval.fromString(query.aggInterval()))
+      .fixedInterval(DateHistogramInterval.fromString(query.aggInterval()))
       .format("yyyy-MM-dd")
       .subAggregations(termsAgg(aggsTermsName, termsField).size(query.pageSize()))
     EsClient.esClient.execute {
