@@ -34,7 +34,7 @@ trait CommonService {
 
   def toBulkDocResponse(response: Response[BulkResponse]): BulkDocResponse = {
     if (response.isSuccess) {
-      BulkDocResponse()
+      BulkDocResponse(response.result.items.length)
     } else {
       throw new OperateDocFailException(response.error.reason)
     }

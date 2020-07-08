@@ -6,7 +6,7 @@ case class DeleteDocResponse()
 
 case class UpdateDocResponse(id: String, result: String)
 
-case class BulkDocResponse()
+case class BulkDocResponse(count: Long)
 
 case class DeleteByQueryRes(
                              total: Long,

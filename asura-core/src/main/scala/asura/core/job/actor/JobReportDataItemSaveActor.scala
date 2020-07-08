@@ -13,6 +13,7 @@ import scala.concurrent.duration._
 
 class JobReportDataItemSaveActor(dayIndexSuffix: String) extends BaseActor {
 
+  implicit val ec = context.dispatcher
   val messages = ArrayBuffer[SaveReportDataHttpItemMessage]()
 
   override def receive: Receive = {
@@ -40,8 +41,9 @@ class JobReportDataItemSaveActor(dayIndexSuffix: String) extends BaseActor {
 
   private def insert(): Unit = {
     if (messages.length > 0) {
-      log.debug(s"${messages.length} items is saving...")
-      JobReportDataItemService.index(messages, dayIndexSuffix)
+      JobReportDataItemService.index(messages, dayIndexSuffix).map(response => {
+        log.debug(s"${response.count} items is saving...")
+      })
       messages.clear()
     }
   }
