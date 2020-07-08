@@ -75,10 +75,10 @@ object ScenarioRunner {
   }
 
   /**
-    * @param scenarioId if this value is null, previous case context should not be put context
-    * @param caseTuples (docId, case)
-    */
-  @deprecated(message = "only http steps", since = "0.2.0")
+   * @param scenarioId if this value is null, previous case context should not be put context
+   * @param caseTuples (docId, case)
+   */
+  // TODO: only http steps
   def test(
             scenarioId: String,
             summary: String,
@@ -144,10 +144,6 @@ object ScenarioRunner {
                 val statis = httpResult.statis
                 val item = if (statis.isSuccessful) {
                   if (null != log) log(s"[SCN][${summary}]: ${cs.summary} ${XtermUtils.greenWrap(ReportStepItemStatus.STATUS_PASS)}.")
-                  if (StringUtils.isNotEmpty(scenarioId)) {
-                    // when it's a real scenario instead of a plain array of case
-                    caseContext.setPrevContext(RuntimeContext.extractSelfContext(httpResult))
-                  }
                   JobReportStepItemData.parse(cs.summary, httpResult, itemDataId)
                 } else {
                   if (null != log) log(s"[SCN][${summary}]: ${cs.summary} ${XtermUtils.redWrap(ReportStepItemStatus.STATUS_FAIL)}.")

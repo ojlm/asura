@@ -4,7 +4,7 @@ import akka.Done
 import akka.actor.ActorSystem
 import akka.kafka.ProducerSettings
 import akka.kafka.scaladsl.Producer
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import com.typesafe.scalalogging.StrictLogging
 import org.apache.kafka.clients.producer.ProducerRecord
@@ -19,7 +19,7 @@ object TestProducer extends StrictLogging {
     logger.info("Start producer")
 
     implicit val system = ActorSystem("producer")
-    implicit val materializer = ActorMaterializer()
+    implicit val materializer = Materializer(system)
     implicit val ec = system.dispatcher
 
     val producerSettings = ProducerSettings(system, new StringSerializer, new StringSerializer)

@@ -24,12 +24,6 @@ object RuntimeContext {
   val KEY__J = "_j"
   // alias for scenario scope
   val KEY__S = "_s"
-  // alias for all steps
-  @deprecated
-  val KEY__C = "_c"
-  // alias for prev step
-  @deprecated
-  val KEY__P = "_p"
   // current step status, now only http step
   val KEY_STATUS = "status"
   // current step headers, now only http step
@@ -52,21 +46,21 @@ object RuntimeContext {
   val SELF_VARIABLE = "$"
 
   /**
-    * render single template macro which can generate field of case.
-    * this will throw exception when json-path is not found
-    *
-    * e.g:
-    *
-    * "" => ""
-    * "abc" => "abc"
-    * "{{$.abc}}" => return context.abc
-    * "{{random(3)}}" => return script evaluate result
-    * "{{}}" => ""
-    *
-    * @param template template string which must start with `${` and end with `}`
-    * @param ctx      context must be java types
-    * @return template itself or value in context wrapped in a future
-    **/
+   * render single template macro which can generate field of case.
+   * this will throw exception when json-path is not found
+   *
+   * e.g:
+   *
+   * "" => ""
+   * "abc" => "abc"
+   * "{{$.abc}}" => return context.abc
+   * "{{random(3)}}" => return script evaluate result
+   * "{{}}" => ""
+   *
+   * @param template template string which must start with `${` and end with `}`
+   * @param ctx      context must be java types
+   * @return template itself or value in context wrapped in a future
+   **/
   def render(template: String, ctx: util.Map[Any, Any]): Any = {
     if (StringUtils.isNotEmpty(template)) {
       if (template.startsWith(TEMPLATE_PREFIX) && template.endsWith(TEMPLATE_SUFFIX)) {
@@ -91,9 +85,9 @@ object RuntimeContext {
   }
 
   /**
-    * render whole body to string which may have many macros.
-    * this will throw exception when json-path is not found
-    */
+   * render whole body to string which may have many macros.
+   * this will throw exception when json-path is not found
+   */
   def renderBody(template: String, ctx: util.Map[Any, Any]): String = {
     if (StringUtils.isNotEmpty(template)) {
       StringTemplate.mustacheParser.parse(template, macroName => {
@@ -132,30 +126,14 @@ object RuntimeContext {
 }
 
 /**
-  * use java type system
-  */
+ * use java type system
+ */
 case class RuntimeContext(
                            private val ctx: util.Map[Any, Any] = new util.concurrent.ConcurrentHashMap[Any, Any](),
                            var options: ContextOptions = null,
                          ) {
 
   def rawContext = ctx
-
-  @deprecated(message = "use exports instead")
-  def setPrevContext(prevContext: util.Map[Any, Any]): RuntimeContext = {
-    if (null != prevContext && !prevContext.isEmpty) {
-      ctx.put(RuntimeContext.KEY__P, prevContext)
-      val cases = ctx.get(RuntimeContext.KEY__C)
-      if (null != cases) {
-        cases.asInstanceOf[util.ArrayList[util.Map[Any, Any]]].add(prevContext)
-      } else {
-        val list = new util.ArrayList[util.Map[Any, Any]]()
-        list.add(prevContext)
-        ctx.put(RuntimeContext.KEY__C, list)
-      }
-    }
-    this
-  }
 
   def evaluateImportsVariables(imports: Seq[VariablesImportItem]): Future[RuntimeContext] = {
     if (null != imports && imports.nonEmpty) {
@@ -276,8 +254,8 @@ case class RuntimeContext(
   }
 
   /**
-    * @param entity `String` or `java.util.Map`
-    */
+   * @param entity `String` or `java.util.Map`
+   */
   def setCurrentEntity(entity: Any): RuntimeContext = {
     ctx.put(RuntimeContext.KEY_ENTITY, entity)
     this

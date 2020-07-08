@@ -3,7 +3,7 @@ package asura.kafka.consumer
 import akka.actor.ActorSystem
 import akka.kafka.scaladsl.Consumer
 import akka.kafka.{ConsumerSettings, Subscriptions}
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import akka.stream.scaladsl.{Keep, Sink}
 import asura.kafka.avro.SampleAvroClass
 import com.typesafe.scalalogging.StrictLogging
@@ -18,7 +18,7 @@ object TestAvroConsumer extends StrictLogging {
   def main(args: Array[String]): Unit = {
 
     implicit val system = ActorSystem("consumer")
-    implicit val materializer = ActorMaterializer()
+    implicit val materializer = Materializer(system)
     implicit val ec = system.dispatcher
 
     val schemaRegistryUrl = ""

@@ -7,7 +7,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 case class ScenarioStep(
                          id: String,
                          `type`: String,
-                         stored: Boolean = false, // do need to store in context
                          enabled: Boolean = true,
                          data: StepData = null,
                        ) {

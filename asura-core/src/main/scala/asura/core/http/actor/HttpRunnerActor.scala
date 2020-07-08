@@ -32,7 +32,7 @@ class HttpRunnerActor extends BaseActor {
       if (this.variables.nonEmpty) {
         self ! 0
       } else {
-        if (null != wsActor) wsActor ! OverActorEvent()
+        if (null != wsActor) wsActor ! OverActorEvent(null)
       }
     case idx: Int =>
       if (idx >= 0 && idx < this.variables.length) {

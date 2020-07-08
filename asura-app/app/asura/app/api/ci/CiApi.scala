@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.scaladsl.Source
 import akka.stream.{Materializer, OverflowStrategy}
 import asura.common.actor.SenderMessage
+import asura.core.actor.flow.WebSocketMessageHandler.completionMatcher
 import asura.core.ci.{CiManager, CiTriggerEventMessage}
 import asura.core.job.actor.JobCiActor
 import asura.play.api.BaseApi
@@ -42,8 +43,12 @@ class CiApi @Inject()(
 
   def jobSSE(id: String) = Action {
     val ciActor = system.actorOf(JobCiActor.props(id))
-    val source = Source.actorRef[String](BaseApi.DEFAULT_SOURCE_BUFFER_SIZE, OverflowStrategy.dropHead)
-      .mapMaterializedValue(ref => ciActor ! SenderMessage(ref))
+    val source = Source.actorRef[String](
+      completionMatcher,
+      PartialFunction.empty,
+      BaseApi.DEFAULT_SOURCE_BUFFER_SIZE,
+      OverflowStrategy.dropHead
+    ).mapMaterializedValue(ref => ciActor ! SenderMessage(ref))
     Ok.chunked(source via EventSource.flow)
       .as(ContentTypes.EVENT_STREAM)
       .withHeaders(BaseApi.responseNoCacheHeaders: _*)

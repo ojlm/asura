@@ -72,7 +72,6 @@ class JobRunnerActor(var wsActor: ActorRef, controller: ControllerOptions) exten
       }
   }
 
-  // TODO: deprecate and refactor this implementation
   private def runCases(execDesc: JobExecDesc): Future[JobExecDesc] = {
     RunCaseJob.doTestCase(execDesc, (log) => {
       if (null != wsActor) wsActor ! NotifyActorEvent(log)

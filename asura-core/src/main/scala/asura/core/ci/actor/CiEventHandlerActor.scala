@@ -45,9 +45,9 @@ class CiEventHandlerActor(eventsSave: ActorRef, service: String) extends BaseAct
           this.leftTriggerCount = this.leftTriggerCount + this.triggers.size
           consume(msg)
       }
-    case triggers: Map[String, CiTrigger] =>
+    case triggers: Map[_, _] =>
       this.stage = CiEventHandlerActor.STAGE_READY
-      this.triggers = triggers.filter(tuple => filterTrigger(tuple._2))
+      this.triggers = triggers.asInstanceOf[Map[String, CiTrigger]].filter(tuple => filterTrigger(tuple._2))
       this.leftTriggerCount = this.triggers.size * this.initialMessages.size
       this.initialMessages.foreach(consume)
       this.initialMessages = null // clear
