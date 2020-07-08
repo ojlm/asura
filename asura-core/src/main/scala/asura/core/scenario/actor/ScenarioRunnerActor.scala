@@ -239,10 +239,6 @@ class ScenarioRunnerActor(scenarioId: String) extends ScenarioStepBasicActor {
 
     if (statis.isSuccessful) {
       if (this.failFast) {
-        if (step.stored) {
-          // extract all response data into the `_p` runtime context
-          runtimeContext.setPrevContext(RuntimeContext.extractSelfContext(result))
-        }
         // extract the exports into the runtime context asynchronously
         runtimeContext.evaluateExportsVariables(exports).map(_ => {
           sendCurrentToWsActor(XtermUtils.greenWrap(ReportStepItemStatus.STATUS_PASS))

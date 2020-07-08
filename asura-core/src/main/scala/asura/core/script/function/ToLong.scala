@@ -4,7 +4,7 @@ import scala.concurrent.Future
 
 object ToLong extends TransformFunction {
 
-  val ZERO = new java.lang.Long(0)
+  val ZERO = java.lang.Long.valueOf(0)
   override val name: String = "toLong"
   override val description: String = "Try to transform string to a long"
 

@@ -10,7 +10,6 @@ class RuntimeContextSpec extends ScalaTestBaseSpec {
   val context = new util.HashMap[Any, Any]()
   context.put("a", "a")
   context.put("b", 5)
-  context.put(RuntimeContext.KEY__P, context)
 
   test("miss") {
     val tpl = "hi"

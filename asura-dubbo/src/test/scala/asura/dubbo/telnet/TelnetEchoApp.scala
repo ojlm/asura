@@ -1,7 +1,7 @@
 package asura.dubbo.telnet
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Framing, Tcp}
 import akka.util.ByteString
 import com.typesafe.scalalogging.Logger
@@ -11,7 +11,7 @@ object TelnetEchoApp {
   val logger = Logger("TelnetEchoApp")
   implicit val system = ActorSystem("telnet")
   implicit val ec = system.dispatcher
-  implicit val materializer = ActorMaterializer()
+  implicit val materializer = Materializer(system)
 
   val echo = Flow[ByteString]
     .via(Framing.delimiter(ByteString("\n"), maximumFrameLength = 256, allowTruncation = false))

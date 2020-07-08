@@ -73,7 +73,7 @@ object RunCaseJob extends JobBase {
     }
   }
 
-  @deprecated(message = "only http steps", since = "0.2.0")
+  // TODO: only http steps
   def doTestCase(execDesc: JobExecDesc, log: String => Unit): Future[JobExecDesc] = {
     val report = execDesc.report
     val jobData = execDesc.job.jobData

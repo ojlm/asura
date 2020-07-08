@@ -4,7 +4,7 @@ import scala.concurrent.Future
 
 object ToInteger extends TransformFunction {
 
-  val ZERO = new Integer(0)
+  val ZERO = Integer.valueOf(0)
   override val name: String = "toInteger"
   override val description: String = "Try to transform string to a integer"
 

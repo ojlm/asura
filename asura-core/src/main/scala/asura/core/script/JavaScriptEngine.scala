@@ -7,11 +7,11 @@ import javax.script.{CompiledScript, ScriptContext, ScriptEngineManager, SimpleS
 import jdk.nashorn.api.scripting.NashornScriptEngine
 
 /**
-  * hold a javascript engine.
-  * TODO: improve performance,
-  * https://stackoverflow.com/questions/30140103/should-i-use-a-separate-scriptengine-and-compiledscript-instances-per-each-threa
-  * https://stackoverflow.com/questions/42543730/how-can--rieuse-scriptcontext-or-otherwise-improve-performance?noredirect=1&lq=1
-  */
+ * hold a javascript engine.
+ * TODO: improve performance,
+ * https://stackoverflow.com/questions/30140103/should-i-use-a-separate-scriptengine-and-compiledscript-instances-per-each-threa
+ * https://stackoverflow.com/questions/42543730/how-can--rieuse-scriptcontext-or-otherwise-improve-performance?noredirect=1&lq=1
+ */
 object JavaScriptEngine {
 
   private val logger = Logger("JavaScriptEngine")

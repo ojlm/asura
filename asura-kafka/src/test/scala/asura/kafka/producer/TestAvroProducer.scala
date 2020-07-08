@@ -3,7 +3,7 @@ package asura.kafka.producer
 import akka.actor.ActorSystem
 import akka.kafka.ProducerSettings
 import akka.kafka.scaladsl.Producer
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import asura.kafka.avro.SampleAvroClass
 import com.typesafe.scalalogging.StrictLogging
@@ -20,7 +20,7 @@ object TestAvroProducer extends StrictLogging {
   def main(args: Array[String]): Unit = {
 
     implicit val system = ActorSystem("producer")
-    implicit val materializer = ActorMaterializer()
+    implicit val materializer = Materializer(system)
     implicit val ec = system.dispatcher
 
     val schemaRegistryUrl = ""
