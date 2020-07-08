@@ -104,7 +104,7 @@ object ApiService extends CommonService {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
       EsClient.esClient.execute {
-        delete(id).from(RestApi.Index).refresh(RefreshPolicy.WAIT_UNTIL)
+        delete(id).from(RestApi.Index).refresh(RefreshPolicy.WAIT_FOR)
       }
     }
   }

@@ -101,7 +101,7 @@ object ActivityService extends CommonService with BaseAggregationService {
   }
 
   def searchFeed(query: SearchAfterActivity) = {
-    val sortFields = Seq(FieldSort(FieldKeys.FIELD_TIMESTAMP).desc(), FieldSort(FieldKeys.FIELD__ID).desc())
+    val sortFields = Seq(FieldSort(FieldKeys.FIELD_TIMESTAMP).desc())
     val esQueries = ArrayBuffer[Query]()
     if (StringUtils.isNotEmpty(query.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, query.group)
     if (StringUtils.isNotEmpty(query.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, query.project)
