@@ -232,14 +232,14 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
           if (userIds.nonEmpty && query.hasCreators) {
             UserProfileService.getByIdsAsRawMap(userIds).map(profiles => {
               Map(
-                "total" -> res.result.hits.total,
+                "total" -> res.result.hits.total.value,
                 "list" -> query.ids.filter(idMap.contains(_)).map(idMap(_)),
                 "creators" -> profiles
               )
             })
           } else {
             Future.successful {
-              Map("total" -> res.result.hits.total, "list" -> query.ids.filter(idMap.contains(_)).map(idMap(_)))
+              Map("total" -> res.result.hits.total.value, "list" -> query.ids.filter(idMap.contains(_)).map(idMap(_)))
             }
           }
         } else {

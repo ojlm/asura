@@ -127,7 +127,7 @@ object ActivityService extends CommonService with BaseAggregationService {
         val scnIds = mutable.HashSet[String]()
         val jobIds = mutable.HashSet[String]()
         val list = ArrayBuffer[Any]()
-        val dataMap = mutable.Map[String, Any]("total" -> hits.total, "list" -> list)
+        val dataMap = mutable.Map[String, Any]("total" -> hits.total.value, "list" -> list)
         for (i <- 0 until hits.hits.length) {
           val hit = hits.hits(i)
           val sourceMap = hit.sourceAsMap

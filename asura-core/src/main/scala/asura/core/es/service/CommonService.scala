@@ -97,7 +97,7 @@ trait CommonService {
   def fetchWithCreatorProfiles(res: Response[SearchResponse])(implicit ec: ExecutionContext): Future[Map[String, Any]] = {
     val hits = res.result.hits
     val userIds = mutable.HashSet[String]()
-    val dataMap = Map("total" -> hits.total, "list" -> hits.hits.map(hit => {
+    val dataMap = Map("total" -> hits.total.value, "list" -> hits.hits.map(hit => {
       val sourceMap = hit.sourceAsMap
       userIds += sourceMap.getOrElse(FieldKeys.FIELD_CREATOR, StringUtils.EMPTY).asInstanceOf[String]
       sourceMap + (FieldKeys.FIELD__ID -> hit.id) + (FieldKeys.FIELD__SORT -> hit.sort.getOrElse(Nil))
