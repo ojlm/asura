@@ -9,7 +9,7 @@ object EsResponse {
 
   def toApiData(res: SearchResponse, hasId: Boolean = true): Map[String, Any] = {
     val hits = res.hits
-    Map("total" -> hits.total, "list" -> hits.hits.map(hit => {
+    Map("total" -> hits.total.value, "list" -> hits.hits.map(hit => {
       if (hasId) {
         hit.sourceAsMap + (FieldKeys.FIELD__ID -> hit.id)
       } else {

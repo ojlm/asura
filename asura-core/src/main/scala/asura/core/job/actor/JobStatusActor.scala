@@ -4,11 +4,11 @@ import akka.actor.Status.Failure
 import akka.actor.{ActorRef, Props}
 import asura.common.actor._
 import asura.common.model.Pagination
-import asura.core.model.QueryJob
 import asura.core.es.service.JobService
 import asura.core.job.actor.JobStatusMonitorActor.JobStatusOperationMessage
 import asura.core.job.eventbus.JobStatusBus.JobStatusNotificationMessage
 import asura.core.job.{JobListItem, JobStates}
+import asura.core.model.QueryJob
 import asura.core.redis.RedisJobState
 import asura.core.util.JacksonSupport
 import com.typesafe.scalalogging.Logger
@@ -50,9 +50,9 @@ class JobStatusActor() extends BaseActor {
             RedisJobState.getJobState(watchIds.toSet).onComplete {
               case util.Success(statesMap) =>
                 statesMap.forEach((jobKey, state) => jobsTable(jobKey).state = state)
-                outSender ! ListActorEvent(Map("total" -> hits.total, "list" -> items))
+                outSender ! ListActorEvent(Map("total" -> hits.total.value, "list" -> items))
               case util.Failure(_) =>
-                outSender ! ListActorEvent(Map("total" -> hits.total, "list" -> items))
+                outSender ! ListActorEvent(Map("total" -> hits.total.value, "list" -> items))
             }(context.system.dispatcher)
           } else {
             outSender ! ListActorEvent(Map("total" -> 0, "list" -> Nil))
