@@ -5,6 +5,5 @@ case class RecommendProject(
                              project: String,
                              count: Long,
                              var summary: String = null,
-                           ) {
-
-}
+                             var description: String = null,
+                           )

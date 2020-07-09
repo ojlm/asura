@@ -20,7 +20,12 @@ object RecommendService {
         Future.successful(Nil)
       }
     } yield (my, other)
-    futureTuple.map(tuple => RecommendProjects(tuple._1, tuple._2))
+    futureTuple.flatMap(tuple => {
+      val groupIds = ArrayBuffer[String]()
+      tuple._1.foreach(item => groupIds += item.group)
+      tuple._2.foreach(item => groupIds += item.group)
+      GroupService.getByIdsAsRawMap(groupIds).map(groups => RecommendProjects(tuple._1, tuple._2, groups))
+    })
   }
 
   def getRecommendProject(user: String, me: Boolean, wd: String, size: Int, excludeGPs: Seq[(String, String)]): Future[Seq[RecommendProject]] = {
@@ -38,11 +43,12 @@ object RecommendService {
             }
           }
         })
-        ProjectService.getByIds(map.keys.toSeq, Seq(FieldKeys.FIELD_SUMMARY)).map(idMap => {
+        ProjectService.getByIds(map.keys.toSeq, Seq(FieldKeys.FIELD_SUMMARY, FieldKeys.FIELD_DESCRIPTION)).map(idMap => {
           idMap.foreach(tuple => {
             val id = tuple._1
             val project = tuple._2
             map(id).summary = project.summary
+            map(id).description = project.description
           })
           items
         })
@@ -54,7 +60,8 @@ object RecommendService {
 
   case class RecommendProjects(
                                 my: Seq[RecommendProject],
-                                others: Seq[RecommendProject]
+                                others: Seq[RecommendProject],
+                                groups: Map[_ <: String, Map[String, Any]],
                               )
 
 }

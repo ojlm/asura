@@ -131,14 +131,19 @@ object ActivityService extends CommonService with BaseAggregationService {
         for (i <- 0 until hits.hits.length) {
           val hit = hits.hits(i)
           val sourceMap = hit.sourceAsMap
+          sourceMap.get(FieldKeys.FIELD_GROUP).map(groupId => {
+            if (StringUtils.isNotEmpty(groupId.asInstanceOf[String])) { // some activities do not have group, eg. user
+              groupIds += groupId.asInstanceOf[String]
+              sourceMap.get(FieldKeys.FIELD_PROJECT).map(projectId => {
+                projectIds += Project.generateDocId(groupId.asInstanceOf[String], projectId.asInstanceOf[String])
+              })
+            }
+          })
           userIds += sourceMap.getOrElse(FieldKeys.FIELD_USER, StringUtils.EMPTY).asInstanceOf[String]
           val activityType = sourceMap.getOrElse(FieldKeys.FIELD_TYPE, StringUtils.EMPTY).asInstanceOf[String]
           val targetId = sourceMap.getOrElse(FieldKeys.FIELD_TARGET_ID, StringUtils.EMPTY).asInstanceOf[String]
           if (StringUtils.isNotEmpty(targetId)) {
             activityType match {
-              case Activity.TYPE_NEW_USER => // userId already be added
-              case Activity.TYPE_NEW_GROUP => groupIds += targetId
-              case Activity.TYPE_NEW_PROJECT => projectIds += targetId
               case Activity.TYPE_NEW_CASE | Activity.TYPE_TEST_CASE => httpIds += targetId
               case Activity.TYPE_NEW_DUBBO | Activity.TYPE_TEST_DUBBO => dubboIds += targetId
               case Activity.TYPE_NEW_SQL | Activity.TYPE_TEST_SQL => sqlIds += targetId
