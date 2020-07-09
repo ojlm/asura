@@ -3,8 +3,9 @@ package asura.app.api
 import akka.actor.ActorSystem
 import asura.app.AppErrorMessages
 import asura.app.api.auth.Reserved
-import asura.common.model.ApiResError
+import asura.common.model.{ApiRes, ApiResError}
 import asura.common.util.StringUtils
+import asura.core.es.EsResponse
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, FieldKeys, Group, Project}
 import asura.core.es.service.{GroupService, ProjectService}
@@ -58,7 +59,24 @@ class ProjectApi @Inject()(
 
   def query() = Action(parse.byteString).async { implicit req =>
     val queryProject = req.bodyAs(classOf[QueryProject])
-    ProjectService.queryProject(queryProject).toOkResultByEsList(false)
+    ProjectService.queryProject(queryProject)
+      .flatMap(esResponse => {
+        if (esResponse.isSuccess) {
+          val hits = esResponse.result.hits
+          if (queryProject.includeGroup) {
+            val groups = hits.hits.map(hit => hit.sourceAsMap.get(FieldKeys.FIELD_GROUP).get.asInstanceOf[String])
+            GroupService.getByIdsAsRawMap(groups).map(groupMap => {
+              OkApiRes(ApiRes(data = Map(
+                "total" -> hits.total.value, "list" -> hits.hits.map(hit => hit.sourceAsMap), "groups" -> groupMap
+              )))
+            })
+          } else {
+            Future.successful(OkApiRes(ApiRes(data = EsResponse.toApiData(esResponse.result, false))))
+          }
+        } else {
+          Future.successful(OkApiRes(ApiResError(msg = esResponse.error.reason)))
+        }
+      })
   }
 
   def getOpenApi(group: String, id: String) = Action.async { implicit req =>
