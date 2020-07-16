@@ -115,7 +115,7 @@ object EnvironmentService extends CommonService {
         }
       })
       if (!ret) {
-        ErrorMessages.error_Msgs(errMsgs)
+        ErrorMessages.error_Msgs(errMsgs.toSeq)
       } else {
         null
       }

@@ -26,7 +26,7 @@ case class SqlRequest(
                      ) extends BaseIndex {
 
   override def toUpdateScriptParams: (String, Map[String, Any]) = {
-    val sb = StringBuilder.newBuilder
+    val sb = new StringBuilder()
     val m = mutable.Map[String, Any]()
     checkCommFieldsToUpdate(m, sb)
     if (null != env) {

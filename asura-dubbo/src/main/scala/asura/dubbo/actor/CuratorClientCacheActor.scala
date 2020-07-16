@@ -18,8 +18,9 @@ import org.apache.curator.retry.RetryNTimes
 import org.apache.zookeeper.ZooDefs
 import org.apache.zookeeper.data.ACL
 
-import scala.collection.{JavaConverters, mutable}
+import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters._
 
 class CuratorClientCacheActor extends BaseActor {
 
@@ -56,8 +57,9 @@ class CuratorClientCacheActor extends BaseActor {
                    ): Future[Seq[DubboInterface]] = {
     getClient(zkConnectString, path, zkUsername, zkPassword)
       .map(client => {
-        JavaConverters.asScalaBuffer(client.getChildren().forPath(path))
+        client.getChildren().forPath(path).asScala
           .map(DubboInterface(zkConnectString, path, _))
+          .toSeq
       })
   }
 
@@ -68,31 +70,33 @@ class CuratorClientCacheActor extends BaseActor {
                              zkUsername: String = null,
                              zkPassword: String = null,
                            ): Future[Seq[DubboProvider]] = {
-    getClient(zkConnectString, path, zkUsername, zkPassword).map(client => {
-      val strings = client.getChildren().forPath(s"${path}/${ref}/providers")
-      JavaConverters.asScalaBuffer(strings)
-        .map(item => URLDecoder.decode(item, StandardCharsets.UTF_8.name()))
-        .map(uriStr => {
-          val uri = URI.create(uriStr)
-          val queryMap = mutable.Map[String, String]()
-          uri.getQuery.split("&").foreach(paramStr => {
-            val param = paramStr.split("=")
-            if (param.length == 2) {
-              queryMap += (param(0) -> param(1))
-            }
+    getClient(zkConnectString, path, zkUsername, zkPassword)
+      .map(client => {
+        client.getChildren().forPath(s"${path}/${ref}/providers")
+          .asScala
+          .map(item => URLDecoder.decode(item, StandardCharsets.UTF_8.name()))
+          .map(uriStr => {
+            val uri = URI.create(uriStr)
+            val queryMap = mutable.Map[String, String]()
+            uri.getQuery.split("&").foreach(paramStr => {
+              val param = paramStr.split("=")
+              if (param.length == 2) {
+                queryMap += (param(0) -> param(1))
+              }
+            })
+            DubboProvider(
+              zkConnectString = zkConnectString,
+              path = path,
+              ref = ref,
+              address = uri.getHost,
+              port = uri.getPort,
+              methods = queryMap.getOrElse("methods", StringUtils.EMPTY).split(",").toIndexedSeq,
+              application = queryMap.getOrElse("application", StringUtils.EMPTY),
+              dubbo = queryMap.getOrElse("dubbo", StringUtils.EMPTY)
+            )
           })
-          DubboProvider(
-            zkConnectString = zkConnectString,
-            path = path,
-            ref = ref,
-            address = uri.getHost,
-            port = uri.getPort,
-            methods = queryMap.getOrElse("methods", StringUtils.EMPTY).split(","),
-            application = queryMap.getOrElse("application", StringUtils.EMPTY),
-            dubbo = queryMap.getOrElse("dubbo", StringUtils.EMPTY)
-          )
-        })
-    })
+          .toSeq
+      })
   }
 
   def getClient(

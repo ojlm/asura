@@ -95,7 +95,7 @@ trait BaseAggregationService {
     })
   }
 
-  def buildEsQueryFromAggQuery(aggs: AggsQuery, isActivity: Boolean = false): Seq[Query] = {
+  def buildEsQueryFromAggQuery(aggs: AggsQuery, isActivity: Boolean = false): collection.Seq[Query] = {
     val esQueries = ArrayBuffer[Query]()
     if (StringUtils.isNotEmpty(aggs.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, aggs.group)
     if (StringUtils.isNotEmpty(aggs.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, aggs.project)

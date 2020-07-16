@@ -17,11 +17,11 @@ import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
 /** Created by [[asura.core.job.actor.JobTestActor]] or [[asura.core.job.impl.RunCaseJob]].
-  * This receive a `JobExecDesc` message and send it back after this is finished.
-  *
-  * @param wsActor    receive WebSocket message event
-  * @param controller this value may be null
-  */
+ * This receive a `JobExecDesc` message and send it back after this is finished.
+ *
+ * @param wsActor    receive WebSocket message event
+ * @param controller this value may be null
+ */
 class JobRunnerActor(var wsActor: ActorRef, controller: ControllerOptions) extends ScenarioStepBasicActor {
 
   var runtimeContext: RuntimeContext = RuntimeContext()
@@ -34,7 +34,7 @@ class JobRunnerActor(var wsActor: ActorRef, controller: ControllerOptions) exten
   override def receive: Receive = {
     case execDesc: JobExecDesc =>
       this.execDesc = execDesc
-      this.execDesc.report.data.scenarios = scenarioReports
+      this.execDesc.report.data.scenarios = scenarioReports.toSeq
       this.resultReceiver = sender()
       if (null != execDesc.overrideRuntime) this.runtimeContext = execDesc.overrideRuntime
       this.runtimeContext.options = execDesc.options
@@ -174,7 +174,7 @@ class JobRunnerActor(var wsActor: ActorRef, controller: ControllerOptions) exten
             messages += ((step, null))
           }
         }
-        messages
+        messages.toSeq
       })
     } else {
       Future.successful(Nil)

@@ -340,9 +340,9 @@ class ScenarioRunnerActor(scenarioId: String) extends ScenarioStepBasicActor {
       }
     })
     val res = for {
-      cs <- HttpCaseRequestService.getByIdsAsMap(csSeq)
-      dubbo <- DubboRequestService.getByIdsAsMap(dubboSeq)
-      sql <- SqlRequestService.getByIdsAsMap(sqlSeq)
+      cs <- HttpCaseRequestService.getByIdsAsMap(csSeq.toSeq)
+      dubbo <- DubboRequestService.getByIdsAsMap(dubboSeq.toSeq)
+      sql <- SqlRequestService.getByIdsAsMap(sqlSeq.toSeq)
     } yield (cs, dubbo, sql)
     res.map(triple => {
       if (null != wsActor) {

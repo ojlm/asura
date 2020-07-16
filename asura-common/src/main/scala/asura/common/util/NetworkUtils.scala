@@ -2,7 +2,7 @@ package asura.common.util
 
 import java.net.{InetAddress, NetworkInterface}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object NetworkUtils {
 

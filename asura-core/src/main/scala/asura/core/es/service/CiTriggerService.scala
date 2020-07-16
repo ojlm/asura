@@ -87,7 +87,7 @@ object CiTriggerService extends CommonService {
     })
   }
 
-  private def buildEsQueries(query: QueryTrigger): Seq[Query] = {
+  private def buildEsQueries(query: QueryTrigger): collection.Seq[Query] = {
     val esQueries = ArrayBuffer[Query]()
     if (StringUtils.isNotEmpty(query.text)) {
       esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)

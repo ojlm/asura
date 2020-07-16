@@ -117,7 +117,7 @@ class SyncOnlineDomainAndRestApiJob extends Job {
       }
     })
     if (domainLogs.nonEmpty) DomainOnlineLogService.index(domainLogs).await
-    if (projectCoverageLogs.nonEmpty) ProjectApiCoverageService.index(projectCoverageLogs).await
+    if (projectCoverageLogs.nonEmpty) ProjectApiCoverageService.index(projectCoverageLogs.toSeq).await
   }
 
   private def getProjectApiSet(project: Project, apisQuery: Seq[Query], aggSize: Int): Map[String, Long] = {

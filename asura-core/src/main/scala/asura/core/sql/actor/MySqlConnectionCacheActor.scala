@@ -45,7 +45,7 @@ class MySqlConnectionCacheActor(size: Int) extends BaseActor {
   }
 
   private def generateCacheKey(request: SqlRequestBody): String = {
-    val sb = StringBuilder.newBuilder
+    val sb = new StringBuilder()
     sb.append(request.username).append(":")
       .append(request.encryptedPass).append("@")
       .append(request.host).append(":")

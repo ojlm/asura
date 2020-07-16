@@ -17,8 +17,8 @@ import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
 
 /** Dtab format
-  * `/svc/${group}/${project}/${namespace} => /$/inet/${host}/${port}`
-  */
+ * `/svc/${group}/${project}/${namespace} => /$/inet/${host}/${port}`
+ */
 @Singleton
 class LinkerdApi @Inject()(
                             implicit val exec: ExecutionContext,
@@ -79,7 +79,7 @@ class LinkerdApi @Inject()(
           )
         }
         if (null == error) {
-          NamerdV1Api.updateNamespaceDtabs(proxyServer.namerd, proxyServer.httpNs, entries)(HttpEngine.http).toOkResult
+          NamerdV1Api.updateNamespaceDtabs(proxyServer.namerd, proxyServer.httpNs, entries.toSeq)(HttpEngine.http).toOkResult
         } else {
           error.toFutureFail
         }

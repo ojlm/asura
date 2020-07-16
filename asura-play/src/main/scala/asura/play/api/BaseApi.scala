@@ -10,8 +10,8 @@ import org.pac4j.play.scala.Security
 import play.api.http.{ContentTypes, HttpEntity}
 import play.api.mvc._
 
-import scala.collection.JavaConverters.asScalaBuffer
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters._
 
 trait BaseApi extends Security[CommonProfile] {
 
@@ -26,11 +26,11 @@ trait BaseApi extends Security[CommonProfile] {
     }
   }
 
-  def getProfiles()(implicit request: RequestHeader): List[CommonProfile] = {
+  def getProfiles()(implicit request: RequestHeader): Seq[CommonProfile] = {
     val webContext = new PlayWebContext(request, playSessionStore)
     val profileManager = new ProfileManager[CommonProfile](webContext)
     val profiles = profileManager.getAll(true)
-    asScalaBuffer(profiles).toList
+    profiles.asScala.toSeq
   }
 
   def getProfileId()(implicit request: RequestHeader): String = {

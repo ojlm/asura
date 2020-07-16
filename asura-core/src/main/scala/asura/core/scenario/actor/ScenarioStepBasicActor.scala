@@ -111,8 +111,8 @@ trait ScenarioStepBasicActor extends BaseActor {
             val msg = s"${consoleLogPrefix(step.`type`, idx)}${delayMsg}"
             wsActor ! NotifyActorEvent(msg)
           }
-          context.system.scheduler.scheduleOnce(duration, () => {
-            self ! (idx + 1)
+          context.system.scheduler.scheduleOnce(duration, new Runnable {
+            override def run(): Unit = self ! (idx + 1)
           })
         }
       }

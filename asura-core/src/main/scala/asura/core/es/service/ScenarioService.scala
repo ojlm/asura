@@ -89,9 +89,9 @@ object ScenarioService extends CommonService {
             }
           })
           val res = for {
-            cs <- HttpCaseRequestService.getByIdsAsMap(httpSeq, true)
-            dubbo <- DubboRequestService.getByIdsAsMap(dubboSeq, true)
-            sql <- SqlRequestService.getByIdsAsMap(sqlSeq, true)
+            cs <- HttpCaseRequestService.getByIdsAsMap(httpSeq.toSeq, true)
+            dubbo <- DubboRequestService.getByIdsAsMap(dubboSeq.toSeq, true)
+            sql <- SqlRequestService.getByIdsAsMap(sqlSeq.toSeq, true)
           } yield (cs, dubbo, sql)
           res.map(triple => {
             Map("scenario" -> scenarioDoc, "case" -> triple._1, "dubbo" -> triple._2, "sql" -> triple._3)
@@ -134,7 +134,7 @@ object ScenarioService extends CommonService {
         if (res.result.isEmpty) {
           Nil
         } else {
-          res.result.hits.hits.map(hit => (hit.id, JacksonSupport.parse(hit.sourceAsString, classOf[Scenario])))
+          res.result.hits.hits.toIndexedSeq.map(hit => (hit.id, JacksonSupport.parse(hit.sourceAsString, classOf[Scenario])))
         }
       } else {
         throw ErrorMessages.error_EsRequestFail(res).toException

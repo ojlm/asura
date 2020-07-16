@@ -34,7 +34,7 @@ object EntityUtils {
           if (body.nonEmpty) {
             var bodyStr: String = null
             try {
-              val sb = StringBuilder.newBuilder
+              val sb = new StringBuilder()
               val params = JacksonSupport.parse(body.get.data, new TypeReference[Seq[KeyValueObject]]() {})
               for (pair <- params if (pair.enabled && StringUtils.isNotEmpty(pair.key))) {
                 val rendered = context.renderBodyAsString(pair.value)

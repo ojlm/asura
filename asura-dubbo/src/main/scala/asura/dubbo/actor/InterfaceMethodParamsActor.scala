@@ -60,11 +60,11 @@ class InterfaceMethodParamsActor(invoker: ActorRef, msg: GetInterfaceMethodParam
             val secondPart = splits(1)
             val idx = secondPart.indexOf("(")
             val method = secondPart.substring(0, idx)
-            val params = secondPart.substring(idx + 1, secondPart.length - 1).split(",")
+            val params = secondPart.substring(idx + 1, secondPart.length - 1).split(",").toIndexedSeq
             methods += (MethodSignature(ret, method, params))
           }
         })
-      InterfaceMethodParams(ref, methods)
+      InterfaceMethodParams(ref, methods.toSeq)
     }
   }
 

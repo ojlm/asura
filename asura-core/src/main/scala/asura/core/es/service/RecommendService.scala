@@ -15,7 +15,7 @@ object RecommendService {
     val futureTuple = for {
       my <- getRecommendProject(user, true, wd, 20, Nil)
       other <- if (discover) {
-        getRecommendProject(user, false, null, 5, my.map(p => ((p.group, p.project))))
+        getRecommendProject(user, false, null, 5, my.map(p => ((p.group, p.project))).toSeq)
       } else {
         Future.successful(Nil)
       }
@@ -28,7 +28,13 @@ object RecommendService {
     })
   }
 
-  def getRecommendProject(user: String, me: Boolean, wd: String, size: Int, excludeGPs: Seq[(String, String)]): Future[Seq[RecommendProject]] = {
+  def getRecommendProject(
+                           user: String,
+                           me: Boolean,
+                           wd: String,
+                           size: Int,
+                           excludeGPs: Seq[(String, String)]
+                         ): Future[collection.Seq[RecommendProject]] = {
     val items = ArrayBuffer[RecommendProject]()
     ActivityService.recentProjects(user, me, wd, size).flatMap(aggItems => {
       if (aggItems.nonEmpty) {
@@ -59,9 +65,9 @@ object RecommendService {
   }
 
   case class RecommendProjects(
-                                my: Seq[RecommendProject],
-                                others: Seq[RecommendProject],
-                                groups: Map[_ <: String, Map[String, Any]],
+                                my: collection.Seq[RecommendProject],
+                                others: collection.Seq[RecommendProject],
+                                groups: collection.Map[_ <: String, Map[String, Any]],
                               )
 
 }

@@ -3,8 +3,8 @@ package asura.core.es.model
 import io.swagger.models.ModelImpl
 import io.swagger.models.properties.{ObjectProperty, Property}
 
-import scala.collection.JavaConverters.mapAsScalaMap
 import scala.collection.mutable
+import scala.jdk.CollectionConverters._
 
 /** only support type now */
 case class JsonSchema(
@@ -18,7 +18,7 @@ case class JsonSchema(
 object JsonSchema {
 
   def toJsonSchema(model: ModelImpl): JsonSchema = {
-    val properties = toJsonSchema(mapAsScalaMap(model.getProperties))
+    val properties = toJsonSchema(model.getProperties.asScala)
     JsonSchema(
       description = model.getDescription,
       `type` = SchemaObject.translateOpenApiType(model.getType, model.getFormat),
@@ -35,7 +35,7 @@ object JsonSchema {
             JsonSchema(
               description = property.getDescription,
               `type` = SchemaObject.translateOpenApiType(property.getType, property.getFormat),
-              properties = toJsonSchema(mapAsScalaMap(p.getProperties))
+              properties = toJsonSchema(p.getProperties.asScala)
             )
           case _ =>
             JsonSchema(

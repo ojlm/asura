@@ -1,9 +1,12 @@
-import BuildSettings._
 import Dependencies._
 import sbt.Keys._
 import sbt._
 
 scalacOptions in ThisBuild ++= Seq("-feature", "-deprecation", "-language:postfixOps", "-language:higherKinds", "-language:implicitConversions")
+ThisBuild / organization := "cc.akkaha"
+ThisBuild / version := "0.8.0"
+ThisBuild / scalaVersion := "2.13.2"
+ThisBuild / maintainer := "ngxcorpio@gmail.com"
 
 lazy val root = Project("asura", file("."))
   .dependsOn(app)
@@ -11,7 +14,6 @@ lazy val root = Project("asura", file("."))
 
 // Sub Projects
 def asuraProjects(id: String) = Project(id, file(id))
-  .settings(commonSettings: _*)
   .settings(publishSettings: _*)
 
 lazy val app = asuraProjects("asura-app")
