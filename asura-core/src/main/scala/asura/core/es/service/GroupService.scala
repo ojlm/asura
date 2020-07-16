@@ -88,7 +88,7 @@ object GroupService extends CommonService {
         if (res.result.isEmpty) {
           Nil
         } else {
-          res.result.hits.hits.map(hit => JacksonSupport.parse(hit.sourceAsString, classOf[Group]))
+          res.result.hits.hits.toIndexedSeq.map(hit => JacksonSupport.parse(hit.sourceAsString, classOf[Group]))
         }
       } else {
         throw RequestFailException(res.error.reason)

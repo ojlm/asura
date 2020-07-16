@@ -6,6 +6,7 @@ import asura.core.runtime.RuntimeContext
 import asura.core.util.JsonPathUtils
 
 import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
 
 object HttpResponseAssert {
 
@@ -44,11 +45,11 @@ object HttpResponseAssert {
           caseContext.setCurrentEntity(entity)
       }
     }
-    import scala.collection.JavaConverters.mapAsScalaMap
     val caseResponse = HttpResponseReportModel(
       response.status.intValue(),
       response.status.reason(),
-      mapAsScalaMap(headers), {
+      headers.asScala,
+      {
         val mediaType = response.entity.getContentType().mediaType
         s"${mediaType.mainType}/${mediaType.subType}"
       },

@@ -253,7 +253,7 @@ object ProjectService extends CommonService {
         if (res.result.isEmpty) {
           Nil
         } else {
-          res.result.hits.hits.map(hit => JacksonSupport.parse(hit.sourceAsString, classOf[Project]))
+          res.result.hits.hits.toIndexedSeq.map(hit => JacksonSupport.parse(hit.sourceAsString, classOf[Project]))
         }
       } else {
         throw ErrorMessages.error_EsRequestFail(res).toException

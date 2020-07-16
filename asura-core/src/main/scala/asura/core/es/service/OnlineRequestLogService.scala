@@ -52,7 +52,12 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
     }
   }
 
-  def previewOnlineApi(config: DomainOnlineConfig, domainTotal: Long, apiCount: Int, esConfig: EsOnlineLogConfig): Future[Seq[RestApiOnlineLog]] = {
+  def previewOnlineApi(
+                        config: DomainOnlineConfig,
+                        domainTotal: Long,
+                        apiCount: Int,
+                        esConfig: EsOnlineLogConfig
+                      ): Future[Seq[RestApiOnlineLog]] = {
     if (null != esConfig.onlineLogClient && StringUtils.isNotEmpty(esConfig.prefix)) {
       var notQueries = ArrayBuffer[Query]()
       val domain = config.domain
@@ -108,7 +113,7 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
         }
         t._1.foreach(itemFunc)
         t._2.foreach(itemFunc)
-        apiLogs
+        apiLogs.toSeq
       })
     } else {
       Future.successful(Nil)
@@ -129,7 +134,7 @@ object OnlineRequestLogService extends CommonService with BaseAggregationService
                              config: DomainOnlineConfig,
                              metricsAggregations: Seq[AbstractAggregation] = Nil,
                              esConfig: EsOnlineLogConfig,
-                           ): Future[Seq[AggsItem]] = {
+                           ): Future[collection.Seq[AggsItem]] = {
     if (null != config && null != config.inclusions && config.inclusions.nonEmpty) {
       val domainTerm = termQuery(esConfig.fieldDomain, domain)
       val notQueries = ArrayBuffer[Query]()

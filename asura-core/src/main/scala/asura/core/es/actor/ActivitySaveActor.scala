@@ -40,7 +40,7 @@ class ActivitySaveActor extends BaseActor {
   private def insert(): Unit = {
     if (activities.length > 0) {
       log.debug(s"${activities.length} activities is saving...")
-      ActivityService.index(activities)
+      ActivityService.index(activities.toSeq)
       activities.clear()
     }
   }

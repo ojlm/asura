@@ -15,7 +15,7 @@ import scala.concurrent.Future
 
 object TriggerEventLogService extends CommonService with BaseAggregationService {
 
-  def index(items: Seq[TriggerEventLog]): Future[BulkDocResponse] = {
+  def index(items: collection.Seq[TriggerEventLog]): Future[BulkDocResponse] = {
     if (null == items && items.isEmpty) {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {

@@ -9,6 +9,7 @@ import asura.dubbo.GenericRequest
 import com.sksamuel.elastic4s.requests.mappings._
 
 import scala.collection.mutable
+import scala.collection.mutable.StringBuilder
 
 case class DubboRequest(
                          val summary: String,
@@ -27,7 +28,7 @@ case class DubboRequest(
                        ) extends BaseIndex {
 
   override def toUpdateScriptParams: (String, Map[String, Any]) = {
-    val sb = StringBuilder.newBuilder
+    val sb = new StringBuilder()
     val m = mutable.Map[String, Any]()
     checkCommFieldsToUpdate(m, sb)
     if (null != env) {

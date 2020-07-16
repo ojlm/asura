@@ -8,8 +8,8 @@ import asura.core.redis.RedisClient.{redisson, toScala}
 import com.typesafe.scalalogging.Logger
 import org.redisson.client.codec.StringCodec
 
-import scala.collection.JavaConverters.setAsJavaSet
 import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success}
 
 object RedisJobState {
@@ -41,6 +41,6 @@ object RedisJobState {
 
   def getJobState(keys: Set[String]): Future[util.Map[String, String]] = {
     val jobStates = redisson.getMap[String, String](KEY_JOB_STATE, StringCodec.INSTANCE)
-    jobStates.getAllAsync(setAsJavaSet(keys))
+    jobStates.getAllAsync(keys.asJava)
   }
 }

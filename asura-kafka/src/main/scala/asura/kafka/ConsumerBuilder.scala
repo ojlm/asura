@@ -9,7 +9,7 @@ import io.confluent.kafka.serializers.{AbstractKafkaAvroSerDeConfig, KafkaAvroDe
 import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord}
 import org.apache.kafka.common.serialization.{Deserializer, StringDeserializer}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object ConsumerBuilder {
 

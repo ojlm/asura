@@ -26,7 +26,7 @@ object UriUtils {
   }
 
   def mapToQueryString(map: Map[String, Any], context: RuntimeContext = null): String = {
-    val sb = StringBuilder.newBuilder
+    val sb = new StringBuilder()
     for ((k, v) <- map) {
       v match {
         case v: String =>
@@ -65,7 +65,7 @@ object UriUtils {
     if (null != cs.request) {
       val params = cs.request.query
       if (null != params && params.nonEmpty) {
-        val sb = StringBuilder.newBuilder
+        val sb = new StringBuilder()
         for (param <- params if param.enabled) {
           val key = if (StringUtils.isNotEmpty(param.key)) {
             URLEncoder.encode(param.key, UTF8)

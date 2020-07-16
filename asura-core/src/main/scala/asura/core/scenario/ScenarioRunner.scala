@@ -40,7 +40,7 @@ object ScenarioRunner {
           caseIds ++= scenarioCaseIds
           scenarioIdCaseIdMap(scenarioId) = scenarioCaseIds
         })
-        HttpCaseRequestService.getByIdsAsMap(caseIds)
+        HttpCaseRequestService.getByIdsAsMap(caseIds.toSeq)
       }).flatMap(caseIdMap => {
         val scenarioIdCaseMap = scala.collection.mutable.HashMap[String, Seq[(String, HttpCaseRequest)]]()
         scenarioIdCaseIdMap.foreach(tuple => {
@@ -53,7 +53,7 @@ object ScenarioRunner {
               cases.append((id, value.get))
             }
           })
-          scenarioIdCaseMap(scenarioId) = cases
+          scenarioIdCaseMap(scenarioId) = cases.toSeq
         })
         var index = 0
         val jobReportItemsFutures = scenarioIds.map(scenarioId => {

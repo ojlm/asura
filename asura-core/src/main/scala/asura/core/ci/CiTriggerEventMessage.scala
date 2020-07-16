@@ -13,7 +13,7 @@ case class CiTriggerEventMessage(
                                 ) {
 
   def eventKey = {
-    val sb = StringBuilder.newBuilder
+    val sb = new StringBuilder()
     sb.append(group).append(":").append(project).append(":")
     if (StringUtils.isNotEmpty(env)) sb.append(env)
     sb.append(":")

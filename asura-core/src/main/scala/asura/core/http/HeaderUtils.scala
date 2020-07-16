@@ -1,7 +1,7 @@
 package asura.core.http
 
 import akka.http.scaladsl.model.HttpHeader.ParsingResult.{Error, Ok}
-import akka.http.scaladsl.model.headers.{Cookie, RawHeader}
+import akka.http.scaladsl.model.headers.{Cookie, HttpCookiePair, RawHeader}
 import akka.http.scaladsl.model.{ErrorInfo, HttpHeader}
 import asura.common.util.StringUtils
 import asura.core.es.model.{Environment, HttpCaseRequest}
@@ -35,11 +35,11 @@ object HeaderUtils {
       }
       val cookieSeq = request.cookie
       if (null != cookieSeq) {
-        val cookies = ArrayBuffer[(String, String)]()
+        val cookies = ArrayBuffer[HttpCookiePair]()
         for (c <- cookieSeq if (c.enabled && StringUtils.isNotEmpty(c.key))) {
-          cookies += ((c.key, context.renderSingleMacroAsString(c.value)))
+          cookies += HttpCookiePair(c.key, context.renderSingleMacroAsString(c.value))
         }
-        if (cookies.nonEmpty) headers += Cookie(cookies: _*)
+        if (cookies.nonEmpty) headers += Cookie(cookies.toSeq)
       }
     }
     if (null != env && null != env.headers && env.headers.nonEmpty) {
@@ -55,7 +55,7 @@ object HeaderUtils {
     }
     if (null != env && env.enableProxy) {
       val headerIdentifier = validateProxyVariables(env)
-      val dst = StringBuilder.newBuilder
+      val dst = new StringBuilder()
       dst.append("/").append(cs.group).append("/").append(cs.project).append("/").append(env.namespace)
       headers += RawHeader(headerIdentifier, dst.toString)
     }

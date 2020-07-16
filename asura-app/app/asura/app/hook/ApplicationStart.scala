@@ -26,6 +26,7 @@ import play.api.libs.mailer.MailerClient
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
 
 @Singleton
 class ApplicationStart @Inject()(
@@ -82,15 +83,14 @@ class ApplicationStart @Inject()(
     val hostnameOpt = configuration.getOptional[String]("asura.cluster.hostname")
     val portOpt = configuration.getOptional[Int]("asura.cluster.port")
     val seedNodes = configuration.underlying.getStringList("asura.cluster.seed-nodes")
-    import scala.collection.JavaConverters.asScalaBuffer
     val seedNodesStr = if (null != seedNodes && !seedNodes.isEmpty) {
-      s""""${asScalaBuffer(seedNodes).mkString("\",\"")}""""
+      s""""${seedNodes.asScala.mkString("\",\"")}""""
     } else {
       """"akka://ClusterSystem@127.0.0.1:2551","""
     }
     val roles = configuration.underlying.getStringList("asura.cluster.roles")
     val rolesStr = if (null != roles && !roles.isEmpty) {
-      s""""${asScalaBuffer(roles).mkString("\",\"")}""""
+      s""""${roles.asScala.mkString("\",\"")}""""
     } else {
       """"indigo""""
     }
@@ -166,7 +166,7 @@ class ApplicationStart @Inject()(
         enabled = false
         Nil
       }
-      LinkerdConfig(enabled, servers)
+      LinkerdConfig(enabled, servers.toSeq)
     } else {
       LinkerdConfig(false, Nil)
     }
@@ -191,7 +191,7 @@ class ApplicationStart @Inject()(
           excludeRemoteAddrs = javaListToSeq(value.get("excludeRemoteAddrs").asInstanceOf[java.util.List[String]])
         )
       })
-      esConfigs
+      esConfigs.toSeq
     } else {
       Nil
     }
@@ -202,6 +202,6 @@ class ApplicationStart @Inject()(
     if (null != list) {
       list.forEach(item => seq += item)
     }
-    seq
+    seq.toSeq
   }
 }

@@ -31,7 +31,7 @@ object SqlParserUtils {
           val name = statement.getTableSource.getName
           if (null == name) StringUtils.EMPTY else name.getSimpleName
         case statement: SQLDropTableStatement =>
-          val sb = StringBuilder.newBuilder
+          val sb = new StringBuilder()
           statement.getTableSources.forEach(s => {
             val name = s.getName
             if (null != name) sb.append(name.getSimpleName).append(",")

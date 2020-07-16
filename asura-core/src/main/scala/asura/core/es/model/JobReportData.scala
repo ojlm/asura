@@ -13,8 +13,8 @@ import asura.core.sql.SqlResult
 import com.fasterxml.jackson.annotation.JsonIgnore
 
 /**
-  * Be careful to modify this class's schema, it should be compatible with data structure in ES.
-  */
+ * Be careful to modify this class's schema, it should be compatible with data structure in ES.
+ */
 case class JobReportData(
                           var dayIndexSuffix: String = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy.MM.dd")),
                           var cases: Seq[JobReportStepItemData] = Nil,
@@ -69,8 +69,8 @@ object JobReportData {
                                      )
 
   /**
-    * For any type of request. eg: http, dubbo, sql. This model is stored in job index
-    */
+   * For any type of request. eg: http, dubbo, sql. This model is stored in job index
+   */
   case class JobReportStepItemData(
                                     // this is the doc id of the request doc
                                     var id: String,
@@ -105,14 +105,14 @@ object JobReportData {
   }
 
   /**
-    * @param id    scenarioId
-    * @param title summary
-    * @param steps CaseReportItem array
-    */
+   * @param id    scenarioId
+   * @param title summary
+   * @param steps CaseReportItem array
+   */
   case class ScenarioReportItemData(
                                      var id: String,
                                      var title: String,
-                                     var steps: Seq[JobReportStepItemData] = Nil
+                                     var steps: collection.Seq[JobReportStepItemData] = Nil
                                    ) extends BasicReportItemData
 
 }

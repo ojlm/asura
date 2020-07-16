@@ -5,12 +5,12 @@ import asura.core.es.model._
 import asura.core.http.HttpMethods
 import com.typesafe.scalalogging.Logger
 import io.swagger.models.parameters.{BodyParameter, CookieParameter, FormParameter, HeaderParameter, PathParameter, QueryParameter, RefParameter, Parameter => SwaggerParameter}
-import io.swagger.models.{HttpMethod, Operation, Response, Swagger}
+import io.swagger.models.{HttpMethod, Operation, Swagger}
 import io.swagger.parser.SwaggerParser
 
-import scala.collection.JavaConverters.{asScalaBuffer, mapAsScalaMap}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scala.jdk.CollectionConverters._
 
 object OpenAPI {
 
@@ -62,7 +62,7 @@ object OpenAPI {
             project = project,
             deprecated = deprecated,
             version = version,
-            schema = v2OperationToSchema(openApi, operation, asScalaBuffer(pathParameters)),
+            schema = v2OperationToSchema(openApi, operation, pathParameters.asScala.toSeq),
             creator = creator,
             createdAt = DateUtils.nowDateTime
           )
@@ -113,7 +113,7 @@ object OpenAPI {
       header = header.values.toSeq,
       cookie = cookie.values.toSeq,
       requestBody = if (null != bodyParameter) HttpRequestBody.toRequestBody(openApi, bodyParameter) else HttpRequestBody.toRequestBody(formData.values.toSeq),
-      responses = HttpResponse.toResponses(openApi, mapAsScalaMap[String, Response](operation.getResponses))
+      responses = HttpResponse.toResponses(openApi, (operation.getResponses.asScala))
     )
   }
 }

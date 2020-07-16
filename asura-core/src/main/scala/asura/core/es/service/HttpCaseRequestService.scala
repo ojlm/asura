@@ -145,7 +145,7 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
           if (res.result.isEmpty) {
             throw ErrorMessages.error_IdsNotFound(ids).toException
           } else {
-            res.result.hits.hits.map(hit => (hit.id, JacksonSupport.parse(hit.sourceAsString, classOf[HttpCaseRequest])))
+            res.result.hits.hits.toIndexedSeq.map(hit => (hit.id, JacksonSupport.parse(hit.sourceAsString, classOf[HttpCaseRequest])))
           }
         } else {
           throw RequestFailException(res.error.reason)

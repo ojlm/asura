@@ -4,6 +4,8 @@ import asura.common.util.{JavaJsonUtils, JsonUtils, StringUtils}
 import com.alibaba.dubbo.config.ReferenceConfig
 import com.alibaba.dubbo.rpc.service.GenericService
 
+import scala.collection.mutable.StringBuilder
+
 case class GenericRequest(
                            dubboGroup: String,
                            interface: String,
@@ -44,11 +46,11 @@ case class GenericRequest(
   }
 
   /**
-    * reference to [[com.alibaba.dubbo.config.utils.ReferenceConfigCache.DEFAULT_KEY_GENERATOR]]
-    * key example: `group1/com.alibaba.foo.FooService:1.0.0@127.0.0.1:20880`.
-    */
+   * reference to [[com.alibaba.dubbo.config.utils.ReferenceConfigCache.DEFAULT_KEY_GENERATOR]]
+   * key example: `group1/com.alibaba.foo.FooService:1.0.0@127.0.0.1:20880`.
+   */
   def generateCacheKey(): String = {
-    val sb = StringBuilder.newBuilder
+    val sb = new StringBuilder()
     if (StringUtils.isNotEmpty(dubboGroup)) {
       sb.append(dubboGroup).append("/")
     }

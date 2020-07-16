@@ -17,7 +17,7 @@ object JobNotifyManager {
   def all(): Seq[JobNotifyItem] = {
     val notifiers = ArrayBuffer[JobNotifyItem]()
     manager.values().stream().forEach(func => notifiers += JobNotifyItem(func.`type`, func.description))
-    notifiers
+    notifiers.toSeq
   }
 
   case class JobNotifyItem(`type`: String, description: String)

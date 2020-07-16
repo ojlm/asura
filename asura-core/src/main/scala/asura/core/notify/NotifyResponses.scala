@@ -1,8 +1,8 @@
 package asura.core.notify
 
 case class NotifyResponses(
-                            success: Seq[NotifyResponse] = Nil,
-                            failure: Seq[NotifyResponse] = Nil
+                            success: collection.Seq[NotifyResponse] = Nil,
+                            failure: collection.Seq[NotifyResponse] = Nil
                           ) {
 
   def isSuccessful(): Boolean = {

@@ -89,7 +89,7 @@ object RestApiOnlineLogService extends CommonService {
               dateIndex
             }
             ApiMetrics(date, hit.sourceAsMap.getOrElse(FieldKeys.FIELD_METRICS, Map.empty))
-          }).sortWith((d1, d2) => d1.date < d2.date)
+          }).sortWith((d1, d2) => d1.date < d2.date).toIndexedSeq
         } else {
           Nil
         }

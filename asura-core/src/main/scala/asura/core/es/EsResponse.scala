@@ -33,7 +33,7 @@ object EsResponse {
   }
 
   def toSeq(res: SearchResponse, hasId: Boolean = true): Seq[Map[String, Any]] = {
-    res.hits.hits.map(hit => {
+    res.hits.hits.toIndexedSeq.map(hit => {
       if (hasId) {
         hit.sourceAsMap + (FieldKeys.FIELD__ID -> hit.id)
       } else {
@@ -44,7 +44,7 @@ object EsResponse {
 
   def toIdMap(res: SearchResponse): Map[String, Map[String, Any]] = {
     val map = mutable.HashMap[String, Map[String, Any]]()
-    res.hits.hits.map(hit => map(hit.id) = hit.sourceAsMap)
+    res.hits.hits.toIndexedSeq.map(hit => map(hit.id) = hit.sourceAsMap)
     map.toMap
   }
 }
