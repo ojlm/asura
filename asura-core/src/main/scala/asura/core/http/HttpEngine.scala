@@ -1,12 +1,14 @@
 package asura.core.http
 
+import java.net.http.HttpResponse.{BodyHandler, BodyHandlers, BodySubscribers}
+import java.net.http.{HttpClient, HttpRequest => JavaHttpRequest, HttpResponse => JavaHttpResponse}
 import java.security.cert.X509Certificate
 
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse, RequestTimeoutException}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.http.scaladsl.{Http, HttpsConnectionContext, UseHttp2}
 import asura.common.model.{ApiMsg, BoolErrorRes, BoolErrorTypeRes}
-import asura.common.util.LogUtils
+import asura.common.util.{JsonUtils, LogUtils}
 import asura.core.CoreConfig
 import asura.core.CoreConfig._
 import asura.core.protocols.Protocols
@@ -14,19 +16,38 @@ import asura.core.util.JacksonSupport
 import com.typesafe.scalalogging.Logger
 import com.typesafe.sslconfig.akka.AkkaSSLConfig
 import javax.net.ssl.{KeyManager, SSLContext, X509TrustManager}
+import jdk.internal.net.http.common.Utils.charsetFrom
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, Future, Promise}
+import scala.jdk.FutureConverters._
 
 object HttpEngine {
 
   val logger = Logger("HttpEngine")
   val http = Http()
+  private val httpClient: HttpClient = HttpClient.newBuilder()
+    .build()
+
+  def sendAsync(request: JavaHttpRequest): Future[JavaHttpResponse[String]] = {
+    httpClient.sendAsync(request, BodyHandlers.ofString()).asScala
+  }
+
+  def sendAsync[T <: AnyRef](request: JavaHttpRequest, clazz: Class[T]): Future[JavaHttpResponse[T]] = {
+    val handler: BodyHandler[T] = (responseInfo) => {
+      val charset = charsetFrom(responseInfo.headers)
+      BodySubscribers.mapping(
+        BodySubscribers.ofByteArray(),
+        (bytes: Array[Byte]) => JsonUtils.parse(new String(bytes, charset), clazz)
+      )
+    }
+    httpClient.sendAsync(request, handler).asScala
+  }
 
   /**
-    * This method will use linkerd proxy and set a `Host` header of original `host` default.
-    * If the schema is `https`, it will replaced by `http` to make the linkerd handle https traffic.
-    **/
+   * This method will use linkerd proxy and set a `Host` header of original `host` default.
+   * If the schema is `https`, it will replaced by `http` to make the linkerd handle https traffic.
+   **/
   private def buildProxyRequest(request: HttpRequest, proxyServerTag: String): Future[HttpRequest] = {
     Future.successful {
       // do not need to do the validation
