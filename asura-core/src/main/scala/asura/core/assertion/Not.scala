@@ -1,17 +1,21 @@
 package asura.core.assertion
 
-import asura.core.concurrent.ExecutionContextManager.cachedExecutor
 import asura.core.assertion.engine.{AssertResult, AssertionContext, FailAssertResult, Statistic}
+import asura.core.concurrent.ExecutionContextManager.cachedExecutor
 
 import scala.concurrent.Future
 
-object Not extends Assertion {
+case class Not() extends Assertion {
 
   override val name: String = Assertions.NOT
 
   override def assert(actual: Any, expect: Any): Future[AssertResult] = {
-    apply(actual, expect)
+    Not.apply(actual, expect)
   }
+
+}
+
+object Not {
 
   def apply(ctx: Any, assert: Any): Future[AssertResult] = {
     val result = AssertResult()
@@ -36,4 +40,5 @@ object Not extends Assertion {
         Future.successful(FailAssertResult(1, AssertResult.msgIncomparableTargetType(assert)))
     }
   }
+
 }

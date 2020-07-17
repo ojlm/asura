@@ -2,19 +2,23 @@ package asura.core.assertion
 
 import java.util
 
-import asura.core.runtime.RuntimeContext
 import asura.core.assertion.engine.{AssertResult, FailAssertResult, PassAssertResult}
+import asura.core.runtime.RuntimeContext
 import asura.core.script.JavaScriptEngine
 
 import scala.concurrent.Future
 
-object Script extends Assertion {
+case class Script() extends Assertion {
 
   override val name: String = Assertions.SCRIPT
 
   override def assert(actual: Any, expect: Any): Future[AssertResult] = {
-    Future.successful(apply(actual, expect))
+    Future.successful(Script.apply(actual, expect))
   }
+
+}
+
+object Script {
 
   def apply(src: Any, target: Any): AssertResult = {
     if (target.isInstanceOf[String]) {
@@ -35,4 +39,5 @@ object Script extends Assertion {
       FailAssertResult(1, AssertResult.msgIncomparableTargetType(target))
     }
   }
+
 }

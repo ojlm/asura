@@ -1,17 +1,20 @@
 package asura.core.assertion
 
-
 import asura.core.assertion.engine.{AssertResult, FailAssertResult, PassAssertResult}
 
 import scala.concurrent.Future
 
-object Nin extends CompareOperator with Assertion {
+case class Nin() extends Assertion {
 
   override val name: String = Assertions.NIN
 
   override def assert(actual: Any, expect: Any): Future[AssertResult] = {
-    Future.successful(apply(actual, expect))
+    Future.successful(Nin.apply(actual, expect))
   }
+
+}
+
+object Nin extends CompareOperator {
 
   def apply(src: Any, target: Any): AssertResult = {
     val result = contains(src, target)
@@ -21,4 +24,5 @@ object Nin extends CompareOperator with Assertion {
       PassAssertResult(1)
     }
   }
+
 }

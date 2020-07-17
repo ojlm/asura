@@ -1,19 +1,23 @@
 package asura.core.assertion
 
-import asura.core.concurrent.ExecutionContextManager.cachedExecutor
 import asura.core.assertion.engine.{AssertResult, AssertionContext, FailAssertResult, Statistic}
+import asura.core.concurrent.ExecutionContextManager.cachedExecutor
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
-object Or extends Assertion {
+case class Or() extends Assertion {
 
   override val name: String = Assertions.OR
 
   override def assert(actual: Any, expect: Any): Future[AssertResult] = {
-    apply(actual, expect)
+    Or.apply(actual, expect)
   }
+
+}
+
+object Or {
 
   def apply(actual: Any, except: Any): Future[AssertResult] = {
     val result = AssertResult(
@@ -53,4 +57,5 @@ object Or extends Assertion {
         Future.successful(FailAssertResult(1, AssertResult.msgIncomparableTargetType(except)))
     }
   }
+
 }

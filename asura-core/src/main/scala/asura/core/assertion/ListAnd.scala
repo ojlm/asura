@@ -4,15 +4,19 @@ import asura.core.assertion.engine.AssertResult
 
 import scala.concurrent.Future
 
-object ListAnd extends Assertion {
+case class ListAnd() extends Assertion {
 
   override val name: String = Assertions.LIST_AND
 
   override def assert(actual: Any, expect: Any): Future[AssertResult] = {
-    apply(actual, expect)
+    ListAnd.apply(actual, expect)
   }
+}
+
+object ListAnd {
 
   def apply(actual: Any, expect: Any): Future[AssertResult] = {
     And(actual, expect)
   }
+
 }

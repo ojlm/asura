@@ -4,13 +4,16 @@ import asura.core.assertion.engine.{AssertResult, PassAssertResult}
 
 import scala.concurrent.Future
 
-object Eq extends CompareOperator with Assertion {
+case class Eq() extends Assertion {
 
   override val name: String = Assertions.EQ
 
   override def assert(actual: Any, expect: Any): Future[AssertResult] = {
-    Future.successful(apply(actual, expect))
+    Future.successful(Eq.apply(actual, expect))
   }
+}
+
+object Eq extends CompareOperator {
 
   def apply(actual: Any, expect: Any): AssertResult = {
     if (null == actual && expect == null) {
@@ -21,4 +24,5 @@ object Eq extends CompareOperator with Assertion {
       }
     }
   }
+
 }
