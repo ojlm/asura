@@ -20,21 +20,21 @@ object AssertResult {
   val KEY_REPORT_MSG = "msg"
 
   def msgIncomparableSourceType(src: Any): String = {
-    "$MSG_INCOMPARABLE, src:${src.getClass.getName}"
+    s"$MSG_INCOMPARABLE, src:${src.getClass.getName}"
   }
 
   def msgIncomparableTargetType(target: Any): String = {
-    "$MSG_INCOMPARABLE, target:${target.getClass.getName}"
+    s"$MSG_INCOMPARABLE, target:${target.getClass.getName}"
   }
 
   def msgIncomparableType(src: Any, target: Any): String = {
-    "$MSG_INCOMPARABLE, src:${src.getClass.getName}, target:${target.getClass.getName}"
+    s"$MSG_INCOMPARABLE, src:${src.getClass.getName}, target:${target.getClass.getName}"
   }
 
-  def pathNotFound(path: String) = "$MSG_PATH_NOT_FOUND: $path"
+  def pathNotFound(path: String) = s"$MSG_PATH_NOT_FOUND: $path"
 
   def msgNotSameType(src: Any, target: Any): String = {
-    "Incompatible type, src:${src.getClass.getName}, target:${target.getClass.getName}"
+    s"Incompatible type, src:${src.getClass.getName}, target:${target.getClass.getName}"
   }
 }
 
