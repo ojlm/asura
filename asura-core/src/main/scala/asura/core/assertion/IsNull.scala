@@ -4,13 +4,17 @@ import asura.core.assertion.engine.{AssertResult, FailAssertResult, PassAssertRe
 
 import scala.concurrent.Future
 
-object IsNull extends Assertion {
+case class IsNull() extends Assertion {
 
   override val name: String = Assertions.IS_NULL
 
   override def assert(actual: Any, expect: Any): Future[AssertResult] = {
-    Future.successful(apply(actual, expect))
+    Future.successful(IsNull.apply(actual, expect))
   }
+
+}
+
+object IsNull {
 
   def apply(actual: Any, expect: Any): AssertResult = {
     if (null != expect && expect.isInstanceOf[Boolean]) {
@@ -23,4 +27,5 @@ object IsNull extends Assertion {
       FailAssertResult(msg = AssertResult.MSG_INCOMPARABLE)
     }
   }
+
 }

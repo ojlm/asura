@@ -6,13 +6,17 @@ import asura.core.assertion.engine.{AssertResult, FailAssertResult, PassAssertRe
 
 import scala.concurrent.Future
 
-object Size extends Assertion {
+case class Size() extends Assertion {
 
   override val name: String = Assertions.SIZE
 
   override def assert(actual: Any, expect: Any): Future[AssertResult] = {
-    Future.successful(apply(actual, expect))
+    Future.successful(Size.apply(actual, expect))
   }
+
+}
+
+object Size {
 
   def apply(src: Any, target: Any): AssertResult = {
     if (null != src && target != null) {
@@ -50,4 +54,5 @@ object Size extends Assertion {
       FailAssertResult(1, s"Null value, src: $src, target: $target")
     }
   }
+
 }

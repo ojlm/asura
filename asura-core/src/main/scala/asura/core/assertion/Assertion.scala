@@ -11,10 +11,10 @@ trait Assertion {
   val name: String
 
   /**
-    *
-    * @param actual the actual value from context
-    * @param expect the expect value
-    * @return
-    */
+   *
+   * @param actual the actual value from context
+   * @param expect the expect value
+   * @return
+   */
   def assert(actual: Any, expect: Any): Future[AssertResult]
 }

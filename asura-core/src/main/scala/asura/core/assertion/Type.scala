@@ -4,13 +4,17 @@ import asura.core.assertion.engine.{AssertResult, FailAssertResult, PassAssertRe
 
 import scala.concurrent.Future
 
-object Type extends Assertion {
+case class Type() extends Assertion {
 
   override val name: String = Assertions.TYPE
 
   override def assert(actual: Any, expect: Any): Future[AssertResult] = {
-    Future.successful(apply(actual, expect))
+    Future.successful(Type.apply(actual, expect))
   }
+
+}
+
+object Type {
 
   def apply(actual: Any, expect: Any): AssertResult = {
     if (null != expect && expect.isInstanceOf[String]) {
@@ -114,4 +118,5 @@ object Type extends Assertion {
       FailAssertResult(1, AssertResult.msgIncomparableSourceType(expect))
     }
   }
+
 }

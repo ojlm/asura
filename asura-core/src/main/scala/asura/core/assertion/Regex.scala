@@ -4,13 +4,17 @@ import asura.core.assertion.engine.{AssertResult, FailAssertResult, PassAssertRe
 
 import scala.concurrent.Future
 
-object Regex extends Assertion {
+case class Regex() extends Assertion {
 
   override val name: String = Assertions.REGEX
 
   override def assert(actual: Any, expect: Any): Future[AssertResult] = {
-    Future.successful(apply(actual, expect))
+    Future.successful(Regex.apply(actual, expect))
   }
+
+}
+
+object Regex {
 
   def apply(src: Any, target: Any): AssertResult = {
     if (null != src && target != null) {
@@ -28,4 +32,5 @@ object Regex extends Assertion {
       FailAssertResult(1, s"Null value, src: $src, target: $target")
     }
   }
+
 }

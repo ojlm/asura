@@ -35,11 +35,11 @@ object Assertions {
 
   // simple have explicit expect and actual value
   val normals = Seq(
-    Eq, Ne, Gt, Gte, Lt, Lte, In, Nin, IsNull, IsEmpty, Regex, Size, Type,
+    Eq(), Ne(), Gt(), Gte(), Lt(), Lte(), In(), Nin(), IsNull(), IsEmpty(), Regex(), Size(), Type(),
   )
   // logic or complex computation
   val specials = Seq(
-    And, Nor, Not, Or, Script, ListAnd, ListOr
+    And(), Nor(), Not(), Or(), Script(), ListAnd(), ListOr()
   )
   normals.foreach(register(_))
   specials.foreach(register(_))
