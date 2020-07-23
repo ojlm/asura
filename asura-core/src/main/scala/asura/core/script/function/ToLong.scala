@@ -2,7 +2,7 @@ package asura.core.script.function
 
 import scala.concurrent.Future
 
-object ToLong extends TransformFunction {
+case class ToLong() extends TransformFunction {
 
   val ZERO = java.lang.Long.valueOf(0)
   override val name: String = "toLong"

@@ -6,7 +6,7 @@ import asura.core.script.JavaScriptEngine
 
 import scala.concurrent.Future
 
-object Script extends TransformFunction {
+case class Script() extends TransformFunction {
 
   override val name: String = "script"
   override val description: String = "Run a script and extract the result"

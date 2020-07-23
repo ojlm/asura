@@ -4,7 +4,7 @@ import asura.core.util.JsonPathUtils
 
 import scala.concurrent.Future
 
-object ToMap extends TransformFunction {
+case class ToMap() extends TransformFunction {
 
   override val name: String = "toMap"
   override val description: String = "Try to transform string to a map powered by fasterxml.jackson"

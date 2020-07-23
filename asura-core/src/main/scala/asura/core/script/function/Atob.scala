@@ -4,7 +4,7 @@ import java.util.Base64
 
 import scala.concurrent.Future
 
-object Atob extends TransformFunction {
+case class Atob() extends TransformFunction {
 
   override val name: String = "atob"
   override val description: String = "Decodes a string of data which has been encoded using base-64 encoding"

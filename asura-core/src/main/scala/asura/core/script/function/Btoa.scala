@@ -5,7 +5,7 @@ import java.util.Base64
 
 import scala.concurrent.Future
 
-object Btoa extends TransformFunction {
+case class Btoa() extends TransformFunction {
 
   override val name: String = "btoa"
   override val description: String = "Creates a base-64 encoded ASCII string from a string"

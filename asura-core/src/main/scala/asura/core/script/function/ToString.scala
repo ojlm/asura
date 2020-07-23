@@ -4,7 +4,7 @@ import asura.common.util.JsonUtils
 
 import scala.concurrent.Future
 
-object ToString extends TransformFunction {
+case class ToString() extends TransformFunction {
 
   override val name: String = "toString"
   override val description: String = "Transform any value to a string powered by fasterxml.jackson"

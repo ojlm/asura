@@ -2,7 +2,7 @@ package asura.core.script.function
 
 import scala.concurrent.Future
 
-object ToInteger extends TransformFunction {
+case class ToInteger() extends TransformFunction {
 
   val ZERO = Integer.valueOf(0)
   override val name: String = "toInteger"
