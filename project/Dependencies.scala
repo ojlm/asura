@@ -19,7 +19,7 @@ object Dependencies {
   private val commonsCodec = "commons-codec" % "commons-codec" % "1.10"
   private val commonsLang3 = "org.apache.commons" % "commons-lang3" % "3.7"
   private val quartz = "org.quartz-scheduler" % "quartz" % "2.3.0" excludeAll(ExclusionRule(organization = "com.mchange", name = "c3p0"), ExclusionRule(organization = "com.mchange", name = "mchange-commons-java"))
-  private val swaggerParser = "io.swagger" % "swagger-parser" % "1.0.33"
+  private val swaggerParser = "io.swagger.parser.v3" % "swagger-parser" % "2.0.20"
   private val elastic4s = "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % "7.5.0"
   private val joddCore = "org.jodd" % "jodd-core" % "3.9.1"
   private val jsonPath = "com.jayway.jsonpath" % "json-path" % "2.4.0"
@@ -79,8 +79,6 @@ object Dependencies {
   val playPac4jVersion = "10.0.0"
   val pac4jVersion = "4.0.0"
   val appPlayDeps = Seq(
-    "org.webjars" % "swagger-ui" % "3.17.4",
-    "org.webjars.npm" % "swagger-editor-dist" % "3.1.16",
     "org.pac4j" %% "play-pac4j" % playPac4jVersion,
     "org.pac4j" % "pac4j-http" % pac4jVersion,
     "org.pac4j" % "pac4j-ldap" % pac4jVersion,
