@@ -7,7 +7,7 @@ import asura.common.util.{DateUtils, LogUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.cachedExecutor
 import asura.core.es.model._
-import asura.core.es.service.{JobNotifyService, JobService}
+import asura.core.es.service.{FavoriteService, JobNotifyService, JobService}
 import asura.core.job.actor.{JobActionValidator, _}
 import com.typesafe.scalalogging.Logger
 import org.quartz.impl.StdSchedulerFactory
@@ -135,7 +135,11 @@ object SchedulerManager {
         } catch {
           case t: Throwable => throw ErrorMessages.error_Throwable(t).toException
         }
-      }.flatMap(_ => JobService.deleteDoc(job.id)).map(_ => true)
+      }.flatMap(_ => {
+        JobService.deleteDoc(job.id)
+      }).flatMap(_ => {
+        FavoriteService.deleteJob(job.id)
+      }).map(_ => true)
     }
   }
 

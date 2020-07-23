@@ -68,6 +68,24 @@ object FavoriteService extends CommonService with BaseAggregationService {
     }
   }
 
+  def deleteScenario(scenarioId: String) = {
+    val esQueries = ArrayBuffer[Query]()
+    esQueries += termQuery(FieldKeys.FIELD_TARGET_ID, scenarioId)
+    esQueries += termQuery(FieldKeys.FIELD_TARGET_TYPE, Favorite.TARGET_TYPE_SCENARIO)
+    EsClient.esClient.execute {
+      deleteByQuery(Favorite.Index, boolQuery().must(esQueries))
+    }.map(toDeleteByQueryResponse(_))
+  }
+
+  def deleteJob(jobId: String) = {
+    val esQueries = ArrayBuffer[Query]()
+    esQueries += termQuery(FieldKeys.FIELD_TARGET_ID, jobId)
+    esQueries += termQuery(FieldKeys.FIELD_TARGET_TYPE, Favorite.TARGET_TYPE_JOB)
+    EsClient.esClient.execute {
+      deleteByQuery(Favorite.Index, boolQuery().must(esQueries))
+    }.map(toDeleteByQueryResponse(_))
+  }
+
   def check(docId: String, value: Boolean, summary: String = null) = {
     EsClient.esClient.execute {
       val m = if (value) {
