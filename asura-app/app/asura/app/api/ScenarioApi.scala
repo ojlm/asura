@@ -44,7 +44,9 @@ class ScenarioApi @Inject()(
           )))
         } else {
           if (res.result.isEmpty) {
-            ScenarioService.deleteDoc(id).toOkResult
+            ScenarioService.deleteDoc(id).flatMap(_ => {
+              FavoriteService.deleteScenario(id)
+            }).toOkResult
           } else {
             Future.successful(OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_CantDeleteScenario))))
           }

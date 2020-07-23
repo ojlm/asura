@@ -2,10 +2,10 @@ package asura.app.api
 
 import akka.actor.ActorSystem
 import asura.common.util.{DateUtils, StringUtils}
-import asura.core.es.EsResponse
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, Favorite, FieldKeys}
 import asura.core.es.service._
+import asura.core.es.{EsConfig, EsResponse}
 import asura.core.model.{AggsQuery, QueryFavorite}
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
@@ -74,7 +74,7 @@ class FavoriteApi @Inject()(implicit system: ActorSystem,
   }
 
   def groupAggs() = Action(parse.byteString).async { implicit req =>
-    val q = AggsQuery(`type` = Favorite.TYPE_TOP_TOP, size = 100, termsField = FieldKeys.FIELD_GROUP)
+    val q = AggsQuery(`type` = Favorite.TYPE_TOP_TOP, size = EsConfig.MaxCount, termsField = FieldKeys.FIELD_GROUP)
     q.checked = "true"
     FavoriteService.termsAggs(q)
       .flatMap(aggsItems => {
