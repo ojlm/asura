@@ -3,6 +3,7 @@ package asura.app.api
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 
+@Deprecated
 @Singleton
 class SwaggerApi @Inject()(val controllerComponents: SecurityComponents) extends BaseApi {
 
