@@ -42,6 +42,8 @@ object ErrorMessages extends CommonErrorMessages {
   val error_ProxyDisabled = ErrorMessage("Proxy is disabled")("error_ProxyDisabled")
   val error_EmptyDate = ErrorMessage("Empty date field")("error_EmptyDate")
   val error_InvalidParams = ErrorMessage("Invalid params")("error_InvalidParams")
+  val error_EmptyProtocol = ErrorMessage("Empty protocol")("error_EmptyProtocol")
+  val error_EmptyHost = ErrorMessage("Empty host")("error_EmptyHost")
 
   def error_EsRequestFail(response: Response[_]) = ErrorMessage(response.error.reason)("error_EsRequestFail")
 
