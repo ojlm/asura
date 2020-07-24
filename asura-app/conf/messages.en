@@ -45,3 +45,5 @@ error_InvalidProxyConfig=Invalid proxy configuration
 error_IdsNotFound=ID({0}) not exist
 error_CanNotUseReservedGroup=A reserved group, please use another one
 error_InvalidParams=Invalid request parameters
+error_EmptyProtocol=Empty protocol
+error_EmptyHost=Empty host

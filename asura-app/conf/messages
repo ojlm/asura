@@ -45,3 +45,5 @@ error_InvalidProxyConfig=代理配置错误
 error_IdsNotFound=ID({0})不存在
 error_CanNotUseReservedGroup=不能使用预留分组, 请换个ID
 error_InvalidParams=无效的参数请求
+error_EmptyProtocol=协议不能为空
+error_EmptyHost=Host不能为空

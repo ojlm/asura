@@ -12,9 +12,9 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters._
 
-object OpenAPI {
+object OpenApiToRestSchema {
 
-  val logger = Logger("OpenAPI")
+  val logger = Logger("OpenApiToRestSchema")
 
   /** a limited convert */
   def v2ToApi(oasStr: String, group: String, project: String, creator: String): Seq[RestApi] = {

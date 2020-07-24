@@ -2,9 +2,11 @@ package asura.app.api
 
 import akka.actor.ActorSystem
 import asura.app.AppErrorMessages
+import asura.app.api.model.OpenApiImport
 import asura.common.model.{ApiRes, ApiResError}
-import asura.common.util.StringUtils
+import asura.common.util.{DateUtils, StringUtils}
 import asura.core.ErrorMessages
+import asura.core.api.openapi.{ConvertResults, OpenApiToHttpRequest}
 import asura.core.assertion.Assertions
 import asura.core.es.EsResponse
 import asura.core.es.actor.ActivitySaveActor
@@ -19,6 +21,7 @@ import asura.core.util.{JacksonSupport, JsonPathUtils}
 import asura.play.api.BaseApi.OkApiRes
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
+import play.api.mvc.RequestHeader
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -142,4 +145,38 @@ class HttpCaseApi @Inject()(implicit system: ActorSystem,
     HttpCaseRequestService.batchTransfer(op).toOkResult
   }
 
+  def openApiPreview(group: String, project: String) = Action(parse.byteString).async { implicit req =>
+    val option = req.bodyAs(classOf[OpenApiImport])
+    if (StringUtils.isNotEmpty(option.url)) {
+      OpenApiToHttpRequest.fromUrl(option.url, option.options).map(dealConvertResults)
+    } else if (StringUtils.isNotEmpty(option.content)) {
+      Future.successful(OpenApiToHttpRequest.fromContent(option.content, option.options)).map(dealConvertResults)
+    } else {
+      Future.successful(Nil).toOkResult
+    }
+  }
+
+  def openApiImport(group: String, project: String) = Action(parse.byteString).async { implicit req =>
+    val option = req.bodyAs(classOf[OpenApiImport])
+    if (null != option.list && option.list.nonEmpty) {
+      val username = getProfileId()
+      val now = DateUtils.nowDateTime
+      option.list.foreach(item => {
+        item.group = group
+        item.project = project
+        item.fillCommonFields(username, now)
+      })
+      HttpCaseRequestService.index(option.list).map(response => OkApiRes(ApiRes(data = response.count)))
+    } else {
+      Future.successful(OkApiRes(ApiRes(data = 0)))
+    }
+  }
+
+  private def dealConvertResults(results: ConvertResults)(implicit request: RequestHeader) = {
+    if (null != results.error) {
+      OkApiRes(ApiResError(getI18nMessage(results.error.name)))
+    } else {
+      OkApiRes(ApiRes(data = results.list))
+    }
+  }
 }

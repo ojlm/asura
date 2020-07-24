@@ -14,8 +14,8 @@ import scala.collection.mutable
 case class HttpCaseRequest(
                             val summary: String,
                             val description: String,
-                            val group: String,
-                            val project: String,
+                            var group: String,
+                            var project: String,
                             val request: Request,
                             val assert: Map[String, Any],
                             val env: String = StringUtils.EMPTY,

@@ -27,9 +27,9 @@ trait BaseIndex {
     if (null != sb) addScriptUpdateItem(sb, FieldKeys.FIELD_UPDATED_AT)
   }
 
-  def fillCommonFields(creator: String): Unit = {
+  def fillCommonFields(creator: String, now: String = DateUtils.nowDateTime): Unit = {
     this.creator = if (StringUtils.isNotEmpty(creator)) creator else StringUtils.EMPTY
-    this.createdAt = DateUtils.nowDateTime
+    this.createdAt = now
     this.updatedAt = this.createdAt
   }
 
