@@ -11,6 +11,7 @@ import scala.concurrent.Future
 
 object RecommendService {
 
+  // 这个关键字仅能按group/project id 检索
   def getRecommendProjects(user: String, wd: String, discover: Boolean): Future[RecommendProjects] = {
     val futureTuple = for {
       my <- getRecommendProject(user, true, wd, 20, Nil)

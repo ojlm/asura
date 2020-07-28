@@ -11,5 +11,6 @@ POST          /aggs/trend                             asura.app.api.HttpCaseApi.
 GET           /aggs/labels                            asura.app.api.HttpCaseApi.aggsLabels(label)
 POST          /batch/labels                           asura.app.api.HttpCaseApi.batchLabels()
 POST          /batch/transfer                         asura.app.api.HttpCaseApi.batchTransfer()
+POST          /:group/:project/batch/delete           asura.app.api.HttpCaseApi.batchDelete(group, project, preview: Option[Boolean])
 POST          /:group/:project/openapi/preview        asura.app.api.HttpCaseApi.openApiPreview(group, project)
 PUT           /:group/:project/openapi/import         asura.app.api.HttpCaseApi.openApiImport(group, project)

@@ -77,7 +77,7 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
 
   def deleteDoc(ids: Seq[String]): Future[DeleteDocResponse] = {
     EsClient.esClient.execute {
-      bulk(ids.map(id => delete(id).from(HttpCaseRequest.Index)))
+      bulk(ids.map(id => delete(id).from(HttpCaseRequest.Index))).refresh(RefreshPolicy.WAIT_FOR)
     }.map(toDeleteDocResponseFromBulk(_))
   }
 
