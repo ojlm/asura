@@ -6,7 +6,7 @@ import java.text.SimpleDateFormat
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.`type`.TypeReference
-import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
+import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper, ObjectWriter}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
 
@@ -23,6 +23,11 @@ object JsonUtils extends JsonUtils {
   mapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true)
   mapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true)
 
+  private val prettyWriter: ObjectWriter = mapper.writerWithDefaultPrettyPrinter()
+
+  def stringifyPretty(obj: AnyRef): String = {
+    prettyWriter.writeValueAsString(obj)
+  }
 }
 
 trait JsonUtils {
