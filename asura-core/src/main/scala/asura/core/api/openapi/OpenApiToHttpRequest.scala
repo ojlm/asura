@@ -4,13 +4,14 @@ import java.net.URI
 import java.net.http.HttpRequest
 
 import asura.common.exceptions.ErrorMessages.ErrorMessage
-import asura.common.util.StringUtils
+import asura.common.util.{JsonUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.model.Label.LabelRef
 import asura.core.es.model._
 import asura.core.http.{HttpContentTypes, HttpEngine2, HttpMethods}
 import com.typesafe.scalalogging.Logger
+import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.Parameter
 import io.swagger.v3.oas.models.{OpenAPI, Operation, PathItem}
 import io.swagger.v3.parser.OpenAPIV3Parser
@@ -55,7 +56,7 @@ object OpenApiToHttpRequest {
                 uri.getPort
               }
             }
-            openApi.getPaths.asScala.foreach(path => buildRequest(apis, scheme, host, port, basePath, path._1, path._2, options))
+            openApi.getPaths.asScala.foreach(path => buildRequest(apis, openApi, scheme, host, port, basePath, path._1, path._2, options))
           }
         }
       } catch {
@@ -67,6 +68,7 @@ object OpenApiToHttpRequest {
 
   def buildRequest(
                     apis: ArrayBuffer[HttpCaseRequest],
+                    openApi: OpenAPI,
                     scheme: String,
                     host: String,
                     port: Int,
@@ -86,7 +88,19 @@ object OpenApiToHttpRequest {
         if (mediaOpt.nonEmpty) {
           val media = mediaOpt.get
           contentType = media._1
-          body += MediaObject(contentType, StringUtils.EMPTY)
+          val mediaType = media._2
+          if (null != mediaType && null != mediaType.getSchema && null != mediaType.getSchema.get$ref() &&
+            null != openApi.getComponents && null != openApi.getComponents.getSchemas) {
+            val componentName = mediaType.getSchema.get$ref().substring("#/components/schemas/".length)
+            val schemas = openApi.getComponents.getSchemas
+            if (null != schemas && schemas.containsKey(componentName)) {
+              body += MediaObject(contentType, bodySchemaToString(schemas.get(componentName)))
+            } else {
+              body += MediaObject(contentType, StringUtils.EMPTY)
+            }
+          } else {
+            body += MediaObject(contentType, StringUtils.EMPTY)
+          }
         } else {
           allowEdBody = false
         }
@@ -191,5 +205,21 @@ object OpenApiToHttpRequest {
 
   def fromContent(content: String, options: ConvertOptions): ConvertResults = {
     openApiToRequest(getOpenApi(content), options)
+  }
+
+  def bodySchemaToString[T](schema: Schema[T]): String = {
+    val map = collection.mutable.HashMap[String, Any]()
+    if (null != schema.getProperties) {
+      schema.getProperties.forEach((k, propSchema) => {
+        if (null != propSchema.getExample) {
+          map.put(k, propSchema.getExample.toString)
+        } else {
+          map.put(k, null)
+        }
+      })
+      JsonUtils.stringifyPretty(map)
+    } else {
+      StringUtils.EMPTY
+    }
   }
 }

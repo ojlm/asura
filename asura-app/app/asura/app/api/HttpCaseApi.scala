@@ -14,7 +14,7 @@ import asura.core.es.model.{Activity, HttpCaseRequest, ScenarioStep}
 import asura.core.es.service._
 import asura.core.http.HttpRunner
 import asura.core.http.actor.HttpRunnerActor.TestCaseMessage
-import asura.core.model.BatchOperation.{BatchOperationLabels, BatchTransfer}
+import asura.core.model.BatchOperation.{BatchDelete, BatchOperationLabels, BatchTransfer}
 import asura.core.model.{AggsQuery, QueryCase, SearchAfterCase}
 import asura.core.runtime.RuntimeContext
 import asura.core.util.{JacksonSupport, JsonPathUtils}
@@ -40,31 +40,7 @@ class HttpCaseApi @Inject()(implicit system: ActorSystem,
   }
 
   def delete(id: String, preview: Option[Boolean]) = Action.async { implicit req =>
-    val caseIds = Seq(id)
-    val res = for {
-      s <- ScenarioService.containSteps(caseIds, ScenarioStep.TYPE_HTTP)
-      j <- JobService.containCase(caseIds)
-    } yield (s, j)
-    res.flatMap(resTuple => {
-      val (scenarioRes, jobRes) = resTuple
-      if (scenarioRes.isSuccess && jobRes.isSuccess) {
-        if (preview.nonEmpty && preview.get) {
-          Future.successful(toActionResultFromAny(Map(
-            "scenario" -> EsResponse.toApiData(scenarioRes.result),
-            "job" -> EsResponse.toApiData(jobRes.result)
-          )))
-        } else {
-          if (scenarioRes.result.isEmpty && jobRes.result.isEmpty) {
-            HttpCaseRequestService.deleteDoc(id).toOkResult
-          } else {
-            Future.successful(OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_CantDeleteCase))))
-          }
-        }
-      } else {
-        val errorRes = if (!scenarioRes.isSuccess) scenarioRes else jobRes
-        ErrorMessages.error_EsRequestFail(errorRes).toFutureFail
-      }
-    })
+    deleteDocs(preview, Seq(id))
   }
 
   def put() = Action(parse.byteString).async { implicit req =>
@@ -145,6 +121,11 @@ class HttpCaseApi @Inject()(implicit system: ActorSystem,
     HttpCaseRequestService.batchTransfer(op).toOkResult
   }
 
+  def batchDelete(group: String, project: String, preview: Option[Boolean]) = Action(parse.byteString).async { implicit req =>
+    val op = req.bodyAs(classOf[BatchDelete])
+    deleteDocs(preview, op.ids)
+  }
+
   def openApiPreview(group: String, project: String) = Action(parse.byteString).async { implicit req =>
     val option = req.bodyAs(classOf[OpenApiImport])
     if (StringUtils.isNotEmpty(option.url)) {
@@ -178,5 +159,32 @@ class HttpCaseApi @Inject()(implicit system: ActorSystem,
     } else {
       OkApiRes(ApiRes(data = results.list))
     }
+  }
+
+  private def deleteDocs(preview: Option[Boolean], ids: Seq[String])(implicit request: RequestHeader) = {
+    val res = for {
+      s <- ScenarioService.containSteps(ids, ScenarioStep.TYPE_HTTP)
+      j <- JobService.containCase(ids)
+    } yield (s, j)
+    res.flatMap(resTuple => {
+      val (scenarioRes, jobRes) = resTuple
+      if (scenarioRes.isSuccess && jobRes.isSuccess) {
+        if (preview.nonEmpty && preview.get) {
+          Future.successful(toActionResultFromAny(Map(
+            "scenario" -> EsResponse.toApiData(scenarioRes.result),
+            "job" -> EsResponse.toApiData(jobRes.result)
+          )))
+        } else {
+          if (scenarioRes.result.isEmpty && jobRes.result.isEmpty) {
+            HttpCaseRequestService.deleteDoc(ids).toOkResult
+          } else {
+            Future.successful(OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_CantDeleteCase))))
+          }
+        }
+      } else {
+        val errorRes = if (!scenarioRes.isSuccess) scenarioRes else jobRes
+        ErrorMessages.error_EsRequestFail(errorRes).toFutureFail
+      }
+    })
   }
 }
