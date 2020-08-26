@@ -112,7 +112,8 @@ object JobReportData {
   case class ScenarioReportItemData(
                                      var id: String,
                                      var title: String,
-                                     var steps: collection.Seq[JobReportStepItemData] = Nil
+                                     var steps: collection.Seq[JobReportStepItemData] = Nil,
+                                     var renderedExportDesc: Map[Int, String] = null,
                                    ) extends BasicReportItemData
 
 }

@@ -24,4 +24,7 @@ trait AbstractResult {
 
   // generator type
   def generator: String
+
+  // 步骤导出时, 渲染描述, key 为下标
+  var renderedExportDesc: Map[Int, String] = null
 }

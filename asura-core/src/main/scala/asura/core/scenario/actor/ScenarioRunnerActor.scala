@@ -107,6 +107,7 @@ class ScenarioRunnerActor(scenarioId: String) extends ScenarioStepBasicActor {
         if (null != jobActor) {
           // running in a job
           runtimeContext.evaluateExportsVariables(this.exports)
+          this.scenarioReportItem.renderedExportDesc = runtimeContext.renderedExportsDesc(this.exports)
           jobActor ! this.scenarioReportItem
           context stop self
         }
@@ -241,6 +242,7 @@ class ScenarioRunnerActor(scenarioId: String) extends ScenarioStepBasicActor {
       if (this.failFast) {
         // extract the exports into the runtime context asynchronously
         runtimeContext.evaluateExportsVariables(exports).map(_ => {
+          result.renderedExportDesc = runtimeContext.renderedExportsDesc(exports)
           sendCurrentToWsActor(XtermUtils.greenWrap(ReportStepItemStatus.STATUS_PASS))
           idx + 1
         })
