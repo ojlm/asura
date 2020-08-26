@@ -74,7 +74,7 @@ object DubboRunner {
       null
     }
     val args = if (StringUtils.isNotEmpty(request.args)) {
-      val renderedText = context.renderBodyAsString(request.args)
+      val renderedText = context.renderTemplateAsString(request.args)
       JsonUtils.parse(renderedText, classOf[Array[Object]])
     } else {
       null

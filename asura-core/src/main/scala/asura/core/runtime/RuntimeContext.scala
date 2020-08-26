@@ -10,6 +10,7 @@ import asura.core.script.JavaScriptEngine
 import asura.core.script.function.{ArgWithExtraData, Functions}
 import asura.core.util.{JsonPathUtils, StringTemplate}
 
+import scala.collection.mutable
 import scala.concurrent.Future
 
 object RuntimeContext {
@@ -61,7 +62,7 @@ object RuntimeContext {
    * @param ctx      context must be java types
    * @return template itself or value in context wrapped in a future
    **/
-  def render(template: String, ctx: util.Map[Any, Any]): Any = {
+  def renderSingleMacro(template: String, ctx: util.Map[Any, Any]): Any = {
     if (StringUtils.isNotEmpty(template)) {
       if (template.startsWith(TEMPLATE_PREFIX) && template.endsWith(TEMPLATE_SUFFIX)) {
         val tplMacro = template.substring(TEMPLATE_PREFIX.length, template.length - TEMPLATE_SUFFIX.length)
@@ -85,10 +86,10 @@ object RuntimeContext {
   }
 
   /**
-   * render whole body to string which may have many macros.
+   * render whole template to string which may have many macros.
    * this will throw exception when json-path is not found
    */
-  def renderBody(template: String, ctx: util.Map[Any, Any]): String = {
+  def renderTemplate(template: String, ctx: util.Map[Any, Any]): String = {
     if (StringUtils.isNotEmpty(template)) {
       StringTemplate.mustacheParser.parse(template, macroName => {
         val bodyString = if (macroName.startsWith(JSON_PATH_MACRO_PREFIX_1) || macroName.startsWith(JSON_PATH_MACRO_PREFIX_2)) {
@@ -194,6 +195,21 @@ case class RuntimeContext(
     }
   }
 
+  def renderedExportsDesc(exports: Seq[VariablesExportItem]): Map[Int, String] = {
+    if (null != exports && exports.nonEmpty) {
+      val map = mutable.Map[Int, String]()
+      for (i <- 0 until exports.size) {
+        val item = exports(i)
+        if (null != item && item.isValid() && StringUtils.isNotEmpty(item.description)) {
+          map(i) = renderTemplateAsString(item.description)
+        }
+      }
+      map.toMap
+    } else {
+      Map.empty
+    }
+  }
+
   private def evaluateValue(value: Object, function: String, extra: VariablesItemExtraData): Future[Object] = {
     val func = Functions.getTransform(function)
     if (func.nonEmpty) {
@@ -266,11 +282,11 @@ case class RuntimeContext(
   }
 
   def renderSingleMacroAsString(tpl: String): String = {
-    RuntimeContext.render(tpl, ctx).toString
+    RuntimeContext.renderSingleMacro(tpl, ctx).toString
   }
 
-  def renderBodyAsString(tpl: String): String = {
-    RuntimeContext.renderBody(tpl, ctx).toString
+  def renderTemplateAsString(tpl: String): String = {
+    RuntimeContext.renderTemplate(tpl, ctx).toString
   }
 
   def setOrUpdateEnv(env: Environment): RuntimeContext = {

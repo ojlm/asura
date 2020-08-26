@@ -13,31 +13,31 @@ class RuntimeContextSpec extends ScalaTestBaseSpec {
 
   test("miss") {
     val tpl = "hi"
-    val value = RuntimeContext.render(tpl, context)
+    val value = RuntimeContext.renderSingleMacro(tpl, context)
     assertResult(tpl)(value)
   }
 
   test("json-path") {
     val tpl = "{{$['b']}}"
-    val value = RuntimeContext.render(tpl, context)
+    val value = RuntimeContext.renderSingleMacro(tpl, context)
     assertResult(context.get("b"))(value)
   }
 
   test("random function") {
     val tpl = "{{random(5)}}"
-    val value = RuntimeContext.render(tpl, context).asInstanceOf[String]
+    val value = RuntimeContext.renderSingleMacro(tpl, context).asInstanceOf[String]
     assertResult(5)(value.length)
   }
 
   test("prev cycle reference") {
     val tpl = "{{$._p.b}}"
-    val value = RuntimeContext.render(tpl, context)
+    val value = RuntimeContext.renderSingleMacro(tpl, context)
     assertResult(context.get("b"))(value)
   }
 
   test("render body") {
     val tpl = "a={{$.a}}, b={{$._p.b}}"
-    val result = RuntimeContext.renderBody(tpl, context)
+    val result = RuntimeContext.renderTemplate(tpl, context)
     assertResult("a=a, b=5")(result)
   }
 
@@ -51,7 +51,7 @@ class RuntimeContextSpec extends ScalaTestBaseSpec {
         |  "uuid" : "{{uuid()}}"
         |}
       """.stripMargin
-    val str = RuntimeContext.renderBody(tpl, context)
+    val str = RuntimeContext.renderTemplate(tpl, context)
     val map = JsonUtils.parse(str, classOf[Map[String, Any]])
     assertResult(map.get("a").get)("a")
     assertResult(map.get("b").get)(5)

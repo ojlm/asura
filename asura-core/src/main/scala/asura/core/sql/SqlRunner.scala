@@ -64,7 +64,7 @@ object SqlRunner {
     val host = request.host
     val port = request.port
     val database = request.database
-    val sql = context.renderBodyAsString(request.sql)
+    val sql = context.renderTemplateAsString(request.sql)
     metrics.renderRequestEnd()
     metrics.renderAuthBegin()
     metrics.renderAuthEnd()

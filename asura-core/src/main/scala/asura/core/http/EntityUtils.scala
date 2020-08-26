@@ -26,7 +26,7 @@ object EntityUtils {
           contentType = ContentTypes.`application/json`
           val body = request.body.find(_.contentType == HttpContentTypes.JSON)
           if (body.nonEmpty) {
-            byteString = ByteString(context.renderBodyAsString(body.get.data))
+            byteString = ByteString(context.renderTemplateAsString(body.get.data))
           }
         case HttpContentTypes.X_WWW_FORM_URLENCODED =>
           contentType = ContentTypes.`application/x-www-form-urlencoded`
@@ -37,7 +37,7 @@ object EntityUtils {
               val sb = new StringBuilder()
               val params = JacksonSupport.parse(body.get.data, new TypeReference[Seq[KeyValueObject]]() {})
               for (pair <- params if (pair.enabled && StringUtils.isNotEmpty(pair.key))) {
-                val rendered = context.renderBodyAsString(pair.value)
+                val rendered = context.renderTemplateAsString(pair.value)
                 sb.append(pair.key).append("=").append(URLEncoder.encode(rendered, UTF8)).append("&")
               }
               if (sb.nonEmpty) {
@@ -56,7 +56,7 @@ object EntityUtils {
           contentType = ContentTypes.`text/plain(UTF-8)`
           val body = request.body.find(_.contentType == HttpContentTypes.TEXT_PLAIN)
           if (body.nonEmpty) {
-            byteString = ByteString(context.renderBodyAsString(body.get.data))
+            byteString = ByteString(context.renderTemplateAsString(body.get.data))
           }
         case _ =>
       }
