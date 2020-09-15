@@ -162,6 +162,8 @@ object FieldKeys {
   val FIELD_AUTHOR = "author"
   val FIELD_TARGET_GROUP = "targetGroup"
   val FIELD_TARGET_PROJECT = "targetProject"
+  val FIELD_IN_SCN = "inScn"
+  val FIELD_REF = "ref"
 
   val FIELD_OBJECT_REQUEST_PROTOCOL = "request.protocol"
   val FIELD_OBJECT_REQUEST_HOST = "request.host"

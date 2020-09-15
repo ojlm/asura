@@ -9,19 +9,21 @@ import com.sksamuel.elastic4s.requests.mappings.{BasicField, _}
 import scala.collection.mutable
 
 /**
- * is useProxy is `true`, then use `namespace` in env first then can fall back to `namespace`
+ * If `useProxy` is `true`, then use `namespace` in env first then can fall back to `namespace`
  */
 case class HttpCaseRequest(
-                            val summary: String,
-                            val description: String,
+                            summary: String,
+                            description: String,
                             var group: String,
                             var project: String,
-                            val request: Request,
-                            val assert: Map[String, Any],
-                            val env: String = StringUtils.EMPTY,
-                            val labels: Seq[LabelRef] = Nil,
-                            val generator: RequestGenerator = RequestGenerator(),
-                            val exports: Seq[VariablesExportItem] = Nil,
+                            request: Request,
+                            assert: Map[String, Any],
+                            env: String = StringUtils.EMPTY,
+                            labels: Seq[LabelRef] = Nil,
+                            inScn: Seq[DocRef] = Nil,
+                            ref: String = null,
+                            generator: RequestGenerator = RequestGenerator(),
+                            exports: Seq[VariablesExportItem] = Nil,
                             var creator: String = null,
                             var createdAt: String = null,
                             var updatedAt: String = null,
@@ -42,6 +44,14 @@ case class HttpCaseRequest(
     if (null != labels) {
       m += (FieldKeys.FIELD_LABELS -> JacksonSupport.mapper.convertValue(labels, classOf[java.util.List[Map[String, Any]]]))
       addScriptUpdateItem(sb, FieldKeys.FIELD_LABELS)
+    }
+    if (null != inScn) {
+      m += (FieldKeys.FIELD_IN_SCN -> JacksonSupport.mapper.convertValue(inScn, classOf[java.util.List[Map[String, Any]]]))
+      addScriptUpdateItem(sb, FieldKeys.FIELD_IN_SCN)
+    }
+    if (null != ref) {
+      m += (FieldKeys.FIELD_REF -> ref)
+      addScriptUpdateItem(sb, FieldKeys.FIELD_REF)
     }
     if (null != assert) {
       m += (FieldKeys.FIELD_ASSERT -> assert)
@@ -73,6 +83,10 @@ object HttpCaseRequest extends IndexSetting {
       KeywordField(name = FieldKeys.FIELD_GROUP),
       KeywordField(name = FieldKeys.FIELD_PROJECT),
       KeywordField(name = FieldKeys.FIELD_ENV),
+      NestedField(name = FieldKeys.FIELD_IN_SCN, fields = Seq(
+        KeywordField(name = FieldKeys.FIELD_ID),
+      )),
+      KeywordField(name = FieldKeys.FIELD_REF),
       NestedField(name = FieldKeys.FIELD_LABELS, fields = Seq(
         KeywordField(name = FieldKeys.FIELD_NAME),
       )),

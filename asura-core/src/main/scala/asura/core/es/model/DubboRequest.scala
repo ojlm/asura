@@ -12,16 +12,18 @@ import scala.collection.mutable
 import scala.collection.mutable.StringBuilder
 
 case class DubboRequest(
-                         val summary: String,
-                         val description: String,
-                         val group: String,
-                         val project: String,
-                         val request: DubboRequestBody,
-                         val assert: Map[String, Any],
-                         val env: String = StringUtils.EMPTY,
-                         val labels: Seq[LabelRef] = Nil,
-                         val generator: RequestGenerator = RequestGenerator(),
-                         val exports: Seq[VariablesExportItem] = Nil,
+                         summary: String,
+                         description: String,
+                         group: String,
+                         project: String,
+                         request: DubboRequestBody,
+                         assert: Map[String, Any],
+                         env: String = StringUtils.EMPTY,
+                         labels: Seq[LabelRef] = Nil,
+                         inScn: Seq[DocRef] = Nil,
+                         ref: String = null,
+                         generator: RequestGenerator = RequestGenerator(),
+                         exports: Seq[VariablesExportItem] = Nil,
                          var creator: String = null,
                          var createdAt: String = null,
                          var updatedAt: String = null,
@@ -46,6 +48,14 @@ case class DubboRequest(
     if (null != labels) {
       m += (FieldKeys.FIELD_LABELS -> JacksonSupport.mapper.convertValue(labels, classOf[java.util.List[Map[String, Any]]]))
       addScriptUpdateItem(sb, FieldKeys.FIELD_LABELS)
+    }
+    if (null != inScn) {
+      m += (FieldKeys.FIELD_IN_SCN -> JacksonSupport.mapper.convertValue(inScn, classOf[java.util.List[Map[String, Any]]]))
+      addScriptUpdateItem(sb, FieldKeys.FIELD_IN_SCN)
+    }
+    if (null != ref) {
+      m += (FieldKeys.FIELD_REF -> ref)
+      addScriptUpdateItem(sb, FieldKeys.FIELD_REF)
     }
     if (null != exports) {
       m += (FieldKeys.FIELD_EXPORTS -> JacksonSupport.mapper.convertValue(exports, classOf[java.util.List[Map[String, Any]]]))

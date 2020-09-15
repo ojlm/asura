@@ -1,11 +1,11 @@
 package asura.core.es.model
 
 case class Label(
-                  val owner: String,
-                  val name: String,
-                  val description: String,
-                  val value: String,
-                  val `type`: String
+                  owner: String,
+                  name: String,
+                  description: String,
+                  value: String,
+                  `type`: String
                 ) {
 
 }
@@ -13,7 +13,7 @@ case class Label(
 object Label {
 
   case class LabelRef(
-                       val name: String
+                       name: String
                      ) {
   }
 
