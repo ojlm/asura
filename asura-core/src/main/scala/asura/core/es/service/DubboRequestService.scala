@@ -137,8 +137,11 @@ object DubboRequestService extends CommonService with BaseAggregationService {
     }
   }
 
-  def query(q: QueryDubboRequest): Future[Map[String, Any]] = {
+  def query(q: QueryDubboRequest, excludeInScn: Boolean = true): Future[Map[String, Any]] = {
     val esQueries = ArrayBuffer[Query]()
+    if (excludeInScn) {
+      esQueries += boolQuery().not(existsQuery(FieldKeys.FIELD_IN_SCN))
+    }
     var sortFields = Seq(FieldSort(FieldKeys.FIELD_CREATED_AT).desc())
     if (StringUtils.isNotEmpty(q.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, q.group)
     if (StringUtils.isNotEmpty(q.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, q.project)
