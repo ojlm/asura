@@ -255,6 +255,11 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
         esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
         sortFields = Nil
       }
+      if (query.isCloned) {
+        esQueries += existsQuery(FieldKeys.FIELD_COPY_FROM)
+      } else {
+        esQueries += boolQuery().not(existsQuery(FieldKeys.FIELD_COPY_FROM))
+      }
       if (StringUtils.isNotEmpty(query.host)) esQueries += termQuery(FieldKeys.FIELD_OBJECT_REQUEST_HOST, query.host)
       if (StringUtils.isNotEmpty(query.path)) esQueries += wildcardQuery(FieldKeys.FIELD_OBJECT_REQUEST_URLPATH, s"${query.path}*")
       if (null != query.methods && query.methods.nonEmpty) esQueries += termsQuery(FieldKeys.FIELD_OBJECT_REQUEST_METHOD, query.methods)
