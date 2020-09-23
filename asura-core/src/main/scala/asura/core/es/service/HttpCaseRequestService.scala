@@ -38,7 +38,7 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
     FieldKeys.FIELD_OBJECT_REQUEST_METHOD,
   )
   val queryFields = basicFields ++ Seq(
-    FieldKeys.FIELD_EXPORTS, FieldKeys.FIELD_REF
+    FieldKeys.FIELD_EXPORTS, FieldKeys.FIELD_COPY_FROM
   )
 
   def index(cs: HttpCaseRequest): Future[IndexDocResponse] = {
@@ -218,7 +218,7 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
   /**
    * return Map("total" -> total , "list" -> list), used by api action
    */
-  def queryCase(query: QueryCase, excludeInScn: Boolean = true): Future[Map[String, Any]] = {
+  def queryCase(query: QueryCase): Future[Map[String, Any]] = {
     if (null != query.ids && query.ids.nonEmpty) {
       getByIds(query.ids, true).flatMap(res => {
         if (res.isSuccess) {
@@ -249,9 +249,6 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
     } else {
       var sortFields = Seq(FieldSort(FieldKeys.FIELD_CREATED_AT).desc())
       val esQueries = ArrayBuffer[Query]()
-      if (excludeInScn) {
-        esQueries += boolQuery().not(existsQuery(FieldKeys.FIELD_IN_SCN))
-      }
       if (StringUtils.isNotEmpty(query.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, query.group)
       if (StringUtils.isNotEmpty(query.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, query.project)
       if (StringUtils.isNotEmpty(query.text)) {

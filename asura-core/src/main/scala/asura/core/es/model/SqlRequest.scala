@@ -18,8 +18,7 @@ case class SqlRequest(
                        assert: Map[String, Any],
                        env: String = StringUtils.EMPTY,
                        labels: Seq[LabelRef] = Nil,
-                       inScn: Seq[DocRef] = Nil,
-                       ref: String = null,
+                       var copyFrom: String = null,
                        generator: RequestGenerator = RequestGenerator(),
                        exports: Seq[VariablesExportItem] = Nil,
                        var creator: String = null,
@@ -47,13 +46,9 @@ case class SqlRequest(
       m += (FieldKeys.FIELD_LABELS -> JacksonSupport.mapper.convertValue(labels, classOf[java.util.List[Map[String, Any]]]))
       addScriptUpdateItem(sb, FieldKeys.FIELD_LABELS)
     }
-    if (null != inScn) {
-      m += (FieldKeys.FIELD_IN_SCN -> JacksonSupport.mapper.convertValue(inScn, classOf[java.util.List[Map[String, Any]]]))
-      addScriptUpdateItem(sb, FieldKeys.FIELD_IN_SCN)
-    }
-    if (null != ref) {
-      m += (FieldKeys.FIELD_REF -> ref)
-      addScriptUpdateItem(sb, FieldKeys.FIELD_REF)
+    if (null != copyFrom) {
+      m += (FieldKeys.FIELD_COPY_FROM -> copyFrom)
+      addScriptUpdateItem(sb, FieldKeys.FIELD_COPY_FROM)
     }
     if (null != exports) {
       m += (FieldKeys.FIELD_EXPORTS -> JacksonSupport.mapper.convertValue(exports, classOf[java.util.List[Map[String, Any]]]))
@@ -92,6 +87,7 @@ object SqlRequest extends IndexSetting {
       NestedField(name = FieldKeys.FIELD_LABELS, fields = Seq(
         KeywordField(name = FieldKeys.FIELD_NAME),
       )),
+      KeywordField(name = FieldKeys.FIELD_COPY_FROM),
       ObjectField(name = FieldKeys.FIELD_GENERATOR, fields = Seq(
         TextField(name = FieldKeys.FIELD_SCRIPT, index = Option("false")),
         NestedField(name = FieldKeys.FIELD_LIST, dynamic = Some("false")),

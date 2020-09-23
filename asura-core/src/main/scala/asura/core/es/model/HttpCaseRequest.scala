@@ -20,8 +20,7 @@ case class HttpCaseRequest(
                             assert: Map[String, Any],
                             env: String = StringUtils.EMPTY,
                             labels: Seq[LabelRef] = Nil,
-                            inScn: Seq[DocRef] = Nil,
-                            ref: String = null,
+                            var copyFrom: String = null,
                             generator: RequestGenerator = RequestGenerator(),
                             exports: Seq[VariablesExportItem] = Nil,
                             var creator: String = null,
@@ -45,13 +44,9 @@ case class HttpCaseRequest(
       m += (FieldKeys.FIELD_LABELS -> JacksonSupport.mapper.convertValue(labels, classOf[java.util.List[Map[String, Any]]]))
       addScriptUpdateItem(sb, FieldKeys.FIELD_LABELS)
     }
-    if (null != inScn) {
-      m += (FieldKeys.FIELD_IN_SCN -> JacksonSupport.mapper.convertValue(inScn, classOf[java.util.List[Map[String, Any]]]))
-      addScriptUpdateItem(sb, FieldKeys.FIELD_IN_SCN)
-    }
-    if (null != ref) {
-      m += (FieldKeys.FIELD_REF -> ref)
-      addScriptUpdateItem(sb, FieldKeys.FIELD_REF)
+    if (null != copyFrom) {
+      m += (FieldKeys.FIELD_COPY_FROM -> copyFrom)
+      addScriptUpdateItem(sb, FieldKeys.FIELD_COPY_FROM)
     }
     if (null != assert) {
       m += (FieldKeys.FIELD_ASSERT -> assert)
@@ -83,10 +78,7 @@ object HttpCaseRequest extends IndexSetting {
       KeywordField(name = FieldKeys.FIELD_GROUP),
       KeywordField(name = FieldKeys.FIELD_PROJECT),
       KeywordField(name = FieldKeys.FIELD_ENV),
-      NestedField(name = FieldKeys.FIELD_IN_SCN, fields = Seq(
-        KeywordField(name = FieldKeys.FIELD_ID),
-      )),
-      KeywordField(name = FieldKeys.FIELD_REF),
+      KeywordField(name = FieldKeys.FIELD_COPY_FROM),
       NestedField(name = FieldKeys.FIELD_LABELS, fields = Seq(
         KeywordField(name = FieldKeys.FIELD_NAME),
       )),
