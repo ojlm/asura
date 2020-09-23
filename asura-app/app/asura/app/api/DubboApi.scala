@@ -4,7 +4,6 @@ import akka.actor.ActorSystem
 import akka.pattern.ask
 import akka.util.Timeout
 import asura.app.AppErrorMessages
-import asura.core.ErrorMessages
 import asura.app.api.model.TestDubbo
 import asura.common.model.ApiResError
 import asura.common.util.StringUtils
@@ -12,11 +11,11 @@ import asura.core.dubbo.DubboRunner
 import asura.core.es.EsResponse
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, DubboRequest, ScenarioStep}
-import asura.core.es.service.{DubboRequestService, JobService, ScenarioService}
+import asura.core.es.service.{DubboRequestService, ScenarioService}
 import asura.core.model.QueryDubboRequest
 import asura.core.runtime.RuntimeContext
 import asura.core.util.{JacksonSupport, JsonPathUtils}
-import asura.core.{CoreConfig, RunnerActors}
+import asura.core.{CoreConfig, ErrorMessages, RunnerActors}
 import asura.dubbo.actor.GenericServiceInvokerActor.{GetInterfaceMethodParams, GetInterfacesMessage, GetProvidersMessage}
 import asura.play.api.BaseApi.OkApiRes
 import javax.inject.{Inject, Singleton}
@@ -24,7 +23,6 @@ import org.pac4j.play.scala.SecurityComponents
 import play.api.Configuration
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.ExecutionContext
 
 @Singleton
 class DubboApi @Inject()(
@@ -69,6 +67,14 @@ class DubboApi @Inject()(
     } else {
       error.toFutureFail
     }
+  }
+
+  def cloneRequest(group: String, project: String, id: String) = Action.async { implicit req =>
+    DubboRequestService.getRequestById(id).flatMap(dubboRequest => {
+      dubboRequest.copyFrom = id
+      dubboRequest.fillCommonFields(getProfileId())
+      DubboRequestService.index(dubboRequest)
+    }).toOkResult
   }
 
   def getById(id: String) = Action.async { implicit req =>

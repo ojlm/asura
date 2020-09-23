@@ -14,3 +14,4 @@ POST          /batch/transfer                         asura.app.api.HttpCaseApi.
 POST          /:group/:project/batch/delete           asura.app.api.HttpCaseApi.batchDelete(group, project, preview: Option[Boolean])
 POST          /:group/:project/openapi/preview        asura.app.api.HttpCaseApi.openApiPreview(group, project)
 PUT           /:group/:project/openapi/import         asura.app.api.HttpCaseApi.openApiImport(group, project)
+PUT           /:group/:project/clone/:id              asura.app.api.HttpCaseApi.cloneRequest(group, project, id)

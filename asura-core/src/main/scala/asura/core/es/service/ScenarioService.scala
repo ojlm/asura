@@ -1,7 +1,7 @@
 package asura.core.es.service
 
 import asura.common.exceptions.ErrorMessages.ErrorMessage
-import asura.common.util.{JsonUtils, StringUtils}
+import asura.common.util.{DateUtils, JsonUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.model._
@@ -11,6 +11,7 @@ import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.ElasticDsl.{bulk, delete, indexInto, _}
 import com.sksamuel.elastic4s.requests.common.RefreshPolicy
+import com.sksamuel.elastic4s.requests.indexes.IndexRequest
 import com.sksamuel.elastic4s.requests.searches.queries.{NestedQuery, Query}
 import com.sksamuel.elastic4s.requests.searches.sort.FieldSort
 
@@ -57,6 +58,77 @@ object ScenarioService extends CommonService {
     EsClient.esClient.execute {
       search(Scenario.Index).query(idsQuery(id)).size(1).sourceExclude(defaultExcludeFields)
     }
+  }
+
+  def copyById(id: String, creator: String) = {
+    getScenarioById(id).flatMap(scenario => {
+      val httpSeq = ArrayBuffer[String]()
+      val dubboSeq = ArrayBuffer[String]()
+      val sqlSeq = ArrayBuffer[String]()
+      scenario.steps.foreach(step => {
+        step.`type` match {
+          case ScenarioStep.TYPE_HTTP => httpSeq += step.id
+          case ScenarioStep.TYPE_DUBBO => dubboSeq += step.id
+          case ScenarioStep.TYPE_SQL => sqlSeq += step.id
+          case _ =>
+        }
+      })
+      val res = for {
+        cs <- HttpCaseRequestService.getByIdsAsMap(httpSeq.toSeq)
+        dubbo <- DubboRequestService.getByIdsAsMap(dubboSeq.toSeq)
+        sql <- SqlRequestService.getByIdsAsMap(sqlSeq.toSeq)
+      } yield (cs, dubbo, sql)
+      val idxMap = mutable.HashMap[Int, Int]()
+      res.flatMap(triple => {
+        val requests = ArrayBuffer[IndexRequest]()
+        val now = DateUtils.nowDateTime
+        for (i <- 0.until(scenario.steps.length)) {
+          val step = scenario.steps(i)
+          step.`type` match {
+            case ScenarioStep.TYPE_HTTP =>
+              val doc = triple._1(step.id)
+              doc.fillCommonFields(creator, now)
+              doc.copyFrom = step.id
+              requests += indexInto(HttpCaseRequest.Index).doc(doc)
+              idxMap(i) = requests.length - 1
+            case ScenarioStep.TYPE_DUBBO =>
+              val doc = triple._2(step.id)
+              doc.fillCommonFields(creator, now)
+              doc.copyFrom = step.id
+              requests += indexInto(DubboRequest.Index).doc(doc)
+              idxMap(i) = requests.length - 1
+            case ScenarioStep.TYPE_SQL =>
+              val doc = triple._3(step.id)
+              doc.fillCommonFields(creator, now)
+              doc.copyFrom = step.id
+              requests += indexInto(SqlRequest.Index).doc(doc)
+              idxMap(i) = requests.length - 1
+            case _ =>
+          }
+        }
+        EsClient.esClient.execute {
+          bulk(requests).refresh(RefreshPolicy.WAIT_FOR)
+        }.flatMap(response => {
+          if (response.isSuccess) {
+            for (i <- 0.until(scenario.steps.length)) {
+              val step = scenario.steps(i)
+              step.`type` match {
+                case ScenarioStep.TYPE_HTTP | ScenarioStep.TYPE_DUBBO | ScenarioStep.TYPE_SQL =>
+                  val bulkItem = response.result.items(idxMap(i))
+                  step.id = bulkItem.id
+                case _ =>
+              }
+            }
+            scenario.fillCommonFields(creator, now)
+            EsClient.esClient.execute {
+              indexInto(Scenario.Index).doc(scenario).refresh(RefreshPolicy.WAIT_FOR)
+            }.map(toIndexDocResponse(_))
+          } else {
+            throw ErrorMessages.error_EsRequestFail(response).toException
+          }
+        })
+      })
+    })
   }
 
   def getScenarioById(id: String): Future[Scenario] = {

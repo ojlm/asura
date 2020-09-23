@@ -5,7 +5,7 @@ import asura.core.es.model.ScenarioStep.StepData
 import com.fasterxml.jackson.annotation.JsonIgnore
 
 case class ScenarioStep(
-                         id: String,
+                         var id: String,
                          `type`: String,
                          enabled: Boolean = true,
                          data: StepData = null,

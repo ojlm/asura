@@ -29,10 +29,7 @@ class ScenarioApi @Inject()(
   }
 
   def copyById(id: String) = Action.async { implicit req =>
-    ScenarioService.getScenarioById(id).flatMap(scenario => {
-      scenario.fillCommonFields(getProfileId())
-      ScenarioService.index(scenario)
-    }).toOkResult
+    ScenarioService.copyById(id, getProfileId()).toOkResult
   }
 
   def delete(id: String, preview: Option[Boolean]) = Action.async { implicit req =>
