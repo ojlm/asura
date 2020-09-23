@@ -7,4 +7,6 @@ case class QueryDubboRequest(
                               interface: String,
                               method: String,
                               hasCreators: Boolean = false,
-                            ) extends QueryPage
+                            ) extends QueryPage {
+  var isCloned = false
+}

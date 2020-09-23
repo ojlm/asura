@@ -9,4 +9,6 @@ case class QuerySqlRequest(
                             text: String,
                             sql: String,
                             hasCreators: Boolean = false,
-                          ) extends QueryPage
+                          ) extends QueryPage {
+  var isCloned = false
+}

@@ -150,6 +150,11 @@ object SqlRequestService extends CommonService with BaseAggregationService {
     if (StringUtils.isNotEmpty(q.host)) esQueries += termQuery(FieldKeys.FIELD_OBJECT_REQUEST_HOST, q.host)
     if (StringUtils.isNotEmpty(q.database)) esQueries += termQuery(FieldKeys.FIELD_OBJECT_REQUEST_DATABASE, q.database)
     if (StringUtils.isNotEmpty(q.table)) esQueries += termQuery(FieldKeys.FIELD_OBJECT_REQUEST_TABLE, q.table)
+    if (q.isCloned) {
+      esQueries += existsQuery(FieldKeys.FIELD_COPY_FROM)
+    } else {
+      esQueries += boolQuery().not(existsQuery(FieldKeys.FIELD_COPY_FROM))
+    }
     if (StringUtils.isNotEmpty(q.text)) {
       esQueries += matchQuery(FieldKeys.FIELD__TEXT, q.text)
       sortFields = Nil

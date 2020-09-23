@@ -142,6 +142,11 @@ object DubboRequestService extends CommonService with BaseAggregationService {
     var sortFields = Seq(FieldSort(FieldKeys.FIELD_CREATED_AT).desc())
     if (StringUtils.isNotEmpty(q.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, q.group)
     if (StringUtils.isNotEmpty(q.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, q.project)
+    if (q.isCloned) {
+      esQueries += existsQuery(FieldKeys.FIELD_COPY_FROM)
+    } else {
+      esQueries += boolQuery().not(existsQuery(FieldKeys.FIELD_COPY_FROM))
+    }
     if (StringUtils.isNotEmpty(q.text)) {
       esQueries += matchQuery(FieldKeys.FIELD__TEXT, q.text)
       sortFields = Nil

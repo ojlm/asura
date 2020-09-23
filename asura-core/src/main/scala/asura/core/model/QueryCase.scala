@@ -10,4 +10,6 @@ case class QueryCase(
                       ids: Seq[String],
                       labels: Seq[String],
                       hasCreators: Boolean = false,
-                    ) extends QueryPage
+                    ) extends QueryPage {
+  var isCloned = false
+}
