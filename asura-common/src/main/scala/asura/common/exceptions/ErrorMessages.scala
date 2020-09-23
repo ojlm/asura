@@ -18,7 +18,7 @@ trait ErrorMessages {
 
 object ErrorMessages {
 
-  case class ErrorMessage(val errMsg: String, val t: Throwable = null)(_name: String) {
+  case class ErrorMessage(errMsg: String, t: Throwable = null)(_name: String) {
 
     def toException: ErrorMessageException = {
       ErrorMessageException(this)

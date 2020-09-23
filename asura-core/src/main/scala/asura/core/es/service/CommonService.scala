@@ -28,7 +28,7 @@ trait CommonService {
     if (response.isSuccess) {
       IndexDocResponse(response.result.id)
     } else {
-      throw new OperateDocFailException(response.error.reason)
+      throw OperateDocFailException(response.error.reason)
     }
   }
 
@@ -36,7 +36,7 @@ trait CommonService {
     if (response.isSuccess) {
       BulkDocResponse(response.result.items.length)
     } else {
-      throw new OperateDocFailException(response.error.reason)
+      throw OperateDocFailException(response.error.reason)
     }
   }
 
@@ -44,7 +44,7 @@ trait CommonService {
     if (response.isSuccess) {
       DeleteDocResponse()
     } else {
-      throw new OperateDocFailException(response.error.reason)
+      throw OperateDocFailException(response.error.reason)
     }
   }
 
@@ -52,7 +52,7 @@ trait CommonService {
     if (response.isSuccess) {
       DeleteDocResponse()
     } else {
-      throw new OperateDocFailException(response.error.reason)
+      throw OperateDocFailException(response.error.reason)
     }
   }
 
@@ -73,7 +73,7 @@ trait CommonService {
     if (response.isSuccess) {
       UpdateDocResponse(id = response.result.id, result = response.result.result)
     } else {
-      throw new OperateDocFailException(response.error.reason)
+      throw OperateDocFailException(response.error.reason)
     }
   }
 
@@ -81,7 +81,7 @@ trait CommonService {
     if (response.isSuccess) {
       response.result
     } else {
-      throw new OperateDocFailException(response.error.reason)
+      throw OperateDocFailException(response.error.reason)
     }
   }
 
@@ -90,7 +90,7 @@ trait CommonService {
       val result = response.result
       DeleteByQueryRes(result.total, result.deleted, result.batches)
     } else {
-      throw new OperateDocFailException(response.error.reason)
+      throw OperateDocFailException(response.error.reason)
     }
   }
 

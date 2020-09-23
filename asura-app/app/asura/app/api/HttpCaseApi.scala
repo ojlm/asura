@@ -33,6 +33,14 @@ class HttpCaseApi @Inject()(implicit system: ActorSystem,
 
   val activityActor = system.actorOf(ActivitySaveActor.props())
 
+  def cloneRequest(group: String, project: String, id: String) = Action.async { implicit req =>
+    HttpCaseRequestService.getRequestById(id).flatMap(httpRequest => {
+      httpRequest.copyFrom = id
+      httpRequest.fillCommonFields(getProfileId())
+      HttpCaseRequestService.index(httpRequest)
+    }).toOkResult
+  }
+
   def getById(id: String) = Action.async { implicit req =>
     HttpCaseRequestService.getById(id).flatMap(response => {
       withSingleUserProfile(id, response)
@@ -44,20 +52,20 @@ class HttpCaseApi @Inject()(implicit system: ActorSystem,
   }
 
   def put() = Action(parse.byteString).async { implicit req =>
-    val cs = req.bodyAs(classOf[HttpCaseRequest])
+    val httpRequest = req.bodyAs(classOf[HttpCaseRequest])
     val user = getProfileId()
-    cs.fillCommonFields(user)
-    HttpCaseRequestService.index(cs).map(res => {
-      activityActor ! Activity(cs.group, cs.project, user, Activity.TYPE_NEW_CASE, res.id)
+    httpRequest.fillCommonFields(user)
+    HttpCaseRequestService.index(httpRequest).map(res => {
+      activityActor ! Activity(httpRequest.group, httpRequest.project, user, Activity.TYPE_NEW_CASE, res.id)
       toActionResultFromAny(res)
     })
   }
 
   def update(id: String) = Action(parse.byteString).async { implicit req =>
-    val cs = req.bodyAs(classOf[HttpCaseRequest])
+    val httpRequest = req.bodyAs(classOf[HttpCaseRequest])
     val user = getProfileId()
-    activityActor ! Activity(cs.group, cs.project, user, Activity.TYPE_UPDATE_CASE, id)
-    HttpCaseRequestService.updateCs(id, cs).toOkResult
+    activityActor ! Activity(httpRequest.group, httpRequest.project, user, Activity.TYPE_UPDATE_CASE, id)
+    HttpCaseRequestService.updateCs(id, httpRequest).toOkResult
   }
 
   def query() = Action(parse.byteString).async { implicit req =>

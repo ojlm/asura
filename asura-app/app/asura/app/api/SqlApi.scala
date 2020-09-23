@@ -5,10 +5,11 @@ import asura.app.AppErrorMessages
 import asura.app.api.model.TestSql
 import asura.common.model.ApiResError
 import asura.common.util.StringUtils
+import asura.core.ErrorMessages
 import asura.core.es.EsResponse
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, ScenarioStep, SqlRequest}
-import asura.core.es.service.{DubboRequestService, JobService, ScenarioService, SqlRequestService}
+import asura.core.es.service.{ScenarioService, SqlRequestService}
 import asura.core.model.QuerySqlRequest
 import asura.core.runtime.RuntimeContext
 import asura.core.sql.SqlRunner
@@ -17,10 +18,8 @@ import asura.play.api.BaseApi.OkApiRes
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 import play.api.Configuration
-import asura.core.ErrorMessages
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.ExecutionContext
 
 @Singleton
 class SqlApi @Inject()(
@@ -48,6 +47,14 @@ class SqlApi @Inject()(
     } else {
       error.toFutureFail
     }
+  }
+
+  def cloneRequest(group: String, project: String, id: String) = Action.async { implicit req =>
+    SqlRequestService.getRequestById(id).flatMap(sqlRequest => {
+      sqlRequest.copyFrom = id
+      sqlRequest.fillCommonFields(getProfileId())
+      SqlRequestService.index(sqlRequest)
+    }).toOkResult
   }
 
   def getById(id: String) = Action.async { implicit req =>
