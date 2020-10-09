@@ -5,7 +5,7 @@ import sbt._
 scalacOptions in ThisBuild ++= Seq("-feature", "-deprecation", "-language:postfixOps", "-language:higherKinds", "-language:implicitConversions")
 ThisBuild / organization := "cc.akkaha"
 ThisBuild / version := "0.8.0"
-ThisBuild / scalaVersion := "2.13.2"
+ThisBuild / scalaVersion := "2.13.3"
 ThisBuild / maintainer := "ngxcorpio@gmail.com"
 
 lazy val root = Project("asura", file("."))
