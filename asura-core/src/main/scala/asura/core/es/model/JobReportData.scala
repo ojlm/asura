@@ -19,7 +19,8 @@ case class JobReportData(
                           var dayIndexSuffix: String = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy.MM.dd")),
                           var cases: Seq[JobReportStepItemData] = Nil,
                           var scenarios: Seq[ScenarioReportItemData] = Nil,
-                          var ext: Map[String, Any] = Map.empty
+                          var ext: Map[String, Any] = Map.empty,
+                          var renderedDescription: String = null
                         )
 
 object JobReportData {
@@ -114,6 +115,8 @@ object JobReportData {
                                      var title: String,
                                      var steps: collection.Seq[JobReportStepItemData] = Nil,
                                      var renderedExportDesc: Map[Int, String] = null,
-                                   ) extends BasicReportItemData
+                                   ) extends BasicReportItemData {
+    var renderedDescription: String = null
+  }
 
 }

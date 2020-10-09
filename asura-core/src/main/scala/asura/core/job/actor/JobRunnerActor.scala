@@ -34,7 +34,6 @@ class JobRunnerActor(var wsActor: ActorRef, controller: ControllerOptions) exten
   override def receive: Receive = {
     case execDesc: JobExecDesc =>
       this.execDesc = execDesc
-      this.execDesc.report.data.scenarios = scenarioReports.toSeq
       this.resultReceiver = sender()
       if (null != execDesc.overrideRuntime) this.runtimeContext = execDesc.overrideRuntime
       this.runtimeContext.options = execDesc.options
@@ -61,6 +60,8 @@ class JobRunnerActor(var wsActor: ActorRef, controller: ControllerOptions) exten
           runScenarioStep(idx) pipeTo self
         }
       } else {
+        this.execDesc.report.data.scenarios = scenarioReports.toSeq
+        this.execDesc.report.data.renderedDescription = runtimeContext.renderTemplateAsString(this.execDesc.job.description)
         this.resultReceiver ! this.execDesc
         self ! PoisonPill
       }
@@ -169,6 +170,7 @@ class JobRunnerActor(var wsActor: ActorRef, controller: ControllerOptions) exten
               scenario.exports,
               scenario.failFast,
             )
+            message.description = scenario.description
             messages += ((step, message))
           } else {
             messages += ((step, null))

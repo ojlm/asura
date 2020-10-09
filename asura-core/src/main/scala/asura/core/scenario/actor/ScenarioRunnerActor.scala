@@ -30,6 +30,7 @@ class ScenarioRunnerActor(scenarioId: String) extends ScenarioStepBasicActor {
   var runtimeContext: RuntimeContext = null
   var wsActor: ActorRef = null
 
+  var description: String = null
   var steps: Seq[ScenarioStep] = Nil
   var stepsData: ScenarioTestData = null
   val stepsReportItems = ArrayBuffer[JobReportStepItemData]()
@@ -50,14 +51,15 @@ class ScenarioRunnerActor(scenarioId: String) extends ScenarioStepBasicActor {
   }
 
   private def doTheTest(): Receive = {
-    case ScenarioTestWebMessage(summary, steps, options, imports, exports, failFast, controller) =>
-      this.scenarioReportItem.title = summary
-      this.runtimeContext = RuntimeContext(options = options)
-      this.controller = controller
-      this.exports = exports
-      this.steps = steps
-      this.failFast = failFast
-      this.runtimeContext.evaluateImportsVariables(imports)
+    case msg: ScenarioTestWebMessage =>
+      this.description = msg.description
+      this.scenarioReportItem.title = msg.summary
+      this.runtimeContext = RuntimeContext(options = msg.options)
+      this.controller = msg.controller
+      this.exports = msg.exports
+      this.steps = msg.steps
+      this.failFast = msg.failFast
+      this.runtimeContext.evaluateImportsVariables(msg.imports)
         .flatMap(_ => getScenarioTestData(steps))
         .map(stepsData => {
           this.stepsData = stepsData
@@ -68,15 +70,16 @@ class ScenarioRunnerActor(scenarioId: String) extends ScenarioStepBasicActor {
             self ! 0
           }
         })
-    case ScenarioTestJobMessage(summary, steps, storeHelper, runtimeContext, imports, exports, failFast) =>
+    case msg: ScenarioTestJobMessage =>
       this.jobActor = sender()
-      this.scenarioReportItem.title = summary
-      this.runtimeContext = runtimeContext
-      this.steps = steps
-      this.storeHelper = storeHelper
-      this.exports = exports
-      this.failFast = failFast
-      this.runtimeContext.evaluateImportsVariables(imports)
+      this.description = msg.description
+      this.scenarioReportItem.title = msg.summary
+      this.runtimeContext = msg.runtimeContext
+      this.steps = msg.steps
+      this.storeHelper = msg.storeHelper
+      this.exports = msg.exports
+      this.failFast = msg.failFast
+      this.runtimeContext.evaluateImportsVariables(msg.imports)
         .flatMap(_ => getScenarioTestData(steps))
         .map(stepsData => {
           this.stepsData = stepsData
@@ -93,6 +96,7 @@ class ScenarioRunnerActor(scenarioId: String) extends ScenarioStepBasicActor {
           executeStep(idx) pipeTo self
         }
       } else {
+        this.scenarioReportItem.renderedDescription = runtimeContext.renderTemplateAsString(this.description)
         if (null != wsActor) {
           val msg = s"[SCN][${this.scenarioReportItem.title}] ${
             if (this.scenarioReportItem.isSuccessful())
@@ -407,7 +411,9 @@ object ScenarioRunnerActor {
                                      exports: Seq[VariablesExportItem],
                                      failFast: Boolean = true,
                                      controller: ControllerOptions = null
-                                   )
+                                   ) {
+    var description: String = null
+  }
 
   // from job
   case class ScenarioTestJobMessage(
@@ -418,7 +424,9 @@ object ScenarioRunnerActor {
                                      imports: Seq[VariablesImportItem],
                                      exports: Seq[VariablesExportItem],
                                      failFast: Boolean = true,
-                                   )
+                                   ) {
+    var description: String = null
+  }
 
   case class ScenarioTestData(
                                http: Map[String, HttpCaseRequest],
