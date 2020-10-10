@@ -3,19 +3,22 @@ import sbt._
 
 object Dependencies {
 
-  val akkaVersion = "2.6.3"
-  val akkaHttpVersion = "10.1.11"
+  val akkaVersion = "2.6.10"
+  val akkaHttpVersion = "10.1.12"
 
   private val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
   private val akkaStream = "com.typesafe.akka" %% "akka-stream" % akkaVersion
+  private val akkaActorTyped = "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion
+  private val akkaSlf4j = "com.typesafe.akka" %% "akka-slf4j" % akkaVersion
+  private val akkaJackson = "com.typesafe.akka" %% "akka-serialization-jackson" % akkaVersion
   private val akkaCluster = "com.typesafe.akka" %% "akka-cluster" % akkaVersion excludeAll (ExclusionRule(organization = "io.netty", name = "netty"))
   private val akkaMetrics = "com.typesafe.akka" %% "akka-cluster-metrics" % akkaVersion excludeAll (ExclusionRule(organization = "io.netty", name = "netty"))
   private val akkaClusterTools = "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion excludeAll (ExclusionRule(organization = "io.netty", name = "netty"))
   private val akkaHttp = "com.typesafe.akka" %% "akka-http" % akkaHttpVersion
   private val akkaHttpXml = "com.typesafe.akka" %% "akka-http-xml" % akkaHttpVersion
   private val config = "com.typesafe" % "config" % "1.4.0"
-  private val jackson = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.11.0"
-  private val guava = "com.google.guava" % "guava" % "23.6-jre"
+  private val jackson = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.11.3"
+  private val guava = "com.google.guava" % "guava" % "29.0-jre"
   private val commonsCodec = "commons-codec" % "commons-codec" % "1.10"
   private val commonsLang3 = "org.apache.commons" % "commons-lang3" % "3.7"
   private val quartz = "org.quartz-scheduler" % "quartz" % "2.3.0" excludeAll(ExclusionRule(organization = "com.mchange", name = "c3p0"), ExclusionRule(organization = "com.mchange", name = "mchange-commons-java"))
@@ -25,7 +28,7 @@ object Dependencies {
   private val jsonPath = "com.jayway.jsonpath" % "json-path" % "2.4.0"
 
   // kafka
-  private val akkaKafka = "com.typesafe.akka" %% "akka-stream-kafka" % "1.0.4"
+  private val akkaKafka = "com.typesafe.akka" %% "akka-stream-kafka" % "2.0.5"
   private val kafkaAvroSerializer = "io.confluent" % "kafka-avro-serializer" % "4.0.0" excludeAll (ExclusionRule(organization = "org.slf4j", name = "*"))
 
   // dubbo, specify javassist and jbossnetty deps because of coursier dep resolve problems
@@ -58,7 +61,7 @@ object Dependencies {
   private val databaseDeps = Seq(mysqlConnector)
   private val testDeps = Seq(akkaTestKit, akkaHttpTestkit) ++ scalaTestDeps
 
-  val commonDependencies = Seq(akkaTestKit, config, akkaActor, jackson) ++ scalaTestDeps ++ loggingDeps
+  val commonDependencies = Seq(akkaTestKit, config, akkaActor, jackson, akkaActorTyped, akkaSlf4j, akkaJackson) ++ scalaTestDeps ++ loggingDeps
   val clusterDependencies = Seq(akkaCluster, akkaMetrics, akkaClusterTools) ++ commonDependencies
   val coreDependencies = Seq(
     commonsLang3, jackson, elastic4s, druid,
