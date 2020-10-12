@@ -1,6 +1,8 @@
 language: scala
 jdk:
-  - openjdk8
+  - oraclejdk11
+scala:
+  - 2.13.3
 sbt_args: -Xmx2048M
 before_script:
   - travis_wait 30 sbt clean
