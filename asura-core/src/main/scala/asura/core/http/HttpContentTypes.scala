@@ -11,7 +11,7 @@ object HttpContentTypes {
 
   def isSupport(contentType: String): Boolean = {
     contentType match {
-      case JSON | X_WWW_FORM_URLENCODED | TEXT_PLAIN => true
+      case JSON | X_WWW_FORM_URLENCODED | TEXT_PLAIN | MULTIPART_FORM_DATA => true
       case _ => false
     }
   }

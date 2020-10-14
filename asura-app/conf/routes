@@ -39,5 +39,6 @@ POST        /api/home                            asura.app.api.HomeApi.query()
 ->          /api/favorite                        favorite.Routes
 ->          /api/count                           count.Routes
 ->          /api/trigger                         trigger.Routes
+->          /api/blob                            blob.Routes
 
 GET         /*file                               asura.app.api.HomeApi.asset(file)

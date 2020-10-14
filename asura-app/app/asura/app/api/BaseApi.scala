@@ -16,6 +16,22 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait BaseApi extends PlayBaseApi {
 
+  @inline
+  def toErrorResult(errorMsg: String) = OkApiRes(ApiResError(msg = errorMsg))
+
+  @inline
+  def toFutureErrorResult(errorMsg: String) = Future.successful(OkApiRes(ApiResError(msg = errorMsg)))
+
+  @inline
+  def toI18nErrorResult(msgKey: String)(implicit request: RequestHeader) = {
+    OkApiRes(ApiResError(msg = getI18nMessage(msgKey)))
+  }
+
+  @inline
+  def toI18nFutureErrorResult(msgKey: String)(implicit request: RequestHeader) = {
+    Future.successful(OkApiRes(ApiResError(msg = getI18nMessage(msgKey))))
+  }
+
   def toActionResultFromEs(response: Response[SearchResponse], hasId: Boolean = true): Result = {
     if (response.isSuccess) {
       OkApiRes(ApiRes(data = EsResponse.toApiData(response.result, hasId)))
