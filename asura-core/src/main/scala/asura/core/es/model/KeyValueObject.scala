@@ -1,10 +1,8 @@
 package asura.core.es.model
 
 case class KeyValueObject(
-                           val key: String,
-                           val value: String,
+                           key: String,
+                           value: String,
                            enabled: Boolean = true,
                            description: String = null,
-                         ) {
-
-}
+                         )

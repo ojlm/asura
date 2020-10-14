@@ -1,0 +1,2 @@
+POST        /upload               asura.app.api.BlobApi.uploadBlob()
+GET         /download/:key        asura.app.api.BlobApi.downloadBlob(key)

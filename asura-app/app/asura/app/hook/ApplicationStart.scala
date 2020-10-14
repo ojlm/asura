@@ -6,6 +6,7 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import asura.app.api.auth.{BasicAuth, Reserved}
 import asura.app.notify.MailNotifier
+import asura.app.store.FileSystemBasedEngine
 import asura.cluster.ClusterManager
 import asura.common.util.{LogUtils, StringUtils}
 import asura.core.CoreConfig.{EsOnlineLogConfig, LinkerdConfig, LinkerdConfigServer}
@@ -15,6 +16,7 @@ import asura.core.es.EsClient
 import asura.core.job.JobCenter
 import asura.core.job.actor.SchedulerActor
 import asura.core.notify.JobNotifyManager
+import asura.core.store.BlobStoreEngines
 import asura.core.{CoreConfig, SecurityConfig}
 import asura.namerd.NamerdConfig
 import com.typesafe.config.{ConfigFactory, ConfigList}
@@ -78,6 +80,9 @@ class ApplicationStart @Inject()(
 
   // add notify
   JobNotifyManager.register(MailNotifier(mailerClient))
+
+  // blobstore
+  BlobStoreEngines.register(FileSystemBasedEngine(configuration))
 
   if (configuration.getOptional[Boolean]("asura.cluster.enabled").getOrElse(false)) {
     val hostnameOpt = configuration.getOptional[String]("asura.cluster.hostname")
