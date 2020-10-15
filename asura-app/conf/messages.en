@@ -51,3 +51,4 @@ error_FileNotExist=File not exist
 error_AccessDenied=Access denied
 error_NonActiveStoreEngine=No active store engine
 error_EmptyBlobStoreDir=File's storage directory is not set
+error_StoreEngineNotAvailable=Store engine({0}) is not available

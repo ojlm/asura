@@ -46,7 +46,7 @@ class BlobApi @Inject()(
 
   private def saveBlob(upFile: MultipartFormData.FilePart[TemporaryFile]) = {
     if (storeEngine.nonEmpty) {
-      storeEngine.get.upload(UploadParams(upFile.filename, upFile.fileSize, upFile.ref.toPath))
+      storeEngine.get.upload(UploadParams(upFile.filename, upFile.fileSize, upFile.contentType, upFile.ref.toPath))
     } else {
       AppErrorMessages.error_NonActiveStoreEngine.toFutureFail
     }

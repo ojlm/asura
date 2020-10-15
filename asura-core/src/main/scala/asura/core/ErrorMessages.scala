@@ -62,4 +62,6 @@ object ErrorMessages extends CommonErrorMessages {
   def error_DuplicateApi(msg: String) = ErrorMessage(s"Duplicate api: $msg")("error_DuplicateApi")
 
   def error_IdsNotFound(ids: Seq[String]) = ErrorMessage(ids.mkString(","))("error_IdsNotFound")
+
+  def error_StoreEngineNotAvailable(msg: String) = ErrorMessage(msg)("error_StoreEngineNotAvailable")
 }
