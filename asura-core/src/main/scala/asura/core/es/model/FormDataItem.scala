@@ -21,8 +21,7 @@ object FormDataItem {
                            key: String,
                            fileName: String,
                            contentLength: Long,
-                           contentDisposition: String = null,
-                           contentType: String = null,
+                           contentType: String,
                          )
 
 }

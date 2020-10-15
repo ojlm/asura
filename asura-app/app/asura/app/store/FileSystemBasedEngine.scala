@@ -27,7 +27,7 @@ case class FileSystemBasedEngine(config: Configuration) extends BlobStoreEngine 
       val toFile = new File(s"${storeDir.get}${File.separator}${key}")
       if (toFile.getCanonicalPath.startsWith(storeDir.get)) {
         Files.move(params.path, toFile.toPath).toFile
-        Future.successful(BlobMetaData(name, key, params.fileName, params.length))
+        Future.successful(BlobMetaData(name, key, params.fileName, params.length, params.contentType.getOrElse(null)))
       } else {
         AppErrorMessages.error_AccessDenied.toFutureFail
       }

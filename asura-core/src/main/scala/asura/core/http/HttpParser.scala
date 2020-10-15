@@ -22,38 +22,40 @@ object HttpParser {
       method = HttpMethods.toAkkaMethod(request.method)
     }
     val uri: Uri = UriUtils.toUri(cs, context)
-    val entity = if (AkkaHttpMethods.GET != method) {
+    val entityFuture = if (AkkaHttpMethods.GET != method) {
       EntityUtils.toEntity(cs, context)
     } else {
-      HttpEntity.Empty
+      Future.successful(HttpEntity.Empty)
     }
-    val notAuthoredRequest = HttpRequest(method = method, uri = uri, headers = headers, entity = entity)
-    metrics.renderRequestEnd()
-    val authUsed: Seq[Authorization] = if (null != context.options && null != context.options.getUsedEnv()) {
-      context.options.getUsedEnv().auth
-    } else {
-      Nil
-    }
-    if (null != authUsed && authUsed.nonEmpty) {
-      metrics.renderAuthBegin()
-      authUsed.foldLeft(Future.successful(notAuthoredRequest))((futureRequest, auth) => {
-        for {
-          initialAuthoredRequest <- futureRequest
-          authoredRequest <- {
-            val operator = AuthManager(auth.`type`)
-            if (operator.nonEmpty) {
-              operator.get.authorize(initialAuthoredRequest, auth)
-            } else {
-              ErrorMessages.error_NotRegisteredAuth(auth.`type`).toFutureFail
+    entityFuture.flatMap(entity => {
+      val notAuthoredRequest = HttpRequest(method = method, uri = uri, headers = headers, entity = entity)
+      metrics.renderRequestEnd()
+      val authUsed: Seq[Authorization] = if (null != context.options && null != context.options.getUsedEnv()) {
+        context.options.getUsedEnv().auth
+      } else {
+        Nil
+      }
+      if (null != authUsed && authUsed.nonEmpty) {
+        metrics.renderAuthBegin()
+        authUsed.foldLeft(Future.successful(notAuthoredRequest))((futureRequest, auth) => {
+          for {
+            initialAuthoredRequest <- futureRequest
+            authoredRequest <- {
+              val operator = AuthManager(auth.`type`)
+              if (operator.nonEmpty) {
+                operator.get.authorize(initialAuthoredRequest, auth)
+              } else {
+                ErrorMessages.error_NotRegisteredAuth(auth.`type`).toFutureFail
+              }
             }
-          }
-        } yield authoredRequest
-      }).map(req => {
-        metrics.renderAuthEnd()
-        req
-      })
-    } else {
-      Future.successful(notAuthoredRequest)
-    }
+          } yield authoredRequest
+        }).map(req => {
+          metrics.renderAuthEnd()
+          req
+        })
+      } else {
+        Future.successful(notAuthoredRequest)
+      }
+    })
   }
 }
