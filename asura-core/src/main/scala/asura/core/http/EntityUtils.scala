@@ -78,7 +78,8 @@ object EntityUtils {
                             HttpEntity(
                               MediaTypes.`application/octet-stream`,
                               downloadParams.length.getOrElse(0), downloadParams.source
-                            )
+                            ),
+                            _additionalDispositionParams = Map("filename" -> metaData.fileName)
                           )
                           parts
                         })
