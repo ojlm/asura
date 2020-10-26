@@ -230,6 +230,7 @@ object SchedulerManager {
     Job(
       summary = jobMeta.summary,
       description = jobMeta.description,
+      comment = jobMeta.comment,
       group = jobMeta.group,
       project = jobMeta.project,
       scheduler = jobMeta.getScheduler(),

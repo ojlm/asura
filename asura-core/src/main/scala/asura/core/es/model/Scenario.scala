@@ -13,6 +13,7 @@ case class Scenario(
                      group: String,
                      project: String,
                      steps: Seq[ScenarioStep],
+                     comment: String = null,
                      failFast: Boolean = true,
                      env: String = StringUtils.EMPTY,
                      labels: Seq[LabelRef] = Nil,
@@ -28,6 +29,9 @@ case class Scenario(
     checkCommFieldsToUpdate(m)
     if (null != steps) {
       m += (FieldKeys.FIELD_STEPS -> steps)
+    }
+    if (null != comment) {
+      m += (FieldKeys.FIELD_COMMENT -> comment)
     }
     if (null != labels) {
       m += (FieldKeys.FIELD_LABELS -> labels)
@@ -52,6 +56,7 @@ object Scenario extends IndexSetting {
     BaseIndex.fieldDefinitions ++ Seq(
       KeywordField(name = FieldKeys.FIELD_GROUP),
       KeywordField(name = FieldKeys.FIELD_PROJECT),
+      TextField(name = FieldKeys.FIELD_COMMENT, copyTo = Seq(FieldKeys.FIELD__TEXT), analysis = EsConfig.IK_ANALYZER),
       NestedField(name = FieldKeys.FIELD_STEPS, fields = Seq(
         KeywordField(name = FieldKeys.FIELD_ID),
         KeywordField(name = FieldKeys.FIELD_TYPE),

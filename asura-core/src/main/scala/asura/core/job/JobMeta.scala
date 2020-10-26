@@ -10,6 +10,7 @@ case class JobMeta(
                     group: String,
                     project: String,
                     summary: String,
+                    comment: String = null,
                     env: String = StringUtils.EMPTY,
                     description: String = StringUtils.EMPTY,
                     scheduler: String = StringUtils.EMPTY, // this field can be null, use method instead
