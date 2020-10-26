@@ -8,16 +8,17 @@ import com.sksamuel.elastic4s.requests.mappings._
 import scala.collection.mutable
 
 case class Job(
-                val summary: String,
-                val description: String,
-                val group: String,
-                val project: String,
-                val scheduler: String,
-                val classAlias: String,
+                summary: String,
+                description: String,
+                group: String,
+                project: String,
+                scheduler: String,
+                classAlias: String,
                 var trigger: Seq[JobTrigger],
-                val jobData: JobData,
-                val env: String = StringUtils.EMPTY,
-                val imports: Seq[VariablesImportItem] = Nil,
+                jobData: JobData,
+                comment: String = null,
+                env: String = StringUtils.EMPTY,
+                imports: Seq[VariablesImportItem] = Nil,
                 var creator: String = null,
                 var createdAt: String = null,
                 var updatedAt: String = null,
@@ -48,6 +49,10 @@ case class Job(
       m += (FieldKeys.FIELD_JOB_DATA -> jobDataToMap())
     } else {
       m += (FieldKeys.FIELD_JOB_DATA -> Map.empty)
+    }
+    if (null != comment) {
+      m += (FieldKeys.FIELD_COMMENT -> comment)
+      addScriptUpdateItem(sb, FieldKeys.FIELD_COMMENT)
     }
     (sb.toString, m.toMap)
   }
@@ -81,6 +86,7 @@ object Job extends IndexSetting {
       KeywordField(name = FieldKeys.FIELD_PROJECT),
       KeywordField(name = FieldKeys.FIELD_SCHEDULER),
       KeywordField(name = FieldKeys.FIELD_CLASS_ALIAS),
+      TextField(name = FieldKeys.FIELD_COMMENT, copyTo = Seq(FieldKeys.FIELD__TEXT), analysis = EsConfig.IK_ANALYZER),
       NestedField(name = FieldKeys.FIELD_TRIGGER, fields = Seq(
         KeywordField(name = FieldKeys.FIELD_NAME),
         KeywordField(name = FieldKeys.FIELD_GROUP),
