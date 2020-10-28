@@ -41,17 +41,17 @@ class HttpCaseApi @Inject()(implicit system: ActorSystem,
     }).toOkResult
   }
 
-  def getById(id: String) = Action.async { implicit req =>
+  def getById(group: String, project: String, id: String) = Action.async { implicit req =>
     HttpCaseRequestService.getById(id).flatMap(response => {
       withSingleUserProfile(id, response)
     })
   }
 
-  def delete(id: String, preview: Option[Boolean]) = Action.async { implicit req =>
+  def delete(group: String, project: String, id: String, preview: Option[Boolean]) = Action.async { implicit req =>
     deleteDocs(preview, Seq(id))
   }
 
-  def put() = Action(parse.byteString).async { implicit req =>
+  def put(group: String, project: String) = Action(parse.byteString).async { implicit req =>
     val httpRequest = req.bodyAs(classOf[HttpCaseRequest])
     val user = getProfileId()
     httpRequest.fillCommonFields(user)
@@ -61,19 +61,19 @@ class HttpCaseApi @Inject()(implicit system: ActorSystem,
     })
   }
 
-  def update(id: String) = Action(parse.byteString).async { implicit req =>
+  def update(group: String, project: String, id: String) = Action(parse.byteString).async { implicit req =>
     val httpRequest = req.bodyAs(classOf[HttpCaseRequest])
     val user = getProfileId()
     activityActor ! Activity(httpRequest.group, httpRequest.project, user, Activity.TYPE_UPDATE_CASE, id)
     HttpCaseRequestService.updateCs(id, httpRequest).toOkResult
   }
 
-  def query() = Action(parse.byteString).async { implicit req =>
+  def query(group: String, project: String) = Action(parse.byteString).async { implicit req =>
     val queryCase = req.bodyAs(classOf[QueryCase])
     HttpCaseRequestService.queryCase(queryCase).toOkResult
   }
 
-  def test() = Action(parse.byteString).async { implicit req =>
+  def test(group: String, project: String) = Action(parse.byteString).async { implicit req =>
     val testCase = req.bodyAs(classOf[TestCaseMessage])
     val cs = testCase.cs
     val user = getProfileId()
@@ -87,11 +87,11 @@ class HttpCaseApi @Inject()(implicit system: ActorSystem,
     HttpRunner.test(testCase.id, cs, RuntimeContext(options = options)).toOkResult
   }
 
-  def getAllAssertions() = Action {
+  def getAllAssertions(group: String, project: String) = Action {
     OkApiRes(ApiRes(data = Assertions.getAll()))
   }
 
-  def searchAfter() = Action(parse.byteString).async { implicit req =>
+  def searchAfter(group: String, project: String) = Action(parse.byteString).async { implicit req =>
     val query = req.bodyAs(classOf[SearchAfterCase])
     if (query.onlyMe) {
       query.creator = getProfileId()
@@ -115,16 +115,16 @@ class HttpCaseApi @Inject()(implicit system: ActorSystem,
     })
   }
 
-  def aggsLabels(label: String) = Action(parse.byteString).async { implicit req =>
+  def aggsLabels(group: String, project: String, label: String) = Action(parse.byteString).async { implicit req =>
     HttpCaseRequestService.aggsLabels(HttpCaseRequest.Index, label).toOkResult
   }
 
-  def batchLabels() = Action(parse.byteString).async { implicit req =>
+  def batchLabels(group: String, project: String) = Action(parse.byteString).async { implicit req =>
     val ops = req.bodyAs(classOf[BatchOperationLabels])
     HttpCaseRequestService.batchUpdateLabels(ops).toOkResult
   }
 
-  def batchTransfer() = Action(parse.byteString).async { implicit req =>
+  def batchTransfer(group: String, project: String) = Action(parse.byteString).async { implicit req =>
     val op = req.bodyAs(classOf[BatchTransfer])
     HttpCaseRequestService.batchTransfer(op).toOkResult
   }
