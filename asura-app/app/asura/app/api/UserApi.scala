@@ -8,6 +8,7 @@ import asura.common.util.StringUtils
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, BaseIndex, UserProfile => EsUserProfile}
 import asura.core.es.service.UserProfileService
+import asura.core.model.QueryUser
 import asura.play.api.BaseApi.OkApiRes
 import javax.inject.{Inject, Singleton}
 import org.pac4j.core.profile.{CommonProfile, ProfileManager}
@@ -96,6 +97,11 @@ class UserApi @Inject()(
 
   def update() = Action(parse.byteString).async { implicit req =>
     val userProfile = req.bodyAs(classOf[EsUserProfile])
-    UserProfileService.updateProfile(userProfile).toOkResult
+    UserProfileService.updateDoc(userProfile).toOkResult
+  }
+
+  def query() = Action(parse.byteString).async { implicit req =>
+    val q = req.bodyAs(classOf[QueryUser])
+    UserProfileService.queryDoc(q).toOkResultByEsList(false)
   }
 }

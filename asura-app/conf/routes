@@ -40,5 +40,6 @@ POST        /api/home                            asura.app.api.HomeApi.query()
 ->          /api/count                           count.Routes
 ->          /api/trigger                         trigger.Routes
 ->          /api/blob                            blob.Routes
+->          /api/permissions                     permissions.Routes
 
 GET         /*file                               asura.app.api.HomeApi.asset(file)

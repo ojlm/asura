@@ -1,0 +1,8 @@
+PUT           /group/:group                              asura.app.api.PermissionsApi.putGroup(group)
+DELETE        /group/:group/:id                          asura.app.api.PermissionsApi.deleteGroup(id, group)
+POST          /group/:group/update/:id                   asura.app.api.PermissionsApi.updateGroup(id, group)
+POST          /group/:group/query                        asura.app.api.PermissionsApi.queryGroup(group)
+PUT           /project/:group/:project                   asura.app.api.PermissionsApi.putProject(group, project)
+DELETE        /project/:group/:project/:id               asura.app.api.PermissionsApi.deleteProject(id,group, project)
+POST          /project/:group/:project/update/:id        asura.app.api.PermissionsApi.updateProject(id, group, project)
+POST          /project/:group/:project/query             asura.app.api.PermissionsApi.queryProject(group, project)

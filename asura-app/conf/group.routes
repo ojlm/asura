@@ -1,30 +1,5 @@
-###
-#  summary: Get a group by id
-#  responses:
-#    '200':
-#      content:
-#        application/json:
-#          schema:
-#            $ref: '#/components/schemas/asura.core.es.model.Group'
-###
 GET           /:id          asura.app.api.GroupApi.getById(id)
 DELETE        /:id          asura.app.api.GroupApi.delete(id)
-
-###
-#  summary: Creates a group.
-#  requestBody:
-#   required: true
-#   content:
-#     application/json:
-#       schema:
-#         $ref: '#/components/schemas/asura.core.es.model.Group'
-#  responses:
-#   '200':
-#     content:
-#        application/json:
-#          schema:
-#            $ref: '#/components/schemas/asura.core.es.model.IndexDocResponse'
-###
 PUT           /             asura.app.api.GroupApi.put()
 POST          /             asura.app.api.GroupApi.update()
 POST          /query        asura.app.api.GroupApi.query()
