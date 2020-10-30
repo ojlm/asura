@@ -4,13 +4,16 @@ import asura.common.exceptions.ErrorMessages.ErrorMessage
 import asura.common.util.{JsonUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.es.model.{DeleteDocResponse, IndexDocResponse, UpdateDocResponse, UserProfile}
+import asura.core.es.model._
 import asura.core.es.{EsClient, EsResponse}
+import asura.core.model.QueryUser
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.ElasticDsl._
 import com.sksamuel.elastic4s.requests.common.RefreshPolicy
+import com.sksamuel.elastic4s.requests.searches.queries.Query
 
 import scala.collection.Iterable
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
 object UserProfileService extends CommonService {
@@ -40,13 +43,29 @@ object UserProfileService extends CommonService {
     }
   }
 
-  def updateProfile(profile: UserProfile): Future[UpdateDocResponse] = {
+  def updateDoc(profile: UserProfile): Future[UpdateDocResponse] = {
     if (null == profile || null == profile.username) {
       ErrorMessages.error_EmptyUsername.toFutureFail
     } else {
       EsClient.esClient.execute {
         update(profile.username).in(UserProfile.Index).doc(profile.toUpdateMap)
       }.map(toUpdateDocResponse(_))
+    }
+  }
+
+  def queryDoc(query: QueryUser) = {
+    val esQueries = ArrayBuffer[Query]()
+    if (StringUtils.isNotEmpty(query.text)) {
+      esQueries += boolQuery().should(
+        wildcardQuery(FieldKeys.FIELD_USERNAME, s"${query.text}*"),
+        wildcardQuery(FieldKeys.FIELD_NICKNAME, s"${query.text}*"),
+      )
+    }
+    EsClient.esClient.execute {
+      search(UserProfile.Index)
+        .query(boolQuery().must(esQueries))
+        .from(query.pageFrom)
+        .size(query.pageSize)
     }
   }
 

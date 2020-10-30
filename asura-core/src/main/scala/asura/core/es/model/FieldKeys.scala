@@ -164,6 +164,7 @@ object FieldKeys {
   val FIELD_TARGET_PROJECT = "targetProject"
   val FIELD_COPY_FROM = "copyFrom"
   val FIELD_COMMENT = "comment"
+  val FIELD_ROLE = "role"
 
   val FIELD_OBJECT_REQUEST_PROTOCOL = "request.protocol"
   val FIELD_OBJECT_REQUEST_HOST = "request.host"
