@@ -6,14 +6,15 @@ import asura.app.api.auth.Reserved
 import asura.common.model.ApiResError
 import asura.common.util.StringUtils
 import asura.core.es.actor.ActivitySaveActor
+import asura.core.es.model.Permissions.Functions
 import asura.core.es.model.{Activity, Group}
-import asura.core.es.service.GroupService
-import asura.core.model.QueryGroup
+import asura.core.es.service.{GroupService, JobService, ProjectService}
+import asura.core.model.{QueryGroup, QueryJob, QueryProject}
+import asura.core.security.PermissionAuthProvider
 import asura.play.api.BaseApi.OkApiRes
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 import play.api.Configuration
-import play.api.mvc.{RequestHeader, Result}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -23,53 +24,67 @@ class GroupApi @Inject()(
                           val exec: ExecutionContext,
                           val configuration: Configuration,
                           val controllerComponents: SecurityComponents,
+                          val permissionAuthProvider: PermissionAuthProvider,
                         ) extends BaseApi {
 
-  val administrators = configuration.getOptional[Seq[String]]("asura.admin").getOrElse(Nil).toSet
   val activityActor = system.actorOf(ActivitySaveActor.props())
 
   def getById(id: String) = Action.async { implicit req =>
-    GroupService.getById(id).toOkResultByEsOneDoc(id)
+    checkPermission(id, None, Functions.GROUP_INFO_VIEW) { _ =>
+      GroupService.getById(id).toOkResultByEsOneDoc(id)
+    }
   }
 
   def delete(id: String) = Action.async { implicit req =>
-    checkPrivilege { user =>
+    checkPermission(id, None, Functions.GROUP_REMOVE) { user =>
       activityActor ! Activity(id, StringUtils.EMPTY, user, Activity.TYPE_DELETE_GROUP, id)
       GroupService.deleteGroup(id).toOkResult
     }
   }
 
   def put() = Action(parse.byteString).async { implicit req =>
-    val group = req.bodyAs(classOf[Group])
-    val user = getProfileId()
-    group.fillCommonFields(user)
-    if (Reserved.isReservedGroup(group.id)) {
-      Future.successful(OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_CanNotUseReservedGroup))))
-    } else {
-      GroupService.index(group).map(res => {
-        activityActor ! Activity(group.id, StringUtils.EMPTY, user, Activity.TYPE_NEW_GROUP, group.id)
-        toActionResultFromAny(res)
-      })
+    checkPermission(null, None, Functions.GROUP_CREATE) { user =>
+      val group = req.bodyAs(classOf[Group])
+      group.fillCommonFields(user)
+      if (Reserved.isReservedGroup(group.id)) {
+        Future.successful(OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_CanNotUseReservedGroup))))
+      } else {
+        GroupService.index(group).map(res => {
+          activityActor ! Activity(group.id, StringUtils.EMPTY, user, Activity.TYPE_NEW_GROUP, group.id)
+          toActionResultFromAny(res)
+        })
+      }
     }
   }
 
   def query() = Action(parse.byteString).async { implicit req =>
-    val queryGroup = req.bodyAs(classOf[QueryGroup])
-    GroupService.queryGroup(queryGroup).toOkResultByEsList(false)
+    checkPermission(null, None, Functions.GROUP_LIST) { _ =>
+      val queryGroup = req.bodyAs(classOf[QueryGroup])
+      GroupService.queryGroup(queryGroup).toOkResultByEsList(false)
+    }
   }
 
-  def update() = Action(parse.byteString).async { implicit req =>
-    val group = req.bodyAs(classOf[Group])
-    GroupService.updateGroup(group).toOkResult
+  def update(id: String) = Action(parse.byteString).async { implicit req =>
+    checkPermission(id, None, Functions.GROUP_INFO_EDIT) { _ =>
+      val group = req.bodyAs(classOf[Group])
+      group.id = id
+      GroupService.updateGroup(group).toOkResult
+    }
   }
 
-  private def checkPrivilege(func: String => Future[Result])(implicit request: RequestHeader): Future[Result] = {
-    val user = getProfileId()
-    val isAllowed = if (administrators.nonEmpty) administrators.contains(user) else true
-    if (isAllowed) {
-      func(user)
-    } else {
-      Future.successful(OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_NotAllowedContactAdministrator, administrators.mkString(",")))))
+  def projects(id: String) = Action(parse.byteString).async { implicit req =>
+    checkPermission(id, None, Functions.GROUP_PROJECT_LIST) { _ =>
+      val q = req.bodyAs(classOf[QueryProject])
+      q.group = id
+      ProjectService.queryProject(q).toOkResultByEsList(false)
+    }
+  }
+
+  def jobs(id: String) = Action(parse.byteString).async { implicit req =>
+    checkPermission(id, None, Functions.GROUP_JOB_LIST) { _ =>
+      val q = req.bodyAs(classOf[QueryJob])
+      q.group = id
+      JobService.queryJob(q).toOkResultByEsList()
     }
   }
 }

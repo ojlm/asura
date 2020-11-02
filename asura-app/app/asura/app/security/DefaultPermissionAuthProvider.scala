@@ -4,20 +4,28 @@ import java.time.Duration
 
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.model.Permissions
+import asura.core.es.model.Permissions.Functions
 import asura.core.es.service.PermissionsService
 import asura.core.security._
 import com.github.benmanes.caffeine.cache.{Cache, Caffeine}
+import play.api.Configuration
 
 import scala.concurrent.Future
 
 case class DefaultPermissionAuthProvider(
-                                          userCacheCount: Int,
-                                          userCacheDuration: Duration,
-                                          groupCacheCount: Int,
-                                          groupCacheDuration: Duration,
-                                          projectCacheCount: Int,
-                                          projectCacheDuration: Duration,
+                                          configuration: Configuration,
                                         ) extends PermissionAuthProvider {
+
+  val ALLOWED = Future.successful(AuthResponse(true))
+  val administrators = configuration.getOptional[Seq[String]]("asura.admin").getOrElse(Nil).toSet
+  val permissionCheckEnabled = configuration.getOptional[Boolean]("asura.security.permission.enabled").getOrElse(true)
+
+  val userCacheCount: Int = 1000
+  val userCacheDuration: Duration = Duration.ofMinutes(2)
+  val groupCacheCount: Int = 1000
+  val groupCacheDuration: Duration = Duration.ofMinutes(2)
+  val projectCacheCount: Int = 1000
+  val projectCacheDuration: Duration = Duration.ofMinutes(2)
 
   private val userRolesCache: Cache[String, UserRoles] = Caffeine.newBuilder()
     .maximumSize(userCacheCount).expireAfterWrite(userCacheDuration).build()
@@ -29,26 +37,36 @@ case class DefaultPermissionAuthProvider(
     .maximumSize(projectCacheCount).expireAfterWrite(projectCacheDuration).build()
 
   override def authorize(username: String, group: String, project: Option[String], function: String): Future[AuthResponse] = {
-    getUserRoles(username).flatMap(roles => {
-      val isAllowed = Permissions.isAllowed(group, project, function, roles)
-      if (isAllowed) {
-        Future.successful(AuthResponse(isAllowed))
+    if (permissionCheckEnabled && !isAdmin(username)) {
+      if (Functions.ANONYMOUS_FUNCTIONS.contains(function)) {
+        ALLOWED
+      } else if (Functions.ADMIN_FUNCTIONS.contains(function)) { // need 'admin' role
+        Future.successful(AuthResponse(false, Maintainers(Nil, Nil, administrators.toSeq)))
       } else {
-        if (project.isEmpty) {
-          getGroupMaintainers(group).map(items => {
-            AuthResponse(false, Maintainers(items, Nil))
-          })
-        } else {
-          val future = for {
-            groups <- getGroupMaintainers(group)
-            projects <- getProjectMaintainers(group, project.get)
-          } yield (groups, projects)
-          future.map(tuple => {
-            AuthResponse(false, Maintainers(tuple._1, tuple._2))
-          })
-        }
+        getUserRoles(username).flatMap(roles => {
+          val isAllowed = Permissions.isAllowed(group, project, function, roles)
+          if (isAllowed) {
+            ALLOWED
+          } else {
+            if (project.isEmpty) {
+              getGroupMaintainers(group).map(items => {
+                AuthResponse(false, Maintainers(items, Nil))
+              })
+            } else {
+              val future = for {
+                groups <- getGroupMaintainers(group)
+                projects <- getProjectMaintainers(group, project.get)
+              } yield (groups, projects)
+              future.map(tuple => {
+                AuthResponse(false, Maintainers(tuple._1, tuple._2))
+              })
+            }
+          }
+        })
       }
-    })
+    } else {
+      ALLOWED
+    }
   }
 
   override def getUserRoles(username: String): Future[UserRoles] = {
@@ -62,6 +80,8 @@ case class DefaultPermissionAuthProvider(
       Future.successful(roles)
     }
   }
+
+  def isAdmin(username: String) = administrators.contains(username)
 
   def getGroupMaintainers(group: String): Future[Seq[PermissionItem]] = {
     val cache = groupCache.getIfPresent(group)
