@@ -18,6 +18,7 @@ def asuraProjects(id: String) = Project(id, file(id))
 
 lazy val app = asuraProjects("asura-app")
   .enablePlugins(PlayScala)
+  .settings(libraryDependencies ++= appDependencies)
   .settings(releaseSettings: _*)
   .settings(publishArtifact in Compile := true)
   .dependsOn(
