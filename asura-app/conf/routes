@@ -8,9 +8,9 @@ GET         /openapi/swagger-ui/*file            controllers.Assets.at(path:Stri
 ### NoDocs ###
 GET         /openapi/swagger-editor/*file        controllers.Assets.at(path:String="/public/lib/swagger-editor-dist", file:String)
 ### NoDocs ###
-GET         /openapi                             asura.app.api.SwaggerApi.home
+GET         /openapi                             asura.app.api.SwaggerApi.home()
 ### NoDocs ###
-GET         /openapi/                            asura.app.api.SwaggerApi.home
+GET         /openapi/                            asura.app.api.SwaggerApi.home()
 ### NoDocs ###
 GET         /openapi/editor                      asura.app.api.SwaggerApi.editor(url: Option[String])
 ### NoDocs ###

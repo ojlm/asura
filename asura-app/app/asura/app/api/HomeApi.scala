@@ -28,7 +28,7 @@ class HomeApi @Inject()(
     if (resource.startsWith("api") || resource.startsWith("openapi")) {
       Action.async(r => errorHandler.onClientError(r, NOT_FOUND, "Not found"))
     } else {
-      if (resource.contains(".")) assets.at(resource) else index
+      if (resource.contains(".")) assets.at(resource) else index()
     }
   }
 

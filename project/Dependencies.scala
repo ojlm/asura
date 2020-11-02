@@ -27,6 +27,8 @@ object Dependencies {
   private val joddCore = "org.jodd" % "jodd-core" % "3.9.1"
   private val jsonPath = "com.jayway.jsonpath" % "json-path" % "2.4.0"
 
+  val caffeineLib = "com.github.ben-manes.caffeine" % "caffeine" % "2.8.4"
+
   // kafka
   private val akkaKafka = "com.typesafe.akka" %% "akka-stream-kafka" % "2.0.5"
   private val kafkaAvroSerializer = "io.confluent" % "kafka-avro-serializer" % "4.0.0" excludeAll (ExclusionRule(organization = "org.slf4j", name = "*"))
@@ -67,7 +69,7 @@ object Dependencies {
     commonsLang3, jackson, elastic4s, druid,
     joddCore, jsonPath, swaggerParser, quartz, redisson
   ) ++ commonDependencies ++ httpDeps ++ databaseDeps
-  val appDependencies = Seq(config, guava, commonsCodec) ++ loggingDeps ++ httpDeps ++ testDeps
+  val appDependencies = Seq(caffeineLib)
   val namerdDependencies = Seq(akkaStream, akkaHttp) ++ commonDependencies
   val dubboDependencies = Seq(dubbo, curator, dubboJavassist, dubboJbossNetty, dubboSpring, akkaStream) ++ commonDependencies
   val kafkaDependencies = Seq(akkaStream, akkaKafka, kafkaAvroSerializer) ++ commonDependencies
