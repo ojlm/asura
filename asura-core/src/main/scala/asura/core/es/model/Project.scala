@@ -9,13 +9,13 @@ import scala.collection.mutable
 
 /** group and id should composite a unique key */
 case class Project(
-                    val id: String,
-                    val summary: String,
-                    val description: String,
-                    val group: String,
-                    val openapi: String = null,
-                    val avatar: String = null,
-                    val domains: Seq[LabelRef] = Nil, // online domain, should only one
+                    var id: String,
+                    summary: String,
+                    description: String,
+                    var group: String,
+                    openapi: String = null,
+                    avatar: String = null,
+                    domains: Seq[LabelRef] = Nil, // online domain, should only one
                     var creator: String = null,
                     var createdAt: String = null,
                     var updatedAt: String = null,

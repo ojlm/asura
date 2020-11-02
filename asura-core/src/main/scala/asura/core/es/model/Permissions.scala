@@ -84,10 +84,22 @@ object Permissions extends IndexSetting {
     val GROUP_MEMBERS_VIEW = "group.members.view"
     val GROUP_MEMBERS_EDIT = "group.members.edit"
     // project
+    // 创建项目
     val PROJECT_CREATE = "project.create"
+    // 删除项目
     val PROJECT_REMOVE = "project.remove"
+    // 查看项目详细
     val PROJECT_INFO_VIEW = "project.info.view"
+    // 编辑项目详细
     val PROJECT_INFO_EDIT = "project.info.edit"
+    // 项目统一查询
+    val PROJECT_LIST = "project.list"
+    // 产看项目 openapi
+    val PROJECT_OPENAPI_VIEW = "project.openapi.view"
+    // 编辑项目 openapi
+    val PROJECT_OPENAPI_EDIT = "project.openapi.edit"
+    // 转移项目
+    val PROJECT_TRANSFER = "project.transfer"
     val PROJECT_MEMBERS_VIEW = "project.members.view"
     val PROJECT_MEMBERS_EDIT = "project.members.edit"
     val PROJECT_REPORT_VIEW = "project.report.view"
@@ -96,15 +108,16 @@ object Permissions extends IndexSetting {
     val PROJECT_COMPONENT_EDIT = "project.component.edit"
     val PROJECT_COMPONENT_EXEC = "project.component.exec"
 
-    val ADMIN_FUNCTIONS = Set(GROUP_CREATE)
+    val ADMIN_FUNCTIONS = Set(GROUP_CREATE, PROJECT_TRANSFER)
     val GUEST_FUNCTIONS = Set(GROUP_LIST, GROUP_INFO_VIEW, GROUP_PROJECT_LIST, GROUP_JOB_LIST, GROUP_MEMBERS_VIEW,
-      PROJECT_INFO_VIEW, PROJECT_MEMBERS_VIEW, PROJECT_COMPONENT_LIST, PROJECT_COMPONENT_VIEW
+      PROJECT_LIST, PROJECT_INFO_VIEW, PROJECT_OPENAPI_VIEW, PROJECT_MEMBERS_VIEW,
+      PROJECT_COMPONENT_LIST, PROJECT_COMPONENT_VIEW
     )
     val REPORTER_FUNCTIONS = GUEST_FUNCTIONS ++ Set(PROJECT_REPORT_VIEW)
-    val DEVELOPER_FUNCTIONS = REPORTER_FUNCTIONS ++ Set(PROJECT_COMPONENT_EDIT, PROJECT_COMPONENT_EXEC)
+    val DEVELOPER_FUNCTIONS = REPORTER_FUNCTIONS ++ Set(PROJECT_CREATE, PROJECT_COMPONENT_EDIT, PROJECT_COMPONENT_EXEC)
     val MAINTAINER_FUNCTIONS = DEVELOPER_FUNCTIONS ++ Set(
       PROJECT_REMOVE, GROUP_INFO_EDIT, GROUP_MEMBERS_EDIT,
-      PROJECT_INFO_EDIT, PROJECT_MEMBERS_EDIT
+      PROJECT_INFO_EDIT, PROJECT_OPENAPI_EDIT, PROJECT_MEMBERS_EDIT
     )
     val OWNER_FUNCTIONS = MAINTAINER_FUNCTIONS ++ Set(GROUP_REMOVE)
 
