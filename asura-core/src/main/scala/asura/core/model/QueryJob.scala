@@ -1,8 +1,8 @@
 package asura.core.model
 
 case class QueryJob(
-                     group: String,
-                     project: String,
+                     var group: String,
+                     var project: String,
                      text: String,
                      triggerType: String,
                    ) extends QueryPage

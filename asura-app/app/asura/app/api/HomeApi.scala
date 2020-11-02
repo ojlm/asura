@@ -48,7 +48,6 @@ class HomeApi @Inject()(
     index match {
       case Group.Index => "group"
       case Project.Index => "project"
-      case RestApi.Index => "rest"
       case HttpCaseRequest.Index => "case"
       case DubboRequest.Index => "dubbo"
       case SqlRequest.Index => "sql"

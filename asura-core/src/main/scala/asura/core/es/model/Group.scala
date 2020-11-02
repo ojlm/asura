@@ -7,10 +7,10 @@ import com.sksamuel.elastic4s.requests.mappings.{KeywordField, MappingDefinition
 import scala.collection.mutable
 
 case class Group(
-                  val id: String,
-                  val summary: String,
-                  val description: String,
-                  val avatar: String = null,
+                  var id: String,
+                  summary: String,
+                  description: String,
+                  avatar: String = null,
                   var creator: String = null,
                   var createdAt: String = null,
                   var updatedAt: String = null,

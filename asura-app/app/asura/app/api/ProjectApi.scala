@@ -10,6 +10,7 @@ import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, FieldKeys, Group, Project}
 import asura.core.es.service.{GroupService, ProjectService}
 import asura.core.model.{QueryProject, TransferProject}
+import asura.core.security.PermissionAuthProvider
 import asura.play.api.BaseApi.OkApiRes
 import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
@@ -23,7 +24,8 @@ class ProjectApi @Inject()(
                             implicit val system: ActorSystem,
                             val exec: ExecutionContext,
                             val configuration: Configuration,
-                            val controllerComponents: SecurityComponents
+                            val controllerComponents: SecurityComponents,
+                            val permissionAuthProvider: PermissionAuthProvider,
                           ) extends BaseApi {
 
   val administrators = configuration.getOptional[Seq[String]]("asura.admin").getOrElse(Nil).toSet

@@ -1,11 +1,12 @@
 package asura.app.api
 
-import asura.common.model.{ApiRes, ApiResError}
+import asura.common.model.{ApiCode, ApiRes, ApiResError}
 import asura.common.util.StringUtils
 import asura.core.ErrorMessages
 import asura.core.es.EsResponse
 import asura.core.es.model.FieldKeys
 import asura.core.es.service.UserProfileService
+import asura.core.security.PermissionAuthProvider
 import asura.play.api.BaseApi.OkApiRes
 import asura.play.api.{BaseApi => PlayBaseApi}
 import com.sksamuel.elastic4s.Response
@@ -86,5 +87,17 @@ trait BaseApi extends PlayBaseApi {
     } else {
       Future.successful(OkApiRes(ApiResError(getI18nMessage(ErrorMessages.error_EsRequestFail(response).name))))
     }
+  }
+
+  def checkPermission(group: String, project: Option[String], function: String)(func: String => Future[Result])
+                     (implicit request: RequestHeader, authProvider: PermissionAuthProvider, exec: ExecutionContext): Future[Result] = {
+    val username = getProfileId()
+    authProvider.authorize(username, group, project, function).flatMap(authResponse => {
+      if (authResponse.allowed) {
+        func(username)
+      } else {
+        Future.successful(OkApiRes(ApiRes(ApiCode.PERMISSION_DENIED, null, authResponse.maintainers)))
+      }
+    })
   }
 }

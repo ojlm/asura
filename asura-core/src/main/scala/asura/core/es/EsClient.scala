@@ -31,7 +31,7 @@ object EsClient {
     client = ElasticClient(JavaClient(ElasticProperties(url)))
     var isAllOk = true
     val indices: Seq[IndexSetting] = Seq(
-      HttpCaseRequest, RestApi, Job, Project, Environment,
+      HttpCaseRequest, Job, Project, Environment,
       Group, JobReport, JobNotify, Scenario, UserProfile,
       Activity, DomainOnlineLog, ProjectApiCoverage, DomainOnlineConfig,
       DubboRequest, SqlRequest, Favorite, CiTrigger, TriggerEventLog, Permissions

@@ -24,6 +24,11 @@ object GroupService extends CommonService {
 
   val logger = Logger("GroupService")
 
+  val groupRelatedIndexes = Seq(HttpCaseRequest.Index, Job.Index, Environment.Index,
+    JobReport.Index, JobNotify.Index, Project.Index, Scenario.Index, Activity.Index,
+    ProjectApiCoverage.Index, DubboRequest.Index, SqlRequest.Index, CiTrigger.Index, Favorite.Index
+  )
+
   def index(group: Group, checkExists: Boolean = true): Future[IndexDocResponse] = {
     if (!CommonValidator.isIdLegal(group.id)) {
       ErrorMessages.error_IllegalGroupId.toFutureFail
@@ -54,11 +59,7 @@ object GroupService extends CommonService {
     if (StringUtils.isEmpty(id)) {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
-      IndexService.deleteByGroupOrProject(Seq(
-        HttpCaseRequest.Index, RestApi.Index, Job.Index, Environment.Index,
-        JobReport.Index, JobNotify.Index, Project.Index, Scenario.Index, Activity.Index,
-        ProjectApiCoverage.Index, DubboRequest.Index, SqlRequest.Index, CiTrigger.Index
-      ), id, null).flatMap(idxRes => {
+      IndexService.deleteByGroupOrProject(groupRelatedIndexes, id, null).flatMap(idxRes => {
         EsClient.esClient.execute {
           delete(id).from(Group.Index).refresh(RefreshPolicy.WAIT_FOR)
         }.map(_ => idxRes)

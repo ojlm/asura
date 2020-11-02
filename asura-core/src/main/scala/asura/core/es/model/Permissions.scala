@@ -67,12 +67,20 @@ object Permissions extends IndexSetting {
   // functions
   object Functions {
     // group
+    // 创建分组
     val GROUP_CREATE = "group.created"
+    // 删除分组
     val GROUP_REMOVE = "group.remove"
-    val GROUP_PROJECT_LIST = "group.project.list"
-    val GROUP_TASK_LIST = "group.task.list"
+    // 分组列表查询
+    val GROUP_LIST = "group.list"
+    // 查看分组详情
     val GROUP_INFO_VIEW = "group.info.view"
+    // 编辑分组信息
     val GROUP_INFO_EDIT = "group.info.edit"
+    // 分组项目列表
+    val GROUP_PROJECT_LIST = "group.project.list"
+    // 分组任务列表
+    val GROUP_JOB_LIST = "group.job.list"
     val GROUP_MEMBERS_VIEW = "group.members.view"
     val GROUP_MEMBERS_EDIT = "group.members.edit"
     // project
@@ -88,7 +96,8 @@ object Permissions extends IndexSetting {
     val PROJECT_COMPONENT_EDIT = "project.component.edit"
     val PROJECT_COMPONENT_EXEC = "project.component.exec"
 
-    val GUEST_FUNCTIONS = Set(GROUP_PROJECT_LIST, GROUP_TASK_LIST, GROUP_INFO_VIEW, GROUP_MEMBERS_VIEW,
+    val ADMIN_FUNCTIONS = Set(GROUP_CREATE)
+    val GUEST_FUNCTIONS = Set(GROUP_LIST, GROUP_INFO_VIEW, GROUP_PROJECT_LIST, GROUP_JOB_LIST, GROUP_MEMBERS_VIEW,
       PROJECT_INFO_VIEW, PROJECT_MEMBERS_VIEW, PROJECT_COMPONENT_LIST, PROJECT_COMPONENT_VIEW
     )
     val REPORTER_FUNCTIONS = GUEST_FUNCTIONS ++ Set(PROJECT_REPORT_VIEW)
@@ -98,6 +107,9 @@ object Permissions extends IndexSetting {
       PROJECT_INFO_EDIT, PROJECT_MEMBERS_EDIT
     )
     val OWNER_FUNCTIONS = MAINTAINER_FUNCTIONS ++ Set(GROUP_REMOVE)
+
+    // 'anonymous' user is not the member of project or group, for now same with 'guest'
+    val ANONYMOUS_FUNCTIONS = GUEST_FUNCTIONS
   }
 
   // misc
