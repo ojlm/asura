@@ -18,18 +18,19 @@ trait BaseAggregationService {
 
   import BaseAggregationService._
 
-  def aggsLabels(index: String, labelPrefix: String): Future[Seq[AggsItem]] = {
-    val query = if (StringUtils.isNotEmpty(labelPrefix)) {
-      nestedQuery(
+  def aggsLabels(group: String, project: String, index: String, labelPrefix: String): Future[Seq[AggsItem]] = {
+    val esQueries = ArrayBuffer[Query]()
+    esQueries += termQuery(FieldKeys.FIELD_GROUP, group)
+    esQueries += termQuery(FieldKeys.FIELD_PROJECT, project)
+    if (StringUtils.isNotEmpty(labelPrefix)) {
+      esQueries += nestedQuery(
         FieldKeys.FIELD_LABELS,
         wildcardQuery(FieldKeys.FIELD_NESTED_LABELS_NAME, s"${labelPrefix}*")
       )
-    } else {
-      matchAllQuery()
     }
     EsClient.esClient.execute {
       search(index)
-        .query(query)
+        .query(boolQuery().must(esQueries))
         .size(0)
         .aggregations(
           nestedAggregation(FieldKeys.FIELD_LABELS, FieldKeys.FIELD_LABELS)

@@ -1,7 +1,7 @@
 package asura.core.model
 
 case class QueryEnv(
-                     group: String,
-                     project: String,
+                     var group: String,
+                     var project: String,
                      text: String
                    ) extends QueryPage {}

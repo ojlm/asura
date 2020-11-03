@@ -12,8 +12,8 @@ import scala.collection.mutable
 case class SqlRequest(
                        summary: String,
                        description: String,
-                       group: String,
-                       project: String,
+                       var group: String,
+                       var project: String,
                        request: SqlRequestBody,
                        assert: Map[String, Any],
                        env: String = StringUtils.EMPTY,

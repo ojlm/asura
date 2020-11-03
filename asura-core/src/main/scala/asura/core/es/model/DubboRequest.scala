@@ -14,8 +14,8 @@ import scala.collection.mutable.StringBuilder
 case class DubboRequest(
                          summary: String,
                          description: String,
-                         group: String,
-                         project: String,
+                         var group: String,
+                         var project: String,
                          request: DubboRequestBody,
                          assert: Map[String, Any],
                          env: String = StringUtils.EMPTY,

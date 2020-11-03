@@ -1,8 +1,8 @@
 package asura.core.model
 
 case class QueryDubboRequest(
-                              group: String,
-                              project: String,
+                              var group: String,
+                              var project: String,
                               text: String,
                               interface: String,
                               method: String,
