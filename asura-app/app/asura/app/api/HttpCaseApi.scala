@@ -10,6 +10,7 @@ import asura.core.api.openapi.{ConvertResults, OpenApiToHttpRequest}
 import asura.core.assertion.Assertions
 import asura.core.es.EsResponse
 import asura.core.es.actor.ActivitySaveActor
+import asura.core.es.model.Permissions.Functions
 import asura.core.es.model.{Activity, HttpCaseRequest, ScenarioStep}
 import asura.core.es.service._
 import asura.core.http.HttpRunner
@@ -17,6 +18,7 @@ import asura.core.http.actor.HttpRunnerActor.TestCaseMessage
 import asura.core.model.BatchOperation.{BatchDelete, BatchOperationLabels, BatchTransfer}
 import asura.core.model.{AggsQuery, QueryCase, SearchAfterCase}
 import asura.core.runtime.RuntimeContext
+import asura.core.security.PermissionAuthProvider
 import asura.core.util.{JacksonSupport, JsonPathUtils}
 import asura.play.api.BaseApi.OkApiRes
 import javax.inject.{Inject, Singleton}
@@ -28,63 +30,79 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class HttpCaseApi @Inject()(implicit system: ActorSystem,
                             val exec: ExecutionContext,
-                            val controllerComponents: SecurityComponents
+                            val controllerComponents: SecurityComponents,
+                            val permissionAuthProvider: PermissionAuthProvider,
                            ) extends BaseApi {
 
   val activityActor = system.actorOf(ActivitySaveActor.props())
 
   def cloneRequest(group: String, project: String, id: String) = Action.async { implicit req =>
-    HttpCaseRequestService.getRequestById(id).flatMap(httpRequest => {
-      httpRequest.copyFrom = id
-      httpRequest.fillCommonFields(getProfileId())
-      HttpCaseRequestService.index(httpRequest)
-    }).toOkResult
+    checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_CLONE) { user =>
+      HttpCaseRequestService.getRequestById(id).flatMap(doc => {
+        doc.copyFrom = id
+        doc.fillCommonFields(user)
+        HttpCaseRequestService.index(doc)
+      }).toOkResult
+    }
   }
 
   def getById(group: String, project: String, id: String) = Action.async { implicit req =>
-    HttpCaseRequestService.getById(id).flatMap(response => {
-      withSingleUserProfile(id, response)
-    })
+    checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_VIEW) { _ =>
+      HttpCaseRequestService.getById(id).flatMap(response => {
+        withSingleUserProfile(id, response)
+      })
+    }
   }
 
   def delete(group: String, project: String, id: String, preview: Option[Boolean]) = Action.async { implicit req =>
-    deleteDocs(preview, Seq(id))
+    checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_REMOVE) { _ =>
+      deleteDocs(preview, Seq(id))
+    }
   }
 
   def put(group: String, project: String) = Action(parse.byteString).async { implicit req =>
-    val httpRequest = req.bodyAs(classOf[HttpCaseRequest])
-    val user = getProfileId()
-    httpRequest.fillCommonFields(user)
-    HttpCaseRequestService.index(httpRequest).map(res => {
-      activityActor ! Activity(httpRequest.group, httpRequest.project, user, Activity.TYPE_NEW_CASE, res.id)
-      toActionResultFromAny(res)
-    })
+    checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_EDIT) { user =>
+      val doc = req.bodyAs(classOf[HttpCaseRequest])
+      doc.group = group
+      doc.project = project
+      doc.fillCommonFields(user)
+      HttpCaseRequestService.index(doc).map(res => {
+        activityActor ! Activity(doc.group, doc.project, user, Activity.TYPE_NEW_CASE, res.id)
+        toActionResultFromAny(res)
+      })
+    }
   }
 
   def update(group: String, project: String, id: String) = Action(parse.byteString).async { implicit req =>
-    val httpRequest = req.bodyAs(classOf[HttpCaseRequest])
-    val user = getProfileId()
-    activityActor ! Activity(httpRequest.group, httpRequest.project, user, Activity.TYPE_UPDATE_CASE, id)
-    HttpCaseRequestService.updateCs(id, httpRequest).toOkResult
+    checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_EDIT) { user =>
+      val doc = req.bodyAs(classOf[HttpCaseRequest])
+      doc.group = group
+      doc.project = project
+      activityActor ! Activity(group, project, user, Activity.TYPE_UPDATE_CASE, id)
+      HttpCaseRequestService.updateCs(id, doc).toOkResult
+    }
   }
 
   def query(group: String, project: String) = Action(parse.byteString).async { implicit req =>
-    val queryCase = req.bodyAs(classOf[QueryCase])
-    HttpCaseRequestService.queryCase(queryCase).toOkResult
+    checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_LIST) { _ =>
+      val q = req.bodyAs(classOf[QueryCase])
+      HttpCaseRequestService.queryCase(q).toOkResult
+    }
   }
 
   def test(group: String, project: String) = Action(parse.byteString).async { implicit req =>
-    val testCase = req.bodyAs(classOf[TestCaseMessage])
-    val cs = testCase.cs
-    val user = getProfileId()
-    activityActor ! Activity(cs.group, cs.project, user, Activity.TYPE_TEST_CASE, StringUtils.notEmptyElse(testCase.id, StringUtils.EMPTY))
-    val options = testCase.options
-    if (null != options && null != options.initCtx) {
-      // make sure use java types, ugly (;
-      val initCtx = JsonPathUtils.parse(JacksonSupport.stringify(options.initCtx)).asInstanceOf[java.util.Map[Any, Any]]
-      options.initCtx = initCtx
+    checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_EXEC) { user =>
+      val testCase = req.bodyAs(classOf[TestCaseMessage])
+      val cs = testCase.cs
+      activityActor ! Activity(group, project, user, Activity.TYPE_TEST_CASE, StringUtils.notEmptyElse(testCase.id, StringUtils.EMPTY))
+      val options = testCase.options
+      if (null != options && null != options.initCtx) {
+        // make sure use java types, ugly (;
+        val initCtx = JsonPathUtils.parse(JacksonSupport.stringify(options.initCtx)).asInstanceOf[java.util.Map[Any, Any]]
+        options.initCtx = initCtx
+      }
+      HttpRunner.test(testCase.id, cs, RuntimeContext(options = options)).toOkResult
     }
-    HttpRunner.test(testCase.id, cs, RuntimeContext(options = options)).toOkResult
   }
 
   def getAllAssertions(group: String, project: String) = Action {
@@ -92,11 +110,15 @@ class HttpCaseApi @Inject()(implicit system: ActorSystem,
   }
 
   def searchAfter(group: String, project: String) = Action(parse.byteString).async { implicit req =>
-    val query = req.bodyAs(classOf[SearchAfterCase])
-    if (query.onlyMe) {
-      query.creator = getProfileId()
+    checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_LIST) { user =>
+      val query = req.bodyAs(classOf[SearchAfterCase])
+      query.group = group
+      query.project = project
+      if (query.onlyMe) {
+        query.creator = user
+      }
+      HttpCaseRequestService.searchAfter(query).toOkResult
     }
-    HttpCaseRequestService.searchAfter(query).toOkResult
   }
 
   def aggs() = Action(parse.byteString).async { implicit req =>
@@ -116,48 +138,59 @@ class HttpCaseApi @Inject()(implicit system: ActorSystem,
   }
 
   def aggsLabels(group: String, project: String, label: String) = Action(parse.byteString).async { implicit req =>
-    HttpCaseRequestService.aggsLabels(HttpCaseRequest.Index, label).toOkResult
+    checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_VIEW) { _ =>
+      HttpCaseRequestService.aggsLabels(group, project, HttpCaseRequest.Index, label).toOkResult
+    }
   }
 
   def batchLabels(group: String, project: String) = Action(parse.byteString).async { implicit req =>
-    val ops = req.bodyAs(classOf[BatchOperationLabels])
-    HttpCaseRequestService.batchUpdateLabels(ops).toOkResult
+    checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_BATCH_LABEL) { _ =>
+      val ops = req.bodyAs(classOf[BatchOperationLabels])
+      HttpCaseRequestService.batchUpdateLabels(ops).toOkResult
+    }
   }
 
   def batchTransfer(group: String, project: String) = Action(parse.byteString).async { implicit req =>
-    val op = req.bodyAs(classOf[BatchTransfer])
-    HttpCaseRequestService.batchTransfer(op).toOkResult
+    checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_BATCH_TRANSFER) { _ =>
+      val op = req.bodyAs(classOf[BatchTransfer])
+      HttpCaseRequestService.batchTransfer(op).toOkResult
+    }
   }
 
   def batchDelete(group: String, project: String, preview: Option[Boolean]) = Action(parse.byteString).async { implicit req =>
-    val op = req.bodyAs(classOf[BatchDelete])
-    deleteDocs(preview, op.ids)
+    checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_BATCH_REMOVE) { _ =>
+      val op = req.bodyAs(classOf[BatchDelete])
+      deleteDocs(preview, op.ids)
+    }
   }
 
   def openApiPreview(group: String, project: String) = Action(parse.byteString).async { implicit req =>
-    val option = req.bodyAs(classOf[OpenApiImport])
-    if (StringUtils.isNotEmpty(option.url)) {
-      OpenApiToHttpRequest.fromUrl(option.url, option.options).map(dealConvertResults)
-    } else if (StringUtils.isNotEmpty(option.content)) {
-      Future.successful(OpenApiToHttpRequest.fromContent(option.content, option.options)).map(dealConvertResults)
-    } else {
-      Future.successful(Nil).toOkResult
+    checkPermission(group, Some(project), Functions.PROJECT_OPENAPI_PREVIEW) { _ =>
+      val option = req.bodyAs(classOf[OpenApiImport])
+      if (StringUtils.isNotEmpty(option.url)) {
+        OpenApiToHttpRequest.fromUrl(option.url, option.options).map(dealConvertResults)
+      } else if (StringUtils.isNotEmpty(option.content)) {
+        Future.successful(OpenApiToHttpRequest.fromContent(option.content, option.options)).map(dealConvertResults)
+      } else {
+        Future.successful(Nil).toOkResult
+      }
     }
   }
 
   def openApiImport(group: String, project: String) = Action(parse.byteString).async { implicit req =>
-    val option = req.bodyAs(classOf[OpenApiImport])
-    if (null != option.list && option.list.nonEmpty) {
-      val username = getProfileId()
-      val now = DateUtils.nowDateTime
-      option.list.foreach(item => {
-        item.group = group
-        item.project = project
-        item.fillCommonFields(username, now)
-      })
-      HttpCaseRequestService.index(option.list).map(response => OkApiRes(ApiRes(data = response.count)))
-    } else {
-      Future.successful(OkApiRes(ApiRes(data = 0)))
+    checkPermission(group, Some(project), Functions.PROJECT_OPENAPI_IMPORT) { user =>
+      val option = req.bodyAs(classOf[OpenApiImport])
+      if (null != option.list && option.list.nonEmpty) {
+        val now = DateUtils.nowDateTime
+        option.list.foreach(item => {
+          item.group = group
+          item.project = project
+          item.fillCommonFields(user, now)
+        })
+        HttpCaseRequestService.index(option.list).map(response => OkApiRes(ApiRes(data = response.count)))
+      } else {
+        Future.successful(OkApiRes(ApiRes(data = 0)))
+      }
     }
   }
 

@@ -10,8 +10,8 @@ import scala.collection.mutable
 case class Scenario(
                      summary: String,
                      description: String,
-                     group: String,
-                     project: String,
+                     var group: String,
+                     var project: String,
                      steps: Seq[ScenarioStep],
                      comment: String = null,
                      failFast: Boolean = true,

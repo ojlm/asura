@@ -1,8 +1,8 @@
 package asura.core.model
 
 case class QuerySqlRequest(
-                            group: String,
-                            project: String,
+                            var group: String,
+                            var project: String,
                             host: String,
                             database: String,
                             table: String,

@@ -1,8 +1,8 @@
 package asura.core.model
 
 case class QueryCase(
-                      group: String,
-                      project: String,
+                      var group: String,
+                      var project: String,
                       host: String,
                       path: String,
                       methods: Seq[String],
