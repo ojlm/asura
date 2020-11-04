@@ -13,6 +13,7 @@ object AppErrorMessages {
   val error_CantDeleteEnv = "error_CantDeleteEnv"
   val error_ClusterNotEnabled = "error_ClusterNotEnabled"
   val error_CanNotUseReservedGroup = "error_CanNotUseReservedGroup"
+  val error_UserAlreadyJoined = "error_UserAlreadyJoined"
 
   val error_FileNotExist = ErrorMessage("File not exists")("error_FileNotExist")
   val error_EmptyBlobStoreDir = ErrorMessage("Empty blob store directory")("error_EmptyBlobStoreDir")

@@ -37,33 +37,39 @@ case class DefaultPermissionAuthProvider(
     .maximumSize(projectCacheCount).expireAfterWrite(projectCacheDuration).build()
 
   override def authorize(username: String, group: String, project: Option[String], function: String): Future[AuthResponse] = {
-    if (permissionCheckEnabled && !isAdmin(username)) {
-      if (Functions.ANONYMOUS_FUNCTIONS.contains(function)) {
-        ALLOWED
-      } else if (Functions.ADMIN_FUNCTIONS.contains(function)) { // need 'admin' role
-        Future.successful(AuthResponse(false, Maintainers(Nil, Nil, administrators.toSeq)))
-      } else {
-        getUserRoles(username).flatMap(roles => {
-          val isAllowed = Permissions.isAllowed(group, project, function, roles)
-          if (isAllowed) {
+    if (permissionCheckEnabled) {
+      isAdmin(username).flatMap(bIsAdmin => {
+        if (bIsAdmin) {
+          ALLOWED
+        } else {
+          if (Functions.ANONYMOUS_FUNCTIONS.contains(function)) {
             ALLOWED
+          } else if (Functions.ADMIN_FUNCTIONS.contains(function)) { // need 'admin' role
+            Future.successful(AuthResponse(false, Maintainers(Nil, Nil, administrators.toSeq)))
           } else {
-            if (project.isEmpty) {
-              getGroupMaintainers(group).map(items => {
-                AuthResponse(false, Maintainers(items, Nil))
-              })
-            } else {
-              val future = for {
-                groups <- getGroupMaintainers(group)
-                projects <- getProjectMaintainers(group, project.get)
-              } yield (groups, projects)
-              future.map(tuple => {
-                AuthResponse(false, Maintainers(tuple._1, tuple._2))
-              })
-            }
+            getUserRoles(username).flatMap(roles => {
+              val isAllowed = Permissions.isAllowed(group, project, function, roles)
+              if (isAllowed) {
+                ALLOWED
+              } else {
+                if (project.isEmpty) {
+                  getGroupMaintainers(group).map(items => {
+                    AuthResponse(false, Maintainers(items, Nil))
+                  })
+                } else {
+                  val future = for {
+                    groups <- getGroupMaintainers(group)
+                    projects <- getProjectMaintainers(group, project.get)
+                  } yield (groups, projects)
+                  future.map(tuple => {
+                    AuthResponse(false, Maintainers(tuple._1, tuple._2))
+                  })
+                }
+              }
+            })
           }
-        })
-      }
+        }
+      })
     } else {
       ALLOWED
     }
@@ -72,16 +78,19 @@ case class DefaultPermissionAuthProvider(
   override def getUserRoles(username: String): Future[UserRoles] = {
     val roles = userRolesCache.getIfPresent(username)
     if (null == roles) {
-      PermissionsService.getRolesOfUser(username).map(roles => {
-        userRolesCache.put(username, roles)
-        roles
+      PermissionsService.getRolesOfUser(username).flatMap(roles => {
+        isAdmin(username).map(bIsAdmin => {
+          roles.isAdmin = bIsAdmin
+          userRolesCache.put(username, roles)
+          roles
+        })
       })
     } else {
       Future.successful(roles)
     }
   }
 
-  def isAdmin(username: String) = administrators.contains(username)
+  override def isAdmin(username: String) = Future.successful(administrators.contains(username))
 
   def getGroupMaintainers(group: String): Future[Seq[PermissionItem]] = {
     val cache = groupCache.getIfPresent(group)

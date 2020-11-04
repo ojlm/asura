@@ -11,6 +11,7 @@ import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig}
 import asura.core.model.QueryPermissions
 import asura.core.security.{MemberRoleItem, PermissionItem, UserRoles}
+import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import com.sksamuel.elastic4s.ElasticDsl._
 import com.sksamuel.elastic4s.Response
@@ -39,6 +40,22 @@ object PermissionsService extends CommonService with BaseAggregationService {
     }
   }
 
+  def getById(id: String) = {
+    EsClient.esClient.execute {
+      search(Permissions.Index).query(idsQuery(id)).size(1).sourceExclude(defaultExcludeFields)
+    }
+  }
+
+  def getItemById(id: String): Future[Permissions] = {
+    getById(id).map(res => {
+      if (res.isSuccess && res.result.nonEmpty) {
+        JacksonSupport.parse(res.result.hits.hits(0).sourceAsString, classOf[Permissions])
+      } else {
+        throw ErrorMessages.error_IdNonExists.toException
+      }
+    })
+  }
+
   def deleteDoc(id: String) = {
     if (StringUtils.isEmpty(id)) {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
@@ -49,13 +66,18 @@ object PermissionsService extends CommonService with BaseAggregationService {
     }
   }
 
-  def updateDoc(id: String, doc: Permissions): Future[UpdateDocResponse] = {
-    if (StringUtils.isEmpty(id) || null == doc) {
-      ErrorMessages.error_EmptyId.toFutureFail
+  def updateDoc(id: String, item: Permissions): Future[UpdateDocResponse] = {
+    val error = validate(item)
+    if (null != error) {
+      error.toFutureFail
     } else {
-      EsClient.esClient.execute {
-        update(id).in(Permissions.Index).doc(JsonUtils.stringify(doc.toUpdateMap))
-      }.map(toUpdateDocResponse(_))
+      if (StringUtils.isEmpty(id) || null == item) {
+        ErrorMessages.error_EmptyId.toFutureFail
+      } else {
+        EsClient.esClient.execute {
+          update(id).in(Permissions.Index).doc(JsonUtils.stringify(item.toUpdateMap)).refresh(RefreshPolicy.WAIT_FOR)
+        }.map(toUpdateDocResponse(_))
+      }
     }
   }
 
@@ -68,6 +90,29 @@ object PermissionsService extends CommonService with BaseAggregationService {
     } else {
       null
     }
+  }
+
+  def isExists(item: Permissions): Future[Boolean] = {
+    val esQueries = ArrayBuffer[Query]()
+    esQueries += termQuery(FieldKeys.FIELD_GROUP, item.group)
+    esQueries += termQuery(FieldKeys.FIELD_TYPE, item.`type`)
+    if (null != item.username) {
+      esQueries += termQuery(FieldKeys.FIELD_USERNAME, item.username)
+    }
+    if (null != item.project) {
+      esQueries += termQuery(FieldKeys.FIELD_PROJECT, item.project)
+    }
+    EsClient.esClient.execute {
+      count(Permissions.Index).filter {
+        boolQuery().must(esQueries)
+      }
+    }.map(res => {
+      if (res.isSuccess) {
+        res.result.count > 0
+      } else {
+        throw ErrorMessages.error_EsRequestFail(res).toException
+      }
+    })
   }
 
   def queryDocs(query: QueryPermissions) = {

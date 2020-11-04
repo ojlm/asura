@@ -52,3 +52,4 @@ error_AccessDenied=拒绝访问
 error_NonActiveStoreEngine=没有可用的存储引擎
 error_EmptyBlobStoreDir=没有设置文件存储路径
 error_StoreEngineNotAvailable=储存引擎({0})不可用
+error_UserAlreadyJoined=该用户已经存在
