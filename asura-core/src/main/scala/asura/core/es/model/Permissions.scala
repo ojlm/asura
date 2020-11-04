@@ -81,7 +81,9 @@ object Permissions extends IndexSetting {
     val GROUP_PROJECT_LIST = "group.project.list"
     // 分组任务列表
     val GROUP_JOB_LIST = "group.job.list"
+    // 查看分组成员
     val GROUP_MEMBERS_VIEW = "group.members.view"
+    // 编辑分组成员
     val GROUP_MEMBERS_EDIT = "group.members.edit"
     // project
     // 创建项目
@@ -100,8 +102,11 @@ object Permissions extends IndexSetting {
     val PROJECT_OPENAPI_EDIT = "project.openapi.edit"
     // 转移项目
     val PROJECT_TRANSFER = "project.transfer"
+    // 查看项目成员
     val PROJECT_MEMBERS_VIEW = "project.members.view"
+    // 查看项目成员
     val PROJECT_MEMBERS_EDIT = "project.members.edit"
+    // 查看项目报告
     val PROJECT_REPORT_VIEW = "project.report.view"
     // 组件查询列表
     val PROJECT_COMPONENT_LIST = "project.component.list"
@@ -136,8 +141,8 @@ object Permissions extends IndexSetting {
       PROJECT_COMPONENT_CLONE, PROJECT_COMPONENT_REMOVE, PROJECT_COMPONENT_EXEC, PROJECT_OPENAPI_PREVIEW
     )
     val MAINTAINER_FUNCTIONS = DEVELOPER_FUNCTIONS ++ Set(
-      PROJECT_REMOVE, GROUP_INFO_EDIT, GROUP_MEMBERS_EDIT,
-      PROJECT_INFO_EDIT, PROJECT_OPENAPI_EDIT, PROJECT_MEMBERS_EDIT,
+      PROJECT_REMOVE, GROUP_INFO_EDIT,
+      PROJECT_INFO_EDIT, PROJECT_OPENAPI_EDIT,
       PROJECT_COMPONENT_BATCH_LABEL, PROJECT_COMPONENT_BATCH_REMOVE, PROJECT_COMPONENT_BATCH_TRANSFER,
       PROJECT_OPENAPI_IMPORT
     )

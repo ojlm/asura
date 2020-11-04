@@ -12,4 +12,6 @@ trait PermissionAuthProvider {
                ): Future[AuthResponse]
 
   def getUserRoles(username: String): Future[UserRoles]
+
+  def isAdmin(username: String): Future[Boolean]
 }

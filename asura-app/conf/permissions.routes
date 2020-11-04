@@ -1,3 +1,4 @@
+GET           /roles                                     asura.app.api.PermissionsApi.roles()
 PUT           /group/:group                              asura.app.api.PermissionsApi.putGroup(group)
 DELETE        /group/:group/:id                          asura.app.api.PermissionsApi.deleteGroup(id, group)
 POST          /group/:group/update/:id                   asura.app.api.PermissionsApi.updateGroup(id, group)
