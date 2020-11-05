@@ -16,6 +16,7 @@ case class Project(
                     openapi: String = null,
                     avatar: String = null,
                     domains: Seq[LabelRef] = Nil, // online domain, should only one
+                    `type`: String = null,
                     var creator: String = null,
                     var createdAt: String = null,
                     var updatedAt: String = null,
@@ -48,6 +49,7 @@ object Project extends IndexSetting {
     BaseIndex.fieldDefinitions ++ Seq(
       KeywordField(name = FieldKeys.FIELD_ID, copyTo = Seq(FieldKeys.FIELD__TEXT)),
       KeywordField(name = FieldKeys.FIELD_GROUP),
+      KeywordField(name = FieldKeys.FIELD_TYPE),
       KeywordField(name = FieldKeys.FIELD_OPENAPI, index = Option("false")),
       KeywordField(name = FieldKeys.FIELD_AVATAR, index = Option("false")),
       NestedField(name = FieldKeys.FIELD_DOMAINS, fields = Seq(
