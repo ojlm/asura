@@ -7,8 +7,8 @@ import asura.common.model.ApiResError
 import asura.common.util.StringUtils
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.Permissions.Functions
-import asura.core.es.model.{Activity, Group}
-import asura.core.es.service.{GroupService, JobService, ProjectService}
+import asura.core.es.model.{Activity, Group, Permissions}
+import asura.core.es.service.{GroupService, JobService, PermissionsService, ProjectService}
 import asura.core.model.{QueryGroup, QueryJob, QueryProject}
 import asura.core.security.PermissionAuthProvider
 import asura.play.api.BaseApi.OkApiRes
@@ -49,9 +49,13 @@ class GroupApi @Inject()(
       if (Reserved.isReservedGroup(group.id)) {
         Future.successful(OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_CanNotUseReservedGroup))))
       } else {
-        GroupService.index(group).map(res => {
+        GroupService.index(group).flatMap(res => {
           activityActor ! Activity(group.id, StringUtils.EMPTY, user, Activity.TYPE_NEW_GROUP, group.id)
-          toActionResultFromAny(res)
+          val member = Permissions(
+            group = group.id, project = null, `type` = Permissions.TYPE_GROUP,
+            username = user, role = Permissions.ROLE_OWNER)
+          member.fillCommonFields(user)
+          PermissionsService.index(member).map(_ => toActionResultFromAny(res))
         })
       }
     }

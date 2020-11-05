@@ -115,6 +115,25 @@ object PermissionsService extends CommonService with BaseAggregationService {
     })
   }
 
+  def isGroupMaintainerOrOwner(group: String, username: String): Future[Boolean] = {
+    EsClient.esClient.execute {
+      count(Permissions.Index).filter {
+        boolQuery().must(
+          termQuery(FieldKeys.FIELD_GROUP, group),
+          termQuery(FieldKeys.FIELD_TYPE, Permissions.TYPE_GROUP),
+          termQuery(FieldKeys.FIELD_USERNAME, username),
+          termsQuery(FieldKeys.FIELD_ROLE, Permissions.ROLE_OWNER, Permissions.ROLE_MAINTAINER)
+        )
+      }
+    }.map(res => {
+      if (res.isSuccess) {
+        res.result.count > 0
+      } else {
+        throw ErrorMessages.error_EsRequestFail(res).toException
+      }
+    })
+  }
+
   def queryDocs(query: QueryPermissions) = {
     val esQueries = ArrayBuffer[Query]()
     if (query.`type`.equals(Permissions.TYPE_GROUP)) {

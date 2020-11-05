@@ -45,7 +45,7 @@ case class DefaultPermissionAuthProvider(
           if (Functions.ANONYMOUS_FUNCTIONS.contains(function)) {
             ALLOWED
           } else if (Functions.ADMIN_FUNCTIONS.contains(function)) { // need 'admin' role
-            Future.successful(AuthResponse(false, Maintainers(Nil, Nil, administrators.toSeq)))
+            Future.successful(AuthResponse(false, Maintainers(group, project.getOrElse(null), Nil, Nil, administrators.toSeq)))
           } else {
             getUserRoles(username).flatMap(roles => {
               val isAllowed = Permissions.isAllowed(group, project, function, roles)
@@ -54,7 +54,7 @@ case class DefaultPermissionAuthProvider(
               } else {
                 if (project.isEmpty) {
                   getGroupMaintainers(group).map(items => {
-                    AuthResponse(false, Maintainers(items, Nil))
+                    AuthResponse(false, Maintainers(group, project.getOrElse(null), items, Nil))
                   })
                 } else {
                   val future = for {
@@ -62,7 +62,7 @@ case class DefaultPermissionAuthProvider(
                     projects <- getProjectMaintainers(group, project.get)
                   } yield (groups, projects)
                   future.map(tuple => {
-                    AuthResponse(false, Maintainers(tuple._1, tuple._2))
+                    AuthResponse(false, Maintainers(group, project.getOrElse(null), tuple._1, tuple._2))
                   })
                 }
               }
