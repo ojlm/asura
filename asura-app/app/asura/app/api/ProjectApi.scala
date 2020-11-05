@@ -5,8 +5,8 @@ import asura.common.model.{ApiRes, ApiResError}
 import asura.core.es.EsResponse
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.Permissions.Functions
-import asura.core.es.model.{Activity, FieldKeys, Project}
-import asura.core.es.service.{GroupService, ProjectService}
+import asura.core.es.model.{Activity, FieldKeys, Permissions, Project}
+import asura.core.es.service.{GroupService, PermissionsService, ProjectService}
 import asura.core.model.{QueryProject, TransferProject}
 import asura.core.security.PermissionAuthProvider
 import asura.play.api.BaseApi.OkApiRes
@@ -48,9 +48,19 @@ class ProjectApi @Inject()(
       doc.group = group
       doc.id = project
       doc.fillCommonFields(user)
-      ProjectService.index(doc).map(res => {
+      ProjectService.index(doc).flatMap(res => {
         activityActor ! Activity(group, project, user, Activity.TYPE_NEW_PROJECT, res.id)
-        toActionResultFromAny(res)
+        PermissionsService.isGroupMaintainerOrOwner(group, user).flatMap(bRet => {
+          if (bRet) {
+            Future.successful(toActionResultFromAny(res))
+          } else {
+            val member = Permissions(
+              group = group, project = project, `type` = Permissions.TYPE_PROJECT,
+              username = user, role = Permissions.ROLE_MAINTAINER)
+            member.fillCommonFields(user)
+            PermissionsService.index(member).map(_ => toActionResultFromAny(res))
+          }
+        })
       })
     }
   }

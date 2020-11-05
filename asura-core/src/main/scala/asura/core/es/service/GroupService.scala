@@ -26,7 +26,8 @@ object GroupService extends CommonService {
 
   val groupRelatedIndexes = Seq(HttpCaseRequest.Index, Job.Index, Environment.Index,
     JobReport.Index, JobNotify.Index, Project.Index, Scenario.Index, Activity.Index,
-    ProjectApiCoverage.Index, DubboRequest.Index, SqlRequest.Index, CiTrigger.Index, Favorite.Index
+    ProjectApiCoverage.Index, DubboRequest.Index, SqlRequest.Index, CiTrigger.Index, Favorite.Index,
+    Permissions.Index
   )
 
   def index(group: Group, checkExists: Boolean = true): Future[IndexDocResponse] = {

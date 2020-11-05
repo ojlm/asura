@@ -1,9 +1,12 @@
 package asura.core.script.function
 
+import com.fasterxml.jackson.annotation.JsonIgnore
+
 import scala.concurrent.Future
 
 case class ToInteger() extends TransformFunction {
 
+  @JsonIgnore
   val ZERO = Integer.valueOf(0)
   override val name: String = "toInteger"
   override val description: String = "Try to transform string to a integer"
