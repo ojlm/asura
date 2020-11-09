@@ -6,8 +6,11 @@ import asura.core.es.model._
 import asura.core.es.service.IndexService
 import com.sksamuel.elastic4s.http.{ElasticClient, ElasticProperties, NoOpHttpClientConfigCallback}
 import com.typesafe.scalalogging.Logger
+import org.apache.http.auth.{AuthScope, UsernamePasswordCredentials}
 import org.apache.http.client.config.RequestConfig
-import org.elasticsearch.client.RestClientBuilder.RequestConfigCallback
+import org.apache.http.impl.client.BasicCredentialsProvider
+import org.apache.http.impl.nio.client.HttpAsyncClientBuilder
+import org.elasticsearch.client.RestClientBuilder.{HttpClientConfigCallback, RequestConfigCallback}
 
 import scala.collection.mutable
 
@@ -26,8 +29,23 @@ object EsClient {
   /**
    * check if index exists, if not create
    */
-  def init(url: String): Boolean = {
-    client = ElasticClient(ElasticProperties(url))
+  def init(url: String, username: String, password: String): Boolean = {
+    client = if (StringUtils.isEmpty(username) || StringUtils.isEmpty(password)) {
+      ElasticClient(ElasticProperties(url))
+    } else {
+      ElasticClient(ElasticProperties(url), new RequestConfigCallback {
+        override def customizeRequestConfig(requestConfigBuilder: RequestConfig.Builder): RequestConfig.Builder = {
+          requestConfigBuilder
+        }
+      }, new HttpClientConfigCallback {
+        override def customizeHttpClient(httpClientBuilder: HttpAsyncClientBuilder) = {
+          val provider = new BasicCredentialsProvider()
+          val credentials = new UsernamePasswordCredentials(username, password)
+          provider.setCredentials(AuthScope.ANY, credentials)
+          httpClientBuilder.setDefaultCredentialsProvider(provider)
+        }
+      })
+    }
     var isAllOk = true
     val indices: Seq[IndexSetting] = Seq(
       HttpCaseRequest, Job, Project, Environment,

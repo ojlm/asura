@@ -18,6 +18,8 @@ case class CoreConfig(
                        redisServers: Seq[String],
                        esIndexPrefix: Option[String] = None,
                        esUrl: String,
+                       esUsername: String = StringUtils.EMPTY,
+                       esPassword: String = StringUtils.EMPTY,
                        linkerdConfig: LinkerdConfig,
                        reportBaseUrl: String = StringUtils.EMPTY,
                        onlineConfigs: Seq[EsOnlineLogConfig] = Nil,
@@ -47,7 +49,7 @@ object CoreConfig {
     if (config.esIndexPrefix.nonEmpty) {
       EsConfig.IndexPrefix = config.esIndexPrefix.get
     }
-    EsClient.init(config.esUrl)
+    EsClient.init(config.esUrl, config.esUsername, config.esPassword)
     EsClient.initOnlineLogClient(config.onlineConfigs)
     RunnerActors.init(system)
   }

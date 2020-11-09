@@ -58,6 +58,8 @@ class ApplicationStart @Inject()(
     redisServers = Nil,
     esIndexPrefix = configuration.getOptional[String]("asura.es.indexPrefix"),
     esUrl = configuration.get[String]("asura.es.url"),
+    esUsername = configuration.getOptional[String]("asura.es.username").getOrElse(null),
+    esPassword = configuration.getOptional[String]("asura.es.password").getOrElse(null),
     linkerdConfig = toLinkerdConfig(configuration),
     reportBaseUrl = configuration.getOptional[String]("asura.reportBaseUrl").getOrElse(""),
     onlineConfigs = toEsOnlineConfigs(configuration.getOptional[ConfigList]("asura.es.onlineLog")),
