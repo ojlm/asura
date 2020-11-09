@@ -9,13 +9,12 @@ import asura.core.es.{EsClient, EsConfig, EsResponse}
 import asura.core.model.{QueryProject, TransferProject}
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
 import asura.core.util.{CommonValidator, JacksonSupport}
-import com.sksamuel.elastic4s.ElasticDsl._
-import com.sksamuel.elastic4s.Indexes
-import com.sksamuel.elastic4s.requests.common.RefreshPolicy
-import com.sksamuel.elastic4s.requests.script.Script
-import com.sksamuel.elastic4s.requests.searches.queries.Query
-import com.sksamuel.elastic4s.requests.searches.sort.FieldSort
-import com.sksamuel.elastic4s.requests.update.UpdateByQueryRequest
+import com.sksamuel.elastic4s.http.ElasticDsl._
+import com.sksamuel.elastic4s.script.Script
+import com.sksamuel.elastic4s.searches.queries.Query
+import com.sksamuel.elastic4s.searches.sort.FieldSort
+import com.sksamuel.elastic4s.update.UpdateByQueryRequest
+import com.sksamuel.elastic4s.{IndexesAndTypes, RefreshPolicy}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{Iterable, mutable}
@@ -43,10 +42,10 @@ object ProjectService extends CommonService {
               ErrorMessages.error_ProjectExists.toFutureFail
             } else {
               EsClient.esClient.execute {
-                indexInto(Project.Index)
+                indexInto(Project.Index / EsConfig.DefaultType)
                   .doc(project)
                   .id(project.generateDocId())
-                  .refresh(RefreshPolicy.WAIT_FOR)
+                  .refresh(RefreshPolicy.WaitFor)
               }.map(toIndexDocResponse(_))
             }
           } else {
@@ -55,10 +54,10 @@ object ProjectService extends CommonService {
         })
       } else {
         EsClient.esClient.execute {
-          indexInto(Project.Index)
+          indexInto(Project.Index / EsConfig.DefaultType)
             .doc(project)
             .id(project.generateDocId())
-            .refresh(RefreshPolicy.WAIT_FOR)
+            .refresh(RefreshPolicy.WaitFor)
         }.map(toIndexDocResponse(_))
       }
     }
@@ -70,7 +69,7 @@ object ProjectService extends CommonService {
     } else {
       IndexService.deleteByGroupOrProject(projectRelatedIndexes, group, project).flatMap(idxRes => {
         EsClient.esClient.execute {
-          delete(Project.generateDocId(group, project)).from(Project.Index).refresh(RefreshPolicy.WAIT_FOR)
+          delete(Project.generateDocId(group, project)).from(Project.Index / EsConfig.DefaultType).refresh(RefreshPolicy.WaitFor)
         }.map(_ => idxRes)
       })
     }
@@ -91,7 +90,7 @@ object ProjectService extends CommonService {
             val esQueries = Seq(termQuery(FieldKeys.FIELD_GROUP, op.oldGroup), termQuery(FieldKeys.FIELD_PROJECT, op.oldId))
             EsClient.esClient.execute {
               UpdateByQueryRequest(
-                indexes = Indexes(projectRelatedIndexes),
+                indexesAndTypes = IndexesAndTypes((projectRelatedIndexes), Seq(EsConfig.DefaultType)),
                 query = boolQuery().must(esQueries),
                 script = Option(Script(
                   script = s"ctx._source.${FieldKeys.FIELD_GROUP} = '${op.newGroup}';ctx._source.${FieldKeys.FIELD_PROJECT} = '${op.newId}'",
@@ -108,15 +107,15 @@ object ProjectService extends CommonService {
                 // delete the old doc
                 EsClient.esClient.execute {
                   delete(Project.generateDocId(op.oldGroup, op.oldId))
-                    .from(Project.Index)
-                    .refresh(RefreshPolicy.WAIT_FOR)
+                    .from(Project.Index / EsConfig.DefaultType)
+                    .refresh(RefreshPolicy.WaitFor)
                 }.flatMap(_ => {
                   // insert the new doc
                   EsClient.esClient.execute {
-                    indexInto(Project.Index)
+                    indexInto(Project.Index / EsConfig.DefaultType)
                       .doc(newProject)
                       .id(Project.generateDocId(op.newGroup, op.newId))
-                      .refresh(RefreshPolicy.WAIT_FOR)
+                      .refresh(RefreshPolicy.WaitFor)
                   }.map(_ => op)
                 })
               } else {
@@ -198,7 +197,7 @@ object ProjectService extends CommonService {
       ErrorMessages.error_IdNonExists.toFutureFail
     } else {
       EsClient.esClient.execute {
-        update(Project.generateDocId(group, projectId)).in(Project.Index).doc(Map(FieldKeys.FIELD_OPENAPI -> openapi))
+        update(Project.generateDocId(group, projectId)).in(Project.Index / EsConfig.DefaultType).doc(Map(FieldKeys.FIELD_OPENAPI -> openapi))
       }.map(toUpdateDocResponse(_))
     }
   }
@@ -208,7 +207,7 @@ object ProjectService extends CommonService {
       ErrorMessages.error_IdNonExists.toFutureFail
     } else {
       EsClient.esClient.execute {
-        update(project.generateDocId()).in(Project.Index).doc(project.toUpdateMap)
+        update(project.generateDocId()).in(Project.Index / EsConfig.DefaultType).doc(project.toUpdateMap)
       }.map(toUpdateDocResponse(_))
     }
   }

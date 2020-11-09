@@ -85,7 +85,7 @@ class ProjectApi @Inject()(
               val groups = hits.hits.map(hit => hit.sourceAsMap.get(FieldKeys.FIELD_GROUP).get.asInstanceOf[String])
               GroupService.getByIdsAsRawMap(groups).map(groupMap => {
                 OkApiRes(ApiRes(data = Map(
-                  "total" -> hits.total.value, "list" -> hits.hits.map(hit => hit.sourceAsMap), "groups" -> groupMap
+                  "total" -> hits.total, "list" -> hits.hits.map(hit => hit.sourceAsMap), "groups" -> groupMap
                 )))
               })
             } else {

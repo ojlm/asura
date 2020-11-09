@@ -2,7 +2,7 @@ package asura.core.es.model
 
 import asura.core.es.EsConfig
 import asura.core.es.model.CiTrigger.ReadinessCheck
-import com.sksamuel.elastic4s.requests.mappings._
+import com.sksamuel.elastic4s.mappings._
 
 import scala.collection.mutable
 
@@ -50,7 +50,7 @@ case class CiTrigger(
 object CiTrigger extends IndexSetting {
 
   override val Index: String = s"${EsConfig.IndexPrefix}ci-trigger"
-  override val mappings: MappingDefinition = MappingDefinition(
+  override val mappings: MappingDefinition = Es6MappingDefinition(
     BaseIndex.fieldDefinitions ++ Seq(
       KeywordField(name = FieldKeys.FIELD_GROUP),
       KeywordField(name = FieldKeys.FIELD_PROJECT),

@@ -2,7 +2,7 @@ package asura.core.es.model
 
 import asura.common.util.{DateUtils, StringUtils}
 import asura.core.es.EsConfig
-import com.sksamuel.elastic4s.requests.mappings.{BasicField, KeywordField, MappingDefinition, ObjectField}
+import com.sksamuel.elastic4s.mappings.{BasicField, KeywordField, MappingDefinition, ObjectField}
 
 case class Activity(
                      val group: String = StringUtils.EMPTY,
@@ -19,7 +19,7 @@ object Activity extends IndexSetting {
   val Index: String = s"${EsConfig.IndexPrefix}activity"
   override val shards: Int = 5
   override val replicas: Int = 1
-  val mappings: MappingDefinition = MappingDefinition(
+  val mappings: MappingDefinition = Es6MappingDefinition(
     Seq(
       KeywordField(name = FieldKeys.FIELD_GROUP),
       KeywordField(name = FieldKeys.FIELD_PROJECT),

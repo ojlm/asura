@@ -134,7 +134,7 @@ class PermissionsApi @Inject()(
           map + (FieldKeys.FIELD__ID -> hit.id)
         })
         UserProfileService.getByIdsAsRawMap(users).map(profiles => Map(
-          "total" -> hits.total.value, "list" -> list, "profiles" -> profiles)
+          "total" -> hits.total, "list" -> list, "profiles" -> profiles)
         )
       }).toOkResult
     }

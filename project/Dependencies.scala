@@ -23,7 +23,7 @@ object Dependencies {
   private val commonsLang3 = "org.apache.commons" % "commons-lang3" % "3.7"
   private val quartz = "org.quartz-scheduler" % "quartz" % "2.3.0" excludeAll(ExclusionRule(organization = "com.mchange", name = "c3p0"), ExclusionRule(organization = "com.mchange", name = "mchange-commons-java"))
   private val swaggerParser = "io.swagger.parser.v3" % "swagger-parser" % "2.0.20"
-  private val elastic4s = "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % "7.5.0"
+  private val elastic4s = "com.sksamuel.elastic4s" %% "elastic4s-http" % "6.7.8"
   private val joddCore = "org.jodd" % "jodd-core" % "3.9.1"
   private val jsonPath = "com.jayway.jsonpath" % "json-path" % "2.4.0"
 

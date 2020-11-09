@@ -4,7 +4,7 @@ import asura.common.util.StringUtils
 import asura.core.es.EsConfig
 import asura.core.es.model.Label.LabelRef
 import asura.core.util.JacksonSupport
-import com.sksamuel.elastic4s.requests.mappings.{BasicField, KeywordField, MappingDefinition, NestedField}
+import com.sksamuel.elastic4s.mappings.{BasicField, KeywordField, MappingDefinition, NestedField}
 
 import scala.collection.mutable
 
@@ -62,7 +62,7 @@ object DomainOnlineConfig extends IndexSetting {
   val Index: String = s"${EsConfig.IndexPrefix}domain-online-config"
   override val shards: Int = 1
   override val replicas: Int = 1
-  val mappings: MappingDefinition = MappingDefinition(
+  val mappings: MappingDefinition = Es6MappingDefinition(
     BaseIndex.fieldDefinitions ++ Seq(
       KeywordField(name = FieldKeys.FIELD_DOMAIN),
       KeywordField(name = FieldKeys.FIELD_TAG),

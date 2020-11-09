@@ -4,7 +4,7 @@ import asura.common.util.StringUtils
 import asura.core.es.EsConfig
 import asura.core.job.JobExecDesc
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.sksamuel.elastic4s.requests.mappings._
+import com.sksamuel.elastic4s.mappings._
 
 case class JobReport(
                       val scheduler: String,
@@ -38,7 +38,7 @@ case class JobReport(
 object JobReport extends IndexSetting {
 
   val Index: String = s"${EsConfig.IndexPrefix}job-report"
-  val mappings: MappingDefinition = MappingDefinition(
+  val mappings: MappingDefinition = Es6MappingDefinition(
     BaseIndex.fieldDefinitions ++ Seq(
       KeywordField(name = FieldKeys.FIELD_SCHEDULER),
       KeywordField(name = FieldKeys.FIELD_GROUP),

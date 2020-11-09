@@ -3,7 +3,7 @@ package asura.core.es.model
 import asura.core.es.EsConfig
 import asura.core.es.model.Label.LabelRef
 import asura.core.util.JacksonSupport
-import com.sksamuel.elastic4s.requests.mappings.{KeywordField, MappingDefinition, NestedField}
+import com.sksamuel.elastic4s.mappings.{KeywordField, MappingDefinition, NestedField}
 
 import scala.collection.mutable
 
@@ -45,7 +45,7 @@ object Project extends IndexSetting {
   val Index: String = s"${EsConfig.IndexPrefix}project"
   override val shards: Int = 1
   override val replicas: Int = 1
-  val mappings: MappingDefinition = MappingDefinition(
+  val mappings: MappingDefinition = Es6MappingDefinition(
     BaseIndex.fieldDefinitions ++ Seq(
       KeywordField(name = FieldKeys.FIELD_ID, copyTo = Seq(FieldKeys.FIELD__TEXT)),
       KeywordField(name = FieldKeys.FIELD_GROUP),

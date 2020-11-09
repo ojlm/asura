@@ -1,7 +1,7 @@
 package asura.core.es
 
 import asura.core.es.model.FieldKeys
-import com.sksamuel.elastic4s.requests.searches.SearchResponse
+import com.sksamuel.elastic4s.http.search.SearchResponse
 
 import scala.collection.mutable
 
@@ -9,7 +9,7 @@ object EsResponse {
 
   def toApiData(res: SearchResponse, hasId: Boolean = true): Map[String, Any] = {
     val hits = res.hits
-    Map("total" -> hits.total.value, "list" -> hits.hits.map(hit => {
+    Map("total" -> hits.total, "list" -> hits.hits.map(hit => {
       if (hasId) {
         hit.sourceAsMap + (FieldKeys.FIELD__ID -> hit.id)
       } else {

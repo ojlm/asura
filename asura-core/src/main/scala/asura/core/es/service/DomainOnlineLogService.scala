@@ -12,9 +12,9 @@ import asura.core.es.model.{BulkDocResponse, DomainOnlineLog, FieldKeys}
 import asura.core.es.service.BaseAggregationService._
 import asura.core.model.{AggsItem, AggsQuery, QueryDomain, QueryDomainWildcard}
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
-import com.sksamuel.elastic4s.ElasticDsl._
-import com.sksamuel.elastic4s.requests.searches.queries.Query
-import com.sksamuel.elastic4s.requests.searches.sort.{FieldSort, SortOrder}
+import com.sksamuel.elastic4s.http.ElasticDsl._
+import com.sksamuel.elastic4s.searches.queries.Query
+import com.sksamuel.elastic4s.searches.sort.{FieldSort, SortOrder}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer

@@ -50,9 +50,9 @@ class JobStatusActor() extends BaseActor {
             RedisJobState.getJobState(watchIds.toSet).onComplete {
               case util.Success(statesMap) =>
                 statesMap.forEach((jobKey, state) => jobsTable(jobKey).state = state)
-                outSender ! ListActorEvent(Map("total" -> hits.total.value, "list" -> items))
+                outSender ! ListActorEvent(Map("total" -> hits.total, "list" -> items))
               case util.Failure(_) =>
-                outSender ! ListActorEvent(Map("total" -> hits.total.value, "list" -> items))
+                outSender ! ListActorEvent(Map("total" -> hits.total, "list" -> items))
             }(context.system.dispatcher)
           } else {
             outSender ! ListActorEvent(Map("total" -> 0, "list" -> Nil))
