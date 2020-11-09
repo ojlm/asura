@@ -2,7 +2,7 @@ package asura.core
 
 import asura.common.exceptions.ErrorMessages.ErrorMessage
 import asura.common.exceptions.{ErrorMessages => CommonErrorMessages}
-import com.sksamuel.elastic4s.Response
+import com.sksamuel.elastic4s.http.Response
 
 object ErrorMessages extends CommonErrorMessages {
 

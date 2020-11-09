@@ -13,11 +13,11 @@ import asura.core.model.QueryPermissions
 import asura.core.security.{MemberRoleItem, PermissionItem, UserRoles}
 import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
-import com.sksamuel.elastic4s.ElasticDsl._
-import com.sksamuel.elastic4s.Response
-import com.sksamuel.elastic4s.requests.common.RefreshPolicy
-import com.sksamuel.elastic4s.requests.searches.SearchResponse
-import com.sksamuel.elastic4s.requests.searches.queries.Query
+import com.sksamuel.elastic4s.RefreshPolicy
+import com.sksamuel.elastic4s.http.ElasticDsl._
+import com.sksamuel.elastic4s.http.Response
+import com.sksamuel.elastic4s.http.search.SearchResponse
+import com.sksamuel.elastic4s.searches.queries.Query
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
@@ -33,9 +33,9 @@ object PermissionsService extends CommonService with BaseAggregationService {
       error.toFutureFail
     } else {
       EsClient.esClient.execute {
-        indexInto(Permissions.Index)
+        indexInto(Permissions.Index / EsConfig.DefaultType)
           .doc(item)
-          .refresh(RefreshPolicy.WAIT_FOR)
+          .refresh(RefreshPolicy.WaitFor)
       }.map(toIndexDocResponse(_))
     }
   }
@@ -61,7 +61,7 @@ object PermissionsService extends CommonService with BaseAggregationService {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
       EsClient.esClient.execute {
-        delete(id).from(Permissions.Index).refresh(RefreshPolicy.WAIT_FOR)
+        delete(id).from(Permissions.Index / EsConfig.DefaultType).refresh(RefreshPolicy.WaitFor)
       }.map(_ => toDeleteDocResponse(_))
     }
   }
@@ -75,7 +75,7 @@ object PermissionsService extends CommonService with BaseAggregationService {
         ErrorMessages.error_EmptyId.toFutureFail
       } else {
         EsClient.esClient.execute {
-          update(id).in(Permissions.Index).doc(JsonUtils.stringify(item.toUpdateMap)).refresh(RefreshPolicy.WAIT_FOR)
+          update(id).in(Permissions.Index / EsConfig.DefaultType).doc(JsonUtils.stringify(item.toUpdateMap)).refresh(RefreshPolicy.WaitFor)
         }.map(toUpdateDocResponse(_))
       }
     }

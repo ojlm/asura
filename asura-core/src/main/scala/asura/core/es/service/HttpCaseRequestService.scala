@@ -13,11 +13,11 @@ import asura.core.model.BatchOperation.{BatchOperationLabels, BatchTransfer}
 import asura.core.model._
 import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
-import com.sksamuel.elastic4s.ElasticDsl.{bulk, delete, indexInto, nestedQuery, _}
-import com.sksamuel.elastic4s.requests.common.RefreshPolicy
-import com.sksamuel.elastic4s.requests.searches.DateHistogramInterval
-import com.sksamuel.elastic4s.requests.searches.queries.Query
-import com.sksamuel.elastic4s.requests.searches.sort.FieldSort
+import com.sksamuel.elastic4s.RefreshPolicy
+import com.sksamuel.elastic4s.http.ElasticDsl.{bulk, delete, indexInto, nestedQuery, _}
+import com.sksamuel.elastic4s.searches.DateHistogramInterval
+import com.sksamuel.elastic4s.searches.queries.Query
+import com.sksamuel.elastic4s.searches.sort.FieldSort
 
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{Iterable, mutable}
@@ -46,7 +46,7 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
     if (null == error) {
       cs.calcGeneratorCount()
       EsClient.esClient.execute {
-        indexInto(HttpCaseRequest.Index).doc(cs).refresh(RefreshPolicy.WAIT_FOR)
+        indexInto(HttpCaseRequest.Index / EsConfig.DefaultType).doc(cs).refresh(RefreshPolicy.WaitFor)
       }.map(toIndexDocResponse(_))
     } else {
       error.toFutureFail
@@ -62,7 +62,7 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
         bulk(
           css.map(cs => {
             cs.calcGeneratorCount()
-            indexInto(HttpCaseRequest.Index).doc(cs)
+            indexInto(HttpCaseRequest.Index / EsConfig.DefaultType).doc(cs)
           })
         )
       }.map(toBulkDocResponse(_))
@@ -71,13 +71,13 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
 
   def deleteDoc(id: String): Future[DeleteDocResponse] = {
     EsClient.esClient.execute {
-      delete(id).from(HttpCaseRequest.Index).refresh(RefreshPolicy.WAIT_FOR)
+      delete(id).from(HttpCaseRequest.Index / EsConfig.DefaultType).refresh(RefreshPolicy.WaitFor)
     }.map(toDeleteDocResponse(_))
   }
 
   def deleteDoc(ids: Seq[String]): Future[DeleteDocResponse] = {
     EsClient.esClient.execute {
-      bulk(ids.map(id => delete(id).from(HttpCaseRequest.Index))).refresh(RefreshPolicy.WAIT_FOR)
+      bulk(ids.map(id => delete(id).from(HttpCaseRequest.Index / EsConfig.DefaultType))).refresh(RefreshPolicy.WaitFor)
     }.map(toDeleteDocResponseFromBulk(_))
   }
 
@@ -123,7 +123,7 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
         cs.calcGeneratorCount()
         EsClient.esClient.execute {
           val (src, params) = cs.toUpdateScriptParams
-          update(id).in(HttpCaseRequest.Index).script {
+          update(id).in(HttpCaseRequest.Index / EsConfig.DefaultType).script {
             script(src).params(params)
           }
         }.map(toUpdateDocResponse(_))
@@ -232,14 +232,14 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
           if (userIds.nonEmpty && query.hasCreators) {
             UserProfileService.getByIdsAsRawMap(userIds).map(profiles => {
               Map(
-                "total" -> res.result.hits.total.value,
+                "total" -> res.result.hits.total,
                 "list" -> query.ids.filter(idMap.contains(_)).map(idMap(_)),
                 "creators" -> profiles
               )
             })
           } else {
             Future.successful {
-              Map("total" -> res.result.hits.total.value, "list" -> query.ids.filter(idMap.contains(_)).map(idMap(_)))
+              Map("total" -> res.result.hits.total, "list" -> query.ids.filter(idMap.contains(_)).map(idMap(_)))
             }
           }
         } else {
@@ -326,7 +326,7 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
     val esQueries = buildEsQueryFromAggQuery(query, false)
     val termsField = query.aggTermsField()
     val dateHistogram = dateHistogramAgg(aggsTermsName, FieldKeys.FIELD_CREATED_AT)
-      .fixedInterval(DateHistogramInterval.fromString(query.aggInterval()))
+      .interval(DateHistogramInterval.fromString(query.aggInterval()))
       .format("yyyy-MM-dd")
       .subAggregations(termsAgg(aggsTermsName, termsField).size(query.pageSize()))
     EsClient.esClient.execute {
@@ -351,9 +351,9 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
       EsClient.esClient.execute(bulk {
         batch.labels.filter(item => null != item.labels).map(item => {
           val labels = item.labels.map(label => Map(FieldKeys.FIELD_NAME -> label.name))
-          update(item.id).in(HttpCaseRequest.Index).doc(Map(FieldKeys.FIELD_LABELS -> labels))
+          update(item.id).in(HttpCaseRequest.Index / EsConfig.DefaultType).doc(Map(FieldKeys.FIELD_LABELS -> labels))
         })
-      }.refresh(RefreshPolicy.WAIT_FOR)).map(toBulkDocResponse(_))
+      }.refresh(RefreshPolicy.WaitFor)).map(toBulkDocResponse(_))
     } else {
       ErrorMessages.error_EmptyRequestBody.toFutureFail
     }
@@ -368,9 +368,9 @@ object HttpCaseRequestService extends CommonService with BaseAggregationService 
             FieldKeys.FIELD_PROJECT -> batch.project,
             FieldKeys.FIELD_ENV -> StringUtils.EMPTY
           )
-          update(csId).in(HttpCaseRequest.Index).doc(docMap)
+          update(csId).in(HttpCaseRequest.Index / EsConfig.DefaultType).doc(docMap)
         })
-      }.refresh(RefreshPolicy.WAIT_FOR)).map(toBulkDocResponse(_))
+      }.refresh(RefreshPolicy.WaitFor)).map(toBulkDocResponse(_))
     } else {
       ErrorMessages.error_InvalidRequestParameters.toFutureFail
     }

@@ -4,7 +4,7 @@ import asura.common.util.StringUtils
 import asura.core.es.EsConfig
 import asura.core.es.model.Label.LabelRef
 import asura.core.util.JacksonSupport
-import com.sksamuel.elastic4s.requests.mappings.{BasicField, _}
+import com.sksamuel.elastic4s.mappings.{BasicField, _}
 
 import scala.collection.mutable
 
@@ -73,7 +73,7 @@ case class HttpCaseRequest(
 object HttpCaseRequest extends IndexSetting {
 
   val Index: String = s"${EsConfig.IndexPrefix}case"
-  val mappings: MappingDefinition = MappingDefinition(
+  val mappings: MappingDefinition = Es6MappingDefinition(
     BaseIndex.fieldDefinitions ++ Seq(
       KeywordField(name = FieldKeys.FIELD_GROUP),
       KeywordField(name = FieldKeys.FIELD_PROJECT),

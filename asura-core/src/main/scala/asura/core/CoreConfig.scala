@@ -6,7 +6,7 @@ import akka.util.Timeout
 import asura.common.util.StringUtils
 import asura.core.CoreConfig.{EsOnlineLogConfig, LinkerdConfig}
 import asura.core.es.{EsClient, EsConfig}
-import com.sksamuel.elastic4s.ElasticClient
+import com.sksamuel.elastic4s.http.ElasticClient
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._

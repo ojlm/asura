@@ -5,13 +5,13 @@ import asura.common.util.StringUtils
 import asura.core.es.model._
 import asura.core.exceptions.OperateDocFailException
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.sksamuel.elastic4s.requests.bulk.BulkResponse
-import com.sksamuel.elastic4s.requests.delete.{DeleteByQueryResponse, DeleteResponse}
-import com.sksamuel.elastic4s.requests.indexes.IndexResponse
-import com.sksamuel.elastic4s.requests.indexes.admin.DeleteIndexResponse
-import com.sksamuel.elastic4s.requests.searches.SearchResponse
-import com.sksamuel.elastic4s.requests.update.UpdateResponse
-import com.sksamuel.elastic4s.{ElasticRequest, Handler, Response}
+import com.sksamuel.elastic4s.http.bulk.BulkResponse
+import com.sksamuel.elastic4s.http.delete.{DeleteByQueryResponse, DeleteResponse}
+import com.sksamuel.elastic4s.http.index.IndexResponse
+import com.sksamuel.elastic4s.http.index.admin.DeleteIndexResponse
+import com.sksamuel.elastic4s.http.search.SearchResponse
+import com.sksamuel.elastic4s.http.update.UpdateResponse
+import com.sksamuel.elastic4s.http.{ElasticRequest, Handler, Response}
 
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
@@ -97,7 +97,7 @@ trait CommonService {
   def fetchWithCreatorProfiles(res: Response[SearchResponse])(implicit ec: ExecutionContext): Future[Map[String, Any]] = {
     val hits = res.result.hits
     val userIds = mutable.HashSet[String]()
-    val dataMap = Map("total" -> hits.total.value, "list" -> hits.hits.map(hit => {
+    val dataMap = Map("total" -> hits.total, "list" -> hits.hits.map(hit => {
       val sourceMap = hit.sourceAsMap
       userIds += sourceMap.getOrElse(FieldKeys.FIELD_CREATOR, StringUtils.EMPTY).asInstanceOf[String]
       sourceMap + (FieldKeys.FIELD__ID -> hit.id) + (FieldKeys.FIELD__SORT -> hit.sort.getOrElse(Nil))

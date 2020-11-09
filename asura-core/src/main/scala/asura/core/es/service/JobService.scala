@@ -7,14 +7,14 @@ import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.model._
-import asura.core.es.{EsClient, EsResponse}
+import asura.core.es.{EsClient, EsConfig, EsResponse}
 import asura.core.model.QueryJob
 import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
-import com.sksamuel.elastic4s.ElasticDsl._
-import com.sksamuel.elastic4s.requests.common.RefreshPolicy
-import com.sksamuel.elastic4s.requests.searches.queries.{NestedQuery, Query}
-import com.sksamuel.elastic4s.requests.searches.sort.FieldSort
+import com.sksamuel.elastic4s.RefreshPolicy
+import com.sksamuel.elastic4s.http.ElasticDsl._
+import com.sksamuel.elastic4s.searches.queries.{NestedQuery, Query}
+import com.sksamuel.elastic4s.searches.sort.FieldSort
 
 import scala.collection.Iterable
 import scala.collection.mutable.ArrayBuffer
@@ -43,7 +43,7 @@ object JobService extends CommonService {
         error.toFutureFail
       } else {
         EsClient.esClient.execute {
-          indexInto(Job.Index).doc(job).refresh(RefreshPolicy.WAIT_FOR)
+          indexInto(Job.Index / EsConfig.DefaultType).doc(job).refresh(RefreshPolicy.WaitFor)
         }.map(toIndexDocResponse(_))
       }
     }
@@ -54,7 +54,7 @@ object JobService extends CommonService {
       FutureUtils.illegalArgs(ApiMsg.INVALID_REQUEST_BODY)
     } else {
       EsClient.esClient.execute {
-        delete(id).from(Job.Index).refresh(RefreshPolicy.WAIT_FOR)
+        delete(id).from(Job.Index / EsConfig.DefaultType).refresh(RefreshPolicy.WaitFor)
       }.map(toDeleteDocResponse(_))
     }
   }
@@ -89,7 +89,7 @@ object JobService extends CommonService {
       } else {
         EsClient.esClient.execute {
           val (src, params) = job.toUpdateScriptParams
-          update(id).in(Job.Index).script {
+          update(id).in(Job.Index / EsConfig.DefaultType).script {
             script(src).params(params)
           }
         }.map(toUpdateDocResponse(_))

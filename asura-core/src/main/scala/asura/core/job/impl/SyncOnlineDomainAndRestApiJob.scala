@@ -9,7 +9,7 @@ import asura.core.es.EsClient
 import asura.core.es.model.RestApiOnlineLog.GroupProject
 import asura.core.es.model._
 import asura.core.es.service._
-import com.sksamuel.elastic4s.requests.searches.queries.Query
+import com.sksamuel.elastic4s.searches.queries.Query
 import com.typesafe.scalalogging.Logger
 import org.quartz.{Job, JobExecutionContext}
 

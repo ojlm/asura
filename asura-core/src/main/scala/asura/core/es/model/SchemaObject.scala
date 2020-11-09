@@ -4,26 +4,26 @@ import asura.common.util.StringUtils
 import asura.core.assertion.FieldTypes
 
 /**
-  * https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#schemaObject
-  * The Schema Object allows the definition of input and output data types.
-  * These types can be objects, but also primitives and arrays.
-  */
+ * https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#schemaObject
+ * The Schema Object allows the definition of input and output data types.
+ * These types can be objects, but also primitives and arrays.
+ */
 trait SchemaObject {
 
   var description: String
 
   /**
-    * a [[FieldTypes]] field converted from `type` and `format`,
-    */
+   * a [[FieldTypes]] field converted from `type` and `format`,
+   */
   var `type`: String
 }
 
 object SchemaObject {
 
   /**
-    * https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#dataTypeFormat
-    * https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.1.md#dataTypes
-    **/
+   * https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#dataTypeFormat
+   * https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.1.md#dataTypes
+   * */
   def translateOpenApiType(t: String, format: String): String = {
     t match {
       case "string" =>

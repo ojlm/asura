@@ -3,7 +3,7 @@ package asura.core.es.model
 import asura.common.util.StringUtils
 import asura.core.es.EsConfig
 import asura.core.security.UserRoles
-import com.sksamuel.elastic4s.requests.mappings.{KeywordField, MappingDefinition, ObjectField}
+import com.sksamuel.elastic4s.mappings.{KeywordField, MappingDefinition, ObjectField}
 import net.minidev.json.annotate.JsonIgnore
 
 import scala.collection.mutable
@@ -43,7 +43,7 @@ object Permissions extends IndexSetting {
   val Index: String = s"${EsConfig.IndexPrefix}permissions"
   override val shards: Int = 5
   override val replicas: Int = 1
-  val mappings: MappingDefinition = MappingDefinition(
+  val mappings: MappingDefinition = Es6MappingDefinition(
     BaseIndex.fieldDefinitions ++ Seq(
       KeywordField(name = FieldKeys.FIELD_GROUP),
       KeywordField(name = FieldKeys.FIELD_PROJECT),

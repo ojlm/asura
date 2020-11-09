@@ -5,15 +5,15 @@ import asura.common.util.{DateUtils, JsonUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.model._
-import asura.core.es.{EsClient, EsResponse}
+import asura.core.es.{EsClient, EsConfig, EsResponse}
 import asura.core.model.QueryScenario
 import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
-import com.sksamuel.elastic4s.ElasticDsl.{bulk, delete, indexInto, _}
-import com.sksamuel.elastic4s.requests.common.RefreshPolicy
-import com.sksamuel.elastic4s.requests.indexes.IndexRequest
-import com.sksamuel.elastic4s.requests.searches.queries.{NestedQuery, Query}
-import com.sksamuel.elastic4s.requests.searches.sort.FieldSort
+import com.sksamuel.elastic4s.RefreshPolicy
+import com.sksamuel.elastic4s.http.ElasticDsl.{bulk, delete, indexInto, _}
+import com.sksamuel.elastic4s.indexes.IndexRequest
+import com.sksamuel.elastic4s.searches.queries.{NestedQuery, Query}
+import com.sksamuel.elastic4s.searches.sort.FieldSort
 
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{Iterable, mutable}
@@ -35,7 +35,7 @@ object ScenarioService extends CommonService {
     val error = check(s)
     if (null == error) {
       EsClient.esClient.execute {
-        indexInto(Scenario.Index).doc(s).refresh(RefreshPolicy.WAIT_FOR)
+        indexInto(Scenario.Index / EsConfig.DefaultType).doc(s).refresh(RefreshPolicy.WaitFor)
       }.map(toIndexDocResponse(_))
     } else {
       error.toFutureFail
@@ -44,13 +44,13 @@ object ScenarioService extends CommonService {
 
   def deleteDoc(id: String): Future[DeleteDocResponse] = {
     EsClient.esClient.execute {
-      delete(id).from(Scenario.Index).refresh(RefreshPolicy.WAIT_FOR)
+      delete(id).from(Scenario.Index / EsConfig.DefaultType).refresh(RefreshPolicy.WaitFor)
     }.map(toDeleteDocResponse(_))
   }
 
   def deleteDoc(ids: Seq[String]): Future[BulkDocResponse] = {
     EsClient.esClient.execute {
-      bulk(ids.map(id => delete(id).from(Scenario.Index)))
+      bulk(ids.map(id => delete(id).from(Scenario.Index / EsConfig.DefaultType)))
     }.map(toBulkDocResponse(_))
   }
 
@@ -107,7 +107,7 @@ object ScenarioService extends CommonService {
           }
         }
         EsClient.esClient.execute {
-          bulk(requests).refresh(RefreshPolicy.WAIT_FOR)
+          bulk(requests).refresh(RefreshPolicy.WaitFor)
         }.flatMap(response => {
           if (response.isSuccess) {
             for (i <- 0.until(scenario.steps.length)) {
@@ -121,7 +121,7 @@ object ScenarioService extends CommonService {
             }
             scenario.fillCommonFields(creator, now)
             EsClient.esClient.execute {
-              indexInto(Scenario.Index).doc(scenario).refresh(RefreshPolicy.WAIT_FOR)
+              indexInto(Scenario.Index / EsConfig.DefaultType).doc(scenario).refresh(RefreshPolicy.WaitFor)
             }.map(toIndexDocResponse(_))
           } else {
             throw ErrorMessages.error_EsRequestFail(response).toException
@@ -192,7 +192,7 @@ object ScenarioService extends CommonService {
       ErrorMessages.error_EmptyId.toFutureFail
     } else {
       EsClient.esClient.execute {
-        update(id).in(Scenario.Index).doc(JsonUtils.stringify(s.toUpdateMap))
+        update(id).in(Scenario.Index / EsConfig.DefaultType).doc(JsonUtils.stringify(s.toUpdateMap))
       }.map(toUpdateDocResponse(_))
     }
   }

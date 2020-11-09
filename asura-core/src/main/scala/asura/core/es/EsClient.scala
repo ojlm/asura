@@ -4,8 +4,7 @@ import asura.common.util.StringUtils
 import asura.core.CoreConfig.EsOnlineLogConfig
 import asura.core.es.model._
 import asura.core.es.service.IndexService
-import com.sksamuel.elastic4s.http.{JavaClient, NoOpHttpClientConfigCallback}
-import com.sksamuel.elastic4s.{ElasticClient, ElasticProperties}
+import com.sksamuel.elastic4s.http.{ElasticClient, ElasticProperties, NoOpHttpClientConfigCallback}
 import com.typesafe.scalalogging.Logger
 import org.apache.http.client.config.RequestConfig
 import org.elasticsearch.client.RestClientBuilder.RequestConfigCallback
@@ -28,7 +27,7 @@ object EsClient {
    * check if index exists, if not create
    */
   def init(url: String): Boolean = {
-    client = ElasticClient(JavaClient(ElasticProperties(url)))
+    client = ElasticClient(ElasticProperties(url))
     var isAllOk = true
     val indices: Seq[IndexSetting] = Seq(
       HttpCaseRequest, Job, Project, Environment,
@@ -50,7 +49,7 @@ object EsClient {
       configs.foreach(config => {
         if (StringUtils.isNotEmpty(config.url)) {
           config.onlineLogClient = clientCache.get(config.url).getOrElse({
-            val client = ElasticClient(JavaClient(ElasticProperties(config.url), new CusRequestConfigCallback(), NoOpHttpClientConfigCallback))
+            val client = ElasticClient(ElasticProperties(config.url), new CusRequestConfigCallback(), NoOpHttpClientConfigCallback)
             clientCache += (config.url -> client)
             client
           })

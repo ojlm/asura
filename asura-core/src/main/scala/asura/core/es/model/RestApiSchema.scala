@@ -8,8 +8,8 @@ case class RestApiSchema(
                           requestBody: HttpRequestBody,
 
                           /**
-                            * the key of `response` is `default` or `http status code`
-                            */
+                           * the key of `response` is `default` or `http status code`
+                           */
                           responses: Map[String, HttpResponse],
                         ) extends ApiSchema {
 

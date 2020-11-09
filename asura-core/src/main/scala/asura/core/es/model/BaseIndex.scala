@@ -2,7 +2,7 @@ package asura.core.es.model
 
 import asura.common.util.{DateUtils, StringUtils}
 import asura.core.es.EsConfig
-import com.sksamuel.elastic4s.requests.mappings.{BasicField, FieldDefinition, KeywordField, TextField}
+import com.sksamuel.elastic4s.mappings.{BasicField, FieldDefinition, KeywordField, TextField}
 
 import scala.collection.mutable
 

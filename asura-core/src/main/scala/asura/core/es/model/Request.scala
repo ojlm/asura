@@ -1,8 +1,8 @@
 package asura.core.es.model
 
 /**
-  * `protocol`, `host`,`port` and `auth` here for situation when need to override fields in `env`.
-  */
+ * `protocol`, `host`,`port` and `auth` here for situation when need to override fields in `env`.
+ */
 case class Request(
                     val protocol: String,
                     val host: String,

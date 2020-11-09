@@ -11,10 +11,10 @@ import asura.core.model.QueryJobNotify
 import asura.core.notify.{JobNotifyManager, NotifyResponse, NotifyResponses}
 import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
-import com.sksamuel.elastic4s.ElasticDsl._
-import com.sksamuel.elastic4s.requests.common.RefreshPolicy
-import com.sksamuel.elastic4s.requests.searches.queries.Query
-import com.sksamuel.elastic4s.requests.searches.sort.FieldSort
+import com.sksamuel.elastic4s.RefreshPolicy
+import com.sksamuel.elastic4s.http.ElasticDsl._
+import com.sksamuel.elastic4s.searches.queries.Query
+import com.sksamuel.elastic4s.searches.sort.FieldSort
 import com.typesafe.scalalogging.Logger
 
 import scala.collection.mutable.ArrayBuffer
@@ -28,7 +28,7 @@ object JobNotifyService extends CommonService {
     val errorMsg = validate(notify)
     if (null == errorMsg) {
       EsClient.esClient.execute {
-        indexInto(JobNotify.Index).doc(notify).refresh(RefreshPolicy.WAIT_FOR)
+        indexInto(JobNotify.Index / EsConfig.DefaultType).doc(notify).refresh(RefreshPolicy.WaitFor)
       }.map(toIndexDocResponse(_))
     } else {
       errorMsg.toFutureFail
@@ -44,7 +44,7 @@ object JobNotifyService extends CommonService {
     if (ret) {
       EsClient.esClient.execute {
         bulk {
-          notifies.map(notify => indexInto(JobNotify.Index).doc(notify))
+          notifies.map(notify => indexInto(JobNotify.Index / EsConfig.DefaultType).doc(notify))
         }.waitForRefresh
       }.map(toBulkDocResponse(_))
     } else {
@@ -56,7 +56,7 @@ object JobNotifyService extends CommonService {
     val errorMsg = validate(notify)
     if (null == errorMsg) {
       EsClient.esClient.execute {
-        update(id).in(JobNotify.Index).doc(notify.toUpdateMap).refresh(RefreshPolicy.WAIT_FOR)
+        update(id).in(JobNotify.Index / EsConfig.DefaultType).doc(notify.toUpdateMap).refresh(RefreshPolicy.WaitFor)
       }.map(toUpdateDocResponse(_))
     } else {
       errorMsg.toFutureFail
@@ -68,7 +68,7 @@ object JobNotifyService extends CommonService {
       ErrorMessages.error_EmptyId.toFutureFail
     } else {
       EsClient.esClient.execute {
-        delete(id).from(JobNotify.Index).refresh(RefreshPolicy.WAIT_FOR)
+        delete(id).from(JobNotify.Index / EsConfig.DefaultType).refresh(RefreshPolicy.WaitFor)
       }.map(toDeleteDocResponse(_))
     }
   }

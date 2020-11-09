@@ -5,15 +5,15 @@ import asura.common.model.ApiMsg
 import asura.common.util.{FutureUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.es.EsClient
 import asura.core.es.model._
 import asura.core.es.service.BaseAggregationService._
+import asura.core.es.{EsClient, EsConfig}
 import asura.core.model.{AggsItem, AggsQuery, QueryFavorite}
 import asura.core.util.JacksonSupport
 import asura.core.util.JacksonSupport.jacksonJsonIndexable
-import com.sksamuel.elastic4s.ElasticDsl._
-import com.sksamuel.elastic4s.requests.common.RefreshPolicy
-import com.sksamuel.elastic4s.requests.searches.queries.Query
+import com.sksamuel.elastic4s.RefreshPolicy
+import com.sksamuel.elastic4s.http.ElasticDsl._
+import com.sksamuel.elastic4s.searches.queries.Query
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
@@ -40,9 +40,9 @@ object FavoriteService extends CommonService with BaseAggregationService {
     } else {
       item.id = item.generateLogicId()
       EsClient.esClient.execute {
-        indexInto(Favorite.Index)
+        indexInto(Favorite.Index / EsConfig.DefaultType)
           .doc(item)
-          .refresh(RefreshPolicy.WAIT_FOR)
+          .refresh(RefreshPolicy.WaitFor)
       }.map(toIndexDocResponse(_))
     }
   }
@@ -73,7 +73,7 @@ object FavoriteService extends CommonService with BaseAggregationService {
     esQueries += termQuery(FieldKeys.FIELD_TARGET_ID, scenarioId)
     esQueries += termQuery(FieldKeys.FIELD_TARGET_TYPE, Favorite.TARGET_TYPE_SCENARIO)
     EsClient.esClient.execute {
-      deleteByQuery(Favorite.Index, boolQuery().must(esQueries))
+      deleteByQuery(Favorite.Index, EsConfig.DefaultType, boolQuery().must(esQueries))
     }.map(toDeleteByQueryResponse(_))
   }
 
@@ -82,7 +82,7 @@ object FavoriteService extends CommonService with BaseAggregationService {
     esQueries += termQuery(FieldKeys.FIELD_TARGET_ID, jobId)
     esQueries += termQuery(FieldKeys.FIELD_TARGET_TYPE, Favorite.TARGET_TYPE_JOB)
     EsClient.esClient.execute {
-      deleteByQuery(Favorite.Index, boolQuery().must(esQueries))
+      deleteByQuery(Favorite.Index, EsConfig.DefaultType, boolQuery().must(esQueries))
     }.map(toDeleteByQueryResponse(_))
   }
 
@@ -93,7 +93,7 @@ object FavoriteService extends CommonService with BaseAggregationService {
       } else {
         Map(FieldKeys.FIELD_CHECKED -> value)
       }
-      update(docId).in(Favorite.Index).doc(m)
+      update(docId).in(Favorite.Index / EsConfig.DefaultType).doc(m)
     }.map(toUpdateDocResponse(_))
   }
 
