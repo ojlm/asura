@@ -27,8 +27,8 @@ case class JobUnscheduled(scheduler: String, triggerGroup: String, triggerName: 
 trait JobActionValidator {
 
   val scheduler: String
-  val group: String
-  val project: String
+  var group: String
+  var project: String
   val id: String
 
   def validate(): ErrorMessage = {
@@ -46,13 +46,13 @@ trait JobActionValidator {
   def getQuartzGroup = JobUtils.generateQuartzGroup(group, project)
 }
 
-case class TriggerJob(scheduler: String, group: String, project: String, id: String) extends JobActionValidator
+case class TriggerJob(scheduler: String, var group: String, var project: String, id: String) extends JobActionValidator
 
-case class ResumeJob(scheduler: String, group: String, project: String, id: String) extends JobActionValidator
+case class ResumeJob(scheduler: String, var group: String, var project: String, id: String) extends JobActionValidator
 
-case class PauseJob(scheduler: String, group: String, project: String, id: String) extends JobActionValidator
+case class PauseJob(scheduler: String, var group: String, var project: String, id: String) extends JobActionValidator
 
-case class DeleteJob(scheduler: String, group: String, project: String, id: String) extends JobActionValidator
+case class DeleteJob(scheduler: String, var group: String, var project: String, id: String) extends JobActionValidator
 
 case class NewJob(jobMeta: JobMeta, triggerMeta: TriggerMeta, jobData: JobData, notifies: Seq[JobNotify], creator: String, imports: Seq[VariablesImportItem])
 

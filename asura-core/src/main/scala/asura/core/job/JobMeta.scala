@@ -7,8 +7,8 @@ import asura.core.job.impl.RunCaseJob
 import org.quartz.{JobBuilder, JobDetail}
 
 case class JobMeta(
-                    group: String,
-                    project: String,
+                    var group: String,
+                    var project: String,
                     summary: String,
                     comment: String = null,
                     env: String = StringUtils.EMPTY,

@@ -66,6 +66,21 @@ object Permissions extends IndexSetting {
 
   // functions
   object Functions {
+    // system
+    val SYSTEM_ES_VIEW = "system.es.view"
+    val SYSTEM_ES_EDIT = "system.es.edit"
+    val SYSTEM_JOBS_VIEW = "system.jobs.view"
+    val SYSTEM_JOBS_EDIT = "system.jobs.edit"
+    // activity
+    // 我的最近项目
+    val ACTIVITY_RECENT_PROJECT = "activity.recent.project"
+    // 我的事件
+    val ACTIVITY_FEED_SELF = "activity.feed.self"
+    // 所有事件
+    val ACTIVITY_FEED_ALL = "activity.feed.all"
+    // blob
+    val BLOB_UPLOAD = "blob.upload"
+    val BLOB_DOWNLOAD = "blob.download"
     // group
     // 创建分组
     val GROUP_CREATE = "group.created"
@@ -106,8 +121,6 @@ object Permissions extends IndexSetting {
     val PROJECT_MEMBERS_VIEW = "project.members.view"
     // 查看项目成员
     val PROJECT_MEMBERS_EDIT = "project.members.edit"
-    // 查看项目报告
-    val PROJECT_REPORT_VIEW = "project.report.view"
     // 组件查询列表
     val PROJECT_COMPONENT_LIST = "project.component.list"
     // 组件创建或编辑
@@ -130,15 +143,34 @@ object Permissions extends IndexSetting {
     val PROJECT_COMPONENT_BATCH_REMOVE = "project.component.batch.remove"
     // 组件批量转移
     val PROJECT_COMPONENT_BATCH_TRANSFER = "project.component.batch.transfer"
+    // job
+    val JOB_STATES = "job.states"
+    val JOB_TYPES = "job.types"
+    val JOB_DETAIL = "job.detail"
+    val JOB_EDIT = "job.edit"
+    val JOB_LIST = "job.list"
+    val JOB_CLONE = "job.clone"
+    val JOB_EXEC = "job.exec"
+    val JOB_REPORT_LIST = "job.report.list"
+    val JOB_REPORT_TREND = "job.report.trend"
+    val JOB_REPORT_DETAIL = "job.report.detail"
+    val JOB_NOTIFY_VIEW = "job.notify.view"
+    val JOB_NOTIFY_EDIT = "job.notify.edit"
 
-    val ADMIN_FUNCTIONS = Set(GROUP_CREATE, PROJECT_TRANSFER)
+    val ADMIN_FUNCTIONS = Set(GROUP_CREATE, PROJECT_TRANSFER, ACTIVITY_FEED_ALL,
+      SYSTEM_ES_VIEW, SYSTEM_ES_EDIT, SYSTEM_JOBS_VIEW, SYSTEM_JOBS_EDIT
+    )
     val GUEST_FUNCTIONS = Set(GROUP_LIST, GROUP_INFO_VIEW, GROUP_PROJECT_LIST, GROUP_JOB_LIST, GROUP_MEMBERS_VIEW,
       PROJECT_LIST, PROJECT_INFO_VIEW, PROJECT_OPENAPI_VIEW, PROJECT_MEMBERS_VIEW,
-      PROJECT_COMPONENT_LIST
+      PROJECT_COMPONENT_LIST, ACTIVITY_RECENT_PROJECT, ACTIVITY_FEED_SELF,
+      JOB_STATES, JOB_TYPES, JOB_LIST, JOB_REPORT_LIST
     )
-    val REPORTER_FUNCTIONS = GUEST_FUNCTIONS ++ Set(PROJECT_REPORT_VIEW, PROJECT_COMPONENT_VIEW)
+    val REPORTER_FUNCTIONS = GUEST_FUNCTIONS ++ Set(
+      PROJECT_COMPONENT_VIEW, JOB_DETAIL, JOB_REPORT_TREND, JOB_REPORT_DETAIL, JOB_NOTIFY_VIEW
+    )
     val DEVELOPER_FUNCTIONS = REPORTER_FUNCTIONS ++ Set(PROJECT_CREATE, PROJECT_COMPONENT_EDIT,
-      PROJECT_COMPONENT_CLONE, PROJECT_COMPONENT_REMOVE, PROJECT_COMPONENT_EXEC, PROJECT_OPENAPI_PREVIEW
+      PROJECT_COMPONENT_CLONE, PROJECT_COMPONENT_REMOVE, PROJECT_COMPONENT_EXEC, PROJECT_OPENAPI_PREVIEW,
+      BLOB_UPLOAD, BLOB_DOWNLOAD, JOB_EDIT, JOB_CLONE, JOB_NOTIFY_EDIT
     )
     val MAINTAINER_FUNCTIONS = DEVELOPER_FUNCTIONS ++ Set(
       PROJECT_REMOVE, GROUP_INFO_EDIT,
