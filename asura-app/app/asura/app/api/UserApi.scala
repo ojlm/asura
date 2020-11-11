@@ -9,6 +9,7 @@ import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.{Activity, BaseIndex, UserProfile => EsUserProfile}
 import asura.core.es.service.UserProfileService
 import asura.core.model.QueryUser
+import asura.core.security.PermissionAuthProvider
 import asura.play.api.BaseApi.OkApiRes
 import javax.inject.{Inject, Singleton}
 import org.pac4j.core.profile.{CommonProfile, ProfileManager}
@@ -26,10 +27,10 @@ class UserApi @Inject()(
                          val exec: ExecutionContext,
                          val configuration: Configuration,
                          val sessionStore: PlaySessionStore,
-                         val controllerComponents: SecurityComponents
+                         val controllerComponents: SecurityComponents,
+                         val permissionAuthProvider: PermissionAuthProvider,
                        ) extends BaseApi {
 
-  val administrators = configuration.getOptional[Seq[String]]("asura.admin").getOrElse(Nil).toSet
   val activityActor = system.actorOf(ActivitySaveActor.props())
 
   def login() = Action.async { implicit request =>
@@ -47,46 +48,48 @@ class UserApi @Inject()(
       } else {
         val username = commonProfile.getId
         val emailStr = if (null != email) email.toString else StringUtils.EMPTY
-        val apiUserProfile = UserProfile(
-          token = token.toString,
-          username = username,
-          email = emailStr,
-          isSysAdmin = administrators.contains(username)
-        )
-        UserProfileService.getProfileById(username)
-          .flatMap(profile => {
-            if (null != profile) {
-              // already registered
-              apiUserProfile.nickname = profile.nickname
-              apiUserProfile.avatar = profile.avatar
-              apiUserProfile.summary = profile.summary
-              apiUserProfile.description = profile.description
-              apiUserProfile.email = profile.email
-              activityActor ! Activity(StringUtils.EMPTY, StringUtils.EMPTY, username, Activity.TYPE_USER_LOGIN, username)
-              Future.successful(OkApiRes(ApiRes(data = apiUserProfile)))
-            } else {
-              // new user
-              val esUserProfile = EsUserProfile(
-                username = username,
-                email = emailStr
-              )
-              if (commonProfile.isInstanceOf[LdapProfile]) {
-                // first time login by ldap
-                esUserProfile.fillCommonFields(BaseIndex.CREATOR_LDAP)
+        permissionAuthProvider.isAdmin(username).flatMap(isAdmin => {
+          val apiUserProfile = UserProfile(
+            token = token.toString,
+            username = username,
+            email = emailStr,
+            isSysAdmin = isAdmin,
+          )
+          UserProfileService.getProfileById(username)
+            .flatMap(profile => {
+              if (null != profile) {
+                // already registered
+                apiUserProfile.nickname = profile.nickname
+                apiUserProfile.avatar = profile.avatar
+                apiUserProfile.summary = profile.summary
+                apiUserProfile.description = profile.description
+                apiUserProfile.email = profile.email
+                activityActor ! Activity(StringUtils.EMPTY, StringUtils.EMPTY, username, Activity.TYPE_USER_LOGIN, username)
+                Future.successful(OkApiRes(ApiRes(data = apiUserProfile)))
               } else {
-                // not by ldap
-                esUserProfile.fillCommonFields(BaseIndex.CREATOR_STANDARD)
-              }
-              UserProfileService.index(esUserProfile).map(indexResponse => {
-                activityActor ! Activity(StringUtils.EMPTY, StringUtils.EMPTY, username, Activity.TYPE_NEW_USER, username)
-                if (StringUtils.isNotEmpty(indexResponse.id)) {
-                  OkApiRes(ApiRes(data = apiUserProfile))
+                // new user
+                val esUserProfile = EsUserProfile(
+                  username = username,
+                  email = emailStr
+                )
+                if (commonProfile.isInstanceOf[LdapProfile]) {
+                  // first time login by ldap
+                  esUserProfile.fillCommonFields(BaseIndex.CREATOR_LDAP)
                 } else {
-                  OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_FailToCreateUser)))
+                  // not by ldap
+                  esUserProfile.fillCommonFields(BaseIndex.CREATOR_STANDARD)
                 }
-              })
-            }
-          })
+                UserProfileService.index(esUserProfile).map(indexResponse => {
+                  activityActor ! Activity(StringUtils.EMPTY, StringUtils.EMPTY, username, Activity.TYPE_NEW_USER, username)
+                  if (StringUtils.isNotEmpty(indexResponse.id)) {
+                    OkApiRes(ApiRes(data = apiUserProfile))
+                  } else {
+                    OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_FailToCreateUser)))
+                  }
+                })
+              }
+            })
+        })
       }
     }
   }

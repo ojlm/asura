@@ -6,8 +6,8 @@ import asura.common.util.StringUtils
 import org.quartz.{CronScheduleBuilder, SimpleScheduleBuilder, Trigger, TriggerBuilder}
 
 case class TriggerMeta(
-                        group: String,
-                        project: String,
+                        var group: String,
+                        var project: String,
                         cron: String,
                         triggerType: String = TriggerMeta.TYPE_MANUAL,
                         startNow: Boolean = true,

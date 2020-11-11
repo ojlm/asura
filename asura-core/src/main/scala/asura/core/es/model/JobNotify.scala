@@ -7,14 +7,14 @@ import com.sksamuel.elastic4s.mappings._
 import scala.collection.mutable
 
 case class JobNotify(
-                      val summary: String = null,
-                      val description: String = null,
-                      val group: String,
-                      val project: String,
+                      summary: String = null,
+                      description: String = null,
+                      var group: String,
+                      var project: String,
                       var jobId: String,
-                      val subscriber: String,
-                      val `type`: String,
-                      val data: Map[String, Any] = Map.empty,
+                      subscriber: String,
+                      `type`: String,
+                      data: Map[String, Any] = Map.empty,
                       var trigger: String = JobNotify.TRIGGER_ALL,
                       var enabled: Boolean = true,
                       var creator: String = null,

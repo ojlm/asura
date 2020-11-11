@@ -1,4 +1,4 @@
-POST        /aggs/trend        asura.app.api.ActivityApi.trend()
-POST        /aggs/terms        asura.app.api.ActivityApi.aggTerms()
-GET         /recent            asura.app.api.ActivityApi.recent(wd: String ?=null, discover: Boolean ?= false)
-POST        /feed              asura.app.api.ActivityApi.feed()
+POST        /aggs/trend             asura.app.api.ActivityApi.trend()
+POST        /aggs/terms             asura.app.api.ActivityApi.aggTerms()
+GET         /recent/projects        asura.app.api.ActivityApi.recentProjects(wd: String ?=null, discover: Boolean ?= false)
+POST        /feed/self              asura.app.api.ActivityApi.feedSelf()
