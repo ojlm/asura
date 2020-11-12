@@ -13,7 +13,7 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - ../docs/sql/quartz-2.3.4.sql:/docker-entrypoint-initdb.d/quartz-2.3.4.sql
+      - ../docs/sql/tables_mysql_innodb.sql:/docker-entrypoint-initdb.d/tables_mysql_innodb.sql
     environment:
       MYSQL_ROOT_PASSWORD: "123456"
   ldap-service:
