@@ -91,7 +91,6 @@ class JobApi @Inject()(
         job.triggerMeta.project = project
       }
       SchedulerManager.updateJob(job).map(res => {
-        val jobMeta = job.jobMeta
         activityActor ! Activity(group, project, user, Activity.TYPE_UPDATE_JOB, job.id)
         OkApiRes(ApiRes(msg = res))
       })
