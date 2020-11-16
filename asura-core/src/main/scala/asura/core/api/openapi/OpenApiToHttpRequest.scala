@@ -29,7 +29,7 @@ object OpenApiToHttpRequest {
   val logger = Logger("OpenApiToHttpRequest")
 
   def openApiToRequest(openApiOpt: Option[OpenAPI], options: ConvertOptions): ConvertResults = {
-    val apis = ArrayBuffer[HttpCaseRequest]()
+    val apis = ArrayBuffer[HttpStepRequest]()
     var errMsg: ErrorMessage = null
     if (openApiOpt.nonEmpty) {
       try {
@@ -67,7 +67,7 @@ object OpenApiToHttpRequest {
   }
 
   def buildRequest(
-                    apis: ArrayBuffer[HttpCaseRequest],
+                    apis: ArrayBuffer[HttpStepRequest],
                     openApi: OpenAPI,
                     scheme: String,
                     host: String,
@@ -141,7 +141,7 @@ object OpenApiToHttpRequest {
           sb.deleteCharAt(sb.length() - 1)
         }
         val rawUrl = sb.toString()
-        apis += HttpCaseRequest(
+        apis += HttpStepRequest(
           summary = summary,
           description = description,
           group = null,

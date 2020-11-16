@@ -7,8 +7,8 @@ import asura.core.ErrorMessages
 import asura.core.assertion.engine.Statistic
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.model.JobReportData.{JobReportStepItemData, ReportStepItemStatus, ScenarioReportItemData}
-import asura.core.es.model.{HttpCaseRequest, JobReportDataItem, Scenario, ScenarioStep}
-import asura.core.es.service.{HttpCaseRequestService, ScenarioService}
+import asura.core.es.model.{HttpStepRequest, JobReportDataItem, Scenario, ScenarioStep}
+import asura.core.es.service.{HttpRequestService, ScenarioService}
 import asura.core.http.{HttpResult, HttpRunner}
 import asura.core.job.actor.JobReportDataItemSaveActor.SaveReportDataHttpItemMessage
 import asura.core.job.{JobReportItemResultEvent, JobReportItemStoreDataHelper}
@@ -40,13 +40,13 @@ object ScenarioRunner {
           caseIds ++= scenarioCaseIds
           scenarioIdCaseIdMap(scenarioId) = scenarioCaseIds
         })
-        HttpCaseRequestService.getByIdsAsMap(caseIds.toSeq)
+        HttpRequestService.getByIdsAsMap(caseIds.toSeq)
       }).flatMap(caseIdMap => {
-        val scenarioIdCaseMap = scala.collection.mutable.HashMap[String, Seq[(String, HttpCaseRequest)]]()
+        val scenarioIdCaseMap = scala.collection.mutable.HashMap[String, Seq[(String, HttpStepRequest)]]()
         scenarioIdCaseIdMap.foreach(tuple => {
           val (scenarioId, caseIds) = tuple
           // if case was deleted the scenario will ignore it
-          val cases = ArrayBuffer[(String, HttpCaseRequest)]()
+          val cases = ArrayBuffer[(String, HttpStepRequest)]()
           caseIds.foreach(id => {
             val value = caseIdMap.get(id)
             if (value.nonEmpty) {
@@ -76,19 +76,18 @@ object ScenarioRunner {
 
   /**
    * @param scenarioId if this value is null, previous case context should not be put context
-   * @param caseTuples (docId, case)
    */
   // TODO: only http steps
   def test(
             scenarioId: String,
             summary: String,
-            caseTuples: Seq[(String, HttpCaseRequest)],
+            httpTuples: Seq[(String, HttpStepRequest)],
             log: String => Unit = null,
             options: ContextOptions = null,
             logResult: ActorEvent => Unit = null,
           )(implicit dataStoreHelper: JobReportItemStoreDataHelper = null): Future[ScenarioReportItemData] = {
-    if (null != log) log(s"[SCN][${summary}] ${XtermUtils.magentaWrap("HTTP")}:${caseTuples.length}")
-    if (caseTuples.isEmpty) throw ErrorMessages.error_EmptyJobCaseScenarioCount.toException
+    if (null != log) log(s"[SCN][${summary}] ${XtermUtils.magentaWrap("HTTP")}:${httpTuples.length}")
+    if (httpTuples.isEmpty) throw ErrorMessages.error_EmptyJobCaseScenarioCount.toException
     val scenarioReportItem = ScenarioReportItemData(scenarioId, summary)
     val caseReportItems = ArrayBuffer[JobReportStepItemData]()
     scenarioReportItem.steps = caseReportItems
@@ -99,7 +98,7 @@ object ScenarioRunner {
     var isScenarioFailed = false
     val caseContext = RuntimeContext(options = options)
     var caseIndex = 0
-    caseTuples.foldLeft(Future.successful(nullCaseReportItem))((prevCaseReportItemFuture, tuple) => {
+    httpTuples.foldLeft(Future.successful(nullCaseReportItem))((prevCaseReportItemFuture, tuple) => {
       val (id, cs) = tuple
       for {
         prevReportItem <- prevCaseReportItemFuture

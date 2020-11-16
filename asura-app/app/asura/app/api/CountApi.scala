@@ -13,7 +13,7 @@ class CountApi @Inject()(implicit exec: ExecutionContext, val controllerComponen
 
   def all() = Action.async { implicit req =>
     val countRes = for {
-      http <- CountService.countIndex(HttpCaseRequest.Index)
+      http <- CountService.countIndex(HttpStepRequest.Index)
       dubbo <- CountService.countIndex(DubboRequest.Index)
       sql <- CountService.countIndex(SqlRequest.Index)
       scenario <- CountService.countIndex(Scenario.Index)
@@ -47,7 +47,7 @@ class CountApi @Inject()(implicit exec: ExecutionContext, val controllerComponen
       )
     }).flatMap(count => {
       val histogramRes = for {
-        httpHistogram <- CountService.dateHistogram(HttpCaseRequest.Index)
+        httpHistogram <- CountService.dateHistogram(HttpStepRequest.Index)
         dubboHistogram <- CountService.dateHistogram(DubboRequest.Index)
         sqlHistogram <- CountService.dateHistogram(SqlRequest.Index)
         scenarioHistogram <- CountService.dateHistogram(Scenario.Index)

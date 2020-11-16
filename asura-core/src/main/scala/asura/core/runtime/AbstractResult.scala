@@ -2,7 +2,7 @@ package asura.core.runtime
 
 import asura.core.assertion.engine.Statistic
 import asura.core.es.model.JobReportData.JobReportStepItemMetrics
-import asura.core.es.model.JobReportDataItem.{ReportDataItemRequest, ReportDataItemResponse}
+import asura.core.es.model.JobReportDataItem.{DataItemRenderedRequest, DataItemRenderedResponse}
 
 trait AbstractResult {
 
@@ -12,9 +12,9 @@ trait AbstractResult {
 
   def context: java.util.Map[Any, Any]
 
-  def request: ReportDataItemRequest
+  def request: DataItemRenderedRequest
 
-  def response: ReportDataItemResponse
+  def response: DataItemRenderedResponse
 
   def metrics: JobReportStepItemMetrics
 

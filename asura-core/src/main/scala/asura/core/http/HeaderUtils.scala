@@ -4,7 +4,7 @@ import akka.http.scaladsl.model.HttpHeader.ParsingResult.{Error, Ok}
 import akka.http.scaladsl.model.headers.{Cookie, HttpCookiePair, RawHeader}
 import akka.http.scaladsl.model.{ErrorInfo, HttpHeader}
 import asura.common.util.StringUtils
-import asura.core.es.model.{Environment, HttpCaseRequest}
+import asura.core.es.model.{Environment, HttpStepRequest}
 import asura.core.runtime.RuntimeContext
 import asura.core.{CoreConfig, ErrorMessages}
 import com.typesafe.scalalogging.Logger
@@ -16,9 +16,9 @@ object HeaderUtils {
 
   val logger = Logger("HeaderUtils")
 
-  def toHeaders(cs: HttpCaseRequest, context: RuntimeContext): immutable.Seq[HttpHeader] = {
+  def toHeaders(httpRequest: HttpStepRequest, context: RuntimeContext): immutable.Seq[HttpHeader] = {
     val headers = ArrayBuffer[HttpHeader]()
-    val request = cs.request
+    val request = httpRequest.request
     val env = if (null != context.options) context.options.getUsedEnv() else null
     if (null != request) {
       val headerSeq = request.header
@@ -56,7 +56,7 @@ object HeaderUtils {
     if (null != env && env.enableProxy) {
       val headerIdentifier = validateProxyVariables(env)
       val dst = new StringBuilder()
-      dst.append("/").append(cs.group).append("/").append(cs.project).append("/").append(env.namespace)
+      dst.append("/").append(httpRequest.group).append("/").append(httpRequest.project).append("/").append(env.namespace)
       headers += RawHeader(headerIdentifier, dst.toString)
     }
     headers.toList

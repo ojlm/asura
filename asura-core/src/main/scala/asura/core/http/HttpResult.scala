@@ -14,8 +14,8 @@ case class HttpResult(
                        var docId: String,
                        var assert: Map[String, Any],
                        var context: java.util.Map[Any, Any],
-                       var request: HttpRequestReportModel,
-                       var response: HttpResponseReportModel,
+                       var request: RenderedHttpRequest,
+                       var response: RenderedHttpResponse,
                        var metrics: JobReportStepItemMetrics = null,
                        var statis: Statistic = Statistic(),
                        var result: java.util.Map[_, _] = java.util.Collections.EMPTY_MAP,
@@ -26,7 +26,7 @@ object HttpResult {
 
   def exceptionResult(
                        docId: String,
-                       rendered: HttpRequestReportModel = null,
+                       rendered: RenderedHttpRequest = null,
                        context: util.Map[Any, Any] = null,
                      ): HttpResult = {
     val result = HttpResult(
@@ -44,8 +44,8 @@ object HttpResult {
             docId: String,
             assert: Map[String, Any],
             context: RuntimeContext,
-            request: HttpRequestReportModel,
-            response: HttpResponseReportModel,
+            request: RenderedHttpRequest,
+            response: RenderedHttpResponse,
           ): Future[HttpResult] = {
     val statistic = Statistic()
     AssertionContext.eval(assert, context.rawContext, statistic).map { assertResult =>

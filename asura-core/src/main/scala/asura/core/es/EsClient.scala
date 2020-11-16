@@ -48,7 +48,7 @@ object EsClient {
     }
     var isAllOk = true
     val indices: Seq[IndexSetting] = Seq(
-      HttpCaseRequest, Job, Project, Environment,
+      HttpStepRequest, Job, Project, Environment,
       Group, JobReport, JobNotify, Scenario, UserProfile,
       Activity, DomainOnlineLog, ProjectApiCoverage, DomainOnlineConfig,
       DubboRequest, SqlRequest, Favorite, CiTrigger, TriggerEventLog, Permissions

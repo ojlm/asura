@@ -162,7 +162,7 @@ object ActivityService extends CommonService with BaseAggregationService {
         futures += UserProfileService.getByIdsAsRawMap(userIds).map(m => dataMap += ("users" -> m))
         futures += GroupService.getByIdsAsRawMap(groupIds).map(m => dataMap += ("group" -> m))
         futures += ProjectService.getByIdsAsRawMap(projectIds).map(m => dataMap += ("project" -> m))
-        futures += HttpCaseRequestService.getByIdsAsRawMap(httpIds).map(m => dataMap += ("http" -> m))
+        futures += HttpRequestService.getByIdsAsRawMap(httpIds).map(m => dataMap += ("http" -> m))
         futures += DubboRequestService.getByIdsAsRawMap(dubboIds).map(m => dataMap += ("dubbo" -> m))
         futures += SqlRequestService.getByIdsAsRawMap(sqlIds).map(m => dataMap += ("sql" -> m))
         futures += ScenarioService.getByIdsAsRawMap(scnIds).map(m => dataMap += ("scenario" -> m))

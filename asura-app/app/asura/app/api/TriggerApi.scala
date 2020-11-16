@@ -74,7 +74,7 @@ class TriggerApi @Inject()(
       val docId = trigger.readiness.targetId
       trigger.readiness.targetType match {
         case ScenarioStep.TYPE_HTTP =>
-          HttpCaseRequestService.getById(docId).map(res => {
+          HttpRequestService.getById(docId).map(res => {
             EsResponse.toSingleApiData(res.result, true)
           })
         case ScenarioStep.TYPE_DUBBO =>

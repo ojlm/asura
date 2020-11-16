@@ -5,7 +5,7 @@ import akka.actor.{ActorRef, Props}
 import akka.pattern.pipe
 import asura.common.actor.{BaseActor, ItemActorEvent, OverActorEvent, SenderMessage}
 import asura.common.util.LogUtils
-import asura.core.es.model.HttpCaseRequest
+import asura.core.es.model.HttpStepRequest
 import asura.core.http.actor.HttpRunnerActor.{StepResult, TestCaseMessage}
 import asura.core.http.{HttpResult, HttpRunner}
 import asura.core.runtime.{ContextOptions, RuntimeContext}
@@ -17,7 +17,7 @@ class HttpRunnerActor extends BaseActor {
   implicit val ec = context.dispatcher
   var wsActor: ActorRef = null
   var docId: String = null
-  var request: HttpCaseRequest = null
+  var request: HttpStepRequest = null
   var variables: Seq[java.util.Map[Any, Any]] = Nil
 
   override def receive: Receive = {
@@ -70,7 +70,7 @@ object HttpRunnerActor {
 
   def props() = Props(new HttpRunnerActor())
 
-  case class TestCaseMessage(id: String, cs: HttpCaseRequest, options: ContextOptions)
+  case class TestCaseMessage(id: String, cs: HttpStepRequest, options: ContextOptions)
 
   case class StepResult(idx: Int, result: HttpResult, errMsg: String = null)
 

@@ -7,7 +7,7 @@ import asura.core.assertion.engine.{AssertionContext, Statistic}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.model.JobReportData.JobReportStepItemMetrics
 import asura.core.runtime.{AbstractResult, RuntimeContext}
-import asura.core.sql.SqlReportModel.{SqlRequestReportModel, SqlResponseReportModel}
+import asura.core.sql.RenderedSqlModel.{RenderedSqlRequest, RenderedSqlResponse}
 
 import scala.concurrent.Future
 
@@ -15,8 +15,8 @@ case class SqlResult(
                       var docId: String,
                       var assert: Map[String, Any],
                       var context: java.util.Map[Any, Any],
-                      var request: SqlRequestReportModel,
-                      var response: SqlResponseReportModel,
+                      var request: RenderedSqlRequest,
+                      var response: RenderedSqlResponse,
                       var metrics: JobReportStepItemMetrics = null,
                       var statis: Statistic = Statistic(),
                       var result: java.util.Map[_, _] = java.util.Collections.EMPTY_MAP,
@@ -27,7 +27,7 @@ object SqlResult {
 
   def exceptionResult(
                        docId: String,
-                       rendered: SqlRequestReportModel = null,
+                       rendered: RenderedSqlRequest = null,
                        context: util.Map[Any, Any] = null,
                      ): SqlResult = {
     val result = SqlResult(
@@ -46,8 +46,8 @@ object SqlResult {
                 docId: String,
                 assert: Map[String, Any],
                 context: RuntimeContext,
-                request: SqlRequestReportModel,
-                response: SqlResponseReportModel,
+                request: RenderedSqlRequest,
+                response: RenderedSqlResponse,
               ): Future[SqlResult] = {
     val statistic = Statistic()
     AssertionContext.eval(assert, context.rawContext, statistic).map(assertResult => {

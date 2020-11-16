@@ -7,8 +7,8 @@ import asura.common.util.{LogUtils, StringUtils}
 import asura.core.ci.actor.ReadinessCheckActor.{DoCheck, DoDelay, DoRetry, ReadinessRequest}
 import asura.core.dubbo.DubboRunner
 import asura.core.es.model.CiTrigger.ReadinessCheck
-import asura.core.es.model.{DubboRequest, HttpCaseRequest, ScenarioStep, SqlRequest}
-import asura.core.es.service.{DubboRequestService, HttpCaseRequestService, SqlRequestService}
+import asura.core.es.model.{DubboRequest, HttpStepRequest, ScenarioStep, SqlRequest}
+import asura.core.es.service.{DubboRequestService, HttpRequestService, SqlRequestService}
 import asura.core.http.HttpRunner
 import asura.core.job.JobExecDesc
 import asura.core.runtime.AbstractResult
@@ -37,7 +37,7 @@ class ReadinessCheckActor(readiness: ReadinessCheck) extends BaseActor {
           case req: DubboRequest =>
             this.doRequest = () => DubboRunner.test(StringUtils.EMPTY, req)
             self ! DoDelay
-          case req: HttpCaseRequest =>
+          case req: HttpStepRequest =>
             this.doRequest = () => HttpRunner.test(StringUtils.EMPTY, req)
             self ! DoDelay
           case req: SqlRequest =>
@@ -120,7 +120,7 @@ class ReadinessCheckActor(readiness: ReadinessCheck) extends BaseActor {
   private def getTargetDoc(): Future[ReadinessRequest] = {
     readiness.targetType match {
       case ScenarioStep.TYPE_HTTP =>
-        HttpCaseRequestService.getRequestById(readiness.targetId)
+        HttpRequestService.getRequestById(readiness.targetId)
           .recover { case t: Throwable => ReadinessRequest(null, LogUtils.stackTraceToString(t)) }
           .map(req => ReadinessRequest(req))
       case ScenarioStep.TYPE_DUBBO =>

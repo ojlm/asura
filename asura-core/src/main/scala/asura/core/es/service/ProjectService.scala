@@ -23,7 +23,7 @@ import scala.concurrent.Future
 object ProjectService extends CommonService {
 
   val projectRelatedIndexes = Seq(
-    HttpCaseRequest.Index, Job.Index, Environment.Index,
+    HttpStepRequest.Index, Job.Index, Environment.Index,
     JobReport.Index, JobNotify.Index, Scenario.Index, Activity.Index,
     ProjectApiCoverage.Index, DubboRequest.Index, SqlRequest.Index, CiTrigger.Index, Favorite.Index,
     Permissions.Index

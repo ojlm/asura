@@ -3,7 +3,7 @@ package asura.core.es.model
 import asura.common.util.StringUtils
 import asura.core.es.EsConfig
 import asura.core.es.model.JobReportData.JobReportStepItemMetrics
-import asura.core.es.model.JobReportDataItem.{ReportDataItemRequest, ReportDataItemResponse}
+import asura.core.es.model.JobReportDataItem.{DataItemRenderedRequest, DataItemRenderedResponse}
 import asura.core.runtime.AbstractResult
 import com.sksamuel.elastic4s.mappings._
 
@@ -15,8 +15,8 @@ case class JobReportDataItem(
                               val jobId: String,
                               val `type`: String,
                               var metrics: JobReportStepItemMetrics,
-                              val request: ReportDataItemRequest,
-                              val response: ReportDataItemResponse,
+                              val request: DataItemRenderedRequest,
+                              val response: DataItemRenderedResponse,
                               var assertions: Map[String, Any],
                               var assertionsResult: java.util.Map[_, _],
                               var generator: String = StringUtils.EMPTY, // specify generator type
@@ -47,9 +47,9 @@ object JobReportDataItem extends IndexSetting {
   )
 
   // rendered request
-  trait ReportDataItemRequest
+  trait DataItemRenderedRequest
 
-  trait ReportDataItemResponse
+  trait DataItemRenderedResponse
 
   def parse(
              jobId: String,
