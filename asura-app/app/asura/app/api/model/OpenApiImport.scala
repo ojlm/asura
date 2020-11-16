@@ -1,11 +1,11 @@
 package asura.app.api.model
 
 import asura.core.api.openapi.ConvertOptions
-import asura.core.es.model.HttpCaseRequest
+import asura.core.es.model.HttpStepRequest
 
 case class OpenApiImport(
                           url: String,
                           content: String,
-                          list: Seq[HttpCaseRequest],
+                          list: Seq[HttpStepRequest],
                           options: ConvertOptions,
                         )

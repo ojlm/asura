@@ -11,7 +11,7 @@ import scala.collection.mutable
 /**
  * If `useProxy` is `true`, then use `namespace` in env first then can fall back to `namespace`
  */
-case class HttpCaseRequest(
+case class HttpStepRequest(
                             summary: String,
                             description: String,
                             var group: String,
@@ -70,7 +70,7 @@ case class HttpCaseRequest(
   }
 }
 
-object HttpCaseRequest extends IndexSetting {
+object HttpStepRequest extends IndexSetting {
 
   val Index: String = s"${EsConfig.IndexPrefix}case"
   val mappings: MappingDefinition = Es6MappingDefinition(

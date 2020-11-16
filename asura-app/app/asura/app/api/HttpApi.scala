@@ -11,7 +11,7 @@ import asura.core.assertion.Assertions
 import asura.core.es.EsResponse
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.Permissions.Functions
-import asura.core.es.model.{Activity, HttpCaseRequest, ScenarioStep}
+import asura.core.es.model.{Activity, HttpStepRequest, ScenarioStep}
 import asura.core.es.service._
 import asura.core.http.HttpRunner
 import asura.core.http.actor.HttpRunnerActor.TestCaseMessage
@@ -28,27 +28,27 @@ import play.api.mvc.RequestHeader
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class HttpCaseApi @Inject()(implicit system: ActorSystem,
-                            val exec: ExecutionContext,
-                            val controllerComponents: SecurityComponents,
-                            val permissionAuthProvider: PermissionAuthProvider,
-                           ) extends BaseApi {
+class HttpApi @Inject()(implicit system: ActorSystem,
+                        val exec: ExecutionContext,
+                        val controllerComponents: SecurityComponents,
+                        val permissionAuthProvider: PermissionAuthProvider,
+                       ) extends BaseApi {
 
   val activityActor = system.actorOf(ActivitySaveActor.props())
 
   def cloneRequest(group: String, project: String, id: String) = Action.async { implicit req =>
     checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_CLONE) { user =>
-      HttpCaseRequestService.getRequestById(id).flatMap(doc => {
+      HttpRequestService.getRequestById(id).flatMap(doc => {
         doc.copyFrom = id
         doc.fillCommonFields(user)
-        HttpCaseRequestService.index(doc)
+        HttpRequestService.index(doc)
       }).toOkResult
     }
   }
 
   def getById(group: String, project: String, id: String) = Action.async { implicit req =>
     checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_VIEW) { _ =>
-      HttpCaseRequestService.getById(id).flatMap(response => {
+      HttpRequestService.getById(id).flatMap(response => {
         withSingleUserProfile(id, response)
       })
     }
@@ -62,11 +62,11 @@ class HttpCaseApi @Inject()(implicit system: ActorSystem,
 
   def put(group: String, project: String) = Action(parse.byteString).async { implicit req =>
     checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_EDIT) { user =>
-      val doc = req.bodyAs(classOf[HttpCaseRequest])
+      val doc = req.bodyAs(classOf[HttpStepRequest])
       doc.group = group
       doc.project = project
       doc.fillCommonFields(user)
-      HttpCaseRequestService.index(doc).map(res => {
+      HttpRequestService.index(doc).map(res => {
         activityActor ! Activity(doc.group, doc.project, user, Activity.TYPE_NEW_CASE, res.id)
         toActionResultFromAny(res)
       })
@@ -75,18 +75,18 @@ class HttpCaseApi @Inject()(implicit system: ActorSystem,
 
   def update(group: String, project: String, id: String) = Action(parse.byteString).async { implicit req =>
     checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_EDIT) { user =>
-      val doc = req.bodyAs(classOf[HttpCaseRequest])
+      val doc = req.bodyAs(classOf[HttpStepRequest])
       doc.group = group
       doc.project = project
       activityActor ! Activity(group, project, user, Activity.TYPE_UPDATE_CASE, id)
-      HttpCaseRequestService.updateCs(id, doc).toOkResult
+      HttpRequestService.updateCs(id, doc).toOkResult
     }
   }
 
   def query(group: String, project: String) = Action(parse.byteString).async { implicit req =>
     checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_LIST) { _ =>
       val q = req.bodyAs(classOf[QueryCase])
-      HttpCaseRequestService.queryCase(q).toOkResult
+      HttpRequestService.queryCase(q).toOkResult
     }
   }
 
@@ -117,20 +117,20 @@ class HttpCaseApi @Inject()(implicit system: ActorSystem,
       if (query.onlyMe) {
         query.creator = user
       }
-      HttpCaseRequestService.searchAfter(query).toOkResult
+      HttpRequestService.searchAfter(query).toOkResult
     }
   }
 
   def aggs() = Action(parse.byteString).async { implicit req =>
     val aggs = req.bodyAs(classOf[AggsQuery])
-    HttpCaseRequestService.aroundAggs(aggs).toOkResult
+    HttpRequestService.aroundAggs(aggs).toOkResult
   }
 
   def trend(groups: Boolean = true) = Action(parse.byteString).async { implicit req =>
     val aggs = req.bodyAs(classOf[AggsQuery])
     val res = for {
       groups <- if (groups) GroupService.getMaxGroups() else Future.successful(Nil)
-      trends <- HttpCaseRequestService.trend(aggs)
+      trends <- HttpRequestService.trend(aggs)
     } yield (groups, trends)
     res.map(tuple => {
       OkApiRes(ApiRes(data = Map("groups" -> tuple._1, "trends" -> tuple._2)))
@@ -139,21 +139,21 @@ class HttpCaseApi @Inject()(implicit system: ActorSystem,
 
   def aggsLabels(group: String, project: String, label: String) = Action(parse.byteString).async { implicit req =>
     checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_VIEW) { _ =>
-      HttpCaseRequestService.aggsLabels(group, project, HttpCaseRequest.Index, label).toOkResult
+      HttpRequestService.aggsLabels(group, project, HttpStepRequest.Index, label).toOkResult
     }
   }
 
   def batchLabels(group: String, project: String) = Action(parse.byteString).async { implicit req =>
     checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_BATCH_LABEL) { _ =>
       val ops = req.bodyAs(classOf[BatchOperationLabels])
-      HttpCaseRequestService.batchUpdateLabels(ops).toOkResult
+      HttpRequestService.batchUpdateLabels(ops).toOkResult
     }
   }
 
   def batchTransfer(group: String, project: String) = Action(parse.byteString).async { implicit req =>
     checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_BATCH_TRANSFER) { _ =>
       val op = req.bodyAs(classOf[BatchTransfer])
-      HttpCaseRequestService.batchTransfer(op).toOkResult
+      HttpRequestService.batchTransfer(op).toOkResult
     }
   }
 
@@ -187,7 +187,7 @@ class HttpCaseApi @Inject()(implicit system: ActorSystem,
           item.project = project
           item.fillCommonFields(user, now)
         })
-        HttpCaseRequestService.index(option.list).map(response => OkApiRes(ApiRes(data = response.count)))
+        HttpRequestService.index(option.list).map(response => OkApiRes(ApiRes(data = response.count)))
       } else {
         Future.successful(OkApiRes(ApiRes(data = 0)))
       }
@@ -217,7 +217,7 @@ class HttpCaseApi @Inject()(implicit system: ActorSystem,
           )))
         } else {
           if (scenarioRes.result.isEmpty && jobRes.result.isEmpty) {
-            HttpCaseRequestService.deleteDoc(ids).toOkResult
+            HttpRequestService.deleteDoc(ids).toOkResult
           } else {
             Future.successful(OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_CantDeleteCase))))
           }

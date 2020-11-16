@@ -24,7 +24,7 @@ object GroupService extends CommonService {
 
   val logger = Logger("GroupService")
 
-  val groupRelatedIndexes = Seq(HttpCaseRequest.Index, Job.Index, Environment.Index,
+  val groupRelatedIndexes = Seq(HttpStepRequest.Index, Job.Index, Environment.Index,
     JobReport.Index, JobNotify.Index, Project.Index, Scenario.Index, Activity.Index,
     ProjectApiCoverage.Index, DubboRequest.Index, SqlRequest.Index, CiTrigger.Index, Favorite.Index,
     Permissions.Index

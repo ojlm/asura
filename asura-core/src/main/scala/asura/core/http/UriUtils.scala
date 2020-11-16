@@ -4,9 +4,8 @@ import java.net.{URLDecoder, URLEncoder}
 import java.nio.charset.StandardCharsets
 
 import akka.http.scaladsl.model.Uri
-import asura.common.exceptions.InvalidStatusException
 import asura.common.util.StringUtils
-import asura.core.es.model.HttpCaseRequest
+import asura.core.es.model.HttpStepRequest
 import asura.core.protocols.Protocols
 import asura.core.runtime.RuntimeContext
 import asura.core.util.StringTemplate
@@ -15,13 +14,13 @@ object UriUtils {
 
   val UTF8 = StandardCharsets.UTF_8.name()
 
-  def toUri(cs: HttpCaseRequest, context: RuntimeContext): Uri = {
+  def toUri(httpRequest: HttpStepRequest, context: RuntimeContext): Uri = {
     Uri.from(
-      scheme = StringUtils.notEmptyElse(cs.request.protocol, Protocols.HTTP),
-      host = context.renderSingleMacroAsString(URLDecoder.decode(cs.request.host, UTF8)),
-      port = if (cs.request.port < 0 || cs.request.port > 65535) 80 else cs.request.port,
-      path = renderPath(URLDecoder.decode(cs.request.urlPath, UTF8), cs, context),
-      queryString = buildQueryString(cs, context)
+      scheme = StringUtils.notEmptyElse(httpRequest.request.protocol, Protocols.HTTP),
+      host = context.renderSingleMacroAsString(URLDecoder.decode(httpRequest.request.host, UTF8)),
+      port = if (httpRequest.request.port < 0 || httpRequest.request.port > 65535) 80 else httpRequest.request.port,
+      path = renderPath(URLDecoder.decode(httpRequest.request.urlPath, UTF8), httpRequest, context),
+      queryString = buildQueryString(httpRequest, context)
     )
   }
 
@@ -46,10 +45,9 @@ object UriUtils {
     sb.toString
   }
 
-  @throws[InvalidStatusException]("if path template variable not in cs")
-  def renderPath(tpl: String, cs: HttpCaseRequest, context: RuntimeContext): String = {
-    if (null != cs.request) {
-      val params = cs.request.path
+  def renderPath(tpl: String, httpRequest: HttpStepRequest, context: RuntimeContext): String = {
+    if (null != httpRequest.request) {
+      val params = httpRequest.request.path
       if (null != params && params.nonEmpty) {
         val ctx = params.map(param => param.key -> context.renderSingleMacroAsString(param.value)).toMap
         StringTemplate.uriPathParse(tpl, ctx)
@@ -61,9 +59,9 @@ object UriUtils {
     }
   }
 
-  def buildQueryString(cs: HttpCaseRequest, context: RuntimeContext): Option[String] = {
-    if (null != cs.request) {
-      val params = cs.request.query
+  def buildQueryString(httpRequest: HttpStepRequest, context: RuntimeContext): Option[String] = {
+    if (null != httpRequest.request) {
+      val params = httpRequest.request.query
       if (null != params && params.nonEmpty) {
         val sb = new StringBuilder()
         for (param <- params if param.enabled) {

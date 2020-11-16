@@ -5,7 +5,7 @@ import akka.util.Timeout
 import asura.common.exceptions.{RequestFailException, WithDataException}
 import asura.common.util.{JsonUtils, StringUtils}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.dubbo.DubboReportModel.{DubboRequestReportModel, DubboResponseReportModel}
+import asura.core.dubbo.RenderedDubboModel.{RenderedDubboRequest, RenderedDubboResponse}
 import asura.core.es.model.DubboRequest
 import asura.core.es.model.DubboRequest.{DubboRequestBody, LoadBalanceAlgorithms}
 import asura.core.runtime.{ContextOptions, RuntimeContext, RuntimeMetrics}
@@ -30,9 +30,9 @@ object DubboRunner {
     context.eraseCurrentData()
     var options = context.options
     if (null != options) {
-      options.caseEnv = request.env
+      options.stepEnv = request.env
     } else {
-      options = ContextOptions(caseEnv = request.env)
+      options = ContextOptions(stepEnv = request.env)
       context.options = options
     }
     metrics.renderRequestStart()
@@ -48,8 +48,8 @@ object DubboRunner {
               docId,
               request.assert,
               context,
-              DubboRequestReportModel(genericRequest),
-              DubboResponseReportModel(responseObj.asInstanceOf[Object])
+              RenderedDubboRequest(genericRequest),
+              RenderedDubboResponse(responseObj.asInstanceOf[Object])
             )
           }).recover {
             case t: Throwable => throw WithDataException(t, genericRequest)

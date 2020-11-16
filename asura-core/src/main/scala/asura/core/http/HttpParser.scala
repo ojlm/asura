@@ -4,7 +4,7 @@ import akka.http.scaladsl.model.{HttpMethods => AkkaHttpMethods, _}
 import asura.core.ErrorMessages
 import asura.core.auth.AuthManager
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.es.model.{Authorization, HttpCaseRequest}
+import asura.core.es.model.{Authorization, HttpStepRequest}
 import asura.core.runtime.{RuntimeContext, RuntimeMetrics}
 
 import scala.collection.immutable
@@ -12,18 +12,19 @@ import scala.concurrent.Future
 
 object HttpParser {
 
-  def toHttpRequest(cs: HttpCaseRequest, context: RuntimeContext)(implicit metrics: RuntimeMetrics): Future[HttpRequest] = {
+  def toHttpRequest(httpRequest: HttpStepRequest, context: RuntimeContext)
+                   (implicit metrics: RuntimeMetrics): Future[HttpRequest] = {
     var method: HttpMethod = null
-    val headers: immutable.Seq[HttpHeader] = HeaderUtils.toHeaders(cs, context)
-    val request = cs.request
+    val request = httpRequest.request
     if (null == request) {
       method = AkkaHttpMethods.GET
     } else {
       method = HttpMethods.toAkkaMethod(request.method)
     }
-    val uri: Uri = UriUtils.toUri(cs, context)
+    val uri: Uri = UriUtils.toUri(httpRequest, context)
+    val headers: immutable.Seq[HttpHeader] = HeaderUtils.toHeaders(httpRequest, context)
     val entityFuture = if (AkkaHttpMethods.GET != method) {
-      EntityUtils.toEntity(cs, context)
+      EntityUtils.toEntity(httpRequest, context)
     } else {
       Future.successful(HttpEntity.Empty)
     }

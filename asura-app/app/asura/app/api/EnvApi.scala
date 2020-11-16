@@ -7,7 +7,7 @@ import asura.core.auth.AuthManager
 import asura.core.es.EsResponse
 import asura.core.es.model.Environment
 import asura.core.es.model.Permissions.Functions
-import asura.core.es.service.{EnvironmentService, HttpCaseRequestService, JobService, ScenarioService}
+import asura.core.es.service.{EnvironmentService, HttpRequestService, JobService, ScenarioService}
 import asura.core.model.QueryEnv
 import asura.core.security.PermissionAuthProvider
 import asura.play.api.BaseApi.OkApiRes
@@ -72,7 +72,7 @@ class EnvApi @Inject()(
     checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_REMOVE) { _ =>
       val ids = Seq(id)
       val res = for {
-        c <- HttpCaseRequestService.containEnv(ids)
+        c <- HttpRequestService.containEnv(ids)
         s <- ScenarioService.containEnv(ids)
         j <- JobService.containEnv(ids)
       } yield (c, s, j)

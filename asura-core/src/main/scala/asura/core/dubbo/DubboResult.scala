@@ -5,7 +5,7 @@ import java.util
 import asura.common.util.StringUtils
 import asura.core.assertion.engine.{AssertionContext, Statistic}
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.dubbo.DubboReportModel.{DubboRequestReportModel, DubboResponseReportModel}
+import asura.core.dubbo.RenderedDubboModel.{RenderedDubboRequest, RenderedDubboResponse}
 import asura.core.es.model.JobReportData.JobReportStepItemMetrics
 import asura.core.runtime.{AbstractResult, RuntimeContext}
 
@@ -15,8 +15,8 @@ case class DubboResult(
                         var docId: String,
                         var assert: Map[String, Any],
                         var context: java.util.Map[Any, Any],
-                        var request: DubboRequestReportModel,
-                        var response: DubboResponseReportModel,
+                        var request: RenderedDubboRequest,
+                        var response: RenderedDubboResponse,
                         var metrics: JobReportStepItemMetrics = null,
                         var statis: Statistic = Statistic(),
                         var result: java.util.Map[_, _] = java.util.Collections.EMPTY_MAP,
@@ -27,7 +27,7 @@ object DubboResult {
 
   def exceptionResult(
                        docId: String,
-                       rendered: DubboRequestReportModel = null,
+                       rendered: RenderedDubboRequest = null,
                        context: util.Map[Any, Any] = null,
                      ): DubboResult = {
     val result = DubboResult(
@@ -45,8 +45,8 @@ object DubboResult {
                 docId: String,
                 assert: Map[String, Any],
                 context: RuntimeContext,
-                request: DubboRequestReportModel,
-                response: DubboResponseReportModel,
+                request: RenderedDubboRequest,
+                response: RenderedDubboResponse,
               ): Future[DubboResult] = {
     val statistic = Statistic()
     AssertionContext.eval(assert, context.rawContext, statistic).map(assertResult => {

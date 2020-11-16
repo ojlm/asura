@@ -1,12 +1,13 @@
 package asura.core.assertion.engine
 
+import java.util.Collections
+
 import akka.http.scaladsl.model.HttpResponse
-import asura.core.http.{HeaderUtils, HttpRequestReportModel, HttpResponseReportModel, HttpResult}
+import asura.core.http.{HeaderUtils, HttpResult, RenderedHttpRequest, RenderedHttpResponse}
 import asura.core.runtime.RuntimeContext
 import asura.core.util.JsonPathUtils
 
 import scala.concurrent.Future
-import scala.jdk.CollectionConverters._
 
 object HttpResponseAssert {
 
@@ -20,41 +21,41 @@ object HttpResponseAssert {
                           assert: Map[String, Any],
                           response: HttpResponse,
                           entity: String,
-                          caseRequest: HttpRequestReportModel,
-                          caseContext: RuntimeContext
+                          renderedRequest: RenderedHttpRequest,
+                          runtimeContext: RuntimeContext
                         ): Future[HttpResult] = {
     var isJson = false
-    caseContext.setCurrentStatus(response.status.intValue())
-    val headers = new java.util.HashMap[String, String]()
+    runtimeContext.setCurrentStatus(response.status.intValue())
+    val headers = new java.util.ArrayList[java.util.Map[String, String]]()
     response.headers.foreach(header => {
-      headers.put(header.name(), header.value())
+      headers.add(Collections.singletonMap(header.name(), header.value()))
       if (HeaderUtils.isApplicationJson(header)) {
         isJson = true
       }
     })
-    caseContext.setCurrentHeaders(headers)
+    runtimeContext.setCurrentHeaders(headers)
     if (isJson) {
       val entityDoc = JsonPathUtils.parse(entity)
-      caseContext.setCurrentEntity(entityDoc)
+      runtimeContext.setCurrentEntity(entityDoc)
     } else {
       try {
         val entityDoc = JsonPathUtils.parse(entity)
-        caseContext.setCurrentEntity(entityDoc)
+        runtimeContext.setCurrentEntity(entityDoc)
       } catch {
         case _: Throwable =>
-          caseContext.setCurrentEntity(entity)
+          runtimeContext.setCurrentEntity(entity)
       }
     }
-    val caseResponse = HttpResponseReportModel(
+    val caseResponse = RenderedHttpResponse(
       response.status.intValue(),
       response.status.reason(),
-      headers.asScala,
+      headers,
       {
         val mediaType = response.entity.getContentType().mediaType
         s"${mediaType.mainType}/${mediaType.subType}"
       },
       entity
     )
-    HttpResult.eval(docId, assert, caseContext, caseRequest, caseResponse)
+    HttpResult.eval(docId, assert, runtimeContext, renderedRequest, caseResponse)
   }
 }

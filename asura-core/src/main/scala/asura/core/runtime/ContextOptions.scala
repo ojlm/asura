@@ -6,14 +6,14 @@ import asura.common.util.StringUtils
 import asura.core.es.model.Environment
 
 /** used for override default case runtime behavior
-  *
-  * 1. get which `Environment` is used.
-  * 2. other options maybe added in the future
-  */
+ *
+ * 1. get which `Environment` is used.
+ * 2. other options maybe added in the future
+ */
 case class ContextOptions(
                            var jobEnv: String = null,
                            var scenarioEnv: String = null,
-                           var caseEnv: String = null,
+                           var stepEnv: String = null,
                            var initCtx: util.Map[Any, Any] = null,
                          ) {
 
@@ -40,7 +40,7 @@ case class ContextOptions(
     } else if (StringUtils.isNotEmpty(scenarioEnv)) {
       scenarioEnv
     } else {
-      caseEnv
+      stepEnv
     }
   }
 }

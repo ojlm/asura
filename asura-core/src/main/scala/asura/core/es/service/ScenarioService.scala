@@ -74,10 +74,10 @@ object ScenarioService extends CommonService {
         }
       })
       val res = for {
-        cs <- HttpCaseRequestService.getByIdsAsMap(httpSeq.toSeq)
+        http <- HttpRequestService.getByIdsAsMap(httpSeq.toSeq)
         dubbo <- DubboRequestService.getByIdsAsMap(dubboSeq.toSeq)
         sql <- SqlRequestService.getByIdsAsMap(sqlSeq.toSeq)
-      } yield (cs, dubbo, sql)
+      } yield (http, dubbo, sql)
       val idxMap = mutable.HashMap[Int, Int]()
       res.flatMap(triple => {
         val requests = ArrayBuffer[IndexRequest]()
@@ -89,7 +89,7 @@ object ScenarioService extends CommonService {
               val doc = triple._1(step.id)
               doc.fillCommonFields(creator, now)
               doc.copyFrom = step.id
-              requests += indexInto(HttpCaseRequest.Index).doc(doc)
+              requests += indexInto(HttpStepRequest.Index).doc(doc)
               idxMap(i) = requests.length - 1
             case ScenarioStep.TYPE_DUBBO =>
               val doc = triple._2(step.id)
@@ -161,7 +161,7 @@ object ScenarioService extends CommonService {
             }
           })
           val res = for {
-            cs <- HttpCaseRequestService.getByIdsAsMap(httpSeq.toSeq, true)
+            cs <- HttpRequestService.getByIdsAsMap(httpSeq.toSeq, true)
             dubbo <- DubboRequestService.getByIdsAsMap(dubboSeq.toSeq, true)
             sql <- SqlRequestService.getByIdsAsMap(sqlSeq.toSeq, true)
           } yield (cs, dubbo, sql)

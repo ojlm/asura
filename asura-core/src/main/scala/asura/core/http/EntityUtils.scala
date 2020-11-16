@@ -7,7 +7,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import asura.common.util.{LogUtils, StringUtils}
 import asura.core.ErrorMessages
-import asura.core.es.model.{FormDataItem, HttpCaseRequest, KeyValueObject, MediaObject}
+import asura.core.es.model.{FormDataItem, HttpStepRequest, KeyValueObject, MediaObject}
 import asura.core.http.UriUtils.UTF8
 import asura.core.runtime.RuntimeContext
 import asura.core.store.BlobStoreEngines
@@ -23,8 +23,8 @@ object EntityUtils {
   val logger = Logger("EntityUtils")
   val EMPTY_ENTITY = HttpEntity(ContentTypes.NoContentType, ByteString.empty)
 
-  def toEntity(cs: HttpCaseRequest, context: RuntimeContext): Future[RequestEntity] = {
-    val request = cs.request
+  def toEntity(httpRequest: HttpStepRequest, context: RuntimeContext): Future[RequestEntity] = {
+    val request = httpRequest.request
     if (StringUtils.isNotEmpty(request.contentType) && null != request.body && request.body.nonEmpty) {
       request.contentType match {
         case HttpContentTypes.JSON =>

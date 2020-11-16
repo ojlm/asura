@@ -26,7 +26,7 @@ object HomeService extends CommonService {
     EsClient.esClient.execute {
       val esQueries = ArrayBuffer[Query]()
       if (StringUtils.isNotEmpty(query.text)) esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
-      search(Group.Index, Project.Index, HttpCaseRequest.Index, DubboRequest.Index, SqlRequest.Index,
+      search(Group.Index, Project.Index, HttpStepRequest.Index, DubboRequest.Index, SqlRequest.Index,
         Environment.Index, Scenario.Index, Job.Index)
         .query(boolQuery().must(esQueries))
         .sourceInclude(includeFields)

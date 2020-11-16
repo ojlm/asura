@@ -7,17 +7,17 @@ import asura.common.exceptions.WithDataException
 import asura.common.util.{FutureUtils, LogUtils, StringUtils, XtermUtils}
 import asura.core.ErrorMessages
 import asura.core.assertion.engine.Statistic
-import asura.core.dubbo.DubboReportModel.DubboRequestReportModel
+import asura.core.dubbo.RenderedDubboModel.RenderedDubboRequest
 import asura.core.dubbo.{DubboResult, DubboRunner}
 import asura.core.es.model.JobReportData.{JobReportStepItemData, ReportStepItemStatus, ScenarioReportItemData}
 import asura.core.es.model._
-import asura.core.es.service.{DubboRequestService, HttpCaseRequestService, SqlRequestService}
-import asura.core.http.{HttpRequestReportModel, HttpResult, HttpRunner}
+import asura.core.es.service.{DubboRequestService, HttpRequestService, SqlRequestService}
+import asura.core.http.{HttpResult, HttpRunner, RenderedHttpRequest}
 import asura.core.job.actor.JobReportDataItemSaveActor.SaveReportDataHttpItemMessage
 import asura.core.job.{JobReportItemResultEvent, JobReportItemStoreDataHelper}
 import asura.core.runtime.{AbstractResult, ContextOptions, ControllerOptions, RuntimeContext}
 import asura.core.scenario.actor.ScenarioRunnerActor.{ScenarioTestData, ScenarioTestJobMessage, ScenarioTestWebMessage}
-import asura.core.sql.SqlReportModel.SqlRequestReportModel
+import asura.core.sql.RenderedSqlModel.RenderedSqlRequest
 import asura.core.sql.{SqlResult, SqlRunner}
 
 import scala.collection.mutable.ArrayBuffer
@@ -135,16 +135,16 @@ class ScenarioRunnerActor(scenarioId: String) extends ScenarioStepBasicActor {
     val step = this.steps(idx)
     step.`type` match {
       case ScenarioStep.TYPE_HTTP =>
-        val csOpt = this.stepsData.http.get(step.id)
-        if (csOpt.nonEmpty) {
-          val httpRequest = csOpt.get
+        val httpOpt = this.stepsData.http.get(step.id)
+        if (httpOpt.nonEmpty) {
+          val httpRequest = httpOpt.get
           HttpRunner.test(step.id, httpRequest, this.runtimeContext)
             .flatMap(httpResult => handleNormalResult(httpRequest.summary, httpResult, step, idx, httpRequest.exports))
             .recover {
               case WithDataException(t, rendered) =>
                 handleExceptionalResult(
                   httpRequest.summary,
-                  HttpResult.exceptionResult(step.id, rendered.asInstanceOf[HttpRequestReportModel], this.runtimeContext.rawContext),
+                  HttpResult.exceptionResult(step.id, rendered.asInstanceOf[RenderedHttpRequest], this.runtimeContext.rawContext),
                   step, idx, t
                 )
               case t: Throwable =>
@@ -163,7 +163,7 @@ class ScenarioRunnerActor(scenarioId: String) extends ScenarioStepBasicActor {
               case WithDataException(t, rendered) =>
                 handleExceptionalResult(
                   dubboRequest.summary,
-                  DubboResult.exceptionResult(step.id, rendered.asInstanceOf[DubboRequestReportModel], this.runtimeContext.rawContext),
+                  DubboResult.exceptionResult(step.id, rendered.asInstanceOf[RenderedDubboRequest], this.runtimeContext.rawContext),
                   step, idx, t)
               case t: Throwable =>
                 handleExceptionalResult(dubboRequest.summary, DubboResult.exceptionResult(step.id), step, idx, t)
@@ -181,7 +181,7 @@ class ScenarioRunnerActor(scenarioId: String) extends ScenarioStepBasicActor {
               case WithDataException(t, rendered) =>
                 handleExceptionalResult(
                   sqlRequest.summary,
-                  SqlResult.exceptionResult(step.id, rendered.asInstanceOf[SqlRequestReportModel], this.runtimeContext.rawContext),
+                  SqlResult.exceptionResult(step.id, rendered.asInstanceOf[RenderedSqlRequest], this.runtimeContext.rawContext),
                   step, idx, t)
               case t: Throwable =>
                 handleExceptionalResult(sqlRequest.summary, SqlResult.exceptionResult(step.id), step, idx, t)
@@ -301,8 +301,8 @@ class ScenarioRunnerActor(scenarioId: String) extends ScenarioStepBasicActor {
       val step = this.steps(i)
       val title = step.`type` match {
         case ScenarioStep.TYPE_HTTP =>
-          val csOpt = this.stepsData.http.get(step.id)
-          csOpt.get.summary
+          val httpOpt = this.stepsData.http.get(step.id)
+          httpOpt.get.summary
         case ScenarioStep.TYPE_DUBBO =>
           val dubboOpt = this.stepsData.dubbo.get(step.id)
           dubboOpt.get.summary
@@ -334,22 +334,22 @@ class ScenarioRunnerActor(scenarioId: String) extends ScenarioStepBasicActor {
   }
 
   private def getScenarioTestData(steps: Seq[ScenarioStep]): Future[ScenarioTestData] = {
-    val csSeq = ArrayBuffer[String]()
+    val httpSeq = ArrayBuffer[String]()
     val dubboSeq = ArrayBuffer[String]()
     val sqlSeq = ArrayBuffer[String]()
     steps.foreach(step => {
       step.`type` match {
-        case ScenarioStep.TYPE_HTTP => csSeq += step.id
+        case ScenarioStep.TYPE_HTTP => httpSeq += step.id
         case ScenarioStep.TYPE_DUBBO => dubboSeq += step.id
         case ScenarioStep.TYPE_SQL => sqlSeq += step.id
         case _ =>
       }
     })
     val res = for {
-      cs <- HttpCaseRequestService.getByIdsAsMap(csSeq.toSeq)
+      http <- HttpRequestService.getByIdsAsMap(httpSeq.toSeq)
       dubbo <- DubboRequestService.getByIdsAsMap(dubboSeq.toSeq)
       sql <- SqlRequestService.getByIdsAsMap(sqlSeq.toSeq)
-    } yield (cs, dubbo, sql)
+    } yield (http, dubbo, sql)
     res.map(triple => {
       if (null != wsActor) {
         val msg = s"${consoleLogPrefix("SUM  ", -1)} " +
@@ -429,7 +429,7 @@ object ScenarioRunnerActor {
   }
 
   case class ScenarioTestData(
-                               http: Map[String, HttpCaseRequest],
+                               http: Map[String, HttpStepRequest],
                                dubbo: Map[String, DubboRequest],
                                sql: Map[String, SqlRequest],
                              )

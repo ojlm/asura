@@ -7,7 +7,7 @@ import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.model.SqlRequest
 import asura.core.es.model.SqlRequest.SqlRequestBody
 import asura.core.runtime.{ContextOptions, RuntimeContext, RuntimeMetrics}
-import asura.core.sql.SqlReportModel.{SqlRequestReportModel, SqlResponseReportModel}
+import asura.core.sql.RenderedSqlModel.{RenderedSqlRequest, RenderedSqlResponse}
 import asura.core.{CoreConfig, RunnerActors}
 import com.typesafe.scalalogging.Logger
 
@@ -25,9 +25,9 @@ object SqlRunner {
     context.eraseCurrentData()
     var options = context.options
     if (null != options) {
-      options.caseEnv = request.env
+      options.stepEnv = request.env
     } else {
-      options = ContextOptions(caseEnv = request.env)
+      options = ContextOptions(stepEnv = request.env)
       context.options = options
     }
     metrics.renderRequestStart()
@@ -44,7 +44,7 @@ object SqlRunner {
               request.assert,
               context,
               tuple._2,
-              SqlResponseReportModel(responseObj.asInstanceOf[Object])
+              RenderedSqlResponse(responseObj.asInstanceOf[Object])
             )
           }).recover {
             case t: Throwable => throw WithDataException(t, tuple._2)
@@ -60,7 +60,7 @@ object SqlRunner {
   }
 
   def renderRequest(request: SqlRequestBody, context: RuntimeContext)
-                   (implicit metrics: RuntimeMetrics): Future[(SqlRequestBody, SqlRequestReportModel)] = {
+                   (implicit metrics: RuntimeMetrics): Future[(SqlRequestBody, RenderedSqlRequest)] = {
     val host = request.host
     val port = request.port
     val database = request.database
@@ -69,7 +69,7 @@ object SqlRunner {
     metrics.renderAuthBegin()
     metrics.renderAuthEnd()
     val renderedRequest = request.copyFrom(host, port, database, sql)
-    val reportModel = SqlRequestReportModel(
+    val reportModel = RenderedSqlRequest(
       host = request.host,
       port = request.port,
       username = request.username,

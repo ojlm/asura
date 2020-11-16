@@ -123,7 +123,7 @@ class SyncOnlineDomainAndRestApiJob extends Job {
   private def getProjectApiSet(project: Project, apisQuery: Seq[Query], aggSize: Int): Map[String, Long] = {
     import asura.common.util.FutureUtils.RichFuture
     try {
-      HttpCaseRequestService.getApiSet(project, Nil, aggSize).await.toMap
+      HttpRequestService.getApiSet(project, Nil, aggSize).await.toMap
     } catch {
       case t: Throwable =>
         logger.error(LogUtils.stackTraceToString(t))

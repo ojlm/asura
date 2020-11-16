@@ -61,7 +61,7 @@ object RuntimeContext {
    * @param template template string which must start with `${` and end with `}`
    * @param ctx      context must be java types
    * @return template itself or value in context wrapped in a future
-   **/
+   * */
   def renderSingleMacro(template: String, ctx: util.Map[Any, Any]): Any = {
     if (StringUtils.isNotEmpty(template)) {
       if (template.startsWith(TEMPLATE_PREFIX) && template.endsWith(TEMPLATE_SUFFIX)) {
@@ -264,7 +264,7 @@ case class RuntimeContext(
     this
   }
 
-  def setCurrentHeaders(headers: java.util.HashMap[String, String]): RuntimeContext = {
+  def setCurrentHeaders(headers: java.util.ArrayList[java.util.Map[String, String]]): RuntimeContext = {
     ctx.put(RuntimeContext.KEY_HEADERS, headers)
     this
   }
