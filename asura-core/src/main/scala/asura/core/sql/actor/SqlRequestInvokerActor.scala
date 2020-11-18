@@ -1,16 +1,16 @@
 package asura.core.sql.actor
 
 import java.sql.Connection
+import java.util
 
 import akka.actor.Props
 import akka.pattern.{ask, pipe}
 import akka.util.Timeout
 import asura.common.actor.BaseActor
-import asura.common.util.FutureUtils
-import asura.core.CoreConfig
 import asura.core.es.model.SqlRequest.SqlRequestBody
 import asura.core.sql.actor.MySqlConnectionCacheActor.GetConnectionMessage
-import asura.core.sql.{MySqlConnector, SqlConfig, SqlParserUtils}
+import asura.core.sql.{MySqlConnector, SqlConfig, SqlParserUtils, SqlToExecute}
+import asura.core.{CoreConfig, ErrorMessages}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -31,24 +31,31 @@ class SqlRequestInvokerActor extends BaseActor {
   def getResponse(requestBody: SqlRequestBody): Future[Object] = {
     implicit val sqlEc = SqlConfig.SQL_EC
     val futConn = (connectionCacheActor ? GetConnectionMessage(requestBody)).asInstanceOf[Future[Connection]]
-    val (isOk, errMsg) = SqlParserUtils.isSelectStatement(requestBody.sql)
-    if (null == errMsg) {
-      futConn.flatMap(conn => {
-        if (isOk) {
-          Future {
-            MySqlConnector.executeQuery(conn, requestBody.sql)
-          }
+    futConn.flatMap(conn => {
+      Future {
+        val statements = SqlParserUtils.getStatements(requestBody.sql)
+        if (statements.size > 1) {
+          val results = new util.ArrayList[Object]()
+          statements.foreach(statement => {
+            results.add(executeSql(conn, statement))
+          })
+          results
+        } else if (statements.size == 1) {
+          executeSql(conn, statements(0))
         } else {
-          Future {
-            MySqlConnector.executeUpdate(conn, requestBody.sql)
-          }
+          ErrorMessages.error_InvalidRequestParameters.toFutureFail
         }
-      })
-    } else {
-      FutureUtils.requestFail(errMsg)
-    }
+      }
+    })
   }
 
+  private def executeSql(conn: Connection, sql: SqlToExecute): Object = {
+    if (sql.isSelect) {
+      MySqlConnector.executeQuery(conn, sql.sql)
+    } else {
+      MySqlConnector.executeUpdate(conn, sql.sql)
+    }
+  }
 }
 
 object SqlRequestInvokerActor {
