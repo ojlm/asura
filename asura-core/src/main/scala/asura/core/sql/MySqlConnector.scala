@@ -78,7 +78,8 @@ object MySqlConnector {
       =>
         rs.getObject(col)
       case _ =>
-        rs.getObject(col).toString
+        val value = rs.getObject(col)
+        if (null != value) value.toString else null
     }
   }
 }
