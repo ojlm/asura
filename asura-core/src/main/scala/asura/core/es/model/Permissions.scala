@@ -71,6 +71,8 @@ object Permissions extends IndexSetting {
     val SYSTEM_ES_EDIT = "system.es.edit"
     val SYSTEM_JOBS_VIEW = "system.jobs.view"
     val SYSTEM_JOBS_EDIT = "system.jobs.edit"
+    // count
+    val COUNT_ALL = "count.all"
     // activity
     // 我的最近项目
     val ACTIVITY_RECENT_PROJECT = "activity.recent.project"
@@ -158,7 +160,7 @@ object Permissions extends IndexSetting {
     val JOB_NOTIFY_EDIT = "job.notify.edit"
 
     val ADMIN_FUNCTIONS = Set(GROUP_CREATE, PROJECT_TRANSFER, ACTIVITY_FEED_ALL,
-      SYSTEM_ES_VIEW, SYSTEM_ES_EDIT, SYSTEM_JOBS_VIEW, SYSTEM_JOBS_EDIT
+      SYSTEM_ES_VIEW, SYSTEM_ES_EDIT, SYSTEM_JOBS_VIEW, SYSTEM_JOBS_EDIT, COUNT_ALL,
     )
     val GUEST_FUNCTIONS = Set(GROUP_LIST, GROUP_INFO_VIEW, GROUP_PROJECT_LIST, GROUP_JOB_LIST, GROUP_MEMBERS_VIEW,
       PROJECT_LIST, PROJECT_INFO_VIEW, PROJECT_OPENAPI_VIEW, PROJECT_MEMBERS_VIEW,

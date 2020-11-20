@@ -16,7 +16,7 @@ import asura.core.es.service._
 import asura.core.http.HttpRunner
 import asura.core.http.actor.HttpRunnerActor.TestCaseMessage
 import asura.core.model.BatchOperation.{BatchDelete, BatchOperationLabels, BatchTransfer}
-import asura.core.model.{AggsQuery, QueryCase, SearchAfterCase}
+import asura.core.model.{QueryCase, SearchAfterCase}
 import asura.core.runtime.RuntimeContext
 import asura.core.security.PermissionAuthProvider
 import asura.core.util.{JacksonSupport, JsonPathUtils}
@@ -119,22 +119,6 @@ class HttpApi @Inject()(implicit system: ActorSystem,
       }
       HttpRequestService.searchAfter(query).toOkResult
     }
-  }
-
-  def aggs() = Action(parse.byteString).async { implicit req =>
-    val aggs = req.bodyAs(classOf[AggsQuery])
-    HttpRequestService.aroundAggs(aggs).toOkResult
-  }
-
-  def trend(groups: Boolean = true) = Action(parse.byteString).async { implicit req =>
-    val aggs = req.bodyAs(classOf[AggsQuery])
-    val res = for {
-      groups <- if (groups) GroupService.getMaxGroups() else Future.successful(Nil)
-      trends <- HttpRequestService.trend(aggs)
-    } yield (groups, trends)
-    res.map(tuple => {
-      OkApiRes(ApiRes(data = Map("groups" -> tuple._1, "trends" -> tuple._2)))
-    })
   }
 
   def aggsLabels(group: String, project: String, label: String) = Action(parse.byteString).async { implicit req =>

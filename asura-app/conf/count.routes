@@ -1,1 +1,6 @@
-GET        /all        asura.app.api.CountApi.all()
+GET         /all                        asura.app.api.CountApi.all()
+POST        /aggs/http                  asura.app.api.CountApi.httpAggs()
+POST        /aggs/trend/http            asura.app.api.CountApi.httpTrend(groups: Boolean ?= true)
+POST        /aggs/trend/activity        asura.app.api.CountApi.activityTrend()
+POST        /aggs/terms/activity        asura.app.api.CountApi.activityAggTerms()
+POST        /activity/feed              asura.app.api.CountApi.activityFeed()

@@ -48,48 +48,45 @@ class UserApi @Inject()(
       } else {
         val username = commonProfile.getId
         val emailStr = if (null != email) email.toString else StringUtils.EMPTY
-        permissionAuthProvider.isAdmin(username).flatMap(isAdmin => {
-          val apiUserProfile = UserProfile(
-            token = token.toString,
-            username = username,
-            email = emailStr,
-            isSysAdmin = isAdmin,
-          )
-          UserProfileService.getProfileById(username)
-            .flatMap(profile => {
-              if (null != profile) {
-                // already registered
-                apiUserProfile.nickname = profile.nickname
-                apiUserProfile.avatar = profile.avatar
-                apiUserProfile.summary = profile.summary
-                apiUserProfile.description = profile.description
-                apiUserProfile.email = profile.email
-                activityActor ! Activity(StringUtils.EMPTY, StringUtils.EMPTY, username, Activity.TYPE_USER_LOGIN, username)
-                Future.successful(OkApiRes(ApiRes(data = apiUserProfile)))
+        val apiUserProfile = UserProfile(
+          token = token.toString,
+          username = username,
+          email = emailStr,
+        )
+        UserProfileService.getProfileById(username)
+          .flatMap(profile => {
+            if (null != profile) {
+              // already registered
+              apiUserProfile.nickname = profile.nickname
+              apiUserProfile.avatar = profile.avatar
+              apiUserProfile.summary = profile.summary
+              apiUserProfile.description = profile.description
+              apiUserProfile.email = profile.email
+              activityActor ! Activity(StringUtils.EMPTY, StringUtils.EMPTY, username, Activity.TYPE_USER_LOGIN, username)
+              Future.successful(OkApiRes(ApiRes(data = apiUserProfile)))
+            } else {
+              // new user
+              val esUserProfile = EsUserProfile(
+                username = username,
+                email = emailStr
+              )
+              if (commonProfile.isInstanceOf[LdapProfile]) {
+                // first time login by ldap
+                esUserProfile.fillCommonFields(BaseIndex.CREATOR_LDAP)
               } else {
-                // new user
-                val esUserProfile = EsUserProfile(
-                  username = username,
-                  email = emailStr
-                )
-                if (commonProfile.isInstanceOf[LdapProfile]) {
-                  // first time login by ldap
-                  esUserProfile.fillCommonFields(BaseIndex.CREATOR_LDAP)
-                } else {
-                  // not by ldap
-                  esUserProfile.fillCommonFields(BaseIndex.CREATOR_STANDARD)
-                }
-                UserProfileService.index(esUserProfile).map(indexResponse => {
-                  activityActor ! Activity(StringUtils.EMPTY, StringUtils.EMPTY, username, Activity.TYPE_NEW_USER, username)
-                  if (StringUtils.isNotEmpty(indexResponse.id)) {
-                    OkApiRes(ApiRes(data = apiUserProfile))
-                  } else {
-                    OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_FailToCreateUser)))
-                  }
-                })
+                // not by ldap
+                esUserProfile.fillCommonFields(BaseIndex.CREATOR_STANDARD)
               }
-            })
-        })
+              UserProfileService.index(esUserProfile).map(indexResponse => {
+                activityActor ! Activity(StringUtils.EMPTY, StringUtils.EMPTY, username, Activity.TYPE_NEW_USER, username)
+                if (StringUtils.isNotEmpty(indexResponse.id)) {
+                  OkApiRes(ApiRes(data = apiUserProfile))
+                } else {
+                  OkApiRes(ApiResError(getI18nMessage(AppErrorMessages.error_FailToCreateUser)))
+                }
+              })
+            }
+          })
       }
     }
   }
@@ -100,11 +97,16 @@ class UserApi @Inject()(
 
   def update() = Action(parse.byteString).async { implicit req =>
     val userProfile = req.bodyAs(classOf[EsUserProfile])
+    userProfile.username = getProfileId()
     UserProfileService.updateDoc(userProfile).toOkResult
   }
 
   def query() = Action(parse.byteString).async { implicit req =>
     val q = req.bodyAs(classOf[QueryUser])
     UserProfileService.queryDoc(q).toOkResultByEsList(false)
+  }
+
+  def isAdmin() = Action(parse.byteString).async { implicit req =>
+    permissionAuthProvider.isAdmin(getProfileId()).toOkResult
   }
 }
