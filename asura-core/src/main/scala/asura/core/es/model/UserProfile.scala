@@ -6,12 +6,12 @@ import com.sksamuel.elastic4s.mappings.{KeywordField, MappingDefinition}
 import scala.collection.mutable
 
 case class UserProfile(
-                        val username: String,
-                        val nickname: String = null,
-                        val email: String = null,
-                        val avatar: String = null,
-                        val summary: String = null,
-                        val description: String = null,
+                        var username: String,
+                        nickname: String = null,
+                        email: String = null,
+                        avatar: String = null,
+                        summary: String = null,
+                        description: String = null,
                         var creator: String = null,
                         var createdAt: String = null,
                         var updatedAt: String = null,
