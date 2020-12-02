@@ -14,6 +14,7 @@ POST          /:group/:project/report/trend                asura.app.api.JobApi.
 GET           /:group/:project/report/trend/:id            asura.app.api.JobApi.jobTrend(group, project, id, days: Option[Int])
 GET           /:group/:project/report/item/:day/:id        asura.app.api.JobApi.reportItem(group, project, day, id)
 POST          /:group/:project/cron                        asura.app.api.JobApi.cron(group, project)
+GET           /:group/:project/aggs/labels                 asura.app.api.JobApi.aggsLabels(group, project, label)
 GET           /:group/:project/notify                      asura.app.api.JobNotifyApi.all(group, project)
 PUT           /:group/:project/notify                      asura.app.api.JobNotifyApi.put(group, project)
 DELETE        /:group/:project/notify/:id                  asura.app.api.JobNotifyApi.delete(group, project, id)

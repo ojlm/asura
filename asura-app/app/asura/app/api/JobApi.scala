@@ -10,7 +10,7 @@ import asura.common.model.{ApiRes, ApiResError}
 import asura.common.util.StringUtils
 import asura.core.es.actor.ActivitySaveActor
 import asura.core.es.model.Permissions.Functions
-import asura.core.es.model.{Activity, JobTrigger}
+import asura.core.es.model.{Activity, Job, JobTrigger}
 import asura.core.es.service._
 import asura.core.job.actor._
 import asura.core.job.{JobCenter, JobUtils, SchedulerManager}
@@ -33,6 +33,12 @@ class JobApi @Inject()(
                       ) extends BaseApi {
 
   val activityActor = system.actorOf(ActivitySaveActor.props())
+
+  def aggsLabels(group: String, project: String, label: String) = Action.async { implicit req =>
+    checkPermission(group, Some(project), Functions.JOB_LIST) { _ =>
+      JobService.aggsLabels(group, project, Job.Index, label).toOkResult
+    }
+  }
 
   def types(group: String, project: String) = Action(parse.byteString).async { implicit req =>
     checkPermission(group, Some(project), Functions.JOB_TYPES) { _ =>

@@ -27,6 +27,12 @@ class ScenarioApi @Inject()(
 
   val activityActor = system.actorOf(ActivitySaveActor.props())
 
+  def aggsLabels(group: String, project: String, label: String) = Action.async { implicit req =>
+    checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_VIEW) { _ =>
+      ScenarioService.aggsLabels(group, project, Scenario.Index, label).toOkResult
+    }
+  }
+
   def getById(group: String, project: String, id: String) = Action.async { implicit req =>
     checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_VIEW) { _ =>
       ScenarioService.getRelativesById(id).toOkResult
