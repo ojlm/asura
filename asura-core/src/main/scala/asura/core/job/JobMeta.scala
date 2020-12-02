@@ -3,6 +3,7 @@ package asura.core.job
 import asura.common.exceptions.ErrorMessages.ErrorMessage
 import asura.common.util.StringUtils
 import asura.core.ErrorMessages
+import asura.core.es.model.Label.LabelRef
 import asura.core.job.impl.RunCaseJob
 import org.quartz.{JobBuilder, JobDetail}
 
@@ -13,6 +14,7 @@ case class JobMeta(
                     comment: String = null,
                     env: String = StringUtils.EMPTY,
                     description: String = StringUtils.EMPTY,
+                    labels: Seq[LabelRef] = Nil,
                     scheduler: String = StringUtils.EMPTY, // this field can be null, use method instead
                     classAlias: String // the field can be null, use method instead
                   ) {

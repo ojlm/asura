@@ -20,7 +20,7 @@ import scala.collection.Iterable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
-object JobService extends CommonService {
+object JobService extends CommonService with BaseAggregationService {
 
   val basicFields = Seq(
     FieldKeys.FIELD_SUMMARY,

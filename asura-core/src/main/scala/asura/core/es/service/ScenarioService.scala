@@ -19,7 +19,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.{Iterable, mutable}
 import scala.concurrent.Future
 
-object ScenarioService extends CommonService {
+object ScenarioService extends CommonService with BaseAggregationService {
 
   val basicFields = Seq(
     FieldKeys.FIELD_SUMMARY,
@@ -241,6 +241,10 @@ object ScenarioService extends CommonService {
       if (StringUtils.isNotEmpty(query.text)) {
         esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
         sortFields = Nil
+      }
+      if (null != query.labels && query.labels.nonEmpty) {
+        val names = query.labels.map(item => item.name)
+        esQueries += nestedQuery(FieldKeys.FIELD_LABELS, termsQuery(FieldKeys.FIELD_NESTED_LABELS_NAME, names))
       }
       EsClient.esClient.execute {
         search(Scenario.Index).query(boolQuery().must(esQueries))

@@ -2,6 +2,7 @@ package asura.core.es.model
 
 import asura.common.util.StringUtils
 import asura.core.es.EsConfig
+import asura.core.es.model.Label.LabelRef
 import asura.core.util.JacksonSupport
 import com.sksamuel.elastic4s.mappings._
 
@@ -18,6 +19,7 @@ case class Job(
                 jobData: JobData,
                 comment: String = null,
                 env: String = StringUtils.EMPTY,
+                labels: Seq[LabelRef] = Nil,
                 imports: Seq[VariablesImportItem] = Nil,
                 var creator: String = null,
                 var createdAt: String = null,
@@ -37,6 +39,11 @@ case class Job(
       m += (FieldKeys.FIELD_TRIGGER -> JacksonSupport.mapper.convertValue(trigger, classOf[java.util.List[Map[String, Any]]]))
     } else {
       m += (FieldKeys.FIELD_TRIGGER -> Nil)
+    }
+    if (null != labels) {
+      m += (FieldKeys.FIELD_LABELS -> JacksonSupport.mapper.convertValue(labels, classOf[java.util.List[Map[String, Any]]]))
+    } else {
+      m += (FieldKeys.FIELD_LABELS -> Nil)
     }
     addScriptUpdateItem(sb, FieldKeys.FIELD_IMPORTS)
     if (null != imports) {
@@ -110,6 +117,9 @@ object Job extends IndexSetting {
         ObjectField(name = FieldKeys.FIELD_EXT, dynamic = Option("false")),
       )),
       KeywordField(name = FieldKeys.FIELD_ENV),
+      NestedField(name = FieldKeys.FIELD_LABELS, fields = Seq(
+        KeywordField(name = FieldKeys.FIELD_NAME),
+      )),
       NestedField(name = FieldKeys.FIELD_IMPORTS, dynamic = Some("false")),
     )
   )

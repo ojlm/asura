@@ -248,6 +248,7 @@ object SchedulerManager {
       )),
       jobData = jobData,
       env = StringUtils.notEmptyElse(jobMeta.env, StringUtils.EMPTY),
+      labels = if (null != jobMeta.labels) jobMeta.labels else Nil,
       imports = imports,
     )
   }
