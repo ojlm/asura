@@ -1,5 +1,6 @@
 package asura.app.api
 
+import akka.stream.scaladsl.Flow
 import asura.common.model.{ApiCode, ApiRes, ApiResError}
 import asura.common.util.StringUtils
 import asura.core.ErrorMessages
@@ -11,6 +12,8 @@ import asura.play.api.BaseApi.OkApiRes
 import asura.play.api.{BaseApi => PlayBaseApi}
 import com.sksamuel.elastic4s.http.Response
 import com.sksamuel.elastic4s.http.search.SearchResponse
+import org.pac4j.http.client.direct.HeaderClient
+import org.pac4j.jwt.credentials.authenticator.JwtAuthenticator
 import play.api.mvc._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -99,5 +102,29 @@ trait BaseApi extends PlayBaseApi {
         Future.successful(OkApiRes(ApiRes(ApiCode.PERMISSION_DENIED, null, authResponse.maintainers)))
       }
     })
+  }
+
+  def checkWsPermission[T](group: String, project: String, function: String)
+                          (func: String => Either[Result, Flow[T, T, _]])
+                          (
+                            implicit request: RequestHeader,
+                            client: HeaderClient,
+                            authProvider: PermissionAuthProvider,
+                            exec: ExecutionContext
+                          ): Future[Either[Result, Flow[T, T, _]]] = {
+    val auth: JwtAuthenticator = client.getAuthenticator().asInstanceOf[JwtAuthenticator]
+    val profile = getWsProfile(auth)
+    if (null == profile) {
+      Future.successful(Left(Forbidden))
+    } else {
+      val user = profile.getId
+      authProvider.authorize(user, group, Some(project), function).map(res => {
+        if (res.allowed) {
+          func(user)
+        } else {
+          Left(Forbidden)
+        }
+      })
+    }
   }
 }

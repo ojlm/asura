@@ -1,0 +1,1 @@
+GET        /proxy/:group/:project        asura.app.api.UiApi.proxy(group, project )
