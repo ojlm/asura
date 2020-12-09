@@ -2,7 +2,6 @@ package asura.app.api
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import akka.stream.scaladsl.Flow
 import asura.common.util.StringUtils
 import asura.core.actor.flow.WebSocketMessageHandler
 import asura.core.es.actor.ActivitySaveActor
@@ -18,11 +17,10 @@ import asura.core.security.PermissionAuthProvider
 import asura.dubbo.actor.TelnetDubboProviderActor
 import javax.inject.{Inject, Singleton}
 import org.pac4j.http.client.direct.HeaderClient
-import org.pac4j.jwt.credentials.authenticator.JwtAuthenticator
 import org.pac4j.play.scala.SecurityComponents
-import play.api.mvc.{RequestHeader, Result, WebSocket}
+import play.api.mvc.WebSocket
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 @Singleton
 class WsApi @Inject()(
@@ -35,7 +33,6 @@ class WsApi @Inject()(
                      ) extends BaseApi {
 
   val activityActor = system.actorOf(ActivitySaveActor.props())
-  val auth: JwtAuthenticator = client.getAuthenticator().asInstanceOf[JwtAuthenticator]
 
   def testHttp(group: String, project: String, id: Option[String]) = WebSocket.acceptOrResult[String, String] { implicit req =>
     checkWsPermission(group, project, Functions.PROJECT_COMPONENT_EXEC) { user =>
@@ -86,28 +83,6 @@ class WsApi @Inject()(
         val testActor = system.actorOf(TelnetDubboProviderActor.props(address, port))
         WebSocketMessageHandler.stringToActorEventFlow(testActor)
       }
-    }
-  }
-
-  private def checkWsPermission(group: String, project: String, function: String)
-                               (func: String => Either[Result, Flow[String, String, _]])
-                               (
-                                 implicit request: RequestHeader,
-                                 authProvider: PermissionAuthProvider,
-                                 exec: ExecutionContext
-                               ): Future[Either[Result, Flow[String, String, _]]] = {
-    val profile = getWsProfile(auth)
-    if (null == profile) {
-      Future.successful(Left(Forbidden))
-    } else {
-      val user = profile.getId
-      permissionAuthProvider.authorize(user, group, Some(project), function).map(res => {
-        if (res.allowed) {
-          func(user)
-        } else {
-          Left(Forbidden)
-        }
-      })
     }
   }
 }
