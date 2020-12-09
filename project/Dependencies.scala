@@ -18,8 +18,6 @@ object Dependencies {
   private val akkaHttpXml = "com.typesafe.akka" %% "akka-http-xml" % akkaHttpVersion
   private val config = "com.typesafe" % "config" % "1.4.0"
   private val jackson = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.11.3"
-  private val guava = "com.google.guava" % "guava" % "29.0-jre"
-  private val commonsCodec = "commons-codec" % "commons-codec" % "1.10"
   private val commonsLang3 = "org.apache.commons" % "commons-lang3" % "3.7"
   private val quartz = "org.quartz-scheduler" % "quartz" % "2.3.0" excludeAll(ExclusionRule(organization = "com.mchange", name = "c3p0"), ExclusionRule(organization = "com.mchange", name = "mchange-commons-java"))
   private val swaggerParser = "io.swagger.parser.v3" % "swagger-parser" % "2.0.20"
@@ -50,6 +48,9 @@ object Dependencies {
   private val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
   private val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
 
+  // ui
+  private val karate = "com.intuit.karate" % "karate-apache" % "0.9.6"
+
   // Test dependencies
   private val akkaTestKit = "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test
   private val scalaTestDeps = Seq(
@@ -73,6 +74,7 @@ object Dependencies {
   val namerdDependencies = Seq(akkaStream, akkaHttp) ++ commonDependencies
   val dubboDependencies = Seq(dubbo, curator, dubboJavassist, dubboJbossNetty, dubboSpring, akkaStream) ++ commonDependencies
   val kafkaDependencies = Seq(akkaStream, akkaKafka, kafkaAvroSerializer) ++ commonDependencies
+  val uiDependencies = Seq(karate) ++ commonDependencies
 
   val commonPlayDeps = Seq(
     guice,
