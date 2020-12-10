@@ -1,4 +1,4 @@
-package asura.app.security
+package asura.app.providers
 
 import java.time.Duration
 
