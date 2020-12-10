@@ -12,6 +12,7 @@ import asura.common.util.{LogUtils, StringUtils}
 import asura.core.CoreConfig.{EsOnlineLogConfig, LinkerdConfig, LinkerdConfigServer}
 import asura.core.auth.AuthManager
 import asura.core.ci.CiManager
+import asura.core.concurrent.ExecutionContextManager
 import asura.core.es.EsClient
 import asura.core.job.JobCenter
 import asura.core.job.actor.SchedulerActor
@@ -19,6 +20,7 @@ import asura.core.notify.JobNotifyManager
 import asura.core.store.BlobStoreEngines
 import asura.core.{CoreConfig, SecurityConfig}
 import asura.namerd.NamerdConfig
+import asura.ui.UiConfig
 import com.typesafe.config.{ConfigFactory, ConfigList}
 import javax.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
@@ -85,6 +87,11 @@ class ApplicationStart @Inject()(
 
   // blobstore
   BlobStoreEngines.register(FileSystemBasedEngine(configuration))
+
+  // ui
+  if (configuration.getOptional[Boolean]("asura.ui.enabled").getOrElse(false)) {
+    UiConfig.init(UiConfig(system, ExecutionContextManager.cachedExecutor))
+  }
 
   if (configuration.getOptional[Boolean]("asura.cluster.enabled").getOrElse(false)) {
     val hostnameOpt = configuration.getOptional[String]("asura.cluster.hostname")

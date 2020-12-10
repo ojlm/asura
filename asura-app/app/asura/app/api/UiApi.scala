@@ -7,8 +7,11 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Sink}
 import akka.util.ByteString
 import asura.common.util.StringUtils
+import asura.core.actor.flow.WebSocketMessageHandler
 import asura.core.es.model.Permissions.Functions
 import asura.core.security.PermissionAuthProvider
+import asura.ui.actor.WebControllerActor
+import asura.ui.driver.{DriverCommand, UiDriverProvider}
 import javax.inject.{Inject, Singleton}
 import org.pac4j.http.client.direct.HeaderClient
 import org.pac4j.play.scala.SecurityComponents
@@ -27,9 +30,26 @@ class UiApi @Inject()(
                        val controllerComponents: SecurityComponents,
                        val client: HeaderClient,
                        val permissionAuthProvider: PermissionAuthProvider,
+                       val uiDriverProvider: UiDriverProvider,
                      ) extends BaseApi {
 
+  // this instance
   val proxyWsUrl = configuration.getOptional[String]("asura.ui.proxy.url").getOrElse(StringUtils.EMPTY)
+
+  def driverList(group: String, project: String) = Action.async { implicit req =>
+    checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_VIEW) { _ =>
+      Future.successful(uiDriverProvider.getDrivers()).toOkResult
+    }
+  }
+
+  def connect(group: String, project: String) = WebSocket.acceptOrResult[String, String] { implicit req =>
+    checkWsPermission(group, project, Functions.PROJECT_COMPONENT_VIEW) { user =>
+      Right {
+        val controller = system.actorOf(WebControllerActor.props(user))
+        WebSocketMessageHandler.stringToActorEventFlow(controller, classOf[DriverCommand])
+      }
+    }
+  }
 
   def proxy(group: String, project: String) = WebSocket.acceptOrResult[ByteString, ByteString] { implicit req =>
     checkWsPermission(group, project, Functions.PROJECT_COMPONENT_EXEC) { _ =>

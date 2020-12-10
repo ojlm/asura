@@ -65,7 +65,7 @@ class CustomChromeDriver(
         .param("modifiers", modifiers)
         .param("type", `type`)
       if (keyCode == -1) {
-        dtm.param("text", c + "")
+        dtm.param("text", s"$c")
       } else {
         keyCode match {
           case 13 =>
@@ -76,7 +76,7 @@ class CustomChromeDriver(
             if ("rawKeyDown" == `type`) dtm.param("type", "keyDown")
             dtm.param("text", ".")
           case _ =>
-            dtm.param("text", c + "")
+            dtm.param("text", s"$c")
         }
         dtm.param("windowsVirtualKeyCode", keyCode)
       }

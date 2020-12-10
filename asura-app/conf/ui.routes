@@ -1,1 +1,3 @@
-GET        /proxy/:group/:project        asura.app.api.UiApi.proxy(group, project )
+GET        /proxy/:group/:project                 asura.app.api.UiApi.proxy(group, project )
+GET        /driver/list/:group/:project           asura.app.api.UiApi.driverList(group, project)
+GET        /driver/connect/:group/:project        asura.app.api.UiApi.connect(group, project)
