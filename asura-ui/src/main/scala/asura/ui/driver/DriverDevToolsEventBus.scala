@@ -1,9 +1,10 @@
 package asura.ui.driver
 
+import java.util
+
 import akka.actor.{ActorRef, ActorSystem}
 import akka.event.{ActorClassifier, ActorEventBus, ManagedActorClassification}
 import asura.ui.driver.DriverDevToolsEventBus.PublishDriverDevToolsMessage
-import com.intuit.karate.driver.DevToolsMessage
 
 class DriverDevToolsEventBus(val system: ActorSystem) extends ActorEventBus with ActorClassifier with ManagedActorClassification {
 
@@ -17,6 +18,6 @@ class DriverDevToolsEventBus(val system: ActorSystem) extends ActorEventBus with
 
 object DriverDevToolsEventBus {
 
-  case class PublishDriverDevToolsMessage(ref: ActorRef, msg: DevToolsMessage)
+  case class PublishDriverDevToolsMessage(ref: ActorRef, params: util.Map[String, AnyRef])
 
 }

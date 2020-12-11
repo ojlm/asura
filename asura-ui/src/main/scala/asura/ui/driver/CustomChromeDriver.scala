@@ -2,6 +2,7 @@ package asura.ui.driver
 
 import java.util
 
+import asura.common.util.StringUtils
 import com.intuit.karate.core.ScenarioContext
 import com.intuit.karate.driver.chrome.Chrome
 import com.intuit.karate.driver.{DevToolsMessage, DriverOptions, Input, Keys}
@@ -15,18 +16,21 @@ class CustomChromeDriver(
                           options: DriverOptions,
                           command: Command,
                           webSocketUrl: String,
-                          filter: DevToolsMessage => Unit,
+                          filter: util.Map[String, AnyRef] => Unit,
                         ) extends Chrome(options, command, webSocketUrl) {
 
   // filter websocket message
   client.setTextHandler(text => {
     val map: util.Map[String, AnyRef] = JsonUtils.toJsonDoc(text).read("$")
     val msg = new DevToolsMessage(this, map)
-    if (filter != null) filter(msg)
+    if (filter != null && StringUtils.isNotEmpty(msg.getMethod())) {
+      filter(map)
+    }
     receive(msg)
     false // no async signalling, for normal use, e.g. chrome developer tools
   })
   this.activate()
+  this.enableLog()
   this.enablePageEvents()
   this.enableRuntimeEvents()
   this.enableTargetEvents()
@@ -94,13 +98,13 @@ object CustomChromeDriver {
     field.get(null).asInstanceOf[util.Map[Character, Integer]]
   }
 
-  def start(newChrome: Boolean, filter: DevToolsMessage => Unit): CustomChromeDriver = {
+  def start(newChrome: Boolean, filter: util.Map[String, AnyRef] => Unit): CustomChromeDriver = {
     val options = new util.HashMap[String, Object]()
     options.put("start", Boolean.box(newChrome))
     start(null, options, null, filter)
   }
 
-  def start(options: util.HashMap[String, Object], filter: DevToolsMessage => Unit): CustomChromeDriver = {
+  def start(options: util.HashMap[String, Object], filter: util.Map[String, AnyRef] => Unit): CustomChromeDriver = {
     start(null, options, null, filter)
   }
 
@@ -108,7 +112,7 @@ object CustomChromeDriver {
              context: ScenarioContext,
              map: util.Map[String, Object],
              appender: LogAppender,
-             filter: DevToolsMessage => Unit
+             filter: util.Map[String, AnyRef] => Unit
            ): CustomChromeDriver = {
     val defaultExecutable = if (FileUtils.isOsWindows) {
       Chrome.DEFAULT_PATH_WIN

@@ -4,11 +4,11 @@ import akka.actor.{ActorRef, Props}
 import asura.common.actor.{ActorEvent, BaseActor, SenderMessage}
 import asura.common.model.ApiCode
 import asura.ui.UiConfig
-import asura.ui.actor.ChromeDriverHolderActor.{SubscribeDriverDevToolsEventMessage, SubscribeDriverStatusMessage}
+import asura.ui.actor.ChromeDriverHolderActor.{SubscribeCommandLogMessage, SubscribeDriverDevToolsEventMessage, SubscribeDriverStatusMessage}
+import asura.ui.driver.DriverCommandLogEventBus.PublishCommandLogMessage
 import asura.ui.driver.DriverDevToolsEventBus.PublishDriverDevToolsMessage
 import asura.ui.driver.DriverStatusEventBus.PublishDriverStatusMessage
-import asura.ui.driver.{DriverCommand, DriverCommandResult, DriverStatus}
-import com.intuit.karate.driver.DevToolsMessage
+import asura.ui.driver.{DriverCommand, DriverCommandStart}
 
 class WebControllerActor(username: String) extends BaseActor {
 
@@ -22,12 +22,14 @@ class WebControllerActor(username: String) extends BaseActor {
     case command: DriverCommand =>
       command.creator = username
       sendCommand(command)
-    case result: DriverCommandResult =>
-      wsActor ! commandEvent(result)
+    case msg: DriverCommandStart =>
+      wsActor ! newEvent(WebControllerActor.COMMAND_START, msg)
+    case PublishCommandLogMessage(_, log) =>
+      wsActor ! newEvent(WebControllerActor.COMMAND_LOG, log)
     case PublishDriverStatusMessage(_, status) =>
-      wsActor ! statusEvent(status)
+      wsActor ! newEvent(WebControllerActor.DRIVER_STATUS, status)
     case PublishDriverDevToolsMessage(_, msg) =>
-      wsActor ! driverEvent(msg)
+      wsActor ! newEvent(WebControllerActor.DRIVER_LOG, msg)
   }
 
   private def sendCommand(command: DriverCommand): Unit = {
@@ -40,27 +42,23 @@ class WebControllerActor(username: String) extends BaseActor {
     if (UiConfig.driverHolder != null) {
       UiConfig.driverHolder ! SubscribeDriverStatusMessage(self)
       UiConfig.driverHolder ! SubscribeDriverDevToolsEventMessage(self)
+      UiConfig.driverHolder ! SubscribeCommandLogMessage(self)
     }
   }
 
   @inline
-  private def commandEvent(result: DriverCommandResult): ActorEvent = {
-    new ActorEvent("command", ApiCode.OK, null, result)
-  }
-
-  @inline
-  private def statusEvent(status: DriverStatus): ActorEvent = {
-    new ActorEvent("status", ApiCode.OK, null, status)
-  }
-
-  @inline
-  private def driverEvent(msg: DevToolsMessage): ActorEvent = {
-    new ActorEvent("driver", ApiCode.OK, null, msg)
+  private def newEvent(`type`: String, data: Any): ActorEvent = {
+    new ActorEvent(`type`, ApiCode.OK, null, data)
   }
 
 }
 
 object WebControllerActor {
+
+  val COMMAND_START = "command.start"
+  val COMMAND_LOG = "command.log"
+  val DRIVER_STATUS = "driver.status"
+  val DRIVER_LOG = "driver.log"
 
   def props(username: String) = Props(new WebControllerActor(username))
 
