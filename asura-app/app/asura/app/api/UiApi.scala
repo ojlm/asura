@@ -34,11 +34,49 @@ class UiApi @Inject()(
                      ) extends BaseApi {
 
   // this instance
-  val proxyWsUrl = configuration.getOptional[String]("asura.ui.proxy.url").getOrElse(StringUtils.EMPTY)
+  val websockifyRfbWsUrl = configuration.getOptional[String]("asura.ui.proxy.url").getOrElse(StringUtils.EMPTY)
 
   def driverList(group: String, project: String) = Action.async { implicit req =>
     checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_VIEW) { _ =>
       Future.successful(uiDriverProvider.getDrivers()).toOkResult
+    }
+  }
+
+  // proxy to 'connect' routes
+  def proxyToConnect(
+                      group: String,
+                      project: String,
+                      host: String,
+                      port: String,
+                      token: String
+                    ) = WebSocket.acceptOrResult[String, String] { implicit req =>
+    checkWsPermission(group, project, Functions.PROJECT_COMPONENT_EXEC) { _ =>
+      Right {
+        val url = s"ws://$host:$port/api/ui/driver/connect/$group/$project?token=$token"
+        Flow[String]
+          .map(msg => TextMessage.Strict(msg))
+          .via(webSocketFlow(url))
+          .map(msg => msg.asTextMessage.getStrictText)
+      }
+    }
+  }
+
+  // proxy to 'rfb' routes
+  def proxyToRfb(
+                  group: String,
+                  project: String,
+                  host: String,
+                  port: String,
+                  token: String
+                ) = WebSocket.acceptOrResult[ByteString, ByteString] { implicit req =>
+    checkWsPermission(group, project, Functions.PROJECT_COMPONENT_EXEC) { _ =>
+      Right {
+        val url = s"ws://$host:$port/api/ui/rfb/$group/$project?token=$token"
+        Flow[ByteString]
+          .map(msg => BinaryMessage(msg))
+          .via(webSocketFlow(url))
+          .mapAsync(10)(msgToBytes)
+      }
     }
   }
 
@@ -51,13 +89,13 @@ class UiApi @Inject()(
     }
   }
 
-  def proxy(group: String, project: String) = WebSocket.acceptOrResult[ByteString, ByteString] { implicit req =>
+  def rfb(group: String, project: String) = WebSocket.acceptOrResult[ByteString, ByteString] { implicit req =>
     checkWsPermission(group, project, Functions.PROJECT_COMPONENT_EXEC) { _ =>
-      if (StringUtils.isNotEmpty(proxyWsUrl)) {
+      if (StringUtils.isNotEmpty(websockifyRfbWsUrl)) {
         Right {
           Flow[ByteString]
             .map(msg => BinaryMessage(msg))
-            .via(webSocketFlow(proxyWsUrl))
+            .via(webSocketFlow(websockifyRfbWsUrl))
             .mapAsync(10)(msgToBytes)
         }
       } else {
