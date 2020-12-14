@@ -105,13 +105,13 @@ class ChromeDriverHolderActor()(implicit ec: ExecutionContext) extends BaseActor
           var i = 0
           while (i < params.generateCount && checkDuration()) {
             monkey.generate()
-            Thread.sleep(params.delta) // ugly
+            Thread.sleep(params.interval) // ugly
             i += 1
           }
         } else {
           while (checkDuration()) {
             monkey.generate()
-            Thread.sleep(params.delta) // ugly
+            Thread.sleep(params.interval) // ugly
           }
         }
         DriverCommandEnd(true)

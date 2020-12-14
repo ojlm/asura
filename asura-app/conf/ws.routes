@@ -3,3 +3,5 @@ GET        /scenario/:group/:project/test                      asura.app.api.WsA
 GET        /job/:group/:project/test                           asura.app.api.WsApi.testJob(group, project, id: Option[String])
 GET        /job/:group/:project/manual/:id                     asura.app.api.WsApi.manualTestJob(group, project, id)
 GET        /dubbo/:group/:project/telnet/:address/:port        asura.app.api.WsApi.telnetDubbo(group, project, address, port: Int)
+GET        /ui/proxy/connect/:group/:project                   asura.app.api.UiApi.proxyToConnect(group, project, host, port, token)
+GET        /ui/proxy/rfb/:group/:project                       asura.app.api.UiApi.proxyToRfb(group, project, host, port, token)
