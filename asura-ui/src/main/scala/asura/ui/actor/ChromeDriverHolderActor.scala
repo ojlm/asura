@@ -45,8 +45,9 @@ class ChromeDriverHolderActor()(implicit ec: ExecutionContext) extends BaseActor
       driverCommandLogEventBus.subscribe(ref, self)
     case log: DriverCommandLog =>
       driverCommandLogEventBus.publish(PublishCommandLogMessage(self, log))
-    case DriverCommandEnd(_, _, _) =>
+    case msg: DriverCommandEnd =>
       resetCommandStatus()
+      dealResult(msg)
     case command: DriverCommand =>
       if (command.`type` == "stop") {
         stopNow.compareAndSet(false, true)
@@ -67,9 +68,18 @@ class ChromeDriverHolderActor()(implicit ec: ExecutionContext) extends BaseActor
           }
         } else {
           msg = "The driver is not ready, please try again later"
+          tryRestartServer()
         }
         sender() ! DriverCommandStart(isOk, msg, currentStatus)
       }
+  }
+
+  private def dealResult(msg: DriverCommandEnd): Unit = {
+    if (msg.msg != null) {
+      if (msg.msg.contains("failed to get reply for")) {
+        tryRestartServer()
+      }
+    }
   }
 
   private def runCommand(command: DriverCommand): Future[DriverCommandEnd] = {
@@ -137,23 +147,25 @@ class ChromeDriverHolderActor()(implicit ec: ExecutionContext) extends BaseActor
     currentStatus.commandStartAt = new Date().getTime()
   }
 
+  private def tryRestartServer(): Unit = {
+    Future {
+      val driver = CustomChromeDriver.start(false, params => {
+        self ! DriverDevToolsMessage(params)
+      })
+      NewDriver(driver)
+    }.recover({
+      case t: Throwable =>
+        log.error("{}", t)
+        NewDriver(null)
+    }).pipeTo(self)
+  }
+
   override def preStart(): Unit = {
     context.system.scheduler.scheduleAtFixedRate(1 seconds, 5 seconds)(() => {
       currentStatus.updateAt = DateUtils.nowDateTime
       self ! DriverStatusMessage(currentStatus)
     })
-    Future {
-      try {
-        val driver = CustomChromeDriver.start(false, params => {
-          self ! DriverDevToolsMessage(params)
-        })
-        NewDriver(driver)
-      } catch {
-        case t: Throwable =>
-          log.error("{}", t)
-          NewDriver(null)
-      }
-    }.pipeTo(self)
+    tryRestartServer()
   }
 
 }
