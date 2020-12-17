@@ -4,7 +4,7 @@ import akka.actor.{ActorRef, Props}
 import asura.common.actor.{ActorEvent, BaseActor, SenderMessage}
 import asura.common.model.ApiCode
 import asura.ui.UiConfig
-import asura.ui.actor.ChromeDriverHolderActor.{SubscribeCommandLogMessage, SubscribeDriverDevToolsEventMessage, SubscribeDriverStatusMessage}
+import asura.ui.actor.DriverHolderActor.{SubscribeCommandLogMessage, SubscribeDriverDevToolsEventMessage, SubscribeDriverStatusMessage}
 import asura.ui.driver.DriverCommandLogEventBus.PublishCommandLogMessage
 import asura.ui.driver.DriverDevToolsEventBus.PublishDriverDevToolsMessage
 import asura.ui.driver.DriverStatusEventBus.PublishDriverStatusMessage

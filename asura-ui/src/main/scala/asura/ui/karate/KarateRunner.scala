@@ -14,7 +14,7 @@ object KarateRunner {
                   text: String,
                   vars: util.Map[String, AnyRef],
                   hook: ExecutionHook = null,
-                  evalKarateConfig: Boolean = true,
+                  evalKarateConfig: Boolean = false,
                 ): FeatureResult = {
     val feature: Feature = parseFeature(text)
     val callContext = if (hook == null) {
