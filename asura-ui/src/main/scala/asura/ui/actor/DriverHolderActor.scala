@@ -7,10 +7,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 import akka.actor.{ActorRef, Props}
 import akka.pattern.pipe
 import asura.common.actor.BaseActor
-import asura.common.util.{DateUtils, JsonUtils, LogUtils}
-import asura.ui.actor.ChromeDriverHolderActor._
-import asura.ui.command.MonkeyCommand.MonkeyCommandParams
-import asura.ui.command.{Commands, MonkeyCommand}
+import asura.common.util.{DateUtils, LogUtils}
+import asura.ui.actor.DriverHolderActor._
+import asura.ui.command.{CommandRunner, Commands, KarateCommandRunner, MonkeyCommandRunner}
 import asura.ui.driver.DriverCommandLogEventBus.PublishCommandLogMessage
 import asura.ui.driver.DriverDevToolsEventBus.PublishDriverDevToolsMessage
 import asura.ui.driver.DriverStatusEventBus.PublishDriverStatusMessage
@@ -19,7 +18,8 @@ import asura.ui.driver._
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
-class ChromeDriverHolderActor()(implicit ec: ExecutionContext) extends BaseActor {
+// for now just the chrome
+class DriverHolderActor()(implicit ec: ExecutionContext) extends BaseActor {
 
   var driver: CustomChromeDriver = null
   val currentStatus = DriverStatus()
@@ -33,6 +33,11 @@ class ChromeDriverHolderActor()(implicit ec: ExecutionContext) extends BaseActor
   override def receive: Receive = {
     case NewDriver(driver) =>
       this.driver = driver
+    case GetDriver(tpe) =>
+      tpe match {
+        case Drivers.CHROME => sender() ! driver
+        case _ => sender() ! driver
+      }
     case SubscribeDriverStatusMessage(ref) =>
       driverStatusEventBus.subscribe(ref, self)
     case DriverStatusMessage(status) =>
@@ -75,6 +80,7 @@ class ChromeDriverHolderActor()(implicit ec: ExecutionContext) extends BaseActor
   }
 
   private def dealResult(msg: DriverCommandEnd): Unit = {
+    // TODO: result
     if (msg.msg != null) {
       if (msg.msg.contains("failed to get reply for")) {
         tryRestartServer()
@@ -83,53 +89,16 @@ class ChromeDriverHolderActor()(implicit ec: ExecutionContext) extends BaseActor
   }
 
   private def runCommand(command: DriverCommand): Future[DriverCommandEnd] = {
-    command.`type` match {
-      case Commands.MONKEY => runMonkey(command)
-    }
-  }
-
-  private def runMonkey(command: DriverCommand): Future[DriverCommandEnd] = {
     Future {
-      val params = JsonUtils.mapper.convertValue(command.params, classOf[MonkeyCommandParams])
-      params.validate()
-      if (params.generateCount == 0 && params.maxDuration == 0) {
-        DriverCommandEnd(true)
-      } else {
-        val monkey = MonkeyCommand(driver, params, log => self ! log)
-        monkey.init()
-        val start = System.currentTimeMillis()
-        val durationInMs = params.maxDuration * 1000
-        val checkDuration = () => {
-          if (stopNow.get()) {
-            stopNow.set(false)
-            false
-          } else {
-            if (durationInMs > 0) {
-              ((System.currentTimeMillis() - start) < durationInMs)
-            } else {
-              true
-            }
-          }
-        }
-        if (params.generateCount > 0) {
-          var i = 0
-          while (i < params.generateCount && checkDuration()) {
-            monkey.generate()
-            Thread.sleep(params.interval) // ugly
-            i += 1
-          }
-        } else {
-          while (checkDuration()) {
-            monkey.generate()
-            Thread.sleep(params.interval) // ugly
-          }
-        }
-        DriverCommandEnd(true)
+      val runner: CommandRunner = command.`type` match {
+        case Commands.MONKEY => MonkeyCommandRunner(driver, command, stopNow, self)
+        case Commands.KARATE => KarateCommandRunner(command, stopNow, self)
       }
+      runner.run()
     }.recover {
       case t: Throwable =>
         log.warning("{}", LogUtils.stackTraceToString(t))
-        DriverCommandEnd(false, t.getMessage)
+        DriverCommandEnd(command.`type`, false, t.getMessage)
     }
   }
 
@@ -170,11 +139,13 @@ class ChromeDriverHolderActor()(implicit ec: ExecutionContext) extends BaseActor
 
 }
 
-object ChromeDriverHolderActor {
+object DriverHolderActor {
 
-  def props(ec: ExecutionContext = ExecutionContext.global) = Props(new ChromeDriverHolderActor()(ec))
+  def props(ec: ExecutionContext = ExecutionContext.global) = Props(new DriverHolderActor()(ec))
 
   case class NewDriver(driver: CustomChromeDriver)
+
+  case class GetDriver(tpe: String)
 
   case class SubscribeDriverDevToolsEventMessage(ref: ActorRef)
 

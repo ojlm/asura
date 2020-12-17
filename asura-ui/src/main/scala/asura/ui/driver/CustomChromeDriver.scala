@@ -38,6 +38,9 @@ class CustomChromeDriver(
     this.initWindowIdAndState()
   }
 
+  // do not quit
+  override def quit(): Unit = {}
+
   // https://chromedevtools.github.io/devtools-protocol/tot/Log/#method-enable
   def enableLog(): Unit = {
     method("Log.enable").send()

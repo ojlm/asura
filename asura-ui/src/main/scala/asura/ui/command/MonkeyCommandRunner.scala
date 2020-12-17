@@ -1,25 +1,29 @@
 package asura.ui.command
 
 import java.util.Random
+import java.util.concurrent.atomic.AtomicBoolean
 
-import asura.common.util.StringUtils
-import asura.ui.command.MonkeyCommand.MonkeyCommandParams
-import asura.ui.driver.{CustomChromeDriver, DriverCommandLog}
+import akka.actor.ActorRef
+import asura.common.util.{JsonUtils, StringUtils}
+import asura.ui.driver.{CustomChromeDriver, DriverCommand, DriverCommandEnd, DriverCommandLog}
 
-case class MonkeyCommand(
-                          driver: CustomChromeDriver,
-                          params: MonkeyCommandParams,
-                          logOut: DriverCommandLog => Unit,
-                        ) extends CommandGenerator {
+case class MonkeyCommandRunner(
+                                driver: CustomChromeDriver,
+                                command: DriverCommand,
+                                stopNow: AtomicBoolean,
+                                logActor: ActorRef,
+                              ) extends CommandRunner {
 
-  import MonkeyCommand._
+  import MonkeyCommandRunner._
 
   var windowWidth = 0
   var windowHeight = 0
   var currentMouseXPos = 0
   var currentMouseYPos = 0
 
-  override def init(): Unit = {
+  val params = JsonUtils.mapper.convertValue(command.params, classOf[MonkeyCommandParams])
+
+  private def setupWindow(): Unit = {
     if (StringUtils.isNotEmpty(params.startUrl)) {
       driver.setUrl(params.startUrl)
     }
@@ -28,7 +32,44 @@ case class MonkeyCommand(
     windowHeight = dimensions.get("height").asInstanceOf[Integer]
   }
 
-  override def generate(): Unit = {
+  override def run(): DriverCommandEnd = {
+    params.validate()
+    if (params.generateCount == 0 && params.maxDuration == 0) {
+      DriverCommandEnd(Commands.MONKEY, true)
+    } else {
+      setupWindow()
+      val start = System.currentTimeMillis()
+      val durationInMs = params.maxDuration * 1000
+      val checkDuration = () => {
+        if (stopNow.get()) {
+          stopNow.set(false)
+          false
+        } else {
+          if (durationInMs > 0) {
+            ((System.currentTimeMillis() - start) < durationInMs)
+          } else {
+            true
+          }
+        }
+      }
+      if (params.generateCount > 0) {
+        var i = 0
+        while (i < params.generateCount && checkDuration()) {
+          generateOnce()
+          Thread.sleep(params.interval) // ugly
+          i += 1
+        }
+      } else {
+        while (checkDuration()) {
+          generateOnce()
+          Thread.sleep(params.interval) // ugly
+        }
+      }
+      DriverCommandEnd(Commands.MONKEY, true)
+    }
+  }
+
+  private def generateOnce(): Unit = {
     if (params.keyEventRatio == 1f) {
       generateKeyEvent()
     } else if (params.keyEventRatio == 0f) {
@@ -49,7 +90,7 @@ case class MonkeyCommand(
       charArray(i) = CHARS(RANDOM.nextInt(CHARS.length))
     }
     val input = String.valueOf(charArray)
-    logOut(DriverCommandLog(Commands.MONKEY, "keyboard", input))
+    if (null != logActor) logActor ! DriverCommandLog(Commands.MONKEY, "keyboard", input)
     driver.input(input)
   }
 
@@ -78,13 +119,12 @@ case class MonkeyCommand(
       }
     }
     toSend.param("x", currentMouseXPos).param("y", currentMouseYPos)
-    logOut(DriverCommandLog(Commands.MONKEY, "mouse", toSend.getParams()))
-
+    if (null != logActor) logActor ! DriverCommandLog(Commands.MONKEY, "mouse", toSend.getParams())
     toSend.send()
   }
 }
 
-object MonkeyCommand {
+object MonkeyCommandRunner {
 
   val RANDOM = new Random()
   val MOUSE_TYPES: Array[String] = Array[String]("mousePressed", "mouseReleased", "mouseMoved", "mouseWheel")
