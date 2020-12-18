@@ -50,6 +50,6 @@ object KarateScenarioContext {
 
   // TODO: support read from other storage
   def readX(ctx: ScenarioContext): String => Object = (s: String) => {
-    s => ctx.read.apply(s)
+    ctx.read.apply(s)
   }
 }

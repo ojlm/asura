@@ -2,13 +2,13 @@ package asura.ui.karate
 
 import java.util
 
-import com.intuit.karate.CallContext
 import com.intuit.karate.core._
+import com.intuit.karate.{CallContext, Resource}
 
 object KarateRunner {
 
-  // because of the karate api limitation
-  private val ORIGIN: Feature = FeatureParser.parse("classpath:asura/ui/karate/override.feature")
+  // empty feature for override because of the karate api limitation
+  private val ORIGIN: Feature = new Feature(Resource.EMPTY)
 
   def runFeature(
                   text: String,
