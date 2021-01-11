@@ -8,6 +8,7 @@ import com.intuit.karate.StepActions;
 import com.intuit.karate.core.FeatureContext;
 import com.intuit.karate.core.Scenario;
 import com.intuit.karate.core.ScenarioContext;
+import com.intuit.karate.driver.Driver;
 
 public class KarateStepActions extends StepActions {
 
@@ -18,6 +19,20 @@ public class KarateStepActions extends StepActions {
     super(null);
     // use custom scenario context
     ScenarioContext context = new KarateScenarioContext(featureContext, callContext, classLoader, scenario, appender);
+    Field field = StepActions.class.getDeclaredField("context");
+    field.setAccessible(true);
+    field.set(this, context);
+  }
+
+  public KarateStepActions(
+    FeatureContext featureContext,
+    CallContext callContext,
+    Driver driver
+  ) throws NoSuchFieldException, IllegalAccessException {
+    super(null);
+    // use custom scenario context
+    ScenarioContext context = new KarateScenarioContext(featureContext, callContext, null, null, null);
+    context.setDriver(driver);
     Field field = StepActions.class.getDeclaredField("context");
     field.setAccessible(true);
     field.set(this, context);
