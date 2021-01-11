@@ -31,12 +31,14 @@ class KarateScenarioContext(
   override def driver(expression: String): Unit = {
     val config = getConfig
     val driverOptions = config.getDriverOptions
-    val `type` = driverOptions.get("type").asInstanceOf[String]
-    if (`type` == null || `type` == "chrome") {
-      import asura.common.util.FutureUtils.RichFuture
-      import asura.ui.UiConfig.DEFAULT_ACTOR_ASK_TIMEOUT
-      val driver = (UiConfig.driverHolder ? GetDriver(Drivers.CHROME)).await.asInstanceOf[Driver]
-      setDriver(driver)
+    if (UiConfig.driverHolder != null && driverOptions != null) {
+      val `type` = driverOptions.get("type")
+      if (`type` == null || `type` == "chrome") {
+        import asura.common.util.FutureUtils.RichFuture
+        import asura.ui.UiConfig.DEFAULT_ACTOR_ASK_TIMEOUT
+        val driver = (UiConfig.driverHolder ? GetDriver(Drivers.CHROME)).await.asInstanceOf[Driver]
+        setDriver(driver)
+      }
     }
     super.driver(expression)
   }

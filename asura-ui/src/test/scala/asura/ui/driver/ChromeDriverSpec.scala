@@ -1,14 +1,20 @@
 package asura.ui.driver
 
-class ChromeDriverSpec {
+import java.util
 
-}
+import asura.ui.karate.KarateRunner
 
 object ChromeDriverSpec {
 
   def main(args: Array[String]): Unit = {
-    val driver = CustomChromeDriver.start(true, null)
-    driver.setUrl("https://github.com/")
+    val options = new util.HashMap[String, Object]()
+    options.put("userDataDir", "logs/chrome")
+    val driver = CustomChromeDriver.start(options, null)
+    implicit val actions = KarateRunner.buildStepActions(driver)
+    KarateRunner.executeStep("driver 'https://github.com/'")
+    KarateRunner.executeStep("delay(5000)")
+    KarateRunner.executeStep("def targetUrl = 'https://github.com/search?q=asura+language:scala'")
+    KarateRunner.executeStep("driver targetUrl")
   }
 
 }
