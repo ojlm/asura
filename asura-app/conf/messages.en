@@ -53,3 +53,4 @@ error_NonActiveStoreEngine=No active store engine
 error_EmptyBlobStoreDir=File's storage directory is not set
 error_StoreEngineNotAvailable=Store engine({0}) is not available
 error_UserAlreadyJoined=This user is already joined
+error_IllegalName=Illegal name
