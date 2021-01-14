@@ -1,5 +1,6 @@
 package asura.core.es
 
+import asura.core.es.model._
 import com.sksamuel.elastic4s.mappings.Analysis
 
 object EsConfig {
@@ -12,4 +13,12 @@ object EsConfig {
 
   val DateFormat = "yyyy-MM-dd'T'HH:mm:ss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
   var IK_ANALYZER = Analysis(analyzer = Option("ik_smart"), searchAnalyzer = Option("ik_smart"))
+
+  val ALL_INDEX: Seq[IndexSetting] = Seq(
+    HttpStepRequest, Job, Project, Environment,
+    Group, JobReport, JobNotify, Scenario, UserProfile,
+    Activity, DomainOnlineLog, ProjectApiCoverage, DomainOnlineConfig,
+    DubboRequest, SqlRequest, Favorite, CiTrigger, TriggerEventLog, Permissions,
+    FileNode,
+  )
 }

@@ -47,12 +47,7 @@ object EsClient {
       })
     }
     var isAllOk = true
-    val indices: Seq[IndexSetting] = Seq(
-      HttpStepRequest, Job, Project, Environment,
-      Group, JobReport, JobNotify, Scenario, UserProfile,
-      Activity, DomainOnlineLog, ProjectApiCoverage, DomainOnlineConfig,
-      DubboRequest, SqlRequest, Favorite, CiTrigger, TriggerEventLog, Permissions
-    )
+    val indices: Seq[IndexSetting] = EsConfig.ALL_INDEX
     for (index <- indices if isAllOk) {
       logger.info(s"check es index ${index.Index}")
       isAllOk = IndexService.initCheck(index)

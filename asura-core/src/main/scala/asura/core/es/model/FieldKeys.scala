@@ -165,6 +165,10 @@ object FieldKeys {
   val FIELD_COPY_FROM = "copyFrom"
   val FIELD_COMMENT = "comment"
   val FIELD_ROLE = "role"
+  val FIELD_EXTENSION = "extension"
+  val FIELD_APP = "app"
+  val FIELD_PARENT = "parent"
+  val FIELD_SIZE = "size"
 
   val FIELD_OBJECT_REQUEST_PROTOCOL = "request.protocol"
   val FIELD_OBJECT_REQUEST_HOST = "request.host"
