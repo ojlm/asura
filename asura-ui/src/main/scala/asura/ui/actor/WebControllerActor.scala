@@ -8,9 +8,9 @@ import asura.ui.actor.DriverHolderActor.{SubscribeCommandLogMessage, SubscribeDr
 import asura.ui.driver.DriverCommandLogEventBus.PublishCommandLogMessage
 import asura.ui.driver.DriverDevToolsEventBus.PublishDriverDevToolsMessage
 import asura.ui.driver.DriverStatusEventBus.PublishDriverStatusMessage
-import asura.ui.driver.{DriverCommand, DriverCommandStart}
+import asura.ui.driver.{CommandMeta, DriverCommand, DriverCommandStart}
 
-class WebControllerActor(username: String) extends BaseActor {
+class WebControllerActor(group: String, project: String, taskId: String, username: String) extends BaseActor {
 
   // represent websocket connection
   var wsActor: ActorRef = null
@@ -20,7 +20,7 @@ class WebControllerActor(username: String) extends BaseActor {
       wsActor = wsSender
       subscribeDriverEvent()
     case command: DriverCommand =>
-      command.creator = username
+      command.meta = CommandMeta(group, project, taskId, username)
       sendCommand(command)
     case msg: DriverCommandStart =>
       wsActor ! newEvent(WebControllerActor.COMMAND_START, msg)
@@ -60,6 +60,11 @@ object WebControllerActor {
   val DRIVER_STATUS = "driver.status"
   val DRIVER_LOG = "driver.log"
 
-  def props(username: String) = Props(new WebControllerActor(username))
+  def props(
+             group: String,
+             project: String,
+             taskId: String,
+             username: String,
+           ) = Props(new WebControllerActor(group, project, taskId, username))
 
 }

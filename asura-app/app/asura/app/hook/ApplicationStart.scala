@@ -14,6 +14,7 @@ import asura.core.auth.AuthManager
 import asura.core.ci.CiManager
 import asura.core.concurrent.ExecutionContextManager
 import asura.core.es.EsClient
+import asura.core.es.actor.UiTaskListenerActor
 import asura.core.job.JobCenter
 import asura.core.job.actor.SchedulerActor
 import asura.core.notify.JobNotifyManager
@@ -90,7 +91,11 @@ class ApplicationStart @Inject()(
 
   // ui
   if (configuration.getOptional[Boolean]("asura.ui.enabled").getOrElse(false)) {
-    UiConfig.init(UiConfig(system, ExecutionContextManager.cachedExecutor))
+    UiConfig.init(UiConfig(
+      system,
+      ExecutionContextManager.cachedExecutor,
+      system.actorOf(UiTaskListenerActor.props())
+    ))
   }
 
   if (configuration.getOptional[Boolean]("asura.cluster.enabled").getOrElse(false)) {

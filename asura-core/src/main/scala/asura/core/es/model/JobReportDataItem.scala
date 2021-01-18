@@ -9,14 +9,14 @@ import com.sksamuel.elastic4s.mappings._
 
 // save all type results, eg: http, sql, dubbo
 case class JobReportDataItem(
-                              val reportId: String,
-                              val caseId: String, // doc id
-                              val scenarioId: String,
-                              val jobId: String,
-                              val `type`: String,
+                              reportId: String,
+                              caseId: String, // doc id
+                              scenarioId: String,
+                              jobId: String,
+                              `type`: String,
                               var metrics: JobReportStepItemMetrics,
-                              val request: DataItemRenderedRequest,
-                              val response: DataItemRenderedResponse,
+                              request: DataItemRenderedRequest,
+                              response: DataItemRenderedResponse,
                               var assertions: Map[String, Any],
                               var assertionsResult: java.util.Map[_, _],
                               var generator: String = StringUtils.EMPTY, // specify generator type
@@ -26,7 +26,6 @@ case class JobReportDataItem(
 
 object JobReportDataItem extends IndexSetting {
 
-  val INDEX_DATE_TIME_PATTERN = "yyyy.MM.dd"
   val Index: String = s"${EsConfig.IndexPrefix}job-report-item"
   override val shards: Int = 5
   override val replicas: Int = 0

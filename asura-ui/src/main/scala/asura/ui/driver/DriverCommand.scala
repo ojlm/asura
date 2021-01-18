@@ -1,7 +1,9 @@
 package asura.ui.driver
 
 case class DriverCommand(
+                          summary: String,
+                          description: String,
                           `type`: String,
                           params: Map[String, Any],
-                          var creator: String,
+                          var meta: CommandMeta,
                         )

@@ -2,7 +2,7 @@ package asura.core.es.service
 
 import asura.common.util.StringUtils
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
-import asura.core.es.model.{FieldKeys, IndexSetting, JobReportDataItem, RestApiOnlineLog}
+import asura.core.es.model._
 import asura.core.es.{EsClient, EsConfig}
 import com.sksamuel.elastic4s.IndexesAndTypes
 import com.sksamuel.elastic4s.delete.DeleteByQueryRequest
@@ -45,7 +45,9 @@ object IndexService extends CommonService {
   }
 
   def checkTemplate(): Boolean = {
-    checkIndexTemplate(JobReportDataItem).await && checkIndexTemplate(RestApiOnlineLog).await
+    checkIndexTemplate(JobReportDataItem).await &&
+      checkIndexTemplate(RestApiOnlineLog).await &&
+      checkIndexTemplate(LogEntry).await
   }
 
   def checkIndexTemplate(idxSetting: IndexSetting): Future[Boolean] = {

@@ -5,13 +5,13 @@ import asura.core.es.EsConfig
 import com.sksamuel.elastic4s.mappings.{BasicField, KeywordField, MappingDefinition, ObjectField}
 
 case class Activity(
-                     val group: String = StringUtils.EMPTY,
-                     val project: String = StringUtils.EMPTY,
-                     val user: String = StringUtils.EMPTY,
-                     val `type`: String = StringUtils.EMPTY,
-                     val targetId: String = StringUtils.EMPTY,
-                     val timestamp: String = DateUtils.nowDateTime,
-                     val data: Map[String, Any] = null,
+                     group: String = StringUtils.EMPTY,
+                     project: String = StringUtils.EMPTY,
+                     user: String = StringUtils.EMPTY,
+                     `type`: String = StringUtils.EMPTY,
+                     targetId: String = StringUtils.EMPTY,
+                     timestamp: String = DateUtils.nowDateTime,
+                     data: Map[String, Any] = null,
                    )
 
 object Activity extends IndexSetting {

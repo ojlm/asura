@@ -14,7 +14,6 @@ case class FileNode(
                      group: String,
                      project: String,
                      `type`: String, // 'file' or 'folder'
-                     var name: String,
                      var parent: String = null,
                      var path: Seq[DocRef] = Nil,
                      var size: Long = 0L,
@@ -30,9 +29,6 @@ case class FileNode(
   override def toUpdateMap: Map[String, Any] = {
     val m = mutable.Map[String, Any]()
     checkCommFieldsToUpdate(m)
-    if (StringUtils.isNotEmpty(name)) {
-      m += (FieldKeys.FIELD_NAME -> name)
-    }
     if (null != path) {
       m += (FieldKeys.FIELD_PATH -> JacksonSupport.mapper.convertValue(path, classOf[java.util.List[Map[String, Any]]]))
     }
@@ -59,7 +55,6 @@ object FileNode extends IndexSetting {
       KeywordField(name = FieldKeys.FIELD_GROUP),
       KeywordField(name = FieldKeys.FIELD_PROJECT),
       KeywordField(name = FieldKeys.FIELD_TYPE),
-      KeywordField(name = FieldKeys.FIELD_NAME),
       NestedField(name = FieldKeys.FIELD_PATH, fields = Seq(
         KeywordField(name = FieldKeys.FIELD_ID),
       )),

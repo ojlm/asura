@@ -3,27 +3,28 @@ package asura.core.es.model
 import asura.common.util.StringUtils
 import asura.core.es.EsConfig
 import asura.core.job.JobExecDesc
+import asura.core.util.HostUtils
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.sksamuel.elastic4s.mappings._
 
 case class JobReport(
-                      val scheduler: String,
-                      val group: String,
-                      val project: String,
-                      val jobId: String,
-                      val jobName: String,
-                      val `type`: String,
-                      val classAlias: String,
+                      scheduler: String,
+                      group: String,
+                      project: String,
+                      jobId: String,
+                      jobName: String,
+                      `type`: String,
+                      classAlias: String,
                       var startAt: String = null,
                       var endAt: String = null,
                       var elapse: Long = 0L,
                       var result: String = JobExecDesc.STATUS_SUCCESS,
                       var errorMsg: String = StringUtils.EMPTY,
-                      val node: String = JobReport.hostname,
-                      val data: JobReportData = JobReportData(),
+                      node: String = HostUtils.hostname,
+                      data: JobReportData = JobReportData(),
                       var statis: JobReportDataStatistic = null,
-                      val summary: String = StringUtils.EMPTY,
-                      val description: String = StringUtils.EMPTY,
+                      summary: String = StringUtils.EMPTY,
+                      description: String = StringUtils.EMPTY,
                       var creator: String = null,
                       var createdAt: String = null,
                       var updatedAt: String = StringUtils.EMPTY,
@@ -71,13 +72,6 @@ object JobReport extends IndexSetting {
       ObjectField(name = FieldKeys.FIELD_DATA, dynamic = Some("false")),
     )
   )
-
-  val hostname = try {
-    import scala.sys.process._
-    "hostname".!!.trim
-  } catch {
-    case _: Throwable => "Unknown"
-  }
 
   val TYPE_QUARTZ = "quartz"
   val TYPE_CI = "ci"

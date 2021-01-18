@@ -50,8 +50,8 @@ object FileNodeService extends CommonService {
 
   def validate(item: FileNode): ErrorMessage = {
     if (null == item ||
-      StringUtils.hasEmpty(item.group, item.project, item.`type`, item.name) ||
-      !FileNode.isNameLegal(item.name)
+      StringUtils.hasEmpty(item.group, item.project, item.`type`, item.summary) ||
+      !FileNode.isNameLegal(item.summary)
     ) {
       ErrorMessages.error_InvalidParams
     } else {

@@ -46,13 +46,14 @@ class UiApi @Inject()(
   def proxyToConnect(
                       group: String,
                       project: String,
+                      id: String,
                       host: String,
                       port: String,
                       token: String
                     ) = WebSocket.acceptOrResult[String, String] { implicit req =>
     checkWsPermission(group, project, Functions.PROJECT_COMPONENT_EXEC) { _ =>
       Right {
-        val url = s"ws://$host:$port/api/ui/driver/connect/$group/$project?token=$token"
+        val url = s"ws://$host:$port/api/ui/driver/connect/$group/$project/$id?token=$token"
         Flow[String]
           .map(msg => TextMessage.Strict(msg))
           .via(webSocketFlow(url))
@@ -65,13 +66,14 @@ class UiApi @Inject()(
   def proxyToRfb(
                   group: String,
                   project: String,
+                  id: String,
                   host: String,
                   port: String,
                   token: String
                 ) = WebSocket.acceptOrResult[ByteString, ByteString] { implicit req =>
     checkWsPermission(group, project, Functions.PROJECT_COMPONENT_EXEC) { _ =>
       Right {
-        val url = s"ws://$host:$port/api/ui/rfb/$group/$project?token=$token"
+        val url = s"ws://$host:$port/api/ui/rfb/$group/$project/$id?token=$token"
         Flow[ByteString]
           .map(msg => BinaryMessage(msg))
           .via(webSocketFlow(url))
@@ -80,16 +82,16 @@ class UiApi @Inject()(
     }
   }
 
-  def connect(group: String, project: String) = WebSocket.acceptOrResult[String, String] { implicit req =>
+  def connect(group: String, project: String, id: String) = WebSocket.acceptOrResult[String, String] { implicit req =>
     checkWsPermission(group, project, Functions.PROJECT_COMPONENT_VIEW) { user =>
       Right {
-        val controller = system.actorOf(WebControllerActor.props(user))
+        val controller = system.actorOf(WebControllerActor.props(group, project, id, user))
         WebSocketMessageHandler.stringToActorEventFlow(controller, classOf[DriverCommand])
       }
     }
   }
 
-  def rfb(group: String, project: String) = WebSocket.acceptOrResult[ByteString, ByteString] { implicit req =>
+  def rfb(group: String, project: String, id: String) = WebSocket.acceptOrResult[ByteString, ByteString] { implicit req =>
     checkWsPermission(group, project, Functions.PROJECT_COMPONENT_EXEC) { _ =>
       if (StringUtils.isNotEmpty(websockifyRfbWsUrl)) {
         Right {
