@@ -1,25 +1,30 @@
 package asura.ui.actor
 
 import java.util
-import java.util.Date
 import java.util.concurrent.atomic.AtomicBoolean
 
 import akka.actor.{ActorRef, Props}
-import akka.pattern.pipe
+import akka.pattern.{ask, pipe}
 import asura.common.actor.BaseActor
 import asura.common.util.{DateUtils, LogUtils}
+import asura.ui.UiConfig.DEFAULT_ACTOR_ASK_TIMEOUT
 import asura.ui.actor.DriverHolderActor._
 import asura.ui.command.{CommandRunner, Commands, KarateCommandRunner, MonkeyCommandRunner}
 import asura.ui.driver.DriverCommandLogEventBus.PublishCommandLogMessage
 import asura.ui.driver.DriverDevToolsEventBus.PublishDriverDevToolsMessage
 import asura.ui.driver.DriverStatusEventBus.PublishDriverStatusMessage
-import asura.ui.driver._
+import asura.ui.driver.{DevToolsProtocol, _}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
-// for now just the chrome
-class DriverHolderActor()(implicit ec: ExecutionContext) extends BaseActor {
+/**
+ * for now just the chrome
+ *
+ * @param taskListener send 'start','log','end' event
+ * @param ec
+ */
+class DriverHolderActor(taskListener: ActorRef)(implicit ec: ExecutionContext) extends BaseActor {
 
   var driver: CustomChromeDriver = null
   val currentStatus = DriverStatus()
@@ -45,14 +50,24 @@ class DriverHolderActor()(implicit ec: ExecutionContext) extends BaseActor {
     case SubscribeDriverDevToolsEventMessage(ref) =>
       driverDevToolsEventBus.subscribe(ref, self)
     case DriverDevToolsMessage(params) =>
+      if (needToSendTaskListener() && DevToolsProtocol.METHOD_Log_entryAdded.equals(params.get(DevToolsProtocol.METHOD))) {
+        taskListener ! TaskListenerDriverDevToolsMessage(currentStatus.command.meta, params)
+      }
       driverDevToolsEventBus.publish(PublishDriverDevToolsMessage(self, params))
     case SubscribeCommandLogMessage(ref) =>
       driverCommandLogEventBus.subscribe(ref, self)
     case log: DriverCommandLog =>
+      if (needToSendTaskListener()) {
+        taskListener ! TaskListenerDriverCommandLogMessage(currentStatus.command.meta, log)
+      }
       driverCommandLogEventBus.publish(PublishCommandLogMessage(self, log))
     case msg: DriverCommandEnd =>
+      if (needToSendTaskListener()) {
+        currentStatus.command.meta.endAt = System.currentTimeMillis()
+        taskListener ! TaskListenerEndMessage(currentStatus.command.meta, msg)
+      }
       resetCommandStatus()
-      dealResult(msg)
+      checkNeedToRestore(msg)
     case command: DriverCommand =>
       if (command.`type` == "stop") {
         stopNow.compareAndSet(false, true)
@@ -63,7 +78,7 @@ class DriverHolderActor()(implicit ec: ExecutionContext) extends BaseActor {
           if (Commands.support(command.`type`)) {
             if (currentStatus.status == DriverStatus.STATUS_IDLE) {
               isOk = true
-              updateCommandStatus(command)
+              updateCommandRunningStatus(command)
               runCommand(command) pipeTo self
             } else {
               msg = "The driver is already running"
@@ -79,8 +94,12 @@ class DriverHolderActor()(implicit ec: ExecutionContext) extends BaseActor {
       }
   }
 
-  private def dealResult(msg: DriverCommandEnd): Unit = {
-    // TODO: result
+  private def needToSendTaskListener(): Boolean = {
+    taskListener != null && currentStatus.command != null &&
+      currentStatus.command.meta != null && currentStatus.command.meta.reportId != null
+  }
+
+  private def checkNeedToRestore(msg: DriverCommandEnd): Unit = {
     if (msg.msg != null) {
       if (msg.msg.contains("failed to get reply for")) {
         tryRestartServer()
@@ -89,13 +108,26 @@ class DriverHolderActor()(implicit ec: ExecutionContext) extends BaseActor {
   }
 
   private def runCommand(command: DriverCommand): Future[DriverCommandEnd] = {
-    Future {
+    val run = () => Future {
       val runner: CommandRunner = command.`type` match {
         case Commands.MONKEY => MonkeyCommandRunner(driver, command, stopNow, self)
         case Commands.KARATE => KarateCommandRunner(command, stopNow, self)
       }
       runner.run()
-    }.recover {
+    }
+    val result = if (taskListener != null) {
+      // create a ui task and return 'reportId'
+      command.meta.startAt = System.currentTimeMillis()
+      (taskListener ? TaskListenerCreateMessage(command)).flatMap(res => {
+        val response = res.asInstanceOf[TaskListenerCreateMessageResponse]
+        command.meta.reportId = response.reportId
+        command.meta.day = response.day
+        run()
+      })
+    } else {
+      run()
+    }
+    result.recover {
       case t: Throwable =>
         log.warning("{}", LogUtils.stackTraceToString(t))
         DriverCommandEnd(command.`type`, false, t.getMessage)
@@ -103,17 +135,18 @@ class DriverHolderActor()(implicit ec: ExecutionContext) extends BaseActor {
   }
 
   def resetCommandStatus(): Unit = {
+    currentStatus.startAt = null
     currentStatus.updateAt = DateUtils.nowDateTime
     currentStatus.status = DriverStatus.STATUS_IDLE
     currentStatus.command = null
-    currentStatus.commandStartAt = 0
   }
 
-  def updateCommandStatus(command: DriverCommand): Unit = {
-    currentStatus.updateAt = DateUtils.nowDateTime
+  def updateCommandRunningStatus(command: DriverCommand): Unit = {
+    val time = DateUtils.nowDateTime
+    currentStatus.startAt = time
+    currentStatus.updateAt = time
     currentStatus.status = DriverStatus.STATUS_RUNNING
     currentStatus.command = command
-    currentStatus.commandStartAt = new Date().getTime()
   }
 
   private def tryRestartServer(): Unit = {
@@ -141,7 +174,10 @@ class DriverHolderActor()(implicit ec: ExecutionContext) extends BaseActor {
 
 object DriverHolderActor {
 
-  def props(ec: ExecutionContext = ExecutionContext.global) = Props(new DriverHolderActor()(ec))
+  def props(
+             taskListener: ActorRef,
+             ec: ExecutionContext = ExecutionContext.global
+           ) = Props(new DriverHolderActor(taskListener)(ec))
 
   case class NewDriver(driver: CustomChromeDriver)
 
@@ -156,5 +192,15 @@ object DriverHolderActor {
   case class DriverDevToolsMessage(params: util.Map[String, AnyRef])
 
   case class DriverStatusMessage(status: DriverStatus)
+
+  case class TaskListenerCreateMessage(command: DriverCommand)
+
+  case class TaskListenerCreateMessageResponse(reportId: String, day: String)
+
+  case class TaskListenerEndMessage(meta: CommandMeta, data: DriverCommandEnd)
+
+  case class TaskListenerDriverDevToolsMessage(meta: CommandMeta, data: util.Map[String, AnyRef])
+
+  case class TaskListenerDriverCommandLogMessage(meta: CommandMeta, data: DriverCommandLog)
 
 }

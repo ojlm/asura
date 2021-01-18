@@ -11,6 +11,7 @@ object EsConfig {
   val DefaultType = "default"
   val MaxCount = 1000
 
+  val INDEX_DATE_TIME_PATTERN = "yyyy.MM.dd"
   val DateFormat = "yyyy-MM-dd'T'HH:mm:ss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
   var IK_ANALYZER = Analysis(analyzer = Option("ik_smart"), searchAnalyzer = Option("ik_smart"))
 
@@ -19,6 +20,6 @@ object EsConfig {
     Group, JobReport, JobNotify, Scenario, UserProfile,
     Activity, DomainOnlineLog, ProjectApiCoverage, DomainOnlineConfig,
     DubboRequest, SqlRequest, Favorite, CiTrigger, TriggerEventLog, Permissions,
-    FileNode,
+    FileNode, UiTaskReport,
   )
 }

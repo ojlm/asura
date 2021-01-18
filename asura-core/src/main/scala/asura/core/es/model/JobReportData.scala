@@ -6,6 +6,7 @@ import java.time.format.DateTimeFormatter
 import asura.common.util.StringUtils
 import asura.core.assertion.engine.Statistic
 import asura.core.dubbo.DubboResult
+import asura.core.es.EsConfig
 import asura.core.es.model.JobReportData.{JobReportStepItemData, ScenarioReportItemData}
 import asura.core.http.HttpResult
 import asura.core.runtime.AbstractResult
@@ -16,7 +17,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
  * Be careful to modify this class's schema, it should be compatible with data structure in ES.
  */
 case class JobReportData(
-                          var dayIndexSuffix: String = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy.MM.dd")),
+                          var dayIndexSuffix: String = LocalDateTime.now().format(DateTimeFormatter.ofPattern(EsConfig.INDEX_DATE_TIME_PATTERN)),
                           var cases: Seq[JobReportStepItemData] = Nil,
                           var scenarios: Seq[ScenarioReportItemData] = Nil,
                           var ext: Map[String, Any] = Map.empty,

@@ -10,6 +10,7 @@ import scala.concurrent.duration.DurationInt
 case class UiConfig(
                      system: ActorSystem,
                      ec: ExecutionContext,
+                     taskListener: ActorRef,
                    )
 
 object UiConfig {
@@ -21,7 +22,7 @@ object UiConfig {
   def init(config: UiConfig): Unit = {
     val system = config.system
     val ec = config.ec
-    driverHolder = system.actorOf(DriverHolderActor.props(ec), "driver-holder")
+    driverHolder = system.actorOf(DriverHolderActor.props(config.taskListener, ec), "driver-holder")
   }
 
 }
