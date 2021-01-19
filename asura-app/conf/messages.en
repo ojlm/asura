@@ -54,3 +54,4 @@ error_EmptyBlobStoreDir=File's storage directory is not set
 error_StoreEngineNotAvailable=Store engine({0}) is not available
 error_UserAlreadyJoined=This user is already joined
 error_IllegalName=Illegal name
+error_FileAlreadyExist=File with the same name already exists

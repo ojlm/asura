@@ -6,4 +6,6 @@ case class QueryFile(
                       `type`: String,
                       parent: String,
                       name: String,
+                      text: String,
+                      topOnly: Boolean = true
                     ) extends QueryPage
