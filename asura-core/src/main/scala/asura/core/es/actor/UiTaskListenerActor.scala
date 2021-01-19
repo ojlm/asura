@@ -31,7 +31,7 @@ class UiTaskListenerActor(bufferSize: Int, flushInterval: Int) extends BaseActor
     case TaskListenerCreateMessage(command) => // create a report and return the reportId
       val now = DateUtils.nowDateTime
       val doc = UiTaskReport(
-        summary = command.summary,
+        summary = command.name,
         description = command.description,
         group = command.meta.group,
         project = command.meta.project,

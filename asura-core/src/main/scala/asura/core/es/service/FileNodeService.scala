@@ -49,13 +49,22 @@ object FileNodeService extends CommonService {
   }
 
   def validate(item: FileNode): ErrorMessage = {
-    if (null == item ||
-      StringUtils.hasEmpty(item.group, item.project, item.`type`, item.summary) ||
-      !FileNode.isNameLegal(item.summary)
-    ) {
+    if (null == item || StringUtils.hasEmpty(item.group, item.project, item.`type`, item.name)) {
       ErrorMessages.error_InvalidParams
     } else {
       null
+    }
+  }
+
+  def fileExists(group: String, project: String, name: String) = {
+    EsClient.esClient.execute {
+      count(FileNode.Index).filter {
+        boolQuery().must(
+          termQuery(FieldKeys.FIELD_GROUP, group),
+          termQuery(FieldKeys.FIELD_PROJECT, project),
+          termQuery(FieldKeys.FIELD_NAME, name)
+        )
+      }
     }
   }
 
@@ -64,16 +73,23 @@ object FileNodeService extends CommonService {
     if (StringUtils.isNotEmpty(query.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, query.group)
     if (StringUtils.isNotEmpty(query.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, query.project)
     if (StringUtils.isNotEmpty(query.`type`)) esQueries += termQuery(FieldKeys.FIELD_TYPE, query.`type`)
-    if (StringUtils.isNotEmpty(query.parent)) esQueries += termQuery(FieldKeys.FIELD_PARENT, query.parent)
+    if (query.topOnly) {
+      esQueries += must(not(existsQuery(FieldKeys.FIELD_PARENT)))
+    } else {
+      if (StringUtils.isNotEmpty(query.parent)) esQueries += termQuery(FieldKeys.FIELD_PARENT, query.parent)
+    }
     if (StringUtils.isNotEmpty(query.name)) {
-      esQueries += wildcardQuery(FieldKeys.FIELD_NAME, s"*${query.name}*")
+      esQueries += wildcardQuery(FieldKeys.FIELD_NAME, query.name)
+    }
+    if (StringUtils.isNotEmpty(query.text)) {
+      esQueries += matchQuery(FieldKeys.FIELD__TEXT, query.text)
     }
     EsClient.esClient.execute {
       search(FileNode.Index)
         .query(boolQuery().must(esQueries))
         .from(query.pageFrom)
         .size(query.pageSize)
-        .sortBy(FieldSort(FieldKeys.FIELD_TYPE).desc(), FieldSort(FieldKeys.FIELD_UPDATED_AT).desc())
+        .sortBy(FieldSort(FieldKeys.FIELD_TYPE).desc(), FieldSort(FieldKeys.FIELD_NAME).asc())
         .sourceExclude(Seq(FieldKeys.FIELD_DATA))
     }
   }

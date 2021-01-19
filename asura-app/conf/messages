@@ -54,3 +54,4 @@ error_EmptyBlobStoreDir=没有设置文件存储路径
 error_StoreEngineNotAvailable=储存引擎({0})不可用
 error_UserAlreadyJoined=该用户已经存在
 error_IllegalName=名称不合法
+error_FileAlreadyExist=同名文件已经存在

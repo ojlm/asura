@@ -13,6 +13,7 @@ case class FileNode(
                      description: String = null,
                      group: String,
                      project: String,
+                     name: String,
                      `type`: String, // 'file' or 'folder'
                      var parent: String = null,
                      var path: Seq[DocRef] = Nil,
@@ -38,6 +39,9 @@ case class FileNode(
     if (null != data) {
       m += (FieldKeys.FIELD_DATA -> JacksonSupport.mapper.convertValue(data, classOf[java.util.List[Map[String, Any]]]))
     }
+    if (StringUtils.isNotEmpty(name)) {
+      m += (FieldKeys.FIELD_NAME -> name)
+    }
     m += (FieldKeys.FIELD_SIZE -> size)
     m += (FieldKeys.FIELD_PARENT -> parent)
     m += (FieldKeys.FIELD_EXTENSION -> `extension`)
@@ -54,6 +58,7 @@ object FileNode extends IndexSetting {
     BaseIndex.fieldDefinitions ++ Seq(
       KeywordField(name = FieldKeys.FIELD_GROUP),
       KeywordField(name = FieldKeys.FIELD_PROJECT),
+      KeywordField(name = FieldKeys.FIELD_NAME, copyTo = Seq(FieldKeys.FIELD__TEXT)),
       KeywordField(name = FieldKeys.FIELD_TYPE),
       NestedField(name = FieldKeys.FIELD_PATH, fields = Seq(
         KeywordField(name = FieldKeys.FIELD_ID),

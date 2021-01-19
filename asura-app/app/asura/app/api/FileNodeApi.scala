@@ -26,7 +26,7 @@ class FileNodeApi @Inject()(
 
   def get(group: String, project: String, id: String) = Action(parse.byteString).async { implicit req =>
     checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_VIEW) { _ =>
-      FileNodeService.getFileNodeById(id).toOkResult
+      FileNodeService.getById(id).toOkResultByEsOneDoc(id)
     }
   }
 
@@ -34,19 +34,25 @@ class FileNodeApi @Inject()(
     checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_EDIT) { user =>
       val q = req.bodyAs(classOf[NewFile])
       if (q != null && FileNode.isNameLegal(q.name) && StringUtils.isNotEmpty(q.app)) {
-        val doc = FileNode(
-          group = group,
-          project = project,
-          `type` = FileNode.TYPE_FILE,
-          summary = q.name,
-          description = q.description,
-          parent = if (StringUtils.isNotEmpty(q.parent)) q.parent else null,
-          path = if (StringUtils.isNotEmpty(q.parent) && q.path != null && q.path.nonEmpty) q.path else null,
-          app = q.app,
-          data = q.data,
-        )
-        doc.fillCommonFields(user)
-        FileNodeService.index(doc).toOkResult
+        FileNodeService.fileExists(group, project, q.name).flatMap(res => {
+          if (res.result.count < 1) {
+            val doc = FileNode(
+              group = group,
+              project = project,
+              name = q.name,
+              `type` = FileNode.TYPE_FILE,
+              description = q.description,
+              parent = if (StringUtils.isNotEmpty(q.parent)) q.parent else null,
+              path = if (StringUtils.isNotEmpty(q.parent) && q.path != null && q.path.nonEmpty) q.path else null,
+              app = q.app,
+              data = q.data,
+            )
+            doc.fillCommonFields(user)
+            FileNodeService.index(doc).toOkResult
+          } else {
+            toI18nFutureErrorResult(AppErrorMessages.error_FileAlreadyExist)
+          }
+        })
       } else {
         toI18nFutureErrorResult(AppErrorMessages.error_InvalidRequestParameters)
       }
@@ -57,17 +63,23 @@ class FileNodeApi @Inject()(
     checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_EDIT) { user =>
       val q = req.bodyAs(classOf[NewFolder])
       if (q != null && FileNode.isNameLegal(q.name)) {
-        val doc = FileNode(
-          group = group,
-          project = project,
-          `type` = FileNode.TYPE_FOLDER,
-          summary = q.name,
-          description = q.description,
-          parent = if (StringUtils.isNotEmpty(q.parent)) q.parent else null,
-          path = if (StringUtils.isNotEmpty(q.parent) && q.path != null && q.path.nonEmpty) q.path else null,
-        )
-        doc.fillCommonFields(user)
-        FileNodeService.index(doc).toOkResult
+        FileNodeService.fileExists(group, project, q.name).flatMap(res => {
+          if (res.result.count < 1) {
+            val doc = FileNode(
+              group = group,
+              project = project,
+              `type` = FileNode.TYPE_FOLDER,
+              name = q.name,
+              description = q.description,
+              parent = if (StringUtils.isNotEmpty(q.parent)) q.parent else null,
+              path = if (StringUtils.isNotEmpty(q.parent) && q.path != null && q.path.nonEmpty) q.path else null,
+            )
+            doc.fillCommonFields(user)
+            FileNodeService.index(doc).toOkResult
+          } else {
+            toI18nFutureErrorResult(AppErrorMessages.error_FileAlreadyExist)
+          }
+        })
       } else {
         toI18nFutureErrorResult(AppErrorMessages.error_InvalidRequestParameters)
       }
