@@ -50,7 +50,7 @@ class DriverHolderActor(taskListener: ActorRef)(implicit ec: ExecutionContext) e
     case SubscribeDriverDevToolsEventMessage(ref) =>
       driverDevToolsEventBus.subscribe(ref, self)
     case DriverDevToolsMessage(params) =>
-      if (needToSendTaskListener() && DevToolsProtocol.METHOD_Log_entryAdded.equals(params.get(DevToolsProtocol.METHOD))) {
+      if (needToSendTaskListener() && DevToolsProtocol.isNeedLog(params.get(DevToolsProtocol.METHOD))) {
         taskListener ! TaskListenerDriverDevToolsMessage(currentStatus.command.meta, params)
       }
       driverDevToolsEventBus.publish(PublishDriverDevToolsMessage(self, params))

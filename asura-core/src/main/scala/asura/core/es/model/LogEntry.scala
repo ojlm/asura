@@ -11,6 +11,7 @@ case class LogEntry(
                      `type`: String,
                      hostname: String,
                      pid: String, // process or package name
+                     var method: String = null, // Log.entryAdded, Runtime.consoleAPICalled
                      var level: String = null,
                      var source: String = null, // network, javascript, class
                      var text: String = null,
@@ -32,6 +33,7 @@ object LogEntry extends IndexSetting {
       KeywordField(name = FieldKeys.FIELD_TYPE),
       KeywordField(name = FieldKeys.FIELD_HOSTNAME),
       KeywordField(name = FieldKeys.FIELD_PID),
+      KeywordField(name = FieldKeys.FIELD_METHOD),
       KeywordField(name = FieldKeys.FIELD_LEVEL),
       KeywordField(name = FieldKeys.FIELD_SOURCE),
       TextField(name = FieldKeys.FIELD_TEXT, analysis = EsConfig.IK_ANALYZER),
