@@ -58,7 +58,6 @@ class CustomChromeDriver(
         sendKey(c, modifiers, "char", keyCode)
         sendKey(c, modifiers, "keyUp", keyCode)
       } else {
-        logger.warn("unknown character / key code: {}", c)
         sendKey(c, modifiers, "char", -1)
       }
     }
