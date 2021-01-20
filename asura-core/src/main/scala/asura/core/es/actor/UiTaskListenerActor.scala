@@ -12,7 +12,7 @@ import asura.core.es.actor.UiTaskListenerActor.WrappedLog
 import asura.core.es.model.{LogEntry, UiTaskReport}
 import asura.core.es.service.{LogEntryService, UiTaskReportService}
 import asura.ui.actor.DriverHolderActor._
-import asura.ui.driver.{CommandMeta, DriverCommandLog}
+import asura.ui.driver.{CommandMeta, DevToolsProtocol, DriverCommandLog}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration._
@@ -98,38 +98,43 @@ object UiTaskListenerActor {
       group = meta.group, project = meta.project, taskId = meta.taskId, reportId = meta.reportId,
       `type` = LogEntry.TYPE_CONSOLE, hostname = meta.hostname, pid = meta.pid,
     )
+    log.method = data.get(DevToolsProtocol.METHOD).asInstanceOf[String]
     val params = data.get("params")
     if (params != null) {
-      val entry = params.asInstanceOf[util.Map[Object, Object]].get("entry")
-      if (entry != null) {
-        val entryMap = entry.asInstanceOf[util.Map[Object, Object]]
-        val level = entryMap.get("level")
-        if (level != null) {
-          log.level = level.asInstanceOf[String]
-          entryMap.remove("level")
-        }
-        val source = entryMap.get("source")
-        if (source != null) {
-          log.source = source.asInstanceOf[String]
-          entryMap.remove("source")
-        }
-        val text = entryMap.get("text")
-        if (null != text) {
-          log.text = text.asInstanceOf[String]
-          entryMap.remove("text")
-        }
-        val timestamp = entryMap.get("timestamp")
-        if (timestamp != null) {
-          log.timestamp = if (timestamp.isInstanceOf[BigDecimal]) {
-            timestamp.asInstanceOf[BigDecimal].toLong
-          } else if (timestamp.isInstanceOf[Long]) {
-            timestamp.asInstanceOf[Long]
-          } else {
-            0L
+      val paramsMap = params.asInstanceOf[util.Map[Object, Object]]
+      if (log.method.equals(DevToolsProtocol.METHOD_Log_entryAdded)) {
+        val entry = paramsMap.get("entry")
+        if (entry != null) {
+          val entryMap = entry.asInstanceOf[util.Map[Object, Object]]
+          val level = entryMap.get("level")
+          if (level != null) {
+            log.level = level.asInstanceOf[String]
+            entryMap.remove("level")
           }
-          entryMap.remove("timestamp")
+          val source = entryMap.get("source")
+          if (source != null) {
+            log.source = source.asInstanceOf[String]
+            entryMap.remove("source")
+          }
+          val text = entryMap.get("text")
+          if (null != text) {
+            log.text = text.asInstanceOf[String]
+            entryMap.remove("text")
+          }
+          val timestamp = entryMap.get("timestamp")
+          if (timestamp != null) {
+            log.timestamp = timestampToLong(timestamp)
+            entryMap.remove("timestamp")
+          }
+          log.data = entryMap
         }
-        log.data = entryMap
+      } else {
+        val timestamp = paramsMap.get("timestamp")
+        if (timestamp != null) {
+          log.timestamp = timestampToLong(timestamp)
+          paramsMap.remove("timestamp")
+        }
+        log.data = paramsMap
       }
     }
     WrappedLog(meta.day, log)
@@ -141,8 +146,25 @@ object UiTaskListenerActor {
       `type` = LogEntry.TYPE_MONKEY, hostname = meta.hostname, pid = meta.pid,
     )
     log.source = data.`type` // 'keyboard' or 'mouse'
+    log.timestamp = data.timestamp
     log.data = Collections.singletonMap("params", data.params)
     WrappedLog(meta.day, log)
+  }
+
+  private def timestampToLong(timestamp: Object): Long = {
+    if (timestamp.isInstanceOf[java.math.BigDecimal]) {
+      timestamp.asInstanceOf[java.math.BigDecimal].longValue()
+    } else if (timestamp.isInstanceOf[java.math.BigInteger]) {
+      timestamp.asInstanceOf[java.math.BigInteger].longValue()
+    } else if (timestamp.isInstanceOf[java.lang.Long]) {
+      timestamp.asInstanceOf[java.lang.Long]
+    } else if (timestamp.isInstanceOf[BigDecimal]) {
+      timestamp.asInstanceOf[BigDecimal].toLong
+    } else if (timestamp.isInstanceOf[Long]) {
+      timestamp.asInstanceOf[Long]
+    } else {
+      0L
+    }
   }
 
 }
