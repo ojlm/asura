@@ -50,19 +50,19 @@ class DriverHolderActor(taskListener: ActorRef)(implicit ec: ExecutionContext) e
     case SubscribeDriverDevToolsEventMessage(ref) =>
       driverDevToolsEventBus.subscribe(ref, self)
     case DriverDevToolsMessage(params) =>
-      if (needToSendTaskListener() && DevToolsProtocol.isNeedLog(params.get(DevToolsProtocol.METHOD))) {
+      if (needSendDriverLogToTaskListener() && DevToolsProtocol.isNeedLog(params.get(DevToolsProtocol.METHOD))) {
         taskListener ! TaskListenerDriverDevToolsMessage(currentStatus.command.meta, params)
       }
       driverDevToolsEventBus.publish(PublishDriverDevToolsMessage(self, params))
     case SubscribeCommandLogMessage(ref) =>
       driverCommandLogEventBus.subscribe(ref, self)
     case log: DriverCommandLog =>
-      if (needToSendTaskListener()) {
+      if (needSendCommandLogToTaskListener()) {
         taskListener ! TaskListenerDriverCommandLogMessage(currentStatus.command.meta, log)
       }
       driverCommandLogEventBus.publish(PublishCommandLogMessage(self, log))
     case msg: DriverCommandEnd =>
-      if (needToSendTaskListener()) {
+      if (canSendToTaskListener()) {
         currentStatus.command.meta.endAt = System.currentTimeMillis()
         taskListener ! TaskListenerEndMessage(currentStatus.command.meta, msg)
       }
@@ -94,7 +94,23 @@ class DriverHolderActor(taskListener: ActorRef)(implicit ec: ExecutionContext) e
       }
   }
 
-  private def needToSendTaskListener(): Boolean = {
+  private def needSendCommandLogToTaskListener(): Boolean = {
+    canSendToTaskListener() && (if (currentStatus.command.options != null) {
+      currentStatus.command.options.saveCommandLog
+    } else {
+      false
+    })
+  }
+
+  private def needSendDriverLogToTaskListener(): Boolean = {
+    canSendToTaskListener() && (if (currentStatus.command.options != null) {
+      currentStatus.command.options.saveDriverLog
+    } else {
+      false
+    })
+  }
+
+  private def canSendToTaskListener(): Boolean = {
     taskListener != null && currentStatus.command != null &&
       currentStatus.command.meta != null && currentStatus.command.meta.reportId != null
   }

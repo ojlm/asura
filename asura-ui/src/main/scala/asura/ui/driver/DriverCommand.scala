@@ -6,4 +6,5 @@ case class DriverCommand(
                           `type`: String,
                           params: Map[String, Any],
                           var meta: CommandMeta,
+                          var options: CommandOptions = CommandOptions(),
                         )
