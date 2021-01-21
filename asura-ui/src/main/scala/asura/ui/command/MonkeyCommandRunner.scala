@@ -35,6 +35,9 @@ case class MonkeyCommandRunner(
     if (StringUtils.isNotEmpty(params.startUrl)) {
       driver.setUrl(params.startUrl)
     }
+    if (StringUtils.isNotEmpty(params.beforeScript)) {
+      params.beforeScript.lines().forEach(step => runStep(step))
+    }
     val dimensions = driver.getDimensions()
     fullWindowRect.width = dimensions.get("width").asInstanceOf[Integer]
     fullWindowRect.height = dimensions.get("height").asInstanceOf[Integer]
@@ -64,9 +67,6 @@ case class MonkeyCommandRunner(
     }
     if (null != logActor) {
       logActor ! DriverCommandLog(Commands.MONKEY, "log", s"window size: ${fullWindowRect.width}*${fullWindowRect.height}")
-    }
-    if (StringUtils.isNotEmpty(params.beforeScript)) {
-      params.beforeScript.lines().forEach(step => runStep(step))
     }
   }
 
