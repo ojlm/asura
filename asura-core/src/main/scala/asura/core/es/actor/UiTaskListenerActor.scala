@@ -129,6 +129,26 @@ object UiTaskListenerActor {
           log.data = entryMap
         }
       } else {
+        if (log.method.equals(DevToolsProtocol.METHOD_Runtime_consoleAPICalled)) {
+          val typeObj = paramsMap.get("type")
+          if (typeObj != null) {
+            log.level = typeObj.asInstanceOf[String]
+          }
+          val argsObj = paramsMap.get("args")
+          if (argsObj != null) {
+            val sb = new StringBuilder()
+            argsObj.asInstanceOf[java.util.List[java.util.Map[String, Object]]].forEach(arg => {
+              val argType = arg.get("type")
+              if ("string".equals(argType)) {
+                sb.append(arg.get("value")).append(" ")
+              } else if ("number".equals(argType)) {
+                sb.append(arg.get("value").toString()).append(" ")
+              }
+            })
+            if (sb.length() > 0) sb.deleteCharAt(sb.length() - 1)
+            log.text = sb.toString()
+          }
+        }
         val timestamp = paramsMap.get("timestamp")
         if (timestamp != null) {
           log.timestamp = timestampToLong(timestamp)
@@ -136,6 +156,9 @@ object UiTaskListenerActor {
         }
         log.data = paramsMap
       }
+    }
+    if (log.timestamp <= 0) { // add a default timestamp
+      log.timestamp = System.currentTimeMillis()
     }
     WrappedLog(meta.day, log)
   }
