@@ -37,6 +37,16 @@ object LogEntryService extends CommonService {
     if (StringUtils.isNotEmpty(query.group)) esQueries += termQuery(FieldKeys.FIELD_GROUP, query.group)
     if (StringUtils.isNotEmpty(query.project)) esQueries += termQuery(FieldKeys.FIELD_PROJECT, query.project)
     if (StringUtils.isNotEmpty(query.reportId)) esQueries += termQuery(FieldKeys.FIELD_REPORT_ID, query.reportId)
+    if (StringUtils.isNotEmpty(query.text)) esQueries += matchQuery(FieldKeys.FIELD_TEXT, query.text)
+    if (query.levels != null && query.levels.nonEmpty) {
+      esQueries += boolQuery().should(query.levels.map(level => {
+        if (level.equals("unknown")) {
+          not(existsQuery(FieldKeys.FIELD_LEVEL))
+        } else {
+          termQuery(FieldKeys.FIELD_LEVEL, level)
+        }
+      }))
+    }
     EsClient.esClient.execute {
       search(s"${LogEntry.Index}-${query.day}")
         .query(boolQuery().must(esQueries))
@@ -49,7 +59,7 @@ object LogEntryService extends CommonService {
         Map(
           "total" -> hits.total,
           "list" -> hits.hits.map(_.sourceAsMap),
-          "sort" -> (if (hits.total > 0) hits.hits.last.sort.getOrElse(Nil) else Nil)
+          "sort" -> (if (hits.hits.nonEmpty) hits.hits.last.sort.getOrElse(Nil) else Nil)
         )
       } else {
         ErrorMessages.error_EsRequestFail(res).toFutureFail
