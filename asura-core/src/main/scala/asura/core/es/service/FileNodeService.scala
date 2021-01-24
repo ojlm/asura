@@ -56,14 +56,19 @@ object FileNodeService extends CommonService {
     }
   }
 
-  def fileExists(group: String, project: String, name: String) = {
+  def fileExists(group: String, project: String, name: String, parentId: String) = {
     EsClient.esClient.execute {
+      val esQueries = ArrayBuffer[Query]()
+      esQueries += termQuery(FieldKeys.FIELD_GROUP, group)
+      esQueries += termQuery(FieldKeys.FIELD_PROJECT, project)
+      esQueries += termQuery(FieldKeys.FIELD_NAME, name)
+      if (StringUtils.isNotEmpty(parentId)) {
+        esQueries += termQuery(FieldKeys.FIELD_PARENT, parentId)
+      } else {
+        esQueries += not(existsQuery(FieldKeys.FIELD_PARENT))
+      }
       count(FileNode.Index).filter {
-        boolQuery().must(
-          termQuery(FieldKeys.FIELD_GROUP, group),
-          termQuery(FieldKeys.FIELD_PROJECT, project),
-          termQuery(FieldKeys.FIELD_NAME, name)
-        )
+        boolQuery().must(esQueries)
       }
     }
   }
