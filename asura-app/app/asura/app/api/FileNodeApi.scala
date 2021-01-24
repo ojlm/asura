@@ -34,7 +34,7 @@ class FileNodeApi @Inject()(
     checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_EDIT) { user =>
       val q = req.bodyAs(classOf[NewFile])
       if (q != null && FileNode.isNameLegal(q.name) && StringUtils.isNotEmpty(q.app)) {
-        FileNodeService.fileExists(group, project, q.name).flatMap(res => {
+        FileNodeService.fileExists(group, project, q.name, q.parent).flatMap(res => {
           if (res.result.count < 1) {
             val doc = FileNode(
               group = group,
@@ -48,7 +48,7 @@ class FileNodeApi @Inject()(
               data = q.data,
             )
             doc.fillCommonFields(user)
-            FileNodeService.index(doc).toOkResult
+            FileNodeService.index(doc).map(res => Map("id" -> res.id, "doc" -> doc)).toOkResult
           } else {
             toI18nFutureErrorResult(AppErrorMessages.error_FileAlreadyExist)
           }
@@ -63,7 +63,7 @@ class FileNodeApi @Inject()(
     checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_EDIT) { user =>
       val q = req.bodyAs(classOf[NewFolder])
       if (q != null && FileNode.isNameLegal(q.name)) {
-        FileNodeService.fileExists(group, project, q.name).flatMap(res => {
+        FileNodeService.fileExists(group, project, q.name, q.parent).flatMap(res => {
           if (res.result.count < 1) {
             val doc = FileNode(
               group = group,
@@ -75,7 +75,7 @@ class FileNodeApi @Inject()(
               path = if (StringUtils.isNotEmpty(q.parent) && q.path != null && q.path.nonEmpty) q.path else null,
             )
             doc.fillCommonFields(user)
-            FileNodeService.index(doc).toOkResult
+            FileNodeService.index(doc).map(res => Map("id" -> res.id, "doc" -> doc)).toOkResult
           } else {
             toI18nFutureErrorResult(AppErrorMessages.error_FileAlreadyExist)
           }
