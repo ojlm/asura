@@ -117,6 +117,16 @@ object KarateRunner {
     karateFeature
   }
 
+  def parseFeatureSummary(text: String): KarateFeatureSummary = {
+    val feature = ORIGIN.replaceText(text)
+    KarateFeatureSummary(
+      name = feature.getName,
+      description = feature.getDescription,
+      lineCount = if (feature.getLines != null) feature.getLines.size() else 0,
+      sectionCount = if (feature.getSections != null) feature.getSections.size() else 0,
+    )
+  }
+
   def findMethodsMatching(text: String): Seq[MethodMatch] = {
     val matches = ArrayBuffer[MethodMatch]()
     PATTERNS.forEach(pattern => {
