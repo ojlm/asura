@@ -2,3 +2,4 @@ GET         /:group/:project/:id           asura.app.api.FileNodeApi.get(group, 
 PUT         /:group/:project/file          asura.app.api.FileNodeApi.newFile(group, project)
 PUT         /:group/:project/folder        asura.app.api.FileNodeApi.newFolder(group, project)
 POST        /:group/:project/query         asura.app.api.FileNodeApi.query(group, project)
+POST        /:group/:project/upload        asura.app.api.FileNodeApi.uploadFile(group, project)

@@ -2,6 +2,8 @@ package asura.core.es.model
 
 import asura.common.util.StringUtils
 import asura.core.es.EsConfig
+import asura.core.es.model.FileNode.FileNodeData
+import asura.core.es.model.FormDataItem.BlobMetaData
 import asura.core.es.model.Label.LabelRef
 import asura.core.util.JacksonSupport
 import com.sksamuel.elastic4s.mappings._
@@ -21,7 +23,7 @@ case class FileNode(
                      extension: String = null,
                      app: String = null,
                      labels: Seq[LabelRef] = Nil,
-                     var data: Map[String, Any] = null, // should be small
+                     var data: FileNodeData = null, // should be small
                      var creator: String = null,
                      var createdAt: String = null,
                      var updatedAt: String = null,
@@ -80,7 +82,20 @@ object FileNode extends IndexSetting {
   val APP_KARATE = "karate"
   val APP_SOLOPI = "solopi"
   val APP_WEB_MONKEY = "web.monkey"
+  val APP_RAW = "raw"
 
   def isNameLegal(name: String): Boolean = StringUtils.isNotEmpty(name)
+
+  def isSupportedApp(app: String): Boolean = {
+    app match {
+      case APP_KARATE | APP_SOLOPI | APP_WEB_MONKEY | APP_RAW => true
+      case _ => false
+    }
+  }
+
+  case class FileNodeData(
+                           data: Map[String, Any] = null,
+                           var blob: BlobMetaData = null,
+                         )
 
 }
