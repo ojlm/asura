@@ -7,6 +7,7 @@ import com.google.inject.{AbstractModule, Provides}
 import org.pac4j.cas.client.direct.DirectCasClient
 import org.pac4j.cas.config.{CasConfiguration, CasProtocol}
 import org.pac4j.core.client.Clients
+import org.pac4j.core.client.direct.AnonymousClient
 import org.pac4j.core.config.Config
 import org.pac4j.http.client.direct.{DirectBasicAuthClient, DirectFormClient, HeaderClient}
 import org.pac4j.jwt.config.signature.SecretSignatureConfiguration
@@ -70,7 +71,7 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
 
   @Provides
   def provideConfig(directFormClient: DirectFormClient, headerClient: HeaderClient, directBasicAuthClient: DirectBasicAuthClient): Config = {
-    val clients = new Clients(directFormClient, headerClient, directBasicAuthClient)
+    val clients = new Clients(new AnonymousClient(), directFormClient, headerClient, directBasicAuthClient)
     val config = new Config(clients)
     config.setHttpActionAdapter(new SecurityHttpActionAdapter())
     // config.addAuthorizer(Authorizer.ADMIN, new RequireAnyRoleAuthorizer(Role.ADMIN))
