@@ -6,12 +6,15 @@ import akka.http.scaladsl.model.ws._
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Sink}
 import akka.util.ByteString
+import asura.app.AppErrorMessages
+import asura.common.model.ApiRes
 import asura.common.util.StringUtils
 import asura.core.actor.flow.WebSocketMessageHandler
 import asura.core.es.model.Permissions.Functions
 import asura.core.security.PermissionAuthProvider
 import asura.ui.actor.WebControllerActor
-import asura.ui.driver.{DriverCommand, UiDriverProvider}
+import asura.ui.driver.{DriverCommand, Drivers, UiDriverProvider}
+import asura.ui.model.MobileDriverInfo
 import javax.inject.{Inject, Singleton}
 import org.pac4j.http.client.direct.HeaderClient
 import org.pac4j.play.scala.SecurityComponents
@@ -36,9 +39,23 @@ class UiApi @Inject()(
   // this instance
   val websockifyRfbWsUrl = configuration.getOptional[String]("asura.ui.proxy.url").getOrElse(StringUtils.EMPTY)
 
-  def driverList(group: String, project: String) = Action.async { implicit req =>
+  def register(driverType: String) = Action(parse.byteString).async { implicit req =>
+    val driverInfo = driverType match {
+      case Drivers.ANDROID =>
+        req.bodyAs(classOf[MobileDriverInfo])
+      case _ => null
+    }
+    if (driverInfo != null && driverInfo.isValid()) {
+      uiDriverProvider.register(driverType, driverInfo)
+      Future.successful(ApiRes()).toOkResult
+    } else {
+      toI18nFutureErrorResult(AppErrorMessages.error_InvalidRequestParameters)
+    }
+  }
+
+  def driverList(group: String, project: String, driverType: String) = Action.async { implicit req =>
     checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_VIEW) { _ =>
-      Future.successful(uiDriverProvider.getDrivers()).toOkResult
+      Future.successful(uiDriverProvider.getDrivers(driverType)).toOkResult
     }
   }
 
