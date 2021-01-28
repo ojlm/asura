@@ -45,4 +45,14 @@ case class FileSystemBasedEngine(config: Configuration) extends BlobStoreEngine 
       AppErrorMessages.error_FileNotExist.toFutureFail
     }
   }
+
+  override def readBytes(key: String): Future[Array[Byte]] = {
+    val file = new File(s"${storeDir.get}${File.separator}${key}")
+    if (file.exists()) {
+      Future.successful(Files.readAllBytes(file.toPath))
+    } else {
+      AppErrorMessages.error_FileNotExist.toFutureFail
+    }
+  }
+
 }

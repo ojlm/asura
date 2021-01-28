@@ -12,4 +12,7 @@ trait BlobStoreEngine {
   def upload(params: UploadParams): Future[BlobMetaData]
 
   def download(key: String): Future[DownloadParams]
+
+  def readBytes(key: String): Future[Array[Byte]]
+
 }

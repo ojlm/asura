@@ -38,7 +38,7 @@ trait JsonUtils {
   }
 
   def parse[T <: AnyRef](content: String, c: Class[T]): T = {
-    mapper.readValue(content, c)
+    if (c.equals(classOf[String])) content.asInstanceOf[T] else mapper.readValue(content, c)
   }
 
   def parse[T <: AnyRef](input: InputStream, c: Class[T]): T = {

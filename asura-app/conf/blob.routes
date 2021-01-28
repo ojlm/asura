@@ -1,2 +1,3 @@
-POST        /:group/:project/upload               asura.app.api.BlobApi.uploadBlob(group, project)
-GET         /:group/:project/download/:key        asura.app.api.BlobApi.downloadBlob(group, project, key)
+POST        /:group/:project/upload                   asura.app.api.BlobApi.uploadBlob(group, project)
+GET         /:group/:project/download/:key            asura.app.api.BlobApi.downloadBlob(group, project, key)
+GET         /:group/:project/readAsString/:key        asura.app.api.BlobApi.readAsString(group, project, key)
