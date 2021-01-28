@@ -4,12 +4,12 @@ import java.net.URI
 import java.net.http.HttpRequest
 
 import asura.common.exceptions.ErrorMessages.ErrorMessage
-import asura.common.util.{JsonUtils, StringUtils}
+import asura.common.util.{HttpUtils, JsonUtils, StringUtils}
 import asura.core.ErrorMessages
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.model.Label.LabelRef
 import asura.core.es.model._
-import asura.core.http.{HttpContentTypes, HttpEngine2, HttpMethods}
+import asura.core.http.{HttpContentTypes, HttpMethods}
 import com.typesafe.scalalogging.Logger
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.Parameter
@@ -183,7 +183,7 @@ object OpenApiToHttpRequest {
   }
 
   def getOpenApiFromUrl(url: String): Future[Option[OpenAPI]] = {
-    HttpEngine2.sendAsync(HttpRequest.newBuilder(URI.create(url)).build())
+    HttpUtils.sendAsync(HttpRequest.newBuilder(URI.create(url)).build())
       .map(response => {
         val body = response.body()
         getOpenApi(body)
