@@ -1,7 +1,10 @@
 package asura.app.api
 
+import java.nio.charset.StandardCharsets
+
 import akka.actor.ActorSystem
 import asura.app.AppErrorMessages
+import asura.common.model.ApiRes
 import asura.core.es.model.Permissions.Functions
 import asura.core.security.PermissionAuthProvider
 import asura.core.store.{BlobStoreEngine, BlobStoreEngines, UploadParams}
@@ -34,6 +37,18 @@ class BlobApi @Inject()(
         saveBlob(fileParam.get).toOkResult
       } else {
         toI18nFutureErrorResult(AppErrorMessages.error_FileNotExist.name)
+      }
+    }
+  }
+
+  def readAsString(group: String, project: String, key: String) = Action.async { implicit req =>
+    checkPermission(group, Some(project), Functions.BLOB_DOWNLOAD) { _ =>
+      if (storeEngine.nonEmpty) {
+        storeEngine.get.readBytes(key).map(bytes => {
+          ApiRes(data = new String(bytes, StandardCharsets.UTF_8))
+        }).toOkResult
+      } else {
+        AppErrorMessages.error_NonActiveStoreEngine.toFutureFail
       }
     }
   }

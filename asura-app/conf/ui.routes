@@ -7,3 +7,4 @@ GET         /rfb/:group/:project/:id                    asura.app.api.UiApi.rfb(
 POST        /task/report/:group/:project                asura.app.api.UiTaskApi.queryReport(group, project)
 GET         /task/report/:group/:project/:id            asura.app.api.UiTaskApi.getReport(group, project, id)
 POST        /task/report/log/:group/:project/:id        asura.app.api.UiTaskApi.getLogs(group, project, id)
+POST        /task/run/solopi/:group/:project/:id        asura.app.api.UiTaskApi.runSolopi(group, project, id)
