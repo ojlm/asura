@@ -55,7 +55,7 @@ class UiApi @Inject()(
 
   def driverList(group: String, project: String, driverType: String) = Action.async { implicit req =>
     checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_VIEW) { _ =>
-      Future.successful(uiDriverProvider.getDrivers(driverType)).toOkResult
+      uiDriverProvider.getDrivers(driverType).toOkResult
     }
   }
 
