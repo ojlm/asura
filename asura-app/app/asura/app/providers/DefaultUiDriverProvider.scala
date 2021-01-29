@@ -7,6 +7,8 @@ import asura.ui.driver.{Drivers, UiDriverProvider}
 import asura.ui.model.{ChromeDriverInfo, DriverInfo}
 import play.api.Configuration
 
+import scala.concurrent.Future
+
 case class DefaultUiDriverProvider(
                                     configuration: Configuration,
                                   ) extends UiDriverProvider {
@@ -22,13 +24,14 @@ case class DefaultUiDriverProvider(
 
   chromeDrivers.put(localChrome.getKey(), localChrome)
 
-  override def getDrivers(`type`: String): java.util.Collection[DriverInfo] = {
-    `type` match {
+  override def getDrivers(`type`: String): Future[java.util.Collection[_ <: DriverInfo]] = {
+    val drivers = `type` match {
       case Drivers.CHROME => chromeDrivers.values()
       case Drivers.ANDROID => androidDrivers.values()
       case Drivers.IOS => iosDrivers.values()
       case _ => Collections.emptyList()
     }
+    Future.successful(drivers)
   }
 
   override def register(`type`: String, info: DriverInfo): Unit = {
