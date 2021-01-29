@@ -26,6 +26,7 @@ object Dependencies {
   private val jsonPath = "com.jayway.jsonpath" % "json-path" % "2.4.0"
 
   val caffeineLib = "com.github.ben-manes.caffeine" % "caffeine" % "2.8.4"
+  val kryo = "com.esotericsoftware" % "kryo" % "5.0.3"
 
   // kafka
   private val akkaKafka = "com.typesafe.akka" %% "akka-stream-kafka" % "2.0.5"
@@ -67,7 +68,7 @@ object Dependencies {
   val commonDependencies = Seq(akkaTestKit, config, akkaActor, jackson, akkaActorTyped, akkaSlf4j, akkaJackson) ++ scalaTestDeps ++ loggingDeps
   val clusterDependencies = Seq(akkaCluster, akkaMetrics, akkaClusterTools) ++ commonDependencies
   val coreDependencies = Seq(
-    commonsLang3, jackson, elastic4s, druid,
+    commonsLang3, jackson, elastic4s, druid, kryo,
     joddCore, jsonPath, swaggerParser, quartz, redisson
   ) ++ commonDependencies ++ httpDeps ++ databaseDeps
   val appDependencies = Seq(caffeineLib)
