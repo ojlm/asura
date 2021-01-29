@@ -83,14 +83,13 @@ class UiApi @Inject()(
   def proxyToRfb(
                   group: String,
                   project: String,
-                  id: String,
                   host: String,
                   port: String,
                   token: String
                 ) = WebSocket.acceptOrResult[ByteString, ByteString] { implicit req =>
     checkWsPermission(group, project, Functions.PROJECT_COMPONENT_EXEC) { _ =>
       Right {
-        val url = s"ws://$host:$port/api/ui/rfb/$group/$project/$id?token=$token"
+        val url = s"ws://$host:$port/api/ui/rfb/$group/$project?token=$token"
         Flow[ByteString]
           .map(msg => BinaryMessage(msg))
           .via(webSocketFlow(url))
@@ -108,7 +107,7 @@ class UiApi @Inject()(
     }
   }
 
-  def rfb(group: String, project: String, id: String) = WebSocket.acceptOrResult[ByteString, ByteString] { implicit req =>
+  def rfb(group: String, project: String) = WebSocket.acceptOrResult[ByteString, ByteString] { implicit req =>
     checkWsPermission(group, project, Functions.PROJECT_COMPONENT_EXEC) { _ =>
       if (StringUtils.isNotEmpty(websockifyRfbWsUrl)) {
         Right {

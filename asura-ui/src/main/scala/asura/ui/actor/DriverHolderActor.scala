@@ -1,6 +1,7 @@
 package asura.ui.actor
 
 import java.util
+import java.util.Base64
 import java.util.concurrent.atomic.AtomicBoolean
 
 import akka.actor.{ActorRef, Props}
@@ -14,17 +15,17 @@ import asura.ui.driver.DriverCommandLogEventBus.PublishCommandLogMessage
 import asura.ui.driver.DriverDevToolsEventBus.PublishDriverDevToolsMessage
 import asura.ui.driver.DriverStatusEventBus.PublishDriverStatusMessage
 import asura.ui.driver.{DevToolsProtocol, _}
+import asura.ui.model.ChromeDriverInfo
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
-/**
- * for now just the chrome
- *
- * @param taskListener send 'start','log','end' event
- * @param ec
- */
-class DriverHolderActor(taskListener: ActorRef)(implicit ec: ExecutionContext) extends BaseActor {
+class DriverHolderActor(
+                         localChrome: ChromeDriverInfo,
+                         uiDriverProvider: UiDriverProvider,
+                         syncInterval: Int,
+                         taskListener: ActorRef,
+                       )(implicit ec: ExecutionContext) extends BaseActor {
 
   var driver: CustomChromeDriver = null
   val currentStatus = DriverStatus()
@@ -183,6 +184,14 @@ class DriverHolderActor(taskListener: ActorRef)(implicit ec: ExecutionContext) e
       currentStatus.updateAt = DateUtils.nowDateTime
       self ! DriverStatusMessage(currentStatus)
     })
+    context.system.scheduler.scheduleAtFixedRate(1 seconds, syncInterval seconds)(() => {
+      if (driver != null && localChrome != null) {
+        Future {
+          localChrome.screenCapture = Base64.getEncoder.encodeToString(driver.screenshot(true))
+          uiDriverProvider.register(Drivers.CHROME, localChrome)
+        }
+      }
+    })
     tryRestartServer()
   }
 
@@ -191,9 +200,12 @@ class DriverHolderActor(taskListener: ActorRef)(implicit ec: ExecutionContext) e
 object DriverHolderActor {
 
   def props(
+             localChrome: ChromeDriverInfo,
+             uiDriverProvider: UiDriverProvider,
              taskListener: ActorRef,
+             syncInterval: Int,
              ec: ExecutionContext = ExecutionContext.global
-           ) = Props(new DriverHolderActor(taskListener)(ec))
+           ) = Props(new DriverHolderActor(localChrome, uiDriverProvider, syncInterval, taskListener)(ec))
 
   case class NewDriver(driver: CustomChromeDriver)
 
