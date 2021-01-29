@@ -3,6 +3,8 @@ package asura.ui
 import akka.actor.{ActorRef, ActorSystem}
 import akka.util.Timeout
 import asura.ui.actor.DriverHolderActor
+import asura.ui.driver.UiDriverProvider
+import asura.ui.model.ChromeDriverInfo
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.DurationInt
@@ -11,6 +13,9 @@ case class UiConfig(
                      system: ActorSystem,
                      ec: ExecutionContext,
                      taskListener: ActorRef,
+                     localChrome: ChromeDriverInfo,
+                     uiDriverProvider: UiDriverProvider,
+                     syncInterval: Int,
                    )
 
 object UiConfig {
@@ -22,7 +27,10 @@ object UiConfig {
   def init(config: UiConfig): Unit = {
     val system = config.system
     val ec = config.ec
-    driverHolder = system.actorOf(DriverHolderActor.props(config.taskListener, ec), "driver-holder")
+    driverHolder = system.actorOf(DriverHolderActor.props(
+      config.localChrome, config.uiDriverProvider,
+      config.taskListener, config.syncInterval, ec,
+    ), "driver-holder")
   }
 
 }

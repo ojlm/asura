@@ -22,6 +22,8 @@ import asura.core.store.BlobStoreEngines
 import asura.core.{CoreConfig, SecurityConfig}
 import asura.namerd.NamerdConfig
 import asura.ui.UiConfig
+import asura.ui.driver.UiDriverProvider
+import asura.ui.model.ChromeDriverInfo
 import com.typesafe.config.{ConfigFactory, ConfigList}
 import javax.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
@@ -38,6 +40,7 @@ class ApplicationStart @Inject()(
                                   lifecycle: ApplicationLifecycle,
                                   system: ActorSystem,
                                   configuration: Configuration,
+                                  uiDriverProvider: UiDriverProvider,
                                   mailerClient: MailerClient
                                 ) {
   val logger = LoggerFactory.getLogger(classOf[ApplicationStart])
@@ -91,10 +94,18 @@ class ApplicationStart @Inject()(
 
   // ui
   if (configuration.getOptional[Boolean]("asura.ui.enabled").getOrElse(false)) {
+    val syncInterval = configuration.getOptional[Int]("asura.ui.sync.interval").getOrElse(30)
+    val host = configuration.getOptional[String]("asura.ui.proxy.host").getOrElse(StringUtils.EMPTY)
+    val port = configuration.getOptional[Int]("asura.ui.proxy.port").getOrElse(0)
+    val password = configuration.getOptional[String]("asura.ui.proxy.password").getOrElse(StringUtils.EMPTY)
+    val localChrome = ChromeDriverInfo(host, port, password)
     UiConfig.init(UiConfig(
       system,
       ExecutionContextManager.cachedExecutor,
-      system.actorOf(UiTaskListenerActor.props())
+      system.actorOf(UiTaskListenerActor.props()),
+      localChrome = localChrome,
+      uiDriverProvider = uiDriverProvider,
+      syncInterval,
     ))
   }
 
