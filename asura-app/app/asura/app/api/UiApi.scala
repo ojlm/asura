@@ -45,7 +45,7 @@ class UiApi @Inject()(
         req.bodyAs(classOf[MobileDriverInfo])
       case _ => null
     }
-    if (driverInfo != null && driverInfo.isValid()) {
+    if (driverInfo != null && driverInfo.valid()) {
       uiDriverProvider.register(driverType, driverInfo)
       Future.successful(ApiRes()).toOkResult
     } else {

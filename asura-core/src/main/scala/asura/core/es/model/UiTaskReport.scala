@@ -3,10 +3,9 @@ package asura.core.es.model
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-import asura.common.util.StringUtils
+import asura.common.util.{HostUtils, StringUtils}
 import asura.core.es.EsConfig
 import asura.core.job.JobExecDesc
-import asura.core.util.HostUtils
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.sksamuel.elastic4s.mappings._
 

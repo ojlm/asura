@@ -23,7 +23,7 @@ case class DefaultUiDriverProvider(
   }
 
   override def register(`type`: String, info: DriverInfo): Unit = {
-    if (info != null) info.timestamp = System.currentTimeMillis()
+    if (info.timestamp <= 0) info.timestamp = System.currentTimeMillis()
     `type` match {
       case Drivers.CHROME => DefaultUiDriverProvider.chromeDrivers.put(info.getKey(), info)
       case Drivers.ANDROID => DefaultUiDriverProvider.androidDrivers.put(info.getKey(), info)

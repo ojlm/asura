@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import akka.actor.{ActorRef, Props}
 import akka.pattern.{ask, pipe}
 import asura.common.actor.BaseActor
-import asura.common.util.{DateUtils, LogUtils}
+import asura.common.util.{DateUtils, HostUtils, LogUtils}
 import asura.ui.UiConfig.DEFAULT_ACTOR_ASK_TIMEOUT
 import asura.ui.actor.DriverHolderActor._
 import asura.ui.command.{CommandRunner, Commands, KarateCommandRunner, MonkeyCommandRunner}
@@ -184,14 +184,18 @@ class DriverHolderActor(
       currentStatus.updateAt = DateUtils.nowDateTime
       self ! DriverStatusMessage(currentStatus)
     })
-    context.system.scheduler.scheduleAtFixedRate(1 seconds, syncInterval seconds)(() => {
-      if (driver != null && localChrome != null) {
-        Future {
-          localChrome.screenCapture = Base64.getEncoder.encodeToString(driver.screenshot(true))
-          uiDriverProvider.register(Drivers.CHROME, localChrome)
+    if (localChrome != null) {
+      localChrome.hostname = HostUtils.hostname
+      context.system.scheduler.scheduleAtFixedRate(1 seconds, syncInterval seconds)(() => {
+        if (driver != null) {
+          Future {
+            localChrome.timestamp = System.currentTimeMillis()
+            localChrome.screenCapture = Base64.getEncoder.encodeToString(driver.screenshot(true))
+            uiDriverProvider.register(Drivers.CHROME, localChrome)
+          }
         }
-      }
-    })
+      })
+    }
     tryRestartServer()
   }
 
