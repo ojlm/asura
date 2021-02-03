@@ -4,13 +4,13 @@ import akka.actor.{ActorRef, Props}
 import asura.common.actor.{ActorEvent, BaseActor, SenderMessage}
 import asura.common.model.ApiCode
 import asura.ui.UiConfig
-import asura.ui.actor.DriverHolderActor.{SubscribeCommandLogMessage, SubscribeDriverDevToolsEventMessage, SubscribeDriverStatusMessage}
+import asura.ui.actor.ChromeDriverHolderActor.{SubscribeCommandLogMessage, SubscribeDriverDevToolsEventMessage, SubscribeDriverStatusMessage}
 import asura.ui.driver.DriverCommandLogEventBus.PublishCommandLogMessage
 import asura.ui.driver.DriverDevToolsEventBus.PublishDriverDevToolsMessage
 import asura.ui.driver.DriverStatusEventBus.PublishDriverStatusMessage
 import asura.ui.driver.{CommandMeta, DriverCommand, DriverCommandStart}
 
-class WebControllerActor(group: String, project: String, taskId: String, username: String) extends BaseActor {
+class ChromeWebControllerActor(group: String, project: String, taskId: String, username: String) extends BaseActor {
 
   // represent websocket connection
   var wsActor: ActorRef = null
@@ -23,13 +23,13 @@ class WebControllerActor(group: String, project: String, taskId: String, usernam
       command.meta = CommandMeta(group, project, taskId, username)
       sendCommand(command)
     case msg: DriverCommandStart =>
-      wsActor ! newEvent(WebControllerActor.COMMAND_START, msg)
+      wsActor ! newEvent(ChromeWebControllerActor.COMMAND_START, msg)
     case PublishCommandLogMessage(_, log) =>
-      wsActor ! newEvent(WebControllerActor.COMMAND_LOG, log)
+      wsActor ! newEvent(ChromeWebControllerActor.COMMAND_LOG, log)
     case PublishDriverStatusMessage(_, status) =>
-      wsActor ! newEvent(WebControllerActor.DRIVER_STATUS, status)
+      wsActor ! newEvent(ChromeWebControllerActor.DRIVER_STATUS, status)
     case PublishDriverDevToolsMessage(_, msg) =>
-      wsActor ! newEvent(WebControllerActor.DRIVER_LOG, msg)
+      wsActor ! newEvent(ChromeWebControllerActor.DRIVER_LOG, msg)
   }
 
   private def sendCommand(command: DriverCommand): Unit = {
@@ -53,7 +53,7 @@ class WebControllerActor(group: String, project: String, taskId: String, usernam
 
 }
 
-object WebControllerActor {
+object ChromeWebControllerActor {
 
   val COMMAND_START = "command.start"
   val COMMAND_LOG = "command.log"
@@ -65,6 +65,6 @@ object WebControllerActor {
              project: String,
              taskId: String,
              username: String,
-           ) = Props(new WebControllerActor(group, project, taskId, username))
+           ) = Props(new ChromeWebControllerActor(group, project, taskId, username))
 
 }

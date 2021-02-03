@@ -2,7 +2,7 @@ package asura.ui
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.util.Timeout
-import asura.ui.actor.DriverHolderActor
+import asura.ui.actor.ChromeDriverHolderActor
 import asura.ui.driver.UiDriverProvider
 import asura.ui.model.ChromeDriverInfo
 
@@ -27,7 +27,7 @@ object UiConfig {
   def init(config: UiConfig): Unit = {
     val system = config.system
     val ec = config.ec
-    driverHolder = system.actorOf(DriverHolderActor.props(
+    driverHolder = system.actorOf(ChromeDriverHolderActor.props(
       config.localChrome, config.uiDriverProvider,
       config.taskListener, config.syncInterval, ec,
     ), "driver-holder")
