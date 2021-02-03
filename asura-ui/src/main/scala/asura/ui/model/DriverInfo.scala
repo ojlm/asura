@@ -8,6 +8,7 @@ trait DriverInfo {
   val host: String
   val port: Int
   var timestamp: Long = 0L
+  var hostname: String = null
 
   @JsonIgnore
   def getKey(): String = {
@@ -15,7 +16,7 @@ trait DriverInfo {
   }
 
   @JsonIgnore
-  def isValid(): Boolean = {
+  def valid(): Boolean = {
     StringUtils.isNotEmpty(host) && port > 0 && port < 65536
   }
 
