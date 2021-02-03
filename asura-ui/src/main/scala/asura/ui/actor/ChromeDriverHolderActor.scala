@@ -9,7 +9,7 @@ import akka.pattern.{ask, pipe}
 import asura.common.actor.BaseActor
 import asura.common.util.{DateUtils, HostUtils, LogUtils}
 import asura.ui.UiConfig.DEFAULT_ACTOR_ASK_TIMEOUT
-import asura.ui.actor.DriverHolderActor._
+import asura.ui.actor.ChromeDriverHolderActor._
 import asura.ui.command.{CommandRunner, Commands, KarateCommandRunner, MonkeyCommandRunner}
 import asura.ui.driver.DriverCommandLogEventBus.PublishCommandLogMessage
 import asura.ui.driver.DriverDevToolsEventBus.PublishDriverDevToolsMessage
@@ -20,12 +20,12 @@ import asura.ui.model.ChromeDriverInfo
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
-class DriverHolderActor(
-                         localChrome: ChromeDriverInfo,
-                         uiDriverProvider: UiDriverProvider,
-                         syncInterval: Int,
-                         taskListener: ActorRef,
-                       )(implicit ec: ExecutionContext) extends BaseActor {
+class ChromeDriverHolderActor(
+                               localChrome: ChromeDriverInfo,
+                               uiDriverProvider: UiDriverProvider,
+                               syncInterval: Int,
+                               taskListener: ActorRef,
+                             )(implicit ec: ExecutionContext) extends BaseActor {
 
   var driver: CustomChromeDriver = null
   val currentStatus = DriverStatus()
@@ -201,7 +201,7 @@ class DriverHolderActor(
 
 }
 
-object DriverHolderActor {
+object ChromeDriverHolderActor {
 
   def props(
              localChrome: ChromeDriverInfo,
@@ -209,7 +209,7 @@ object DriverHolderActor {
              taskListener: ActorRef,
              syncInterval: Int,
              ec: ExecutionContext = ExecutionContext.global
-           ) = Props(new DriverHolderActor(localChrome, uiDriverProvider, syncInterval, taskListener)(ec))
+           ) = Props(new ChromeDriverHolderActor(localChrome, uiDriverProvider, syncInterval, taskListener)(ec))
 
   case class NewDriver(driver: CustomChromeDriver)
 

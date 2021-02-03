@@ -11,7 +11,7 @@ import asura.core.actor.messages.Flush
 import asura.core.es.actor.UiTaskListenerActor.WrappedLog
 import asura.core.es.model.{LogEntry, UiTaskReport}
 import asura.core.es.service.{LogEntryService, UiTaskReportService}
-import asura.ui.actor.DriverHolderActor._
+import asura.ui.actor.ChromeDriverHolderActor._
 import asura.ui.driver.{CommandMeta, DevToolsProtocol, DriverCommandLog}
 
 import scala.collection.mutable.ArrayBuffer

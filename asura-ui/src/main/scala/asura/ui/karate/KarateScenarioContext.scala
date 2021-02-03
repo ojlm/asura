@@ -2,7 +2,7 @@ package asura.ui.karate
 
 import akka.pattern.ask
 import asura.ui.UiConfig
-import asura.ui.actor.DriverHolderActor.GetDriver
+import asura.ui.actor.ChromeDriverHolderActor.GetDriver
 import asura.ui.driver.Drivers
 import com.intuit.karate.core.{FeatureContext, Scenario, ScenarioContext}
 import com.intuit.karate.driver.Driver

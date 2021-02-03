@@ -12,7 +12,7 @@ import asura.common.util.StringUtils
 import asura.core.actor.flow.WebSocketMessageHandler
 import asura.core.es.model.Permissions.Functions
 import asura.core.security.PermissionAuthProvider
-import asura.ui.actor.WebControllerActor
+import asura.ui.actor.ChromeWebControllerActor
 import asura.ui.driver.{DriverCommand, Drivers, UiDriverProvider}
 import asura.ui.model.MobileDriverInfo
 import javax.inject.{Inject, Singleton}
@@ -101,7 +101,7 @@ class UiApi @Inject()(
   def connect(group: String, project: String, id: String) = WebSocket.acceptOrResult[String, String] { implicit req =>
     checkWsPermission(group, project, Functions.PROJECT_COMPONENT_VIEW) { user =>
       Right {
-        val controller = system.actorOf(WebControllerActor.props(group, project, id, user))
+        val controller = system.actorOf(ChromeWebControllerActor.props(group, project, id, user))
         WebSocketMessageHandler.stringToActorEventFlow(controller, classOf[DriverCommand])
       }
     }
