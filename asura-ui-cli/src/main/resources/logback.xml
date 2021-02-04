@@ -1,0 +1,17 @@
+<configuration>
+
+  <conversionRule conversionWord="coloredLevel" converterClass="asura.ui.cli.ColoredLevel"/>
+
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%date{"yyyy-MM-dd'T'HH:mm:ss.SSS"} %coloredLevel %logger{15} - %message%n%xException{10}</pattern>
+    </encoder>
+  </appender>
+
+  <logger name="ch.qos.logback" level="OFF"/>
+
+  <root level="WARN">
+    <appender-ref ref="STDOUT"/>
+  </root>
+
+</configuration>

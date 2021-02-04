@@ -50,7 +50,8 @@ object Dependencies {
   private val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
 
   // ui
-  private val karate = "com.intuit.karate" % "karate-apache" % "0.9.6"
+  private val karate = "com.intuit.karate" % "karate-apache" % "0.9.6" excludeAll (ExclusionRule(organization = "commons-logging", name = "*"))
+  private val picocli = "info.picocli" % "picocli" % "4.6.1"
 
   // Test dependencies
   private val akkaTestKit = "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test
@@ -75,7 +76,7 @@ object Dependencies {
   val namerdDependencies = Seq(akkaStream, akkaHttp) ++ commonDependencies
   val dubboDependencies = Seq(dubbo, curator, dubboJavassist, dubboJbossNetty, dubboSpring, akkaStream) ++ commonDependencies
   val kafkaDependencies = Seq(akkaStream, akkaKafka, kafkaAvroSerializer) ++ commonDependencies
-  val uiDependencies = Seq(karate) ++ commonDependencies
+  val uiDependencies = Seq(karate, picocli) ++ commonDependencies
 
   val commonPlayDeps = Seq(
     guice,

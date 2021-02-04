@@ -25,6 +25,7 @@ class ChromeDriverHolderActor(
                                uiDriverProvider: UiDriverProvider,
                                syncInterval: Int,
                                taskListener: ActorRef,
+                               options: util.HashMap[String, Object],
                              )(implicit ec: ExecutionContext) extends BaseActor {
 
   var driver: CustomChromeDriver = null
@@ -168,9 +169,11 @@ class ChromeDriverHolderActor(
 
   private def tryRestartServer(): Unit = {
     Future {
-      val driver = CustomChromeDriver.start(false, params => {
-        self ! DriverDevToolsMessage(params)
-      })
+      val driver = if (options == null) {
+        CustomChromeDriver.start(false, params => self ! DriverDevToolsMessage(params))
+      } else {
+        CustomChromeDriver.start(options, params => self ! DriverDevToolsMessage(params))
+      }
       NewDriver(driver)
     }.recover({
       case t: Throwable =>
@@ -208,8 +211,9 @@ object ChromeDriverHolderActor {
              uiDriverProvider: UiDriverProvider,
              taskListener: ActorRef,
              syncInterval: Int,
+             options: util.HashMap[String, Object],
              ec: ExecutionContext = ExecutionContext.global
-           ) = Props(new ChromeDriverHolderActor(localChrome, uiDriverProvider, syncInterval, taskListener)(ec))
+           ) = Props(new ChromeDriverHolderActor(localChrome, uiDriverProvider, syncInterval, taskListener, options)(ec))
 
   case class NewDriver(driver: CustomChromeDriver)
 
