@@ -9,8 +9,8 @@ ThisBuild / scalaVersion := "2.13.3"
 ThisBuild / maintainer := "ngxcorpio@gmail.com"
 
 lazy val root = Project("asura", file("."))
-  .dependsOn(app)
-  .aggregate(app)
+  .dependsOn(app, cli)
+  .aggregate(app, cli)
 
 // Sub Projects
 def asuraProjects(id: String) = Project(id, file(id))
@@ -51,6 +51,9 @@ lazy val cluster = asuraProjects("asura-cluster")
 lazy val ui = asuraProjects("asura-ui")
   .settings(libraryDependencies ++= uiDependencies)
   .dependsOn(common % "compile->compile;test->test")
+
+lazy val cli = asuraProjects("asura-ui-cli")
+  .dependsOn(ui % "compile->compile;test->test")
 
 lazy val core = asuraProjects("asura-core")
   .settings(libraryDependencies ++= coreDependencies)
