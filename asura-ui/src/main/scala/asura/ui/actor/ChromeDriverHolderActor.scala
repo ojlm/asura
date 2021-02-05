@@ -7,10 +7,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 import akka.actor.{ActorRef, Props}
 import akka.pattern.{ask, pipe}
 import asura.common.actor.BaseActor
-import asura.common.util.{DateUtils, HostUtils, LogUtils}
+import asura.common.util.{DateUtils, LogUtils}
 import asura.ui.UiConfig.DEFAULT_ACTOR_ASK_TIMEOUT
 import asura.ui.actor.ChromeDriverHolderActor._
-import asura.ui.command.{CommandRunner, Commands, KarateCommandRunner, MonkeyCommandRunner}
+import asura.ui.command.{CommandRunner, Commands, KarateCommandRunner, WebMonkeyCommandRunner}
 import asura.ui.driver.DriverCommandLogEventBus.PublishCommandLogMessage
 import asura.ui.driver.DriverDevToolsEventBus.PublishDriverDevToolsMessage
 import asura.ui.driver.DriverStatusEventBus.PublishDriverStatusMessage
@@ -21,7 +21,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 class ChromeDriverHolderActor(
-                               localChrome: ChromeDriverInfo,
+                               driverInfo: ChromeDriverInfo, // register to provider
                                uiDriverProvider: UiDriverProvider,
                                syncInterval: Int,
                                taskListener: ActorRef,
@@ -40,11 +40,6 @@ class ChromeDriverHolderActor(
   override def receive: Receive = {
     case NewDriver(driver) =>
       this.driver = driver
-    case GetDriver(tpe) =>
-      tpe match {
-        case Drivers.CHROME => sender() ! driver
-        case _ => sender() ! driver
-      }
     case SubscribeDriverStatusMessage(ref) =>
       driverStatusEventBus.subscribe(ref, self)
     case DriverStatusMessage(status) =>
@@ -128,7 +123,7 @@ class ChromeDriverHolderActor(
   private def runCommand(command: DriverCommand): Future[DriverCommandEnd] = {
     val run = () => Future {
       val runner: CommandRunner = command.`type` match {
-        case Commands.MONKEY => MonkeyCommandRunner(driver, command, stopNow, self)
+        case Commands.WEB_MONKEY => WebMonkeyCommandRunner(driver, command, stopNow, self)
         case Commands.KARATE => KarateCommandRunner(command, stopNow, self)
       }
       runner.run()
@@ -183,23 +178,23 @@ class ChromeDriverHolderActor(
   }
 
   override def preStart(): Unit = {
-    context.system.scheduler.scheduleAtFixedRate(1 seconds, 5 seconds)(() => {
-      currentStatus.updateAt = DateUtils.nowDateTime
-      self ! DriverStatusMessage(currentStatus)
-    })
-    if (localChrome != null) {
-      localChrome.hostname = HostUtils.hostname
-      context.system.scheduler.scheduleAtFixedRate(1 seconds, syncInterval seconds)(() => {
-        if (driver != null) {
+    tryRestartServer()
+    context.system.scheduler.scheduleAtFixedRate(60 seconds, syncInterval seconds)(() => {
+      if (driver != null) {
+        currentStatus.updateAt = DateUtils.nowDateTime
+        self ! DriverStatusMessage(currentStatus)
+        if (driverInfo != null) { // push to the register
           Future {
-            localChrome.timestamp = System.currentTimeMillis()
-            localChrome.screenCapture = Base64.getEncoder.encodeToString(driver.screenshot(true))
-            uiDriverProvider.register(Drivers.CHROME, localChrome)
+            driverInfo.timestamp = System.currentTimeMillis()
+            driverInfo.screenCapture = Base64.getEncoder.encodeToString(driver.screenshot(true))
+            driverInfo.status = currentStatus
+            uiDriverProvider.register(Drivers.CHROME, driverInfo)
           }
         }
-      })
-    }
-    tryRestartServer()
+      } else {
+        tryRestartServer()
+      }
+    })
   }
 
 }
@@ -207,17 +202,15 @@ class ChromeDriverHolderActor(
 object ChromeDriverHolderActor {
 
   def props(
-             localChrome: ChromeDriverInfo,
+             driverInfo: ChromeDriverInfo,
              uiDriverProvider: UiDriverProvider,
              taskListener: ActorRef,
              syncInterval: Int,
              options: util.HashMap[String, Object],
              ec: ExecutionContext = ExecutionContext.global
-           ) = Props(new ChromeDriverHolderActor(localChrome, uiDriverProvider, syncInterval, taskListener, options)(ec))
+           ) = Props(new ChromeDriverHolderActor(driverInfo, uiDriverProvider, syncInterval, taskListener, options)(ec))
 
   case class NewDriver(driver: CustomChromeDriver)
-
-  case class GetDriver(tpe: String)
 
   case class SubscribeDriverDevToolsEventMessage(ref: ActorRef)
 

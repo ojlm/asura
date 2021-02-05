@@ -33,16 +33,16 @@ class ChromeWebControllerActor(group: String, project: String, taskId: String, u
   }
 
   private def sendCommand(command: DriverCommand): Unit = {
-    if (UiConfig.driverHolder != null) {
-      UiConfig.driverHolder ! command
+    if (UiConfig.localChromeDriver != null) {
+      UiConfig.localChromeDriver ! command
     }
   }
 
   private def subscribeDriverEvent(): Unit = {
-    if (UiConfig.driverHolder != null) {
-      UiConfig.driverHolder ! SubscribeDriverStatusMessage(self)
-      UiConfig.driverHolder ! SubscribeDriverDevToolsEventMessage(self)
-      UiConfig.driverHolder ! SubscribeCommandLogMessage(self)
+    if (UiConfig.localChromeDriver != null) {
+      UiConfig.localChromeDriver ! SubscribeDriverStatusMessage(self)
+      UiConfig.localChromeDriver ! SubscribeDriverDevToolsEventMessage(self)
+      UiConfig.localChromeDriver ! SubscribeCommandLogMessage(self)
     }
   }
 

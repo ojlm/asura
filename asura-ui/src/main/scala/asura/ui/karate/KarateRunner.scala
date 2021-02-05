@@ -41,7 +41,7 @@ object KarateRunner {
                       ): KarateStepActions = {
     val callContext = buildCallContext(vars, hook, evalKarateConfig)
     val featureContext = new FeatureContext(null, KarateRunner.ORIGIN, null)
-    new KarateStepActions(featureContext, callContext, driver)
+    new KarateStepActions(featureContext, callContext, new KarateExtension(driver))
   }
 
   def runFeature(
@@ -101,9 +101,9 @@ object KarateRunner {
     }
   }
 
-  def parseFeature(text: String): KarateFeature = {
+  def parseFeature(text: String, extension: KarateExtension = null): KarateFeature = {
     val feature = ORIGIN.replaceText(text)
-    val karateFeature = new KarateFeature(ORIGIN.getResource())
+    val karateFeature = new KarateFeature(ORIGIN.getResource(), extension)
     karateFeature.setLine(feature.getLine())
     karateFeature.setTags(feature.getTags())
     karateFeature.setName(feature.getName())

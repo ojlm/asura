@@ -37,7 +37,6 @@ case class MobileDriverInfo(
                              cpuABI: String,
                              mac: String,
                              ram: Int,
-                             screenCapture: String, // base64 image
                            ) extends DriverInfo {
 
 }

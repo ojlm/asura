@@ -8,7 +8,7 @@ import asura.app.api.auth.{BasicAuth, Reserved}
 import asura.app.notify.MailNotifier
 import asura.app.store.FileSystemBasedEngine
 import asura.cluster.ClusterManager
-import asura.common.util.{LogUtils, StringUtils}
+import asura.common.util.{HostUtils, LogUtils, StringUtils}
 import asura.core.CoreConfig.{EsOnlineLogConfig, LinkerdConfig, LinkerdConfigServer}
 import asura.core.auth.AuthManager
 import asura.core.ci.CiManager
@@ -99,6 +99,7 @@ class ApplicationStart @Inject()(
     val port = configuration.getOptional[Int]("asura.ui.proxy.port").getOrElse(0)
     val password = configuration.getOptional[String]("asura.ui.proxy.password").getOrElse(StringUtils.EMPTY)
     val localChrome = ChromeDriverInfo(host, port, password)
+    localChrome.hostname = HostUtils.hostname
     UiConfig.init(UiConfig(
       system,
       ExecutionContextManager.cachedExecutor,

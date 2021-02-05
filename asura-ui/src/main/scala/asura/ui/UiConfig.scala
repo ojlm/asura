@@ -25,12 +25,12 @@ object UiConfig {
 
   implicit val DEFAULT_ACTOR_ASK_TIMEOUT: Timeout = 10.minutes
 
-  var driverHolder: ActorRef = null
+  var localChromeDriver: ActorRef = null
 
   def init(config: UiConfig): Unit = {
     val system = config.system
     val ec = config.ec
-    driverHolder = system.actorOf(
+    localChromeDriver = system.actorOf(
       ChromeDriverHolderActor.props(
         config.localChrome, config.uiDriverProvider,
         config.taskListener, config.syncInterval,
