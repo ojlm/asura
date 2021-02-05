@@ -14,7 +14,7 @@ import asura.core.es.model.Permissions.Functions
 import asura.core.security.PermissionAuthProvider
 import asura.ui.actor.ChromeWebControllerActor
 import asura.ui.driver.{DriverCommand, Drivers, UiDriverProvider}
-import asura.ui.model.MobileDriverInfo
+import asura.ui.model.{ChromeDriverInfo, MobileDriverInfo}
 import javax.inject.{Inject, Singleton}
 import org.pac4j.http.client.direct.HeaderClient
 import org.pac4j.play.scala.SecurityComponents
@@ -43,6 +43,8 @@ class UiApi @Inject()(
     val driverInfo = driverType match {
       case Drivers.ANDROID =>
         req.bodyAs(classOf[MobileDriverInfo])
+      case Drivers.CHROME =>
+        req.bodyAs(classOf[ChromeDriverInfo])
       case _ => null
     }
     if (driverInfo != null && driverInfo.valid()) {

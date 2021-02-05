@@ -1,9 +1,10 @@
 package asura.ui.cli.args
 
+import asura.common.util.NetworkUtils
 import asura.ui.cli.runner.ChromeRunner
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.typesafe.scalalogging.Logger
-import picocli.CommandLine.{Command, Option}
+import picocli.CommandLine.{Command, Mixin, Option}
 
 @Command(
   header = Array("@|cyan Start a local chrome for remote debugging |@"),
@@ -25,10 +26,18 @@ class ChromeCommand extends BaseCommand {
   var start: Boolean = true
 
   @Option(
+    names = Array("-H", "--host"),
+    arity = "1",
+    paramLabel = "IP",
+    description = Array("Chrome host or any remote ip, default: localhost")
+  )
+  var host: String = "localhost"
+
+  @Option(
     names = Array("-p", "--remote-debugging-port"),
     arity = "1",
     paramLabel = "PORT",
-    description = Array("Chrome remote debugging port, default: 9222.")
+    description = Array("Chrome remote debugging port or any remote port, default: 9222.")
   )
   var port: Int = 9222
 
@@ -64,7 +73,7 @@ class ChromeCommand extends BaseCommand {
       "Local proxy ip. If not set and proxy is enabled, will select one automatically",
     )
   )
-  var proxyIp: String = null
+  var proxyIp: String = NetworkUtils.getLocalIpAddress()
 
   @Option(
     names = Array("--proxy-port"),
@@ -97,6 +106,9 @@ class ChromeCommand extends BaseCommand {
     description = Array("Interval of push event, default: 30 seconds.")
   )
   var pushInterval: Int = 30
+
+  @Mixin
+  val loggingMixin: LoggingMixin = null
 
   override def call(): Int = {
     ChromeRunner.run(this)

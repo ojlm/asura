@@ -19,12 +19,15 @@ case class DriverRegister(pushUrl: String) extends UiDriverProvider {
   override def getDrivers(`type`: String): Future[util.Collection[_ <: DriverInfo]] = Future.successful(Collections.emptyList())
 
   override def register(`type`: String, info: DriverInfo): Unit = {
-    HttpUtils.postJson(s"${pushUrl}/api/ui/driver/register/${`type`}", info, classOf[ApiRes]).map(res => {
-      if (!ApiCode.OK.equals(res.code)) {
-        logger.error(res.msg)
+    val url = s"$pushUrl/api/ui/driver/register/${`type`}"
+    HttpUtils.postJson(url, info, classOf[ApiRes]).map(res => {
+      if (ApiCode.OK.equals(res.code)) {
+        logger.debug(s"push to url $url success")
+      } else {
+        logger.error(s"push to url $url error: ${res.msg}")
       }
     }).recover {
-      case t: Throwable => logger.error("", t)
+      case t: Throwable => logger.error(s"push to url: $url", t)
     }
   }
 
