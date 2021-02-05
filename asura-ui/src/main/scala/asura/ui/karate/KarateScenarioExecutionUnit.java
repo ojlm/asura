@@ -18,15 +18,19 @@ import com.intuit.karate.core.StepResult;
 
 public class KarateScenarioExecutionUnit extends ScenarioExecutionUnit {
 
+  public KarateExtension extension;
+
   public KarateScenarioExecutionUnit(Scenario scenario,
-    List<StepResult> results, ExecutionContext exec) {
+    List<StepResult> results, ExecutionContext exec, KarateExtension extension) {
     super(scenario, results, exec);
+    this.extension = extension;
   }
 
   public KarateScenarioExecutionUnit(Scenario scenario,
     List<StepResult> results, ExecutionContext exec,
-    ScenarioContext backgroundContext) {
+    ScenarioContext backgroundContext, KarateExtension extension) {
     super(scenario, results, exec, backgroundContext);
+    this.extension = extension;
   }
 
   @Override
@@ -52,7 +56,10 @@ public class KarateScenarioExecutionUnit extends ScenarioExecutionUnit {
         // karate-config.js will be processed here
         // when the script-context constructor is called
         try {
-          actions = new KarateStepActions(exec.featureContext, exec.callContext, exec.classLoader, scenario, appender);
+          actions = new KarateStepActions(
+            exec.featureContext, exec.callContext, exec.classLoader, scenario,
+            appender, extension
+          );
           setActions(actions);
         } catch (Exception e) {
           initFailed = true;

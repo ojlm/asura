@@ -1,6 +1,7 @@
 package asura.ui.model
 
 import asura.common.util.StringUtils
+import asura.ui.driver.DriverStatus
 import net.minidev.json.annotate.JsonIgnore
 
 trait DriverInfo {
@@ -9,6 +10,8 @@ trait DriverInfo {
   val port: Int
   var timestamp: Long = 0L
   var hostname: String = null
+  var screenCapture: String = null // base64 image
+  var status: DriverStatus = null
 
   @JsonIgnore
   def getKey(): String = {

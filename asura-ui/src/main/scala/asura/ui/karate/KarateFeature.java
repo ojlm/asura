@@ -18,8 +18,11 @@ import com.intuit.karate.core.ScenarioExecutionUnit;
 
 public class KarateFeature extends Feature {
 
-  public KarateFeature(Resource resource) {
+  public KarateExtension extension;
+
+  public KarateFeature(Resource resource, KarateExtension extension) {
     super(resource);
+    this.extension = extension;
   }
 
   // return custom ScenarioExecutionUnit
@@ -33,7 +36,7 @@ public class KarateFeature extends Feature {
             if (!FeatureExecutionUnit.isSelected(exec.featureContext, scenario, new Logger())) { // throwaway logger
               continue;
             }
-            ScenarioExecutionUnit bgUnit = new KarateScenarioExecutionUnit(scenario, null, exec);
+            ScenarioExecutionUnit bgUnit = new KarateScenarioExecutionUnit(scenario, null, exec, extension);
             bgUnit.run();
             ScenarioContext bgContext = bgUnit.getContext();
             if (bgContext == null || bgUnit.isStopped()) { // karate-config.js || background failed
@@ -65,7 +68,8 @@ public class KarateFeature extends Feature {
                     dynamic.replace("<" + k + ">", sv.getAsString());
                   });
                   ScenarioExecutionUnit unit =
-                    new KarateScenarioExecutionUnit(dynamic, bgUnit.result.getStepResults(), exec, bgContext);
+                    new KarateScenarioExecutionUnit(dynamic, bgUnit.result.getStepResults(), exec, bgContext,
+                      extension);
                   units.add(unit);
                 } else {
                   bgContext.logger.warn("ignoring dynamic expression list item {}, not map-like: {}", i, rowValue);
@@ -76,11 +80,11 @@ public class KarateFeature extends Feature {
                 .warn("ignoring dynamic expression, did not evaluate to list: {} - {}", expression, listValue);
             }
           } else {
-            units.add(new KarateScenarioExecutionUnit(scenario, null, exec));
+            units.add(new KarateScenarioExecutionUnit(scenario, null, exec, extension));
           }
         }
       } else {
-        units.add(new KarateScenarioExecutionUnit(section.getScenario(), null, exec));
+        units.add(new KarateScenarioExecutionUnit(section.getScenario(), null, exec, extension));
       }
     }
     return units;
