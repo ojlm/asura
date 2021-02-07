@@ -112,9 +112,13 @@ class ChromeDriverHolderActor(
       currentStatus.command.meta != null && currentStatus.command.meta.reportId != null
   }
 
+  private def isTimeoutError(msg: String): Boolean = {
+    msg.contains("failed to get reply for")
+  }
+
   private def checkNeedToRestore(msg: DriverCommandEnd): Unit = {
     if (msg.msg != null) {
-      if (msg.msg.contains("failed to get reply for")) {
+      if (isTimeoutError(msg.msg)) {
         tryRestartServer()
       }
     }
@@ -189,7 +193,15 @@ class ChromeDriverHolderActor(
             driverInfo.screenCapture = Base64.getEncoder.encodeToString(driver.screenshot(true))
             driverInfo.status = currentStatus
             uiDriverProvider.register(Drivers.CHROME, driverInfo)
-          }
+          }.recover({ // keep alive
+            case t: Throwable => if (isTimeoutError(t.getMessage)) tryRestartServer()
+          })
+        } else { // keep alive
+          Future {
+            driver.getPages
+          }.recover({
+            case t: Throwable => if (isTimeoutError(t.getMessage)) tryRestartServer()
+          })
         }
       } else {
         tryRestartServer()
