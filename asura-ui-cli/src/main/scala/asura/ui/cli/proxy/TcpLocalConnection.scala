@@ -10,7 +10,7 @@ class TcpLocalConnection(
                           config: TcpProxyConfig,
                         ) extends BaseActor with Stash {
 
-  val remoteConnection = context.actorOf(TcpRemoteConnection.props(config), "remote")
+  val remoteConnection = context.actorOf(TcpRemoteConnection.props(config))
   context watch remoteConnection
 
   override def receive: Receive = {

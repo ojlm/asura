@@ -30,7 +30,7 @@ class TcpProxy(config: TcpProxyConfig) extends BaseActor {
   }
 
   def createConnectionHandler(connection: ActorRef, remote: InetSocketAddress) = {
-    context.actorOf(TcpLocalConnection.props(connection, config), s"local-${remote.getHostName}-${remote.getPort}")
+    context.actorOf(TcpLocalConnection.props(connection, config))
   }
 
 }
