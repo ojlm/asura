@@ -12,7 +12,7 @@ import asura.core.es.actor.UiTaskListenerActor.WrappedLog
 import asura.core.es.model.{LogEntry, UiTaskReport}
 import asura.core.es.service.{LogEntryService, UiTaskReportService}
 import asura.ui.actor.ChromeDriverHolderActor._
-import asura.ui.driver.{CommandMeta, DevToolsProtocol, DriverCommandLog}
+import asura.ui.driver.{DevToolsProtocol, DriverCommandLog}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration._
@@ -38,6 +38,7 @@ class UiTaskListenerActor(bufferSize: Int, flushInterval: Int) extends BaseActor
         taskId = command.meta.taskId,
         `type` = command.`type`,
         params = command.params,
+        servos = command.servos,
         startAt = command.meta.startAt,
         endAt = command.meta.startAt,
         creator = command.meta.creator,
@@ -47,10 +48,10 @@ class UiTaskListenerActor(bufferSize: Int, flushInterval: Int) extends BaseActor
       UiTaskReportService.index(doc).map(res => TaskListenerCreateMessageResponse(res.id, doc.day)) pipeTo sender()
     case TaskListenerEndMessage(meta, data) => // task finished
       UiTaskReportService.updateReport(meta, data)
-    case TaskListenerDriverDevToolsMessage(meta, data) => // dev tools logs
-      self ! UiTaskListenerActor.devToolsMessageToLog(meta, data)
-    case TaskListenerDriverCommandLogMessage(meta, data) => // command logs
-      self ! UiTaskListenerActor.driverCommandLogMessageToLog(meta, data)
+    case TaskListenerDriverDevToolsMessage(data) => // dev tools logs
+      self ! UiTaskListenerActor.devToolsMessageToLog(data)
+    case TaskListenerDriverCommandLogMessage(data) => // command logs
+      self ! UiTaskListenerActor.driverCommandLogMessageToLog(data)
     case log: WrappedLog => // eg: (2021.01.15, _)
       buffer += log
       if (buffer.length >= bufferSize) {
@@ -93,7 +94,9 @@ object UiTaskListenerActor {
     Props(new UiTaskListenerActor(bufferSize, flushInterval))
   }
 
-  def devToolsMessageToLog(meta: CommandMeta, data: util.Map[String, AnyRef]): WrappedLog = {
+  def devToolsMessageToLog(msg: DriverDevToolsMessage): WrappedLog = {
+    val meta = msg.meta
+    val data = msg.params
     val log = LogEntry(
       group = meta.group, project = meta.project, taskId = meta.taskId, reportId = meta.reportId,
       `type` = LogEntry.TYPE_CONSOLE, hostname = meta.hostname, pid = meta.pid,
@@ -163,7 +166,8 @@ object UiTaskListenerActor {
     WrappedLog(meta.day, log)
   }
 
-  def driverCommandLogMessageToLog(meta: CommandMeta, data: DriverCommandLog): WrappedLog = {
+  def driverCommandLogMessageToLog(data: DriverCommandLog): WrappedLog = {
+    val meta = data.meta
     val log = LogEntry(
       group = meta.group, project = meta.project, taskId = meta.taskId, reportId = meta.reportId,
       `type` = LogEntry.TYPE_MONKEY, hostname = meta.hostname, pid = meta.pid,

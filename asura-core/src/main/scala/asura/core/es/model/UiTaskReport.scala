@@ -6,6 +6,7 @@ import java.time.format.DateTimeFormatter
 import asura.common.util.{HostUtils, StringUtils}
 import asura.core.es.EsConfig
 import asura.core.job.JobExecDesc
+import asura.ui.model.ServoAddress
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.sksamuel.elastic4s.mappings._
 
@@ -17,6 +18,7 @@ case class UiTaskReport(
                          taskId: String,
                          `type`: String,
                          var params: Map[String, Any],
+                         var servos: Seq[ServoAddress] = Nil,
                          startAt: Long = 0L,
                          var endAt: Long = 0L,
                          var elapse: Long = 0L,
@@ -54,6 +56,7 @@ object UiTaskReport extends IndexSetting {
       KeywordField(name = FieldKeys.FIELD_NODE),
       KeywordField(name = FieldKeys.FIELD_DAY),
       ObjectField(name = FieldKeys.FIELD_PARAMS, dynamic = Some("false")),
+      NestedField(name = FieldKeys.FIELD_SERVOS, dynamic = Some("false")),
       ObjectField(name = FieldKeys.FIELD_DATA, dynamic = Some("false")),
     )
   )

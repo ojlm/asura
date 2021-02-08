@@ -6,13 +6,14 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import akka.actor.ActorRef
 import asura.common.util.{JsonUtils, StringUtils}
-import asura.ui.driver.{CustomChromeDriver, DriverCommand, DriverCommandEnd, DriverCommandLog}
+import asura.ui.driver._
 import asura.ui.karate.KarateRunner
 import asura.ui.model.Position
 import asura.ui.util.{RandomStringUtils, TypeConverters}
 
 case class WebMonkeyCommandRunner(
                                    driver: CustomChromeDriver,
+                                   meta: CommandMeta,
                                    command: DriverCommand,
                                    stopNow: AtomicBoolean,
                                    logActor: ActorRef,
@@ -56,7 +57,7 @@ case class WebMonkeyCommandRunner(
               TypeConverters.toInt(position.get("height")),
             )
             if (null != logActor) {
-              logActor ! DriverCommandLog(Commands.WEB_MONKEY, "log", s"position(${item.locator}): ${posObj.x},${posObj.y},${posObj.width},${posObj.height}")
+              logActor ! DriverCommandLog(Commands.WEB_MONKEY, "log", s"position(${item.locator}): ${posObj.x},${posObj.y},${posObj.width},${posObj.height}", meta)
             }
             areaRatio.put(totalRatio, posObj)
           }
@@ -66,7 +67,7 @@ case class WebMonkeyCommandRunner(
       checkIntervalInMs = params.checkInterval * 1000
     }
     if (null != logActor) {
-      logActor ! DriverCommandLog(Commands.WEB_MONKEY, "log", s"window size: ${fullWindowRect.width}*${fullWindowRect.height}")
+      logActor ! DriverCommandLog(Commands.WEB_MONKEY, "log", s"window size: ${fullWindowRect.width}*${fullWindowRect.height}", meta)
     }
   }
 
@@ -122,7 +123,7 @@ case class WebMonkeyCommandRunner(
   private def runStep(step: String): Unit = {
     val stepResult = KarateRunner.executeStep(step)
     if (null != logActor) {
-      logActor ! DriverCommandLog(Commands.WEB_MONKEY, "log", s"before step: $step, result: ${stepResult.status}")
+      logActor ! DriverCommandLog(Commands.WEB_MONKEY, "log", s"before step: $step, result: ${stepResult.status}", meta)
     }
   }
 
@@ -149,7 +150,7 @@ case class WebMonkeyCommandRunner(
     // val input = String.valueOf(charArray)
     // driver.input(input)
     val input = RandomStringUtils.nextString(params.minOnceKeyCount, params.maxOnceKeyCount, params.cjkRatio)
-    if (null != logActor) logActor ! DriverCommandLog(Commands.WEB_MONKEY, "keyboard", input)
+    if (null != logActor) logActor ! DriverCommandLog(Commands.WEB_MONKEY, "keyboard", input, meta)
     driver.input(input)
   }
 
@@ -181,7 +182,7 @@ case class WebMonkeyCommandRunner(
       }
     }
     toSend.param("x", currentMouseXPos).param("y", currentMouseYPos)
-    if (null != logActor) logActor ! DriverCommandLog(Commands.WEB_MONKEY, "mouse", toSend.getParams())
+    if (null != logActor) logActor ! DriverCommandLog(Commands.WEB_MONKEY, "mouse", toSend.getParams(), meta)
     toSend.send()
   }
 }

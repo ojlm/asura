@@ -177,6 +177,7 @@ object FieldKeys {
   val FIELD_TEXT = "text"
   val FIELD_PARAMS = "params"
   val FIELD_DAY = "day"
+  val FIELD_SERVOS = "servos"
 
   val FIELD_OBJECT_REQUEST_PROTOCOL = "request.protocol"
   val FIELD_OBJECT_REQUEST_HOST = "request.host"

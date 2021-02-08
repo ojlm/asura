@@ -8,5 +8,6 @@ case class DriverCommandLog(
                              command: String,
                              `type`: String,
                              params: Object,
+                             meta: CommandMeta,
                              timestamp: Long = System.currentTimeMillis(),
                            )
