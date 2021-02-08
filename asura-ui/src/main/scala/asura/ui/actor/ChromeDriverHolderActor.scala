@@ -15,7 +15,7 @@ import asura.ui.driver.DriverCommandLogEventBus.PublishCommandLogMessage
 import asura.ui.driver.DriverDevToolsEventBus.PublishDriverDevToolsMessage
 import asura.ui.driver.DriverStatusEventBus.PublishDriverStatusMessage
 import asura.ui.driver.{DevToolsProtocol, _}
-import asura.ui.model.{ChromeDriverInfo, ServoAddress}
+import asura.ui.model.{ChromeDriverInfo, ChromeTargetPage, ServoAddress}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -65,7 +65,7 @@ class ChromeDriverHolderActor(
         taskListener ! TaskListenerEndMessage(currentStatus.command.meta, msg)
       }
       resetCommandStatus()
-      checkNeedToRestore(msg)
+      checkNeedToRestore(msg.msg)
     case command: DriverCommand =>
       if (command.`type` == "stop") {
         stopNow.compareAndSet(false, true)
@@ -117,9 +117,10 @@ class ChromeDriverHolderActor(
     msg.contains("failed to get reply for")
   }
 
-  private def checkNeedToRestore(msg: DriverCommandEnd): Unit = {
-    if (msg.msg != null) {
-      if (isTimeoutError(msg.msg)) {
+  private def checkNeedToRestore(errorMsg: String): Unit = {
+    if (errorMsg != null) {
+      val startNew = options != null && options.getOrDefault("start", Boolean.box(false)).asInstanceOf[Boolean]
+      if (isTimeoutError(errorMsg) && !startNew) {
         tryRestartServer()
       }
     }
@@ -194,19 +195,15 @@ class ChromeDriverHolderActor(
         currentStatus.updateAt = DateUtils.nowDateTime
         self ! DriverStatusMessage(currentStatus)
         if (driverInfo != null) { // push to the register
-          Future {
+          ChromeTargetPage.getTargetPages(driverInfo).map(targets => {
             driverInfo.timestamp = System.currentTimeMillis()
             driverInfo.screenCapture = Base64.getEncoder.encodeToString(driver.screenshot(true))
             driverInfo.status = currentStatus
+            driverInfo.targets = targets
             uiDriverProvider.register(Drivers.CHROME, driverInfo)
-          }.recover({ // keep alive
-            case t: Throwable => if (isTimeoutError(t.getMessage)) tryRestartServer()
-          })
-        } else { // keep alive
-          Future {
-            driver.getPages
-          }.recover({
-            case t: Throwable => if (isTimeoutError(t.getMessage)) tryRestartServer()
+          }).recover({
+            case t: Throwable =>
+              log.error(LogUtils.stackTraceToString(t))
           })
         }
       } else {
