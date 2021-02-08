@@ -15,6 +15,7 @@ case class UiConfig(
                      system: ActorSystem,
                      ec: ExecutionContext,
                      taskListener: ActorRef,
+                     enableLocal: Boolean,
                      localChrome: ChromeDriverInfo,
                      uiDriverProvider: UiDriverProvider,
                      syncInterval: Int,
@@ -30,14 +31,16 @@ object UiConfig {
   def init(config: UiConfig): Unit = {
     val system = config.system
     val ec = config.ec
-    localChromeDriver = system.actorOf(
-      ChromeDriverHolderActor.props(
-        config.localChrome, config.uiDriverProvider,
-        config.taskListener, config.syncInterval,
-        config.options, ec,
-      ),
-      "driver-holder",
-    )
+    if (config.enableLocal) {
+      localChromeDriver = system.actorOf(
+        ChromeDriverHolderActor.props(
+          config.localChrome, config.uiDriverProvider,
+          config.taskListener, config.syncInterval,
+          config.options, ec,
+        ),
+        "local-chrome",
+      )
+    }
   }
 
 }

@@ -37,7 +37,7 @@ class UiApi @Inject()(
                      ) extends BaseApi {
 
   // this instance
-  val websockifyRfbWsUrl = configuration.getOptional[String]("asura.ui.proxy.url").getOrElse(StringUtils.EMPTY)
+  val websockifyRfbWsUrl = configuration.getOptional[String]("asura.ui.local.url").getOrElse(StringUtils.EMPTY)
 
   def register(driverType: String) = Action(parse.byteString).async { implicit req =>
     val driverInfo = driverType match {

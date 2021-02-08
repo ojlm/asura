@@ -94,16 +94,18 @@ class ApplicationStart @Inject()(
 
   // ui
   if (configuration.getOptional[Boolean]("asura.ui.enabled").getOrElse(false)) {
+    val enableLocal = configuration.getOptional[Boolean]("asura.ui.local.enabled").getOrElse(false)
     val syncInterval = configuration.getOptional[Int]("asura.ui.sync.interval").getOrElse(30)
-    val host = configuration.getOptional[String]("asura.ui.proxy.host").getOrElse(StringUtils.EMPTY)
-    val port = configuration.getOptional[Int]("asura.ui.proxy.port").getOrElse(0)
-    val password = configuration.getOptional[String]("asura.ui.proxy.password").getOrElse(StringUtils.EMPTY)
+    val host = configuration.getOptional[String]("asura.ui.local.host").getOrElse(StringUtils.EMPTY)
+    val port = configuration.getOptional[Int]("asura.ui.local.port").getOrElse(0)
+    val password = configuration.getOptional[String]("asura.ui.local.password").getOrElse(StringUtils.EMPTY)
     val localChrome = ChromeDriverInfo(host, port, password)
     localChrome.hostname = HostUtils.hostname
     UiConfig.init(UiConfig(
       system,
       ExecutionContextManager.cachedExecutor,
       system.actorOf(UiTaskListenerActor.props()),
+      enableLocal,
       localChrome = localChrome,
       uiDriverProvider = uiDriverProvider,
       syncInterval,
