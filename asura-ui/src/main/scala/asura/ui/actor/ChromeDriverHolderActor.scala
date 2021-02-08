@@ -10,12 +10,12 @@ import asura.common.actor.BaseActor
 import asura.common.util.{DateUtils, LogUtils}
 import asura.ui.UiConfig.DEFAULT_ACTOR_ASK_TIMEOUT
 import asura.ui.actor.ChromeDriverHolderActor._
-import asura.ui.command.{CommandRunner, Commands, KarateCommandRunner, WebMonkeyCommandRunner}
+import asura.ui.command.{CommandRunner, Commands, WebMonkeyCommandRunner}
 import asura.ui.driver.DriverCommandLogEventBus.PublishCommandLogMessage
 import asura.ui.driver.DriverDevToolsEventBus.PublishDriverDevToolsMessage
 import asura.ui.driver.DriverStatusEventBus.PublishDriverStatusMessage
 import asura.ui.driver.{DevToolsProtocol, _}
-import asura.ui.model.ChromeDriverInfo
+import asura.ui.model.{ChromeDriverInfo, ServoAddress}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -28,6 +28,7 @@ class ChromeDriverHolderActor(
                                options: util.HashMap[String, Object],
                              )(implicit ec: ExecutionContext) extends BaseActor {
 
+  val servoAddr: ServoAddress = if (driverInfo != null) ServoAddress(driverInfo.host, driverInfo.port, driverInfo.hostname) else null
   var driver: CustomChromeDriver = null
   val currentStatus = DriverStatus()
 
@@ -46,16 +47,16 @@ class ChromeDriverHolderActor(
       driverStatusEventBus.publish(PublishDriverStatusMessage(self, status))
     case SubscribeDriverDevToolsEventMessage(ref) =>
       driverDevToolsEventBus.subscribe(ref, self)
-    case DriverDevToolsMessage(params) =>
-      if (needSendDriverLogToTaskListener() && DevToolsProtocol.isNeedLog(params.get(DevToolsProtocol.METHOD))) {
-        taskListener ! TaskListenerDriverDevToolsMessage(currentStatus.command.meta, params)
+    case log: DriverDevToolsMessage =>
+      if (needSendDriverLogToTaskListener() && DevToolsProtocol.isNeedLog(log.params.get(DevToolsProtocol.METHOD))) {
+        taskListener ! TaskListenerDriverDevToolsMessage(log)
       }
-      driverDevToolsEventBus.publish(PublishDriverDevToolsMessage(self, params))
+      driverDevToolsEventBus.publish(PublishDriverDevToolsMessage(self, log))
     case SubscribeCommandLogMessage(ref) =>
       driverCommandLogEventBus.subscribe(ref, self)
     case log: DriverCommandLog =>
       if (needSendCommandLogToTaskListener()) {
-        taskListener ! TaskListenerDriverCommandLogMessage(currentStatus.command.meta, log)
+        taskListener ! TaskListenerDriverCommandLogMessage(log)
       }
       driverCommandLogEventBus.publish(PublishCommandLogMessage(self, log))
     case msg: DriverCommandEnd =>
@@ -127,8 +128,8 @@ class ChromeDriverHolderActor(
   private def runCommand(command: DriverCommand): Future[DriverCommandEnd] = {
     val run = () => Future {
       val runner: CommandRunner = command.`type` match {
-        case Commands.WEB_MONKEY => WebMonkeyCommandRunner(driver, command, stopNow, self)
-        case Commands.KARATE => KarateCommandRunner(command, stopNow, self)
+        case Commands.WEB_MONKEY => WebMonkeyCommandRunner(driver, command.meta, command, stopNow, self)
+        case Commands.KARATE => throw new RuntimeException("TBD")
       }
       runner.run()
     }
@@ -168,10 +169,15 @@ class ChromeDriverHolderActor(
 
   private def tryRestartServer(): Unit = {
     Future {
+      val sendFunc = (params: util.Map[String, AnyRef]) => {
+        if (currentStatus.command != null && currentStatus.command.meta != null) {
+          self ! DriverDevToolsMessage(currentStatus.command.meta, params)
+        }
+      }
       val driver = if (options == null) {
-        CustomChromeDriver.start(false, params => self ! DriverDevToolsMessage(params))
+        CustomChromeDriver.start(false, sendFunc)
       } else {
-        CustomChromeDriver.start(options, params => self ! DriverDevToolsMessage(params))
+        CustomChromeDriver.start(options, sendFunc)
       }
       NewDriver(driver)
     }.recover({
@@ -230,7 +236,7 @@ object ChromeDriverHolderActor {
 
   case class SubscribeCommandLogMessage(ref: ActorRef)
 
-  case class DriverDevToolsMessage(params: util.Map[String, AnyRef])
+  case class DriverDevToolsMessage(meta: CommandMeta, params: util.Map[String, AnyRef])
 
   case class DriverStatusMessage(status: DriverStatus)
 
@@ -240,8 +246,8 @@ object ChromeDriverHolderActor {
 
   case class TaskListenerEndMessage(meta: CommandMeta, data: DriverCommandEnd)
 
-  case class TaskListenerDriverDevToolsMessage(meta: CommandMeta, data: util.Map[String, AnyRef])
+  case class TaskListenerDriverDevToolsMessage(data: DriverDevToolsMessage)
 
-  case class TaskListenerDriverCommandLogMessage(meta: CommandMeta, data: DriverCommandLog)
+  case class TaskListenerDriverCommandLogMessage(data: DriverCommandLog)
 
 }

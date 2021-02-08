@@ -3,7 +3,7 @@ package asura.ui.cli.runner
 import java.net.InetSocketAddress
 import java.util
 
-import asura.common.util.{NetworkUtils, StringUtils}
+import asura.common.util.{HostUtils, NetworkUtils, StringUtils}
 import asura.ui.UiConfig
 import asura.ui.cli.args.ChromeCommand
 import asura.ui.cli.proxy.{TcpProxy, TcpProxyConfig}
@@ -41,6 +41,7 @@ object ChromeRunner {
     } else {
       null
     }
+    if (localChrome != null) localChrome.hostname = HostUtils.hostname
     val config = UiConfig(
       system = CliSystem.system,
       ec = CliSystem.ec,

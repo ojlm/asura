@@ -1,8 +1,8 @@
 package asura.app.api.model
 
-import asura.ui.model.ServerAddress
+import asura.ui.model.ServoAddress
 
 case class RunTaskInBlob(
                           key: String,
-                          servers: Seq[ServerAddress]
+                          servos: Seq[ServoAddress]
                         )

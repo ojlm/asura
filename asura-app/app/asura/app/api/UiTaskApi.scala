@@ -3,15 +3,19 @@ package asura.app.api
 import java.nio.charset.StandardCharsets
 
 import akka.actor.ActorSystem
+import akka.pattern.ask
 import asura.app.AppErrorMessages
-import asura.app.api.model.{RunTaskInBlob, RunUiTask}
+import asura.app.api.model.RunTaskInBlob
 import asura.common.util.{HttpUtils, StringUtils}
+import asura.core.es.actor.UiTaskListenerActor
 import asura.core.es.model.Permissions.Functions
 import asura.core.es.service.{LogEntryService, UiTaskReportService}
 import asura.core.model.{QueryUiReport, SearchAfterLogEntry}
 import asura.core.security.PermissionAuthProvider
 import asura.core.store.{BlobStoreEngine, BlobStoreEngines}
-import asura.ui.driver.CommandMeta
+import asura.ui.UiConfig.DEFAULT_ACTOR_ASK_TIMEOUT
+import asura.ui.actor.ServosTaskControllerActor
+import asura.ui.driver.{CommandMeta, DriverCommand}
 import javax.inject.{Inject, Singleton}
 import org.pac4j.http.client.direct.HeaderClient
 import org.pac4j.play.scala.SecurityComponents
@@ -29,6 +33,7 @@ class UiTaskApi @Inject()(
                            val permissionAuthProvider: PermissionAuthProvider,
                          ) extends BaseApi {
 
+  val taskListener = system.actorOf(UiTaskListenerActor.props())
   private val storeEngine: Option[BlobStoreEngine] = configuration
     .getOptional[String]("asura.store.active")
     .flatMap(name => BlobStoreEngines.get(name))
@@ -61,11 +66,11 @@ class UiTaskApi @Inject()(
   def runSolopi(group: String, project: String, id: String) = Action(parse.byteString).async { implicit req =>
     checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_EDIT) { _ =>
       val q = req.bodyAs(classOf[RunTaskInBlob])
-      if (StringUtils.isNotEmpty(q.key) && q.servers != null && q.servers.nonEmpty && storeEngine.nonEmpty) {
+      if (StringUtils.isNotEmpty(q.key) && q.servos != null && q.servos.nonEmpty && storeEngine.nonEmpty) {
         storeEngine.get.readBytes(q.key).flatMap(bytes => {
           val bodyStr = new String(bytes, StandardCharsets.UTF_8)
-          val futures = q.servers.map(server => {
-            HttpUtils.postJson(s"http://${server.host}:${server.port}", bodyStr, classOf[String])
+          val futures = q.servos.map(servo => {
+            HttpUtils.postJson(s"http://${servo.host}:${servo.port}", bodyStr, classOf[String])
           })
           Future.sequence(futures).toOkResult
         })
@@ -77,11 +82,11 @@ class UiTaskApi @Inject()(
 
   def runCommand(group: String, project: String, id: String) = Action(parse.byteString).async { implicit req =>
     checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_EDIT) { user =>
-      val q = req.bodyAs(classOf[RunUiTask])
-      if (q.validate() && storeEngine.nonEmpty) {
-        q.command.meta = CommandMeta(group = group, project = project, taskId = id, creator = user)
-        // TODO: create a actor
-        Future.successful(q).toOkResult
+      val q = req.bodyAs(classOf[DriverCommand])
+      if (q.validateServos() && storeEngine.nonEmpty) {
+        q.meta = CommandMeta(group = group, project = project, taskId = id, creator = user)
+        val controller = system.actorOf(ServosTaskControllerActor.props(q, taskListener))
+        (controller ? ServosTaskControllerActor.Start).toOkResult
       } else {
         toI18nFutureErrorResult(AppErrorMessages.error_InvalidRequestParameters)
       }
