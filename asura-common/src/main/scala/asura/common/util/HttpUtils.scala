@@ -17,6 +17,7 @@ object HttpUtils {
 
   private val httpClient: HttpClient = HttpClient.newBuilder()
     .connectTimeout(Duration.ofSeconds(60))
+    .version(HttpClient.Version.HTTP_1_1)
     .build()
 
   // import jdk.internal.net.http.common.Utils.charsetFrom
