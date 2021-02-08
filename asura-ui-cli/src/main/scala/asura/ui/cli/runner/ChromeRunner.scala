@@ -46,6 +46,7 @@ object ChromeRunner {
       system = CliSystem.system,
       ec = CliSystem.ec,
       taskListener = null,
+      enableLocal = true,
       localChrome = localChrome,
       uiDriverProvider = if (args.enablePush) DriverRegister(args.pushUrl) else null,
       syncInterval = args.pushInterval,
