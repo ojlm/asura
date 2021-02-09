@@ -131,7 +131,11 @@ class ChromeDriverHolderActor(
   private def runCommand(command: DriverCommand): Future[DriverCommandEnd] = {
     val run = () => Future {
       val runner: CommandRunner = command.`type` match {
-        case Commands.WEB_MONKEY => WebMonkeyCommandRunner(driver, command.meta, command, stopNow, self)
+        case Commands.WEB_MONKEY =>
+          WebMonkeyCommandRunner(
+            driver, command.meta, command, stopNow, self,
+            if (driverInfo != null) driverInfo.electron else false,
+          )
         case Commands.KARATE => throw new RuntimeException("TBD")
       }
       runner.run()
