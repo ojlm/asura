@@ -79,7 +79,7 @@ class ServosTaskControllerActor(
       RunnerResult(item, item.runner.run())
     } recover {
       case t: Throwable =>
-        log.warning("{}", LogUtils.stackTraceToString(t))
+        log.warning(LogUtils.stackTraceToString(t))
         RunnerResult(item, DriverCommandEnd(command.`type`, false, t.getMessage))
     }
     result pipeTo self
@@ -118,7 +118,7 @@ object ServosTaskControllerActor {
               if (meta.reportId != null) logActor ! DriverDevToolsMessage(meta, params)
             })
             val item = ServoInitResponseItem(servo, true, null)
-            item.runner = WebMonkeyCommandRunner(driver, meta, command, stopNow, logActor)
+            item.runner = WebMonkeyCommandRunner(driver, meta, command, stopNow, logActor, servo.electron)
             item
           }.recover {
             case t: Throwable => ServoInitResponseItem(servo, false, t.getMessage)

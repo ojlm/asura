@@ -17,6 +17,7 @@ case class WebMonkeyCommandRunner(
                                    command: DriverCommand,
                                    stopNow: AtomicBoolean,
                                    logActor: ActorRef,
+                                   electron: Boolean,
                                  ) extends CommandRunner {
 
   import WebMonkeyCommandRunner._
@@ -39,7 +40,11 @@ case class WebMonkeyCommandRunner(
     if (StringUtils.isNotEmpty(params.beforeScript)) {
       params.beforeScript.lines().forEach(step => runStep(step))
     }
-    val dimensions = driver.getDimensions()
+    val dimensions = if (electron) {
+      driver.position("body")
+    } else {
+      driver.getDimensions()
+    }
     fullWindowRect.width = dimensions.get("width").asInstanceOf[Integer]
     fullWindowRect.height = dimensions.get("height").asInstanceOf[Integer]
     if (params.areaRatio != null) {

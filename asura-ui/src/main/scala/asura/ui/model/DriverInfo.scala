@@ -2,7 +2,7 @@ package asura.ui.model
 
 import asura.common.util.StringUtils
 import asura.ui.driver.DriverStatus
-import net.minidev.json.annotate.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonIgnore
 
 trait DriverInfo {
 

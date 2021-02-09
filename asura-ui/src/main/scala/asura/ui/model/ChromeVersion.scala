@@ -1,6 +1,6 @@
 package asura.ui.model
 
-import com.fasterxml.jackson.annotation.{JsonAlias, JsonIgnore}
+import com.fasterxml.jackson.annotation.JsonAlias
 
 case class ChromeVersion(
                           @JsonAlias(Array("Browser"))
@@ -13,6 +13,4 @@ case class ChromeVersion(
                           v8Version: String,
                           @JsonAlias(Array("WebKit-Version"))
                           webKitVersion: String,
-                          @JsonIgnore
-                          webSocketDebuggerUrl: String,
                         )
