@@ -1,7 +1,6 @@
 package asura.ui.actor
 
 import java.util
-import java.util.Base64
 import java.util.concurrent.atomic.AtomicBoolean
 
 import akka.actor.{ActorRef, Props}
@@ -151,7 +150,7 @@ class ChromeDriverHolderActor(
     }
     result.recover {
       case t: Throwable =>
-        log.warning("{}", LogUtils.stackTraceToString(t))
+        log.warning(LogUtils.stackTraceToString(t))
         DriverCommandEnd(command.`type`, false, t.getMessage)
     }
   }
@@ -184,24 +183,28 @@ class ChromeDriverHolderActor(
         CustomChromeDriver.start(options, sendFunc)
       }
     }.flatMap(driver => {
-      ChromeDevTools.getVersion(driverInfo).map(version => NewDriver(driver, version))
+      if (driverInfo != null) {
+        ChromeDevTools.getVersion(driverInfo).map(version => NewDriver(driver, version))
+      } else {
+        Future.successful(NewDriver(driver, null))
+      }
     }).recover({
       case t: Throwable =>
-        log.error("{}", t)
+        log.error(LogUtils.stackTraceToString(t))
         NewDriver(null, null)
     }).pipeTo(self)
   }
 
   override def preStart(): Unit = {
     tryRestartServer()
-    context.system.scheduler.scheduleAtFixedRate(60 seconds, syncInterval seconds)(() => {
+    context.system.scheduler.scheduleAtFixedRate(30 seconds, syncInterval seconds)(() => {
       if (driver != null) {
         currentStatus.updateAt = DateUtils.nowDateTime
         self ! DriverStatusMessage(currentStatus)
         if (driverInfo != null) { // push to the register
           ChromeDevTools.getTargetPages(driverInfo).map(targets => {
             driverInfo.timestamp = System.currentTimeMillis()
-            driverInfo.screenCapture = Base64.getEncoder.encodeToString(driver.screenshot(true))
+            driverInfo.screenCapture = driver.screenshotAsBase64()
             driverInfo.status = currentStatus
             driverInfo.targets = targets
             driverInfo.version = version
