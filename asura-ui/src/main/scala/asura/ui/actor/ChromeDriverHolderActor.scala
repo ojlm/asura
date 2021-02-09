@@ -15,7 +15,8 @@ import asura.ui.driver.DriverCommandLogEventBus.PublishCommandLogMessage
 import asura.ui.driver.DriverDevToolsEventBus.PublishDriverDevToolsMessage
 import asura.ui.driver.DriverStatusEventBus.PublishDriverStatusMessage
 import asura.ui.driver.{DevToolsProtocol, _}
-import asura.ui.model.{ChromeDriverInfo, ChromeTargetPage, ServoAddress}
+import asura.ui.model.{ChromeDriverInfo, ChromeVersion, ServoAddress}
+import asura.ui.util.ChromeDevTools
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -30,6 +31,7 @@ class ChromeDriverHolderActor(
 
   val servoAddr: ServoAddress = if (driverInfo != null) ServoAddress(driverInfo.host, driverInfo.port, driverInfo.hostname) else null
   var driver: CustomChromeDriver = null
+  var version: ChromeVersion = null
   val currentStatus = DriverStatus()
 
   val stopNow = new AtomicBoolean(false)
@@ -39,8 +41,9 @@ class ChromeDriverHolderActor(
   val driverCommandLogEventBus = new DriverCommandLogEventBus(context.system)
 
   override def receive: Receive = {
-    case NewDriver(driver) =>
+    case NewDriver(driver, version) =>
       this.driver = driver
+      this.version = version
     case SubscribeDriverStatusMessage(ref) =>
       driverStatusEventBus.subscribe(ref, self)
     case DriverStatusMessage(status) =>
@@ -175,16 +178,17 @@ class ChromeDriverHolderActor(
           self ! DriverDevToolsMessage(currentStatus.command.meta, params)
         }
       }
-      val driver = if (options == null) {
+      if (options == null) {
         CustomChromeDriver.start(false, sendFunc)
       } else {
         CustomChromeDriver.start(options, sendFunc)
       }
-      NewDriver(driver)
-    }.recover({
+    }.flatMap(driver => {
+      ChromeDevTools.getVersion(driverInfo).map(version => NewDriver(driver, version))
+    }).recover({
       case t: Throwable =>
         log.error("{}", t)
-        NewDriver(null)
+        NewDriver(null, null)
     }).pipeTo(self)
   }
 
@@ -195,15 +199,15 @@ class ChromeDriverHolderActor(
         currentStatus.updateAt = DateUtils.nowDateTime
         self ! DriverStatusMessage(currentStatus)
         if (driverInfo != null) { // push to the register
-          ChromeTargetPage.getTargetPages(driverInfo).map(targets => {
+          ChromeDevTools.getTargetPages(driverInfo).map(targets => {
             driverInfo.timestamp = System.currentTimeMillis()
             driverInfo.screenCapture = Base64.getEncoder.encodeToString(driver.screenshot(true))
             driverInfo.status = currentStatus
             driverInfo.targets = targets
+            driverInfo.version = version
             uiDriverProvider.register(Drivers.CHROME, driverInfo)
           }).recover({
-            case t: Throwable =>
-              log.error(LogUtils.stackTraceToString(t))
+            case t: Throwable => log.error(LogUtils.stackTraceToString(t))
           })
         }
       } else {
@@ -225,7 +229,7 @@ object ChromeDriverHolderActor {
              ec: ExecutionContext = ExecutionContext.global
            ) = Props(new ChromeDriverHolderActor(driverInfo, uiDriverProvider, syncInterval, taskListener, options)(ec))
 
-  case class NewDriver(driver: CustomChromeDriver)
+  case class NewDriver(driver: CustomChromeDriver, version: ChromeVersion)
 
   case class SubscribeDriverDevToolsEventMessage(ref: ActorRef)
 

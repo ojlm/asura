@@ -5,6 +5,7 @@ case class ChromeDriverInfo(
                              port: Int,
                              password: String,
                              var targets: Seq[ChromeTargetPage] = Nil,
+                             var version: ChromeVersion = null,
                            ) extends DriverInfo {
 
 }
