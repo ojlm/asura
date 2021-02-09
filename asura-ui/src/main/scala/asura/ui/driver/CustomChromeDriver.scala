@@ -31,6 +31,7 @@ class CustomChromeDriver(
   })
   this.activate()
   this.enableLog()
+  this.setDiscoverTargets()
   this.enablePageEvents()
   this.enableRuntimeEvents()
   this.enableTargetEvents()
@@ -41,9 +42,20 @@ class CustomChromeDriver(
   // do not quit
   override def quit(): Unit = {}
 
+  // do not close
+  override def close(): Unit = {}
+
   // https://chromedevtools.github.io/devtools-protocol/tot/Log/#method-enable
   def enableLog(): Unit = {
     method("Log.enable").send()
+  }
+
+  def enableDom(): Unit = {
+    method("DOM.enable").send()
+  }
+
+  def setDiscoverTargets(): Unit = {
+    method("Target.setDiscoverTargets").param("discover", true).send()
   }
 
   // do not need to locate an element
@@ -90,6 +102,12 @@ class CustomChromeDriver(
     }
   }
 
+  def screenshotAsBase64(): String = {
+    screenshot(false)
+    val dtm = method("Page.captureScreenshot").send()
+    dtm.getResult("data").getAsString()
+  }
+
 }
 
 object CustomChromeDriver {
@@ -134,31 +152,43 @@ object CustomChromeDriver {
       options.arg("--headless")
     }
     val command = options.startProcess
-    val http = options.getHttp
-    Command.waitForHttp(http.urlBase)
-    val res = http.path("json").get
-    if (res.body.asList.isEmpty) {
-      if (command != null) command.close(true)
-      throw new RuntimeException("chrome server returned empty list from " + http.urlBase)
-    }
-    var attachUrl: String = null
     var webSocketUrl: String = null
-    import scala.jdk.CollectionConverters.CollectionHasAsScala
-    val targets = res.body.asList.asInstanceOf[util.List[util.Map[String, Object]]].asScala
-    var found = false
-    for (target <- targets if !found) {
-      val targetUrl = target.get("url").asInstanceOf[String]
-      if (targetUrl == null || targetUrl.startsWith("chrome-")) {
-        // ignore
-      } else {
-        val targetType = target.get("type").asInstanceOf[String]
-        if ("page" == targetType) {
-          webSocketUrl = target.get("webSocketDebuggerUrl").asInstanceOf[String]
-          if (options.attach == null) { // take the first
-            found = true
-          } else if (targetUrl.contains(options.attach)) {
-            attachUrl = targetUrl
-            found = true
+    var attachUrl: String = null
+    val startUrl = map.get("startUrl")
+    if (map.containsKey("debuggerUrl")) {
+      webSocketUrl = map.get("debuggerUrl").asInstanceOf[String]
+    } else {
+      val http = options.getHttp
+      Command.waitForHttp(http.urlBase)
+      val res = http.path("json").get
+      if (res.body.asList.isEmpty) {
+        if (command != null) command.close(true)
+        throw new RuntimeException("chrome server returned empty list from " + http.urlBase)
+      }
+      import scala.jdk.CollectionConverters.CollectionHasAsScala
+      val targets = res.body.asList.asInstanceOf[util.List[util.Map[String, Object]]].asScala
+      var found = false
+      for (target <- targets if !found) {
+        val targetUrl = target.get("url").asInstanceOf[String]
+        if (targetUrl == null || targetUrl.startsWith("chrome-")) {
+          // ignore
+        } else {
+          if (startUrl != null) {
+            if (targetUrl.equals(startUrl)) {
+              webSocketUrl = target.get("webSocketDebuggerUrl").asInstanceOf[String]
+              found = true
+            }
+          } else {
+            val targetType = target.get("type").asInstanceOf[String]
+            if ("page" == targetType) {
+              webSocketUrl = target.get("webSocketDebuggerUrl").asInstanceOf[String]
+              if (options.attach == null) { // take the first
+                found = true
+              } else if (targetUrl.contains(options.attach)) {
+                attachUrl = targetUrl
+                found = true
+              }
+            }
           }
         }
       }

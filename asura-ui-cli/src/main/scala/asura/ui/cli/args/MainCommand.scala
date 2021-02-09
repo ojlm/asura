@@ -10,6 +10,7 @@ import picocli.CommandLine.{Command, Mixin, Option}
   description = Array("Hold local chrome, adb, electron..."),
   subcommands = Array(
     classOf[ChromeCommand],
+    classOf[ElectronCommand],
   ),
   footer = Array(
     "",
