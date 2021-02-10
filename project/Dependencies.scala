@@ -66,6 +66,24 @@ object Dependencies {
   private val databaseDeps = Seq(mysqlConnector)
   private val testDeps = Seq(akkaTestKit, akkaHttpTestkit) ++ scalaTestDeps
 
+  private val javaCV = Seq(
+    "org.bytedeco" % "javacv" % "1.5.4" excludeAll(
+      ExclusionRule(organization = "org.bytedeco", name = "ffmpeg"),
+      ExclusionRule(organization = "org.bytedeco", name = "flandmark"),
+      ExclusionRule(organization = "org.bytedeco", name = "flycapture"),
+      ExclusionRule(organization = "org.bytedeco", name = "libdc1394"),
+      ExclusionRule(organization = "org.bytedeco", name = "libfreenect"),
+      ExclusionRule(organization = "org.bytedeco", name = "libfreenect2"),
+      ExclusionRule(organization = "org.bytedeco", name = "librealsense"),
+      ExclusionRule(organization = "org.bytedeco", name = "librealsense2"),
+      ExclusionRule(organization = "org.bytedeco", name = "videoinput"),
+      ExclusionRule(organization = "org.bytedeco", name = "artoolkitplus"),
+      ExclusionRule(organization = "org.bytedeco", name = "leptonica"),
+      ExclusionRule(organization = "org.bytedeco", name = "flycapture"),
+      ExclusionRule(organization = "org.bytedeco", name = "tesseract"),
+    )
+  )
+
   val commonDependencies = Seq(akkaTestKit, config, akkaActor, jackson, akkaActorTyped, akkaSlf4j, akkaJackson) ++ scalaTestDeps ++ loggingDeps
   val clusterDependencies = Seq(akkaCluster, akkaMetrics, akkaClusterTools) ++ commonDependencies
   val coreDependencies = Seq(
@@ -76,7 +94,7 @@ object Dependencies {
   val namerdDependencies = Seq(akkaStream, akkaHttp) ++ commonDependencies
   val dubboDependencies = Seq(dubbo, curator, dubboJavassist, dubboJbossNetty, dubboSpring, akkaStream) ++ commonDependencies
   val kafkaDependencies = Seq(akkaStream, akkaKafka, kafkaAvroSerializer) ++ commonDependencies
-  val uiDependencies = Seq(karate, picocli) ++ commonDependencies
+  val uiDependencies = Seq(karate, picocli) ++ commonDependencies ++ javaCV
 
   val commonPlayDeps = Seq(
     guice,
