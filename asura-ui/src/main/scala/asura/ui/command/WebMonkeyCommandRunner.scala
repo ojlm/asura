@@ -9,7 +9,9 @@ import asura.common.util.{JsonUtils, StringUtils}
 import asura.ui.driver._
 import asura.ui.karate.KarateRunner
 import asura.ui.model.Position
-import asura.ui.util.{RandomStringUtils, TypeConverters}
+import asura.ui.util.RandomStringUtils
+
+import scala.collection.mutable.ArrayBuffer
 
 case class WebMonkeyCommandRunner(
                                    driver: CustomChromeDriver,
@@ -25,6 +27,8 @@ case class WebMonkeyCommandRunner(
   implicit val actions = KarateRunner.buildStepActions(driver)
   val params = JsonUtils.mapper.convertValue(command.params, classOf[MonkeyCommandParams])
   val areaRatio = new util.TreeMap[Float, Position]()
+  val excludeArea = ArrayBuffer[Position]()
+  var mouseButtonsLength = MOUSE_BUTTONS.length
 
   val fullWindowRect = Position(0, 0, 0, 0)
   var currentMouseXPos = 0
@@ -55,12 +59,7 @@ case class WebMonkeyCommandRunner(
           val position = driver.position(item.locator)
           if (position != null && totalRatio <= 1f) {
             totalRatio = totalRatio + item.ratio
-            val posObj = Position(
-              TypeConverters.toInt(position.get("x")),
-              TypeConverters.toInt(position.get("y")),
-              TypeConverters.toInt(position.get("width")),
-              TypeConverters.toInt(position.get("height")),
-            )
+            val posObj = Position(position)
             if (null != logActor) {
               logActor ! DriverCommandLog(Commands.WEB_MONKEY, "log", s"position(${item.locator}): ${posObj.x},${posObj.y},${posObj.width},${posObj.height}", meta)
             }
@@ -68,6 +67,17 @@ case class WebMonkeyCommandRunner(
           }
         })
     }
+    if (params.excludeArea != null) {
+      params.excludeArea
+        .filter(item => StringUtils.isNotEmpty(item.locator))
+        .foreach(item => {
+          val position = driver.position(item.locator)
+          if (position != null) {
+            excludeArea += Position(position)
+          }
+        })
+    }
+    if (params.disableMouseRightKey) mouseButtonsLength = MOUSE_BUTTONS.length - 1
     if (params.checkInterval > 0) {
       checkIntervalInMs = params.checkInterval * 1000
     }
@@ -147,23 +157,23 @@ case class WebMonkeyCommandRunner(
   }
 
   private def generateKeyEvent(): Unit = {
-    // val count = RANDOM.nextInt(params.maxOnceKeyCount) + 1
-    // val charArray = new Array[Char](count)
-    // for (i <- 0 until count) {
-    //   charArray(i) = CHARS(RANDOM.nextInt(CHARS.length))
-    // }
-    // val input = String.valueOf(charArray)
-    // driver.input(input)
-    val input = RandomStringUtils.nextString(params.minOnceKeyCount, params.maxOnceKeyCount, params.cjkRatio)
-    if (null != logActor) logActor ! DriverCommandLog(Commands.WEB_MONKEY, "keyboard", input, meta)
-    driver.input(input)
+    var inputStr = RandomStringUtils.nextString(params.minOnceKeyCount, params.maxOnceKeyCount, params.cjkRatio)
+    if (StringUtils.isNotEmpty(params.excludeChars)) {
+      val sb = new StringBuilder()
+      inputStr.foreach(c => {
+        if (!params.excludeChars.contains(c)) sb.append(c)
+      })
+      inputStr = sb.toString()
+    }
+    if (null != logActor) logActor ! DriverCommandLog(Commands.WEB_MONKEY, "keyboard", inputStr, meta)
+    driver.input(inputStr)
   }
 
   private def generateMouseEvent(): Unit = {
     val mouseEventType = MOUSE_TYPES(RANDOM.nextInt(MOUSE_TYPES.length))
     val toSend = driver.method("Input.dispatchMouseEvent").param("type", mouseEventType)
     if ("mousePressed" == mouseEventType || "mouseReleased" == mouseEventType) {
-      val button = MOUSE_BUTTONS(RANDOM.nextInt(MOUSE_BUTTONS.length))
+      val button = MOUSE_BUTTONS(RANDOM.nextInt(mouseButtonsLength))
       toSend.param("button", button).param("clickCount", 1)
     } else if ("mouseMoved" == mouseEventType) {
       var rect = fullWindowRect
@@ -171,8 +181,17 @@ case class WebMonkeyCommandRunner(
         val entry = areaRatio.ceilingEntry(RANDOM.nextFloat())
         if (entry != null) rect = entry.getValue()
       }
-      currentMouseXPos = rect.x + RANDOM.nextInt(rect.width)
-      currentMouseYPos = rect.y + RANDOM.nextInt(rect.height)
+      val newXPos = rect.x + RANDOM.nextInt(rect.width)
+      val newYPos = rect.y + RANDOM.nextInt(rect.height)
+      if (excludeArea.nonEmpty) {
+        if (excludeArea.find(p => p.inArea(newXPos, newYPos)).isEmpty) {
+          currentMouseXPos = newXPos
+          currentMouseYPos = newYPos
+        }
+      } else {
+        currentMouseXPos = newXPos
+        currentMouseYPos = newYPos
+      }
     } else if ("mouseWheel" == mouseEventType) { // mouseWheel
       var delta = params.delta
       if (RANDOM.nextFloat() > 0.5) {
@@ -213,6 +232,9 @@ object WebMonkeyCommandRunner {
                                   var checkInterval: Int = 0, // second
                                   var checkScript: String = null,
                                   var areaRatio: Seq[AreaRatio] = null,
+                                  var excludeArea: Seq[AreaRatio] = null,
+                                  var excludeChars: String = null,
+                                  var disableMouseRightKey: Boolean = false,
                                 ) {
 
     def validate(): Unit = {
