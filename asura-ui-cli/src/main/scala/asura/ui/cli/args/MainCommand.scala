@@ -11,6 +11,7 @@ import picocli.CommandLine.{Command, Mixin, Option}
   subcommands = Array(
     classOf[ChromeCommand],
     classOf[ElectronCommand],
+    classOf[MonkeyCommand],
   ),
   footer = Array(
     "",
@@ -25,7 +26,7 @@ class MainCommand extends BaseCommand {
     arity = "1",
     paramLabel = "FILE",
     description = Array(
-      "Config file with format of json or yaml.",
+      "Config file.",
       "If this option is provided, the command will be ignored."
     )
   )

@@ -39,6 +39,10 @@ class CustomChromeDriver(
     this.initWindowIdAndState()
   }
 
+  def realQuit(): Unit = {
+    super.quit()
+  }
+
   // do not quit
   override def quit(): Unit = {}
 

@@ -6,9 +6,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 import akka.actor.{ActorRef, Props}
 import akka.pattern.{ask, pipe}
 import asura.common.actor.BaseActor
-import asura.common.util.{DateUtils, LogUtils}
+import asura.common.util.{DateUtils, JsonUtils, LogUtils}
 import asura.ui.UiConfig.DEFAULT_ACTOR_ASK_TIMEOUT
 import asura.ui.actor.ChromeDriverHolderActor._
+import asura.ui.command.WebMonkeyCommandRunner.MonkeyCommandParams
 import asura.ui.command.{CommandRunner, Commands, WebMonkeyCommandRunner}
 import asura.ui.driver.DriverCommandLogEventBus.PublishCommandLogMessage
 import asura.ui.driver.DriverDevToolsEventBus.PublishDriverDevToolsMessage
@@ -132,8 +133,9 @@ class ChromeDriverHolderActor(
     val run = () => Future {
       val runner: CommandRunner = command.`type` match {
         case Commands.WEB_MONKEY =>
+          val params = JsonUtils.mapper.convertValue(command.params, classOf[MonkeyCommandParams])
           WebMonkeyCommandRunner(
-            driver, command.meta, command, stopNow, self,
+            driver, command.meta, params, stopNow, self,
             if (driverInfo != null) driverInfo.electron else false,
           )
         case Commands.KARATE => throw new RuntimeException("TBD")
