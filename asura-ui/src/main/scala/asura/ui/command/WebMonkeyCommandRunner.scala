@@ -5,7 +5,8 @@ import java.util.Random
 import java.util.concurrent.atomic.AtomicBoolean
 
 import akka.actor.ActorRef
-import asura.common.util.{JsonUtils, StringUtils}
+import asura.common.util.StringUtils
+import asura.ui.command.WebMonkeyCommandRunner.MonkeyCommandParams
 import asura.ui.driver._
 import asura.ui.karate.KarateRunner
 import asura.ui.model.Position
@@ -16,7 +17,7 @@ import scala.collection.mutable.ArrayBuffer
 case class WebMonkeyCommandRunner(
                                    driver: CustomChromeDriver,
                                    meta: CommandMeta,
-                                   command: DriverCommand,
+                                   params: MonkeyCommandParams,
                                    stopNow: AtomicBoolean,
                                    logActor: ActorRef,
                                    electron: Boolean,
@@ -25,7 +26,6 @@ case class WebMonkeyCommandRunner(
   import WebMonkeyCommandRunner._
 
   implicit val actions = KarateRunner.buildStepActions(driver)
-  val params = JsonUtils.mapper.convertValue(command.params, classOf[MonkeyCommandParams])
   val areaRatio = new util.TreeMap[Float, Position]()
   val excludeArea = ArrayBuffer[Position]()
   var mouseButtonsLength = MOUSE_BUTTONS.length
@@ -219,7 +219,7 @@ object WebMonkeyCommandRunner {
   var CHARS: Array[Character] = CustomChromeDriver.CODES.keySet().toArray(Array[Character]())
 
   case class MonkeyCommandParams(
-                                  var startUrl: String,
+                                  var startUrl: String = null,
                                   var delta: Int = 100,
                                   var minOnceKeyCount: Int = 1,
                                   var maxOnceKeyCount: Int = 5,

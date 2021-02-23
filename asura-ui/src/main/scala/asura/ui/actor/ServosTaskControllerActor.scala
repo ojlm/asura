@@ -6,9 +6,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 import akka.actor.{ActorRef, Props}
 import akka.pattern.pipe
 import asura.common.actor.BaseActor
-import asura.common.util.LogUtils
+import asura.common.util.{JsonUtils, LogUtils}
 import asura.ui.actor.ChromeDriverHolderActor._
 import asura.ui.actor.ServosTaskControllerActor.{RunnerResult, Start}
+import asura.ui.command.WebMonkeyCommandRunner.MonkeyCommandParams
 import asura.ui.command.{Commands, WebMonkeyCommandRunner}
 import asura.ui.driver.{CustomChromeDriver, DriverCommand, DriverCommandEnd, DriverCommandLog}
 import asura.ui.model.DriverInitResponse
@@ -107,6 +108,7 @@ object ServosTaskControllerActor {
                  )(implicit ec: ExecutionContext): Future[DriverInitResponse] = {
     command.`type` match {
       case Commands.WEB_MONKEY =>
+        val params = JsonUtils.mapper.convertValue(command.params, classOf[MonkeyCommandParams])
         val futures = command.servos.map(servo => {
           Future {
             val options = new util.HashMap[String, Object]()
@@ -118,7 +120,7 @@ object ServosTaskControllerActor {
               if (meta.reportId != null) logActor ! DriverDevToolsMessage(meta, params)
             })
             val item = ServoInitResponseItem(servo, true, null)
-            item.runner = WebMonkeyCommandRunner(driver, meta, command, stopNow, logActor, servo.electron)
+            item.runner = WebMonkeyCommandRunner(driver, meta, params, stopNow, logActor, servo.electron)
             item
           }.recover {
             case t: Throwable => ServoInitResponseItem(servo, false, t.getMessage)
