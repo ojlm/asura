@@ -1,5 +1,6 @@
 .DS_Store
 .idea/
+.bsp/
 logs/
 /.idea_modules
 /.classpath
