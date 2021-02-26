@@ -22,7 +22,7 @@ case class DriverRegister(pushUrl: String) extends UiDriverProvider {
     val url = s"$pushUrl/api/ui/driver/register/${`type`}"
     HttpUtils.postJson(url, info, classOf[ApiRes]).map(res => {
       if (ApiCode.OK.equals(res.code)) {
-        logger.debug(s"push to url $url success")
+        logger.info(s"push to url $url success")
       } else {
         logger.error(s"push to url $url error: ${res.msg}")
       }
