@@ -34,9 +34,17 @@ object ChromeRunner {
     }
     val localChrome = if (args.enablePush) {
       if (args.enableProxy) {
-        ChromeDriverInfo(args.proxyIp, args.proxyPort, null)
+        ChromeDriverInfo(
+          if (StringUtils.isNotEmpty(args.pushIp)) args.pushIp else args.proxyIp,
+          if (args.pushPort > 0) args.pushPort else args.proxyPort,
+          null,
+        )
       } else {
-        ChromeDriverInfo(args.host, args.port, null)
+        ChromeDriverInfo(
+          if (StringUtils.isNotEmpty(args.pushIp)) args.pushIp else args.host,
+          if (args.pushPort > 0) args.pushPort else args.port,
+          null,
+        )
       }
     } else {
       null

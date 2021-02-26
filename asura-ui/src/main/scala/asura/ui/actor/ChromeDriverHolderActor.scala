@@ -189,7 +189,7 @@ class ChromeDriverHolderActor(
         CustomChromeDriver.start(options, sendFunc)
       }
     }.flatMap(driver => {
-      if (driverInfo != null) {
+      if (driverInfo != null && driver != null) {
         ChromeDevTools.getVersion(driverInfo).map(version => NewDriver(driver, version))
       } else {
         Future.successful(NewDriver(driver, null))
@@ -201,9 +201,8 @@ class ChromeDriverHolderActor(
     }).pipeTo(self)
   }
 
-  override def preStart(): Unit = {
-    tryRestartServer()
-    context.system.scheduler.scheduleAtFixedRate(30 seconds, syncInterval seconds)(() => {
+  def enablePush(): Unit = {
+    context.system.scheduler.scheduleAtFixedRate(10 seconds, syncInterval seconds)(() => {
       if (driver != null) {
         currentStatus.updateAt = DateUtils.nowDateTime
         self ! DriverStatusMessage(currentStatus)
@@ -223,6 +222,11 @@ class ChromeDriverHolderActor(
         tryRestartServer()
       }
     })
+  }
+
+  override def preStart(): Unit = {
+    tryRestartServer()
+    enablePush()
   }
 
 }

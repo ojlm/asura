@@ -92,6 +92,22 @@ class ChromeCommand extends BaseCommand {
   var enablePush: Boolean = false
 
   @Option(
+    names = Array("--push-ip"),
+    arity = "1",
+    paramLabel = "IP",
+    description = Array("Used to push to server.")
+  )
+  var pushIp: String = null
+
+  @Option(
+    names = Array("--push-port"),
+    arity = "1",
+    paramLabel = "PORT",
+    description = Array("Used to push to server.")
+  )
+  var pushPort: Int = -1
+
+  @Option(
     names = Array("--push-url"),
     arity = "1",
     paramLabel = "URL",
