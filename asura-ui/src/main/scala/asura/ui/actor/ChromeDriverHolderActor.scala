@@ -193,7 +193,7 @@ class ChromeDriverHolderActor(
       }
     }.flatMap(driver => {
       if (driverInfo != null && driver != null) {
-        ChromeDevTools.getVersion(driverInfo).map(version => NewDriver(driver, version))
+        ChromeDevTools.getVersion("127.0.0.1", driverInfo.port).map(version => NewDriver(driver, version))
       } else {
         Future.successful(NewDriver(driver, null))
       }
@@ -206,7 +206,7 @@ class ChromeDriverHolderActor(
 
   private def pushToRegister(): Unit = {
     if (driverInfo != null) {
-      ChromeDevTools.getTargetPages(driverInfo).map(targets => {
+      ChromeDevTools.getTargetPages("127.0.0.1", driverInfo.port).map(targets => {
         driverInfo.timestamp = System.currentTimeMillis()
         driverInfo.screenCapture = driver.screenshotAsBase64()
         driverInfo.status = currentStatus
