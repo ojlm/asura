@@ -1,6 +1,5 @@
 package asura.ui.cli.args
 
-import asura.common.util.NetworkUtils
 import asura.ui.cli.runner.ChromeRunner
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.typesafe.scalalogging.Logger
@@ -11,7 +10,7 @@ import picocli.CommandLine.{Command, Mixin, Option}
   name = "chrome",
   description = Array("Control the local chrome life cycle"),
 )
-class ChromeCommand extends BaseCommand {
+class ChromeCommand extends SubBaseCommand {
 
   @JsonIgnore
   val logger = Logger(classOf[ChromeCommand])
@@ -20,26 +19,18 @@ class ChromeCommand extends BaseCommand {
     names = Array("-s", "--start"),
     description = Array(
       "Start a new chrome. Default true. If `false`, ",
-      "it will try to attach to the instance in PORT."
+      "it will try to attach to the instance on `--remote-debugging-port`."
     )
   )
   var start: Boolean = true
 
   @Option(
-    names = Array("-H", "--host"),
-    arity = "1",
-    paramLabel = "IP",
-    description = Array("Chrome host or any remote ip, default: localhost")
-  )
-  var host: String = "localhost"
-
-  @Option(
-    names = Array("-p", "--remote-debugging-port"),
+    names = Array("--remote-debugging-port"),
     arity = "1",
     paramLabel = "PORT",
     description = Array("Chrome remote debugging port or any remote port, default: 9222.")
   )
-  var port: Int = 9222
+  var chromePort: Int = 9222
 
   @Option(
     names = Array("--user-data-dir"),
@@ -66,62 +57,23 @@ class ChromeCommand extends BaseCommand {
   var enableProxy: Boolean = false
 
   @Option(
-    names = Array("--proxy-ip"),
+    names = Array("--vnc-pass"),
     arity = "1",
-    paramLabel = "IP",
-    description = Array(
-      "Local proxy ip. If not set and proxy is enabled, will select one automatically",
-    )
+    paramLabel = "***",
+    description = Array("VNC password.")
   )
-  var proxyIp: String = NetworkUtils.getLocalIpAddress()
+  var vncPassword: String = null
 
   @Option(
-    names = Array("--proxy-port"),
+    names = Array("--vnc-ws-port"),
     arity = "1",
     paramLabel = "PORT",
-    description = Array("Local proxy port, default: 9223.")
+    description = Array("Local websockify port. Default: 5901.")
   )
-  var proxyPort: Int = 9223
+  var vncWsPort: Int = 5901
 
-  @Option(
-    names = Array("--enable-push"),
-    description = Array(
-      "Push current driver info to remote server. Default false.",
-    )
-  )
-  var enablePush: Boolean = false
-
-  @Option(
-    names = Array("--push-ip"),
-    arity = "1",
-    paramLabel = "IP",
-    description = Array("Used to push to server.")
-  )
-  var pushIp: String = null
-
-  @Option(
-    names = Array("--push-port"),
-    arity = "1",
-    paramLabel = "PORT",
-    description = Array("Used to push to server.")
-  )
-  var pushPort: Int = -1
-
-  @Option(
-    names = Array("--push-url"),
-    arity = "1",
-    paramLabel = "URL",
-    description = Array("Remote sync post url, Default: http://localhost:9000")
-  )
-  var pushUrl: String = "http://localhost:9000"
-
-  @Option(
-    names = Array("--push-interval"),
-    arity = "1",
-    paramLabel = "SECS",
-    description = Array("Interval of push event, default: 30 seconds.")
-  )
-  var pushInterval: Int = 30
+  @Mixin
+  val push: PushMixin = null
 
   @Mixin
   val loggingMixin: LoggingMixin = null
