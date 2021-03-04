@@ -44,6 +44,9 @@ class ChromeDriverHolderActor(
     case NewDriver(driver, version) =>
       this.driver = driver
       this.version = version
+      if (driver != null) {
+        pushToRegister()
+      }
     case SubscribeDriverStatusMessage(ref) =>
       driverStatusEventBus.subscribe(ref, self)
     case DriverStatusMessage(status) =>
@@ -201,23 +204,27 @@ class ChromeDriverHolderActor(
     }).pipeTo(self)
   }
 
+  private def pushToRegister(): Unit = {
+    if (driverInfo != null) {
+      ChromeDevTools.getTargetPages(driverInfo).map(targets => {
+        driverInfo.timestamp = System.currentTimeMillis()
+        driverInfo.screenCapture = driver.screenshotAsBase64()
+        driverInfo.status = currentStatus
+        driverInfo.targets = targets
+        driverInfo.version = version
+        uiDriverProvider.register(Drivers.CHROME, driverInfo)
+      }).recover({
+        case t: Throwable => log.error(LogUtils.stackTraceToString(t))
+      })
+    }
+  }
+
   def enablePush(): Unit = {
-    context.system.scheduler.scheduleAtFixedRate(10 seconds, syncInterval seconds)(() => {
+    context.system.scheduler.scheduleAtFixedRate(30 seconds, syncInterval seconds)(() => {
       if (driver != null) {
         currentStatus.updateAt = DateUtils.nowDateTime
         self ! DriverStatusMessage(currentStatus)
-        if (driverInfo != null) { // push to the register
-          ChromeDevTools.getTargetPages(driverInfo).map(targets => {
-            driverInfo.timestamp = System.currentTimeMillis()
-            driverInfo.screenCapture = driver.screenshotAsBase64()
-            driverInfo.status = currentStatus
-            driverInfo.targets = targets
-            driverInfo.version = version
-            uiDriverProvider.register(Drivers.CHROME, driverInfo)
-          }).recover({
-            case t: Throwable => log.error(LogUtils.stackTraceToString(t))
-          })
-        }
+        pushToRegister()
       } else {
         tryRestartServer()
       }
