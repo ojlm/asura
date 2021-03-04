@@ -1,12 +1,11 @@
 package asura.ui.cli.runner
 
-import java.net.InetSocketAddress
 import java.util
 
-import asura.common.util.{HostUtils, NetworkUtils, StringUtils}
+import asura.common.util.HostUtils
 import asura.ui.UiConfig
 import asura.ui.cli.args.ElectronCommand
-import asura.ui.cli.proxy.{TcpProxy, TcpProxyConfig}
+import asura.ui.cli.server.{Server, ServerProxyConfig}
 import asura.ui.cli.{CliSystem, DriverRegister}
 import asura.ui.model.ChromeDriverInfo
 import com.typesafe.scalalogging.Logger
@@ -16,30 +15,21 @@ object ElectronRunner {
   val logger = Logger("ElectronRunner")
 
   def run(args: ElectronCommand): Unit = {
-    if (args.enableProxy) {
-      if (StringUtils.isEmpty(args.proxyIp)) args.proxyIp = NetworkUtils.getLocalIpAddress()
-      logger.info(s"proxy: ${args.proxyIp}:${args.proxyPort} => localhost:${args.port}")
-      val proxyConfig = TcpProxyConfig(
-        new InetSocketAddress(args.proxyIp, args.proxyPort),
-        new InetSocketAddress(args.port),
-      )
-      CliSystem.system.actorOf(TcpProxy.props(proxyConfig), s"tcp-proxy-${args.proxyPort}")
-    }
     val options = new util.HashMap[String, Object]()
     options.put("start", Boolean.box(false))
-    options.put("port", Int.box(args.port))
+    options.put("port", Int.box(args.chromePort))
     if (args.debuggerUrl != null) {
       options.put("debuggerUrl", args.debuggerUrl)
     }
     if (args.startUrl != null) {
       options.put("startUrl", args.startUrl)
     }
-    val localChrome = if (args.enablePush) {
-      if (args.enableProxy) {
-        ChromeDriverInfo(args.proxyIp, args.proxyPort, null, true)
-      } else {
-        ChromeDriverInfo("localhost", args.port, null, true)
-      }
+    val localChrome = if (args.enableServer && args.push.enablePush) {
+      ChromeDriverInfo(
+        args.push.pushIp,
+        if (args.push.pushPort > 0) args.push.pushPort else args.serverPort,
+        null, true
+      )
     } else {
       null
     }
@@ -54,11 +44,18 @@ object ElectronRunner {
       taskListener = null,
       enableLocal = true,
       localChrome = localChrome,
-      uiDriverProvider = if (args.enablePush) DriverRegister(args.pushUrl) else null,
-      syncInterval = args.pushInterval,
+      uiDriverProvider = if (args.push.enablePush) DriverRegister(args.push.pushUrl) else null,
+      syncInterval = args.push.pushInterval,
       options = options
     )
     UiConfig.init(config)
+    if (args.enableServer) {
+      val server = Server(args.serverPort, ServerProxyConfig(args.enableProxy, args.chromePort))
+      server.start()
+      sys.addShutdownHook({
+        server.stop()
+      })
+    }
   }
 
 }
