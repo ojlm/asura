@@ -10,6 +10,7 @@ import io.netty.karate.handler.codec.http.websocketx.extensions.compression.WebS
 import io.netty.karate.handler.codec.http.websocketx.{WebSocketDecoderConfig, WebSocketServerProtocolConfig, WebSocketServerProtocolHandler}
 import io.netty.karate.handler.codec.http.{HttpObjectAggregator, HttpServerCodec}
 import io.netty.karate.handler.ssl.{SslContext, SslHandler}
+import io.netty.karate.handler.stream.ChunkedWriteHandler
 
 class PortUnificationServerHandler(
                                     sslCtx: SslContext,
@@ -99,6 +100,7 @@ class PortUnificationServerHandler(
     val p = ctx.pipeline()
     p.addLast(new HttpServerCodec())
     p.addLast(new HttpObjectAggregator(104857600)) // 100M
+    p.addLast(new ChunkedWriteHandler())
     p.addLast(new WebSocketServerCompressionHandler())
     p.addLast(new WebSocketServerProtocolHandler(wsServerConfig))
     p.addLast(new HttpPageHandler())

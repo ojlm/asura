@@ -7,7 +7,7 @@ case class ServerProxyConfig(
                             ) {
 
   def isChrome(uri: String): Boolean = {
-    enable && localChromePort > 0 && (uri.equals("/") || uri.startsWith("/json") || uri.startsWith("/devtools"))
+    enable && localChromePort > 0 && (uri.startsWith("/json") || uri.startsWith("/devtools"))
   }
 
   def isWebsockify(uri: String): Boolean = {
