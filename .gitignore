@@ -20,3 +20,5 @@ docs/_build/
 !asura-pea/dist/
 asura-app/public/
 !asura-app/public/.gitkeep
+asura-ui-cli/src/main/resources/static/*
+!asura-ui-cli/src/main/resources/static/.gitkeep

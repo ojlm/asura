@@ -11,7 +11,7 @@ import io.netty.karate.handler.ssl.{SslContext, SslContextBuilder}
 
 case class Server(port: Int, proxyConfig: ServerProxyConfig) {
 
-  private val logger = Logger(classOf[Server])
+  private val logger = Logger("Server")
   private val sslCtx: SslContext = {
     val sc = new SelfSignedCertificate()
     SslContextBuilder
