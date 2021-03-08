@@ -23,8 +23,6 @@ class ServosTaskControllerActor(
                                  taskListener: ActorRef
                                )(implicit ec: ExecutionContext) extends BaseActor {
 
-  val saveDriverLog = if (command.options != null && taskListener != null) command.options.saveDriverLog else false
-  val saveCommandLog = if (command.options != null && taskListener != null) command.options.saveCommandLog else false
   val stopNow = new AtomicBoolean(false)
   var servos: Seq[ServoInitResponseItem] = Nil
   val resultMap = mutable.Map[String, DriverCommandEnd]()
@@ -32,7 +30,9 @@ class ServosTaskControllerActor(
 
   override def receive: Receive = {
     case Start =>
-      val res = ServosTaskControllerActor.initDrivers(command, stopNow, self)
+      val saveDriverLog = if (command.options != null && taskListener != null) command.options.saveDriverLog else false
+      val saveCommandLog = if (command.options != null && taskListener != null) command.options.saveCommandLog else false
+      val res = ServosTaskControllerActor.initDrivers(command, stopNow, self, saveDriverLog, saveCommandLog)
       res pipeTo sender()
       res pipeTo self
     case response: DriverInitResponse =>
@@ -53,13 +53,9 @@ class ServosTaskControllerActor(
         run(servo)
       })
     case log: DriverDevToolsMessage =>
-      if (saveDriverLog) {
-        taskListener ! TaskListenerDriverDevToolsMessage(log)
-      }
+      taskListener ! TaskListenerDriverDevToolsMessage(log)
     case log: DriverCommandLog =>
-      if (saveCommandLog) {
-        taskListener ! TaskListenerDriverCommandLogMessage(log)
-      }
+      taskListener ! TaskListenerDriverCommandLogMessage(log)
     case RunnerResult(item, result) =>
       resultMap += (item.servo.toKey -> result)
       if (!result.ok) resultOk = false
@@ -105,6 +101,8 @@ object ServosTaskControllerActor {
                    command: DriverCommand,
                    stopNow: AtomicBoolean,
                    logActor: ActorRef,
+                   saveDriverLog: Boolean,
+                   saveCommandLog: Boolean,
                  )(implicit ec: ExecutionContext): Future[DriverInitResponse] = {
     command.`type` match {
       case Commands.WEB_MONKEY =>
@@ -116,11 +114,16 @@ object ServosTaskControllerActor {
             options.put("host", servo.host)
             options.put("port", Int.box(servo.port))
             val meta = command.meta.copy(hostname = servo.hostname)
-            val driver = CustomChromeDriver.start(options, params => {
-              if (meta.reportId != null) logActor ! DriverDevToolsMessage(meta, params)
-            })
+            val driver = CustomChromeDriver.start(
+              options,
+              if (saveDriverLog && meta.reportId != null) params => logActor ! DriverDevToolsMessage(meta, params) else null
+            )
             val item = ServoInitResponseItem(servo, true, null)
-            item.runner = WebMonkeyCommandRunner(driver, meta, params, stopNow, logActor, servo.electron)
+            item.runner = WebMonkeyCommandRunner(
+              driver, meta, params, stopNow,
+              if (saveCommandLog) logActor else null,
+              servo.electron
+            )
             item
           }.recover {
             case t: Throwable => ServoInitResponseItem(servo, false, t.getMessage)
