@@ -14,6 +14,7 @@ import asura.ui.cli.CliSystem
 import asura.ui.cli.runner.MonkeyRunner.ConfigParams
 import asura.ui.command.{Commands, WebMonkeyCommandRunner}
 import asura.ui.driver._
+import asura.ui.model.BytesObject
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -46,7 +47,12 @@ class ChromeRunnerActor(
         driverLogFile.newLine()
       }
     case DriverCommandLog(_, ty, params, _, timestamp) =>
-      val paramsStr = JsonUtils.stringify(params)
+      val paramsStr = ty match {
+        case DriverCommandLog.TYPE_SCREEN => s"size: ${params.asInstanceOf[BytesObject].bytes.length}"
+        case DriverCommandLog.TYPE_MOUSE => JsonUtils.stringify(params)
+        case DriverCommandLog.TYPE_KEYBOARD => params.toString
+        case DriverCommandLog.TYPE_LOG => params.toString
+      }
       log.info(s"command: $ty $paramsStr")
       if (commandLogFile != null) {
         commandLogFile.write(DateUtils.parse(timestamp, CliSystem.LOG_DATE_PATTERN))

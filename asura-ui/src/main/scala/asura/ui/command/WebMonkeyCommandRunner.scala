@@ -9,8 +9,10 @@ import asura.common.util.StringUtils
 import asura.ui.command.WebMonkeyCommandRunner.MonkeyCommandParams
 import asura.ui.driver._
 import asura.ui.karate.KarateRunner
-import asura.ui.model.Position
+import asura.ui.model.{BytesObject, IntPoint, Position}
+import asura.ui.opencv.detector.MSERDetector
 import asura.ui.util.RandomStringUtils
+import com.typesafe.scalalogging.Logger
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -26,7 +28,10 @@ case class WebMonkeyCommandRunner(
   import WebMonkeyCommandRunner._
 
   implicit val actions = KarateRunner.buildStepActions(driver)
-  val areaRatio = new util.TreeMap[Float, Position]()
+  val areaRatioPositionMap = new util.TreeMap[Float, Position]()
+  val areaRatioLocatorMap = new util.TreeMap[Float, String]()
+  val areaLocatorPointsMap = new util.HashMap[String, Seq[IntPoint]]()
+  var fullScreenPoints: Seq[IntPoint] = Nil
   val excludeArea = ArrayBuffer[Position]()
   var mouseButtonsLength = MOUSE_BUTTONS.length
 
@@ -56,24 +61,55 @@ case class WebMonkeyCommandRunner(
       params.areaRatio
         .filter(item => item.ratio > 0f && item.ratio <= 1f && StringUtils.isNotEmpty(item.locator))
         .foreach(item => {
-          val position = driver.position(item.locator)
-          if (position != null && totalRatio <= 1f) {
-            totalRatio = totalRatio + item.ratio
-            val posObj = Position(position)
-            if (null != logActor) {
-              logActor ! DriverCommandLog(Commands.WEB_MONKEY, "log", s"position(${item.locator}): ${posObj.x},${posObj.y},${posObj.width},${posObj.height}", meta)
+          try {
+            if (totalRatio <= 1f) {
+              totalRatio = totalRatio + item.ratio
+              val position = driver.position(item.locator)
+              val posObj = Position(position)
+              if (null != logActor) {
+                logActor ! DriverCommandLog(Commands.WEB_MONKEY, DriverCommandLog.TYPE_LOG, s"position(${item.locator}): ${posObj.x},${posObj.y},${posObj.width},${posObj.height}", meta)
+              }
+              areaRatioPositionMap.put(totalRatio, posObj)
+              if (item.useCvDetectPoints) {
+                areaRatioLocatorMap.put(totalRatio, item.locator)
+                val bytes = driver.screenshot(item.locator)
+                val image = MSERDetector.detectAndGetImage(bytes)
+                if (image.points != null && image.points.nonEmpty) {
+                  image.points.foreach(p => p.offset(posObj.x, posObj.y))
+                  areaLocatorPointsMap.put(item.locator, image.points)
+                  logActor ! DriverCommandLog(Commands.WEB_MONKEY, DriverCommandLog.TYPE_SCREEN, BytesObject(item.locator, image.image), meta)
+                } else {
+                  throwError(s"Points of ${item.locator} is empty")
+                }
+              }
             }
-            areaRatio.put(totalRatio, posObj)
+          } catch {
+            case _: Throwable =>
+              throwError(s"Can't get position/points of locator:'${item.locator}'")
           }
         })
+    }
+    if (params.useCvDetectPoints) {
+      val bytes = driver.screenshot()
+      val image = MSERDetector.detectAndGetImage(bytes)
+      if (image.points != null && image.points.nonEmpty) {
+        fullScreenPoints = image.points
+        logActor ! DriverCommandLog(Commands.WEB_MONKEY, DriverCommandLog.TYPE_SCREEN, BytesObject("", image.image), meta)
+      } else {
+        throwError("Points of screen is empty")
+      }
     }
     if (params.excludeArea != null) {
       params.excludeArea
         .filter(item => StringUtils.isNotEmpty(item.locator))
         .foreach(item => {
-          val position = driver.position(item.locator)
-          if (position != null) {
-            excludeArea += Position(position)
+          try {
+            val position = driver.position(item.locator)
+            if (position != null) {
+              excludeArea += Position(position)
+            }
+          } catch {
+            case _: Throwable => throwError(s"Can't get position/points of locator:'${item.locator}'")
           }
         })
     }
@@ -82,8 +118,13 @@ case class WebMonkeyCommandRunner(
       checkIntervalInMs = params.checkInterval * 1000
     }
     if (null != logActor) {
-      logActor ! DriverCommandLog(Commands.WEB_MONKEY, "log", s"window size: ${fullWindowRect.width}*${fullWindowRect.height}", meta)
+      logActor ! DriverCommandLog(Commands.WEB_MONKEY, DriverCommandLog.TYPE_LOG, s"window size: ${fullWindowRect.width}*${fullWindowRect.height}", meta)
     }
+  }
+
+  def throwError(msg: String): Unit = {
+    logger.error(msg)
+    throw new RuntimeException(msg)
   }
 
   override def run(): DriverCommandEnd = {
@@ -138,7 +179,7 @@ case class WebMonkeyCommandRunner(
   private def runStep(step: String): Unit = {
     val stepResult = KarateRunner.executeStep(step)
     if (null != logActor) {
-      logActor ! DriverCommandLog(Commands.WEB_MONKEY, "log", s"before step: $step, result: ${stepResult.status}", meta)
+      logActor ! DriverCommandLog(Commands.WEB_MONKEY, DriverCommandLog.TYPE_LOG, s"before step: $step, result: ${stepResult.status}", meta)
     }
   }
 
@@ -165,7 +206,7 @@ case class WebMonkeyCommandRunner(
       })
       inputStr = sb.toString()
     }
-    if (null != logActor) logActor ! DriverCommandLog(Commands.WEB_MONKEY, "keyboard", inputStr, meta)
+    if (null != logActor) logActor ! DriverCommandLog(Commands.WEB_MONKEY, DriverCommandLog.TYPE_KEYBOARD, inputStr, meta)
     driver.input(inputStr)
   }
 
@@ -176,21 +217,36 @@ case class WebMonkeyCommandRunner(
       val button = MOUSE_BUTTONS(RANDOM.nextInt(mouseButtonsLength))
       toSend.param("button", button).param("clickCount", 1)
     } else if ("mouseMoved" == mouseEventType) {
-      var rect = fullWindowRect
-      if (areaRatio.size() > 0) {
-        val entry = areaRatio.ceilingEntry(RANDOM.nextFloat())
-        if (entry != null) rect = entry.getValue()
+      val newPos = if (areaLocatorPointsMap.isEmpty && fullScreenPoints.isEmpty) {
+        var rect = fullWindowRect
+        if (areaRatioPositionMap.size() > 0) {
+          val entry = areaRatioPositionMap.ceilingEntry(RANDOM.nextFloat())
+          if (entry != null) rect = entry.getValue()
+        }
+        rect.randomPoint(RANDOM)
+      } else { // use cv detected points
+        var points: Seq[IntPoint] = fullScreenPoints
+        if (!areaLocatorPointsMap.isEmpty) {
+          val entry = areaRatioLocatorMap.ceilingEntry(RANDOM.nextFloat())
+          if (entry != null) {
+            points = areaLocatorPointsMap.get(entry.getValue)
+          }
+        }
+        if (points.nonEmpty) {
+          val point = points(RANDOM.nextInt(points.length))
+          (point.x, point.y)
+        } else {
+          fullWindowRect.randomPoint(RANDOM)
+        }
       }
-      val newXPos = rect.x + RANDOM.nextInt(rect.width)
-      val newYPos = rect.y + RANDOM.nextInt(rect.height)
       if (excludeArea.nonEmpty) {
-        if (excludeArea.find(p => p.inArea(newXPos, newYPos)).isEmpty) {
-          currentMouseXPos = newXPos
-          currentMouseYPos = newYPos
+        if (excludeArea.find(p => p.inArea(newPos._1, newPos._2)).isEmpty) {
+          currentMouseXPos = newPos._1
+          currentMouseYPos = newPos._2
         }
       } else {
-        currentMouseXPos = newXPos
-        currentMouseYPos = newYPos
+        currentMouseXPos = newPos._1
+        currentMouseYPos = newPos._2
       }
     } else if ("mouseWheel" == mouseEventType) { // mouseWheel
       var delta = params.delta
@@ -206,13 +262,14 @@ case class WebMonkeyCommandRunner(
       }
     }
     toSend.param("x", currentMouseXPos).param("y", currentMouseYPos)
-    if (null != logActor) logActor ! DriverCommandLog(Commands.WEB_MONKEY, "mouse", toSend.getParams(), meta)
+    if (null != logActor) logActor ! DriverCommandLog(Commands.WEB_MONKEY, DriverCommandLog.TYPE_MOUSE, toSend.getParams(), meta)
     toSend.send()
   }
 }
 
 object WebMonkeyCommandRunner {
 
+  val logger = Logger("WebMonkeyCommandRunner")
   val RANDOM = new Random()
   val MOUSE_TYPES: Array[String] = Array[String]("mousePressed", "mouseReleased", "mouseMoved", "mouseWheel")
   val MOUSE_BUTTONS: Array[String] = Array[String]("none", "left", "middle", "right")
@@ -235,6 +292,7 @@ object WebMonkeyCommandRunner {
                                   var excludeArea: Seq[AreaRatio] = null,
                                   var excludeChars: String = null,
                                   var disableMouseRightKey: Boolean = false,
+                                  var useCvDetectPoints: Boolean = false,
                                 ) {
 
     def validate(): Unit = {
@@ -250,6 +308,6 @@ object WebMonkeyCommandRunner {
 
   }
 
-  case class AreaRatio(locator: String, ratio: Float)
+  case class AreaRatio(locator: String, ratio: Float, useCvDetectPoints: Boolean = false)
 
 }

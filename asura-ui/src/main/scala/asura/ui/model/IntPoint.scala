@@ -1,3 +1,10 @@
 package asura.ui.model
 
-case class IntPoint(x: Int, y: Int)
+case class IntPoint(var x: Int, var y: Int) {
+
+  def offset(offsetX: Int, offsetY: Int): Unit = {
+    x = x + offsetX
+    y = y + offsetY
+  }
+
+}
