@@ -9,19 +9,23 @@ import asura.common.actor.BaseActor
 import asura.common.util.{DateUtils, LogUtils}
 import asura.core.actor.messages.Flush
 import asura.core.es.actor.UiTaskListenerActor.WrappedLog
+import asura.core.es.model.FormDataItem.BlobMetaData
 import asura.core.es.model.{LogEntry, UiTaskReport}
 import asura.core.es.service.{LogEntryService, UiTaskReportService}
+import asura.core.store.BlobStoreEngine
 import asura.ui.actor.ChromeDriverHolderActor._
 import asura.ui.driver.{DevToolsProtocol, DriverCommandLog}
+import asura.ui.model.BytesObject
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * @param bufferSize
  * @param flushInterval in ms
  */
-class UiTaskListenerActor(bufferSize: Int, flushInterval: Int) extends BaseActor {
+class UiTaskListenerActor(imageStore: Option[BlobStoreEngine], bufferSize: Int, flushInterval: Int) extends BaseActor {
 
   implicit val ec = context.dispatcher
   val buffer = ArrayBuffer[WrappedLog]()
@@ -51,7 +55,7 @@ class UiTaskListenerActor(bufferSize: Int, flushInterval: Int) extends BaseActor
     case TaskListenerDriverDevToolsMessage(data) => // dev tools logs
       self ! UiTaskListenerActor.devToolsMessageToLog(data)
     case TaskListenerDriverCommandLogMessage(data) => // command logs
-      self ! UiTaskListenerActor.driverCommandLogMessageToLog(data)
+      UiTaskListenerActor.driverCommandLogMessageToLog(data, imageStore) pipeTo self
     case log: WrappedLog => // eg: (2021.01.15, _)
       buffer += log
       if (buffer.length >= bufferSize) {
@@ -90,8 +94,14 @@ object UiTaskListenerActor {
 
   case class WrappedLog(date: String, log: LogEntry)
 
-  def props(bufferSize: Int = 1000, flushInterval: Int = 5000) = {
-    Props(new UiTaskListenerActor(bufferSize, flushInterval))
+  case class BytesObjectStore(locator: String, store: BlobMetaData, errMsg: String)
+
+  def props(
+             imageStore: Option[BlobStoreEngine],
+             bufferSize: Int = 1000,
+             flushInterval: Int = 5000,
+           ) = {
+    Props(new UiTaskListenerActor(imageStore, bufferSize, flushInterval))
   }
 
   def devToolsMessageToLog(msg: DriverDevToolsMessage): WrappedLog = {
@@ -166,16 +176,35 @@ object UiTaskListenerActor {
     WrappedLog(meta.day, log)
   }
 
-  def driverCommandLogMessageToLog(data: DriverCommandLog): WrappedLog = {
+  def driverCommandLogMessageToLog(
+                                    data: DriverCommandLog,
+                                    imageStore: Option[BlobStoreEngine]
+                                  )(implicit ec: ExecutionContext): Future[WrappedLog] = {
     val meta = data.meta
     val log = LogEntry(
       group = meta.group, project = meta.project, taskId = meta.taskId, reportId = meta.reportId,
       `type` = LogEntry.TYPE_MONKEY, hostname = meta.hostname, pid = meta.pid,
     )
-    log.source = data.`type` // 'keyboard' or 'mouse'
+    log.source = data.`type` // asura.ui.driver.DriverCommandLog
     log.timestamp = data.timestamp
-    log.data = Collections.singletonMap("params", data.params)
-    WrappedLog(meta.day, log)
+    if (log.source.equals(DriverCommandLog.TYPE_SCREEN) && data.params.isInstanceOf[BytesObject]) {
+      val params = data.params.asInstanceOf[BytesObject]
+      if (imageStore.nonEmpty) {
+        imageStore.get.uploadBytes(params.bytes).map(blobRes => {
+          log.data = Collections.singletonMap("params", BytesObjectStore(params.locator, blobRes, null))
+          WrappedLog(meta.day, log)
+        }).recover({
+          case t: Throwable =>
+            log.data = Collections.singletonMap("params", BytesObjectStore(params.locator, null, t.getMessage))
+            WrappedLog(meta.day, log)
+        })
+      } else {
+        Future.successful(WrappedLog(meta.day, log))
+      }
+    } else {
+      log.data = Collections.singletonMap("params", data.params)
+      Future.successful(WrappedLog(meta.day, log))
+    }
   }
 
   private def timestampToLong(timestamp: Object): Long = {

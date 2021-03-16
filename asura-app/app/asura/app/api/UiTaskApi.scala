@@ -33,10 +33,13 @@ class UiTaskApi @Inject()(
                            val permissionAuthProvider: PermissionAuthProvider,
                          ) extends BaseApi {
 
-  val taskListener = system.actorOf(UiTaskListenerActor.props())
   private val storeEngine: Option[BlobStoreEngine] = configuration
-    .getOptional[String]("asura.store.active")
+    .getOptional[String]("asura.store.file")
     .flatMap(name => BlobStoreEngines.get(name))
+  private val imageStoreEngine: Option[BlobStoreEngine] = configuration
+    .getOptional[String]("asura.store.image")
+    .flatMap(name => BlobStoreEngines.get(name))
+  val taskListener = system.actorOf(UiTaskListenerActor.props(imageStoreEngine))
 
   def getReport(group: String, project: String, id: String) = Action.async { implicit req =>
     checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_VIEW) { _ =>
@@ -50,6 +53,17 @@ class UiTaskApi @Inject()(
       q.group = group
       q.project = q.project
       UiTaskReportService.queryDocs(q).toOkResultByEsList()
+    }
+  }
+
+  def getAggs(group: String, project: String, reportId: String, day: String) = Action(parse.byteString).async { implicit req =>
+    checkPermission(group, Some(project), Functions.PROJECT_COMPONENT_VIEW) { _ =>
+      val q = SearchAfterLogEntry()
+      q.group = group
+      q.project = project
+      q.reportId = reportId
+      q.day = day
+      LogEntryService.getAggs(q).toOkResult
     }
   }
 

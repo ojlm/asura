@@ -66,7 +66,7 @@ case class WebMonkeyCommandRunner(
               totalRatio = totalRatio + item.ratio
               val position = driver.position(item.locator)
               val posObj = Position(position)
-              if (null != logActor) {
+              if (logActor != null) {
                 logActor ! DriverCommandLog(Commands.WEB_MONKEY, DriverCommandLog.TYPE_LOG, s"position(${item.locator}): ${posObj.x},${posObj.y},${posObj.width},${posObj.height}", meta)
               }
               areaRatioPositionMap.put(totalRatio, posObj)
@@ -77,7 +77,9 @@ case class WebMonkeyCommandRunner(
                 if (image.points != null && image.points.nonEmpty) {
                   image.points.foreach(p => p.offset(posObj.x, posObj.y))
                   areaLocatorPointsMap.put(item.locator, image.points)
-                  logActor ! DriverCommandLog(Commands.WEB_MONKEY, DriverCommandLog.TYPE_SCREEN, BytesObject(item.locator, image.image), meta)
+                  if (logActor != null) {
+                    logActor ! DriverCommandLog(Commands.WEB_MONKEY, DriverCommandLog.TYPE_SCREEN, BytesObject(item.locator, image.image), meta)
+                  }
                 } else {
                   throwError(s"Points of ${item.locator} is empty")
                 }
@@ -94,7 +96,9 @@ case class WebMonkeyCommandRunner(
       val image = MSERDetector.detectAndGetImage(bytes)
       if (image.points != null && image.points.nonEmpty) {
         fullScreenPoints = image.points
-        logActor ! DriverCommandLog(Commands.WEB_MONKEY, DriverCommandLog.TYPE_SCREEN, BytesObject("", image.image), meta)
+        if (logActor != null) {
+          logActor ! DriverCommandLog(Commands.WEB_MONKEY, DriverCommandLog.TYPE_SCREEN, BytesObject("", image.image), meta)
+        }
       } else {
         throwError("Points of screen is empty")
       }
@@ -117,7 +121,7 @@ case class WebMonkeyCommandRunner(
     if (params.checkInterval > 0) {
       checkIntervalInMs = params.checkInterval * 1000
     }
-    if (null != logActor) {
+    if (logActor != null) {
       logActor ! DriverCommandLog(Commands.WEB_MONKEY, DriverCommandLog.TYPE_LOG, s"window size: ${fullWindowRect.width}*${fullWindowRect.height}", meta)
     }
   }
@@ -178,7 +182,7 @@ case class WebMonkeyCommandRunner(
 
   private def runStep(step: String): Unit = {
     val stepResult = KarateRunner.executeStep(step)
-    if (null != logActor) {
+    if (logActor != null) {
       logActor ! DriverCommandLog(Commands.WEB_MONKEY, DriverCommandLog.TYPE_LOG, s"before step: $step, result: ${stepResult.status}", meta)
     }
   }

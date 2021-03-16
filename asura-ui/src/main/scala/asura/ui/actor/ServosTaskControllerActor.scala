@@ -53,9 +53,13 @@ class ServosTaskControllerActor(
         run(servo)
       })
     case log: DriverDevToolsMessage =>
-      taskListener ! TaskListenerDriverDevToolsMessage(log)
+      if (log.meta != null && log.meta.reportId != null) {
+        taskListener ! TaskListenerDriverDevToolsMessage(log)
+      }
     case log: DriverCommandLog =>
-      taskListener ! TaskListenerDriverCommandLogMessage(log)
+      if (log.meta != null && log.meta.reportId != null) {
+        taskListener ! TaskListenerDriverCommandLogMessage(log)
+      }
     case RunnerResult(item, result) =>
       resultMap += (item.servo.toKey -> result)
       if (!result.ok) resultOk = false
@@ -76,8 +80,9 @@ class ServosTaskControllerActor(
       RunnerResult(item, item.runner.run())
     } recover {
       case t: Throwable =>
-        log.warning(LogUtils.stackTraceToString(t))
-        RunnerResult(item, DriverCommandEnd(command.`type`, false, t.getMessage))
+        val error = LogUtils.stackTraceToString(t)
+        log.warning(error)
+        RunnerResult(item, DriverCommandEnd(command.`type`, false, error))
     }
     result pipeTo self
   }
@@ -116,7 +121,7 @@ object ServosTaskControllerActor {
             val meta = command.meta.copy(hostname = servo.hostname)
             val driver = CustomChromeDriver.start(
               options,
-              if (saveDriverLog && meta.reportId != null) params => logActor ! DriverDevToolsMessage(meta, params) else null
+              if (saveDriverLog && logActor != null) params => logActor ! DriverDevToolsMessage(meta, params) else null
             )
             val item = ServoInitResponseItem(servo, true, null)
             item.runner = WebMonkeyCommandRunner(
