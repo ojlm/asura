@@ -29,7 +29,7 @@ class FileNodeApi @Inject()(
                            ) extends BaseApi {
 
   private val storeEngine: Option[BlobStoreEngine] = configuration
-    .getOptional[String]("asura.store.active")
+    .getOptional[String]("asura.store.file")
     .flatMap(name => BlobStoreEngines.get(name))
 
   def uploadFile(group: String, project: String) = Action(parse.multipartFormData(true)).async { implicit req =>

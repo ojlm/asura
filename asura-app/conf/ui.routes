@@ -7,5 +7,6 @@ POST        /driver/register/:driverType                 asura.app.api.UiApi.reg
 POST        /task/report/:group/:project                 asura.app.api.UiTaskApi.queryReport(group, project)
 GET         /task/report/:group/:project/:id             asura.app.api.UiTaskApi.getReport(group, project, id)
 POST        /task/report/log/:group/:project/:id         asura.app.api.UiTaskApi.getLogs(group, project, id)
+GET         /task/report/aggs/:group/:project/:id        asura.app.api.UiTaskApi.getAggs(group, project, id, day)
 POST        /task/run/solopi/:group/:project/:id         asura.app.api.UiTaskApi.runSolopi(group, project, id)
 POST        /task/run/command/:group/:project/:id        asura.app.api.UiTaskApi.runCommand(group, project, id)

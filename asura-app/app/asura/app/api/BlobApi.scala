@@ -26,25 +26,26 @@ class BlobApi @Inject()(
                          val permissionAuthProvider: PermissionAuthProvider,
                        ) extends BaseApi {
 
-  private val storeEngine: Option[BlobStoreEngine] = configuration
-    .getOptional[String]("asura.store.active")
+  private val defaultStoreEngine: Option[BlobStoreEngine] = configuration
+    .getOptional[String]("asura.store.file")
     .flatMap(name => BlobStoreEngines.get(name))
 
-  def uploadBlob(group: String, project: String) = Action(parse.multipartFormData(true)).async { implicit req =>
+  def uploadBlob(group: String, project: String, engine: Option[String]) = Action(parse.multipartFormData(true)).async { implicit req =>
     checkPermission(group, Some(project), Functions.BLOB_UPLOAD) { _ =>
       val fileParam = req.body.file("file")
       if (fileParam.nonEmpty) {
-        saveBlob(fileParam.get).toOkResult
+        saveBlob(fileParam.get, engine).toOkResult
       } else {
         toI18nFutureErrorResult(AppErrorMessages.error_FileNotExist.name)
       }
     }
   }
 
-  def readAsString(group: String, project: String, key: String) = Action.async { implicit req =>
+  def readAsString(group: String, project: String, key: String, engine: Option[String]) = Action.async { implicit req =>
     checkPermission(group, Some(project), Functions.BLOB_DOWNLOAD) { _ =>
-      if (storeEngine.nonEmpty) {
-        storeEngine.get.readBytes(key).map(bytes => {
+      val usedEngine = if (engine.nonEmpty) BlobStoreEngines.get(engine.get) else defaultStoreEngine
+      if (usedEngine.nonEmpty) {
+        usedEngine.get.readBytes(key).map(bytes => {
           ApiRes(data = new String(bytes, StandardCharsets.UTF_8))
         }).toOkResult
       } else {
@@ -53,10 +54,22 @@ class BlobApi @Inject()(
     }
   }
 
-  def downloadBlob(group: String, project: String, key: String) = Action.async { implicit req =>
+  def readAsBytes(group: String, project: String, key: String, engine: Option[String]) = Action.async { implicit req =>
     checkPermission(group, Some(project), Functions.BLOB_DOWNLOAD) { _ =>
-      if (storeEngine.nonEmpty) {
-        storeEngine.get.download(key).map(params => {
+      val usedEngine = if (engine.nonEmpty) BlobStoreEngines.get(engine.get) else defaultStoreEngine
+      if (usedEngine.nonEmpty) {
+        usedEngine.get.readBytes(key).toOkResult
+      } else {
+        AppErrorMessages.error_NonActiveStoreEngine.toFutureFail
+      }
+    }
+  }
+
+  def downloadBlob(group: String, project: String, key: String, engine: Option[String]) = Action.async { implicit req =>
+    checkPermission(group, Some(project), Functions.BLOB_DOWNLOAD) { _ =>
+      val usedEngine = if (engine.nonEmpty) BlobStoreEngines.get(engine.get) else defaultStoreEngine
+      if (usedEngine.nonEmpty) {
+        usedEngine.get.download(key).map(params => {
           val playEntity = HttpEntity.Streamed(params.source, params.length, None)
           Ok.sendEntity(playEntity, false, None)
         })
@@ -66,9 +79,10 @@ class BlobApi @Inject()(
     }
   }
 
-  private def saveBlob(upFile: MultipartFormData.FilePart[TemporaryFile]) = {
-    if (storeEngine.nonEmpty) {
-      storeEngine.get.upload(UploadParams(upFile.filename, upFile.fileSize, upFile.contentType, upFile.ref.toPath))
+  private def saveBlob(upFile: MultipartFormData.FilePart[TemporaryFile], engine: Option[String]) = {
+    val usedEngine = if (engine.nonEmpty) BlobStoreEngines.get(engine.get) else defaultStoreEngine
+    if (usedEngine.nonEmpty) {
+      usedEngine.get.upload(UploadParams(upFile.filename, upFile.fileSize, upFile.contentType, upFile.ref.toPath))
     } else {
       AppErrorMessages.error_NonActiveStoreEngine.toFutureFail
     }

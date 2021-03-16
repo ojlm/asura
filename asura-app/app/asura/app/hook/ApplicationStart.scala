@@ -18,7 +18,7 @@ import asura.core.es.actor.UiTaskListenerActor
 import asura.core.job.JobCenter
 import asura.core.job.actor.SchedulerActor
 import asura.core.notify.JobNotifyManager
-import asura.core.store.BlobStoreEngines
+import asura.core.store.{BlobStoreEngine, BlobStoreEngines}
 import asura.core.{CoreConfig, SecurityConfig}
 import asura.namerd.NamerdConfig
 import asura.ui.UiConfig
@@ -101,10 +101,13 @@ class ApplicationStart @Inject()(
     val password = configuration.getOptional[String]("asura.ui.local.password").getOrElse(StringUtils.EMPTY)
     val localChrome = ChromeDriverInfo(host, port, password)
     localChrome.hostname = HostUtils.hostname
+    val imageStoreEngine: Option[BlobStoreEngine] = configuration
+      .getOptional[String]("asura.store.image")
+      .flatMap(name => BlobStoreEngines.get(name))
     UiConfig.init(UiConfig(
       system,
       ExecutionContextManager.cachedExecutor,
-      system.actorOf(UiTaskListenerActor.props()),
+      system.actorOf(UiTaskListenerActor.props(imageStoreEngine)),
       enableLocal,
       localChrome = localChrome,
       uiDriverProvider = uiDriverProvider,

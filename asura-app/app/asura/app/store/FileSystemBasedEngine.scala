@@ -1,6 +1,6 @@
 package asura.app.store
 
-import java.io.File
+import java.io.{BufferedOutputStream, File, FileOutputStream}
 import java.nio.file.Files
 import java.util.UUID
 
@@ -22,12 +22,27 @@ case class FileSystemBasedEngine(config: Configuration) extends BlobStoreEngine 
       |""".stripMargin
 
   override def upload(params: UploadParams): Future[BlobMetaData] = {
+    check((key, toFile) => {
+      Files.move(params.path, toFile.toPath).toFile
+      Future.successful(BlobMetaData(name, key, params.fileName, params.length, params.contentType.getOrElse(null)))
+    })
+  }
+
+  override def uploadBytes(bytes: Array[Byte]): Future[BlobMetaData] = {
+    check((key, toFile) => {
+      val bos = new BufferedOutputStream(new FileOutputStream(toFile))
+      bos.write(bytes)
+      bos.close()
+      Future.successful(BlobMetaData(name, key, null, bytes.length, null))
+    })
+  }
+
+  private def check(func: (String, File) => Future[BlobMetaData]): Future[BlobMetaData] = {
     if (storeDir.nonEmpty) {
       val key = UUID.randomUUID().toString
       val toFile = new File(s"${storeDir.get}${File.separator}${key}")
       if (toFile.getCanonicalPath.startsWith(storeDir.get)) {
-        Files.move(params.path, toFile.toPath).toFile
-        Future.successful(BlobMetaData(name, key, params.fileName, params.length, params.contentType.getOrElse(null)))
+        func(key, toFile)
       } else {
         AppErrorMessages.error_AccessDenied.toFutureFail
       }
