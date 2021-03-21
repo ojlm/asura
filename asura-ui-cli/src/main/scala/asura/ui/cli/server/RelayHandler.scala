@@ -1,8 +1,8 @@
 package asura.ui.cli.server
 
-import io.netty.karate.buffer.Unpooled
-import io.netty.karate.channel.{Channel, ChannelHandlerContext, ChannelInboundHandlerAdapter}
-import io.netty.karate.util.ReferenceCountUtil
+import karate.io.netty.buffer.Unpooled
+import karate.io.netty.channel.{Channel, ChannelHandlerContext, ChannelInboundHandlerAdapter}
+import karate.io.netty.util.ReferenceCountUtil
 
 class RelayHandler(relayChannel: Channel) extends ChannelInboundHandlerAdapter {
 

@@ -1,7 +1,7 @@
 package asura.ui.cli.server
 
-import io.netty.karate.channel.{Channel, ChannelHandlerContext, ChannelInboundHandlerAdapter}
-import io.netty.karate.util.concurrent.Promise
+import karate.io.netty.channel.{Channel, ChannelHandlerContext, ChannelInboundHandlerAdapter}
+import karate.io.netty.util.concurrent.Promise
 
 class DirectClientHandler(promise: Promise[Channel]) extends ChannelInboundHandlerAdapter {
 

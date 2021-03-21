@@ -3,25 +3,27 @@ package asura.ui.driver
 import java.util
 
 import asura.common.util.StringUtils
-import com.intuit.karate.core.ScenarioContext
+import asura.ui.karate.KarateRunner
+import com.intuit.karate.core.ScenarioEngine
 import com.intuit.karate.driver.chrome.Chrome
 import com.intuit.karate.driver.{DevToolsMessage, DriverOptions, Input, Keys}
 import com.intuit.karate.shell.Command
-import com.intuit.karate.{FileUtils, JsonUtils, LogAppender}
+import com.intuit.karate.{FileUtils, Json}
 
 /**
  * the operation of this driver is blocked
  */
 class CustomChromeDriver(
                           options: DriverOptions,
+                          val engine: ScenarioEngine,
                           command: Command,
                           webSocketUrl: String,
-                          filter: util.Map[String, AnyRef] => Unit,
+                          val filter: util.Map[String, AnyRef] => Unit,
                         ) extends Chrome(options, command, webSocketUrl) {
 
   // filter websocket message
   client.setTextHandler(text => {
-    val map: util.Map[String, AnyRef] = JsonUtils.toJsonDoc(text).read("$")
+    val map: util.Map[String, AnyRef] = Json.of(text).value
     val msg = new DevToolsMessage(this, map)
     if (filter != null && StringUtils.isNotEmpty(msg.getMethod())) {
       filter(map)
@@ -38,6 +40,7 @@ class CustomChromeDriver(
   if (!options.headless) {
     this.initWindowIdAndState()
   }
+  engine.setDriver(this)
 
   def realQuit(): Unit = {
     super.quit()
@@ -125,17 +128,16 @@ object CustomChromeDriver {
   def start(newChrome: Boolean, filter: util.Map[String, AnyRef] => Unit): CustomChromeDriver = {
     val options = new util.HashMap[String, Object]()
     options.put("start", Boolean.box(newChrome))
-    start(null, options, null, filter)
+    start(options, KarateRunner.buildScenarioEngine(), filter)
   }
 
   def start(options: util.HashMap[String, Object], filter: util.Map[String, AnyRef] => Unit): CustomChromeDriver = {
-    start(null, options, null, filter)
+    start(options, KarateRunner.buildScenarioEngine(), filter)
   }
 
   def start(
-             context: ScenarioContext,
              map: util.Map[String, Object],
-             appender: LogAppender,
+             engine: ScenarioEngine,
              filter: util.Map[String, AnyRef] => Unit
            ): CustomChromeDriver = {
     val defaultExecutable = if (FileUtils.isOsWindows) {
@@ -145,7 +147,7 @@ object CustomChromeDriver {
     } else {
       Chrome.DEFAULT_PATH_LINUX
     }
-    val options = new DriverOptions(context, map, appender, 9222, defaultExecutable)
+    val options = new DriverOptions(map, engine.runtime, 9222, defaultExecutable)
     options.arg("--remote-debugging-port=" + options.port)
     options.arg("--no-first-run")
     if (options.userDataDir != null) {
@@ -163,14 +165,14 @@ object CustomChromeDriver {
       webSocketUrl = map.get("debuggerUrl").asInstanceOf[String]
     } else {
       val http = options.getHttp
-      Command.waitForHttp(http.urlBase)
+      Command.waitForHttp(http.urlBase + "/json")
       val res = http.path("json").get
-      if (res.body.asList.isEmpty) {
+      if (res.json().asList.isEmpty) {
         if (command != null) command.close(true)
         throw new RuntimeException("chrome server returned empty list from " + http.urlBase)
       }
       import scala.jdk.CollectionConverters.CollectionHasAsScala
-      val targets = res.body.asList.asInstanceOf[util.List[util.Map[String, Object]]].asScala
+      val targets = res.json().asList.asInstanceOf[util.List[util.Map[String, Object]]].asScala
       var found = false
       for (target <- targets if !found) {
         val targetUrl = target.get("url").asInstanceOf[String]
@@ -200,11 +202,7 @@ object CustomChromeDriver {
     if (webSocketUrl == null) {
       throw new RuntimeException("failed to attach to chrome debug server")
     }
-    val chrome = new CustomChromeDriver(options, command, webSocketUrl, filter)
-    if (attachUrl != null) {
-      chrome.currentUrl = attachUrl
-    }
-    chrome
+    new CustomChromeDriver(options, engine, command, webSocketUrl, filter)
   }
 
 }

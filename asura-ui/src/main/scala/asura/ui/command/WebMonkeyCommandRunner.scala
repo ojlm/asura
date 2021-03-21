@@ -27,7 +27,7 @@ case class WebMonkeyCommandRunner(
 
   import WebMonkeyCommandRunner._
 
-  implicit val actions = KarateRunner.buildStepActions(driver)
+  implicit val actions = KarateRunner.buildScenarioAction(driver.engine)
   val areaRatioPositionMap = new util.TreeMap[Float, Position]()
   val areaRatioLocatorMap = new util.TreeMap[Float, String]()
   val areaLocatorPointsMap = new util.HashMap[String, Seq[IntPoint]]()
@@ -72,7 +72,7 @@ case class WebMonkeyCommandRunner(
               areaRatioPositionMap.put(totalRatio, posObj)
               if (item.useCvDetectPoints) {
                 areaRatioLocatorMap.put(totalRatio, item.locator)
-                val bytes = driver.screenshot(item.locator)
+                val bytes = driver.screenshot(item.locator, false)
                 val image = MSERDetector.detectAndGetImage(bytes)
                 if (image.points != null && image.points.nonEmpty) {
                   image.points.foreach(p => p.offset(posObj.x, posObj.y))
@@ -92,7 +92,7 @@ case class WebMonkeyCommandRunner(
         })
     }
     if (params.useCvDetectPoints) {
-      val bytes = driver.screenshot()
+      val bytes = driver.screenshot(false)
       val image = MSERDetector.detectAndGetImage(bytes)
       if (image.points != null && image.points.nonEmpty) {
         fullScreenPoints = image.points
@@ -266,7 +266,7 @@ case class WebMonkeyCommandRunner(
       }
     }
     toSend.param("x", currentMouseXPos).param("y", currentMouseYPos)
-    if (null != logActor) logActor ! DriverCommandLog(Commands.WEB_MONKEY, DriverCommandLog.TYPE_MOUSE, toSend.getParams(), meta)
+    if (null != logActor) logActor ! DriverCommandLog(Commands.WEB_MONKEY, DriverCommandLog.TYPE_MOUSE, toSend.toMap, meta)
     toSend.send()
   }
 }

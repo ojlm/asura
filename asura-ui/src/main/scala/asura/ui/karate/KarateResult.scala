@@ -16,7 +16,7 @@ object KarateResult {
 
   def passed(nanos: Long) = KarateResult(PASSED, nanos, false, false)
 
-  def failed(error: String) = KarateResult(FAILED, 0, false, false, error)
+  def failed(error: String, nanos: Long = 0) = KarateResult(FAILED, nanos, false, false, error)
 
   def skipped() = KarateResult(SKIPPED, 0, false, false)
 

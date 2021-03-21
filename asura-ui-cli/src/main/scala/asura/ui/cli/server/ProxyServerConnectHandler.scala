@@ -2,10 +2,10 @@ package asura.ui.cli.server
 
 import asura.ui.cli.server.ProxyServerConnectHandler.logger
 import com.typesafe.scalalogging.Logger
-import io.netty.karate.bootstrap.Bootstrap
-import io.netty.karate.channel._
-import io.netty.karate.channel.socket.nio.NioSocketChannel
-import io.netty.karate.util.concurrent.Future
+import karate.io.netty.bootstrap.Bootstrap
+import karate.io.netty.channel._
+import karate.io.netty.channel.socket.nio.NioSocketChannel
+import karate.io.netty.util.concurrent.Future
 
 class ProxyServerConnectHandler(
                                  remoteHost: String,

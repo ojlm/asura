@@ -5,9 +5,9 @@ import java.util._
 
 import asura.common.util.LogUtils
 import com.typesafe.scalalogging.Logger
-import io.netty.karate.buffer.Unpooled
-import io.netty.karate.channel.{Channel, ChannelFutureListener}
-import io.netty.karate.handler.codec.http.{FullHttpResponse, HttpHeaderNames, HttpRequest, HttpResponse}
+import karate.io.netty.buffer.Unpooled
+import karate.io.netty.channel.{Channel, ChannelFutureListener}
+import karate.io.netty.handler.codec.http.{FullHttpResponse, HttpHeaderNames, HttpRequest, HttpResponse}
 
 object NettyUtils {
 
