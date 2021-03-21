@@ -50,7 +50,7 @@ object Dependencies {
   private val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
 
   // ui
-  private val karate = "com.intuit.karate" % "karate-apache" % "0.9.6" excludeAll (ExclusionRule(organization = "commons-logging", name = "*"))
+  private val karate = "com.intuit.karate" % "karate-core" % "1.0.0" excludeAll (ExclusionRule(organization = "commons-logging", name = "*"))
   private val picocli = "info.picocli" % "picocli" % "4.6.1"
 
   // Test dependencies

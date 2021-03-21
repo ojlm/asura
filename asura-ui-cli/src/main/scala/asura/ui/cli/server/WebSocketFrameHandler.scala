@@ -1,7 +1,7 @@
 package asura.ui.cli.server
 
-import io.netty.karate.channel.{ChannelHandlerContext, SimpleChannelInboundHandler}
-import io.netty.karate.handler.codec.http.websocketx.{TextWebSocketFrame, WebSocketFrame}
+import karate.io.netty.channel.{ChannelHandlerContext, SimpleChannelInboundHandler}
+import karate.io.netty.handler.codec.http.websocketx.{TextWebSocketFrame, WebSocketFrame}
 
 class WebSocketFrameHandler extends SimpleChannelInboundHandler[WebSocketFrame] {
 

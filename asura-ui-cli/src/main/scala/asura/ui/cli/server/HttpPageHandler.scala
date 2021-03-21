@@ -7,12 +7,12 @@ import java.util.regex.Pattern
 import asura.common.util.LogUtils
 import asura.ui.cli.server.HttpPageHandler._
 import com.typesafe.scalalogging.Logger
-import io.netty.karate.buffer.Unpooled
-import io.netty.karate.channel._
-import io.netty.karate.handler.codec.http.HttpResponseStatus._
-import io.netty.karate.handler.codec.http._
-import io.netty.karate.handler.stream.ChunkedStream
-import io.netty.karate.util.CharsetUtil
+import karate.io.netty.buffer.Unpooled
+import karate.io.netty.channel._
+import karate.io.netty.handler.codec.http.HttpResponseStatus._
+import karate.io.netty.handler.codec.http._
+import karate.io.netty.handler.stream.ChunkedStream
+import karate.io.netty.util.CharsetUtil
 
 class HttpPageHandler extends SimpleChannelInboundHandler[FullHttpRequest] {
 
@@ -56,8 +56,8 @@ class HttpPageHandler extends SimpleChannelInboundHandler[FullHttpRequest] {
         } else {
           decodedUri = decodedUri.replace("/", File.separator)
           if (
-            decodedUri.contains(File.separator + '.') ||
-              decodedUri.contains('.' + File.separator) ||
+            decodedUri.contains(s"${File.separator}.") ||
+              decodedUri.contains(s".${File.separator}") ||
               decodedUri.charAt(0) == '.' || uri.charAt(uri.length - 1) == '.' ||
               INSECURE_URI.matcher(decodedUri).matches()
           ) {

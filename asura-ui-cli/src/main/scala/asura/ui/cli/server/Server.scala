@@ -2,12 +2,12 @@ package asura.ui.cli.server
 
 import asura.common.util.LogUtils
 import com.typesafe.scalalogging.Logger
-import io.netty.karate.bootstrap.ServerBootstrap
-import io.netty.karate.channel.ChannelOption
-import io.netty.karate.channel.nio.NioEventLoopGroup
-import io.netty.karate.channel.socket.nio.NioServerSocketChannel
-import io.netty.karate.handler.ssl.util.SelfSignedCertificate
-import io.netty.karate.handler.ssl.{SslContext, SslContextBuilder}
+import karate.io.netty.bootstrap.ServerBootstrap
+import karate.io.netty.channel.ChannelOption
+import karate.io.netty.channel.nio.NioEventLoopGroup
+import karate.io.netty.channel.socket.nio.NioServerSocketChannel
+import karate.io.netty.handler.ssl.util.SelfSignedCertificate
+import karate.io.netty.handler.ssl.{SslContext, SslContextBuilder}
 
 case class Server(port: Int, proxyConfig: ServerProxyConfig) {
 

@@ -13,7 +13,7 @@ object OpenCvSpec {
     val options = new util.HashMap[String, Object]()
     options.put("start", Boolean.box(false))
     val driver = CustomChromeDriver.start(options, null)
-    val bytes = driver.screenshot()
+    val bytes = driver.screenshot(false)
     val image = load(bytes, IMREAD_GRAYSCALE)
     show(image, "origin screenshot")
     val res = MSERDetector.detectAndGetImage(bytes)

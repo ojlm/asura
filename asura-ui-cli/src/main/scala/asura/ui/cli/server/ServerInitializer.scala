@@ -1,8 +1,8 @@
 package asura.ui.cli.server
 
-import io.netty.karate.channel.ChannelInitializer
-import io.netty.karate.channel.socket.SocketChannel
-import io.netty.karate.handler.ssl.SslContext
+import karate.io.netty.channel.ChannelInitializer
+import karate.io.netty.channel.socket.SocketChannel
+import karate.io.netty.handler.ssl.SslContext
 
 class ServerInitializer(
                          sslCtx: SslContext,
