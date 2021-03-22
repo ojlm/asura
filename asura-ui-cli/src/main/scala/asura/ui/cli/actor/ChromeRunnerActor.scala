@@ -95,7 +95,7 @@ class ChromeRunnerActor(
       val sendFunc = (params: util.Map[String, AnyRef]) => {
         self ! DriverDevToolsMessage(null, params)
       }
-      NewDriver(CustomChromeDriver.start(options, sendFunc), null)
+      NewDriver(CustomChromeDriver.start(options, sendFunc, true), null)
     }.recover({
       case t: Throwable =>
         log.error(LogUtils.stackTraceToString(t))

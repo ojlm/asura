@@ -437,4 +437,26 @@ public class ScenarioActions implements Actions {
     engine.evalJs("delay(" + exp + "000)");
   }
 
+  @When("^use driver (.+)")
+  public void useDriver(String exp) {
+    int start = 0;
+    int end = 0;
+    char first = exp.charAt(0);
+    if (first == '\'' || first == '"') {
+      start = 1;
+    }
+    char last = exp.charAt(exp.length() - 1);
+    if (last == '\'' || last == '"') {
+      end = exp.length() - 1;
+    }
+    if (start > 0 || end > 0) {
+      exp = exp.substring(start, end);
+    }
+    if (engine.newDrivers.containsKey(exp)) {
+      engine.setDriver(engine.newDrivers.get(exp).driver);
+    } else {
+      throw new RuntimeException("driver(" + exp + ") not exists");
+    }
+  }
+
 }
