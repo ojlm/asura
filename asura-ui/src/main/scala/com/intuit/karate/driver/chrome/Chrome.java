@@ -49,22 +49,6 @@ public class Chrome extends DevToolsDriver {
   public static final String DEFAULT_PATH_WIN = "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe";
   public static final String DEFAULT_PATH_LINUX = "/usr/bin/google-chrome";
 
-  public boolean shouldQuit = true;
-
-  @Override
-  public void close() {
-    if (this.shouldQuit) {
-      super.close();
-    }
-  }
-
-  @Override
-  public void quit() {
-    if (this.shouldQuit) {
-      super.quit();
-    }
-  }
-
   public Chrome(DriverOptions options, Command command, String webSocketUrl) {
     super(options, command, webSocketUrl);
   }
@@ -125,7 +109,6 @@ public class Chrome extends DevToolsDriver {
     if (!options.headless) {
       chrome.initWindowIdAndState();
     }
-    chrome.shouldQuit = (Boolean) map.getOrDefault("quit", true);
     return chrome;
   }
 
