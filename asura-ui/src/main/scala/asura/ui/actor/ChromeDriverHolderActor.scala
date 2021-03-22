@@ -187,9 +187,9 @@ class ChromeDriverHolderActor(
         }
       }
       if (options == null) {
-        CustomChromeDriver.start(false, sendFunc)
+        CustomChromeDriver.start(false, sendFunc, true)
       } else {
-        CustomChromeDriver.start(options, sendFunc)
+        CustomChromeDriver.start(options, sendFunc, true)
       }
     }.flatMap(driver => {
       if (driverInfo != null && driver != null) {

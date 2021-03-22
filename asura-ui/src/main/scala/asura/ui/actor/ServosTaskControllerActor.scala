@@ -121,7 +121,8 @@ object ServosTaskControllerActor {
             val meta = command.meta.copy(hostname = servo.hostname)
             val driver = CustomChromeDriver.start(
               options,
-              if (saveDriverLog && logActor != null) params => logActor ! DriverDevToolsMessage(meta, params) else null
+              if (saveDriverLog && logActor != null) params => logActor ! DriverDevToolsMessage(meta, params) else null,
+              true,
             )
             val item = ServoInitResponseItem(servo, true, null)
             item.runner = WebMonkeyCommandRunner(

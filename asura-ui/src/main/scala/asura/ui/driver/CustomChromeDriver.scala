@@ -19,6 +19,7 @@ class CustomChromeDriver(
                           command: Command,
                           webSocketUrl: String,
                           val filter: util.Map[String, AnyRef] => Unit,
+                          inject: Boolean,
                         ) extends Chrome(options, command, webSocketUrl) {
 
   // filter websocket message
@@ -40,7 +41,13 @@ class CustomChromeDriver(
   if (!options.headless) {
     this.initWindowIdAndState()
   }
-  engine.setDriver(this)
+  if (inject) {
+    engine.setDriver(this)
+  }
+
+  def closeClient(): Unit = {
+    client.close()
+  }
 
   def realQuit(): Unit = {
     super.quit()
@@ -125,20 +132,29 @@ object CustomChromeDriver {
     field.get(null).asInstanceOf[util.Map[Character, Integer]]
   }
 
-  def start(newChrome: Boolean, filter: util.Map[String, AnyRef] => Unit): CustomChromeDriver = {
+  def start(
+             newChrome: Boolean,
+             filter: util.Map[String, AnyRef] => Unit,
+             inject: Boolean,
+           ): CustomChromeDriver = {
     val options = new util.HashMap[String, Object]()
     options.put("start", Boolean.box(newChrome))
-    start(options, KarateRunner.buildScenarioEngine(), filter)
+    start(options, KarateRunner.buildScenarioEngine(), filter, inject)
   }
 
-  def start(options: util.HashMap[String, Object], filter: util.Map[String, AnyRef] => Unit): CustomChromeDriver = {
-    start(options, KarateRunner.buildScenarioEngine(), filter)
+  def start(
+             options: util.HashMap[String, Object],
+             filter: util.Map[String, AnyRef] => Unit,
+             inject: Boolean,
+           ): CustomChromeDriver = {
+    start(options, KarateRunner.buildScenarioEngine(), filter, inject)
   }
 
   def start(
              map: util.Map[String, Object],
              engine: ScenarioEngine,
-             filter: util.Map[String, AnyRef] => Unit
+             filter: util.Map[String, AnyRef] => Unit,
+             inject: Boolean,
            ): CustomChromeDriver = {
     val defaultExecutable = if (FileUtils.isOsWindows) {
       Chrome.DEFAULT_PATH_WIN
@@ -202,7 +218,7 @@ object CustomChromeDriver {
     if (webSocketUrl == null) {
       throw new RuntimeException("failed to attach to chrome debug server")
     }
-    new CustomChromeDriver(options, engine, command, webSocketUrl, filter)
+    new CustomChromeDriver(options, engine, command, webSocketUrl, filter, inject)
   }
 
 }

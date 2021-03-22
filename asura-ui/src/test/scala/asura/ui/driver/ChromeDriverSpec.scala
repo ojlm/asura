@@ -9,7 +9,8 @@ object ChromeDriverSpec {
   def main(args: Array[String]): Unit = {
     val options = new util.HashMap[String, Object]()
     options.put("userDataDir", "logs/chrome")
-    val driver = CustomChromeDriver.start(options, null)
+    options.put("port", Int.box(9222));
+    val driver = CustomChromeDriver.start(options, null, true)
     implicit val actions = KarateRunner.buildScenarioAction(driver.engine)
     KarateRunner.executeStep("driver 'https://github.com/'")
     KarateRunner.executeStep("delay(2000)")

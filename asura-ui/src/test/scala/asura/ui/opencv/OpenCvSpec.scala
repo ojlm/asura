@@ -12,7 +12,7 @@ object OpenCvSpec {
   def main(args: Array[String]): Unit = {
     val options = new util.HashMap[String, Object]()
     options.put("start", Boolean.box(false))
-    val driver = CustomChromeDriver.start(options, null)
+    val driver = CustomChromeDriver.start(options, null, true)
     val bytes = driver.screenshot(false)
     val image = load(bytes, IMREAD_GRAYSCALE)
     show(image, "origin screenshot")
