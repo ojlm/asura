@@ -12,12 +12,13 @@ import asura.ui.karate.KarateRunner
 import asura.ui.model.{BytesObject, IntPoint, Position}
 import asura.ui.opencv.detector.MSERDetector
 import asura.ui.util.RandomStringUtils
+import com.intuit.karate.driver.chrome.Chrome
 import com.typesafe.scalalogging.Logger
 
 import scala.collection.mutable.ArrayBuffer
 
 case class WebMonkeyCommandRunner(
-                                   driver: CustomChromeDriver,
+                                   driver: Chrome,
                                    meta: CommandMeta,
                                    params: MonkeyCommandParams,
                                    stopNow: AtomicBoolean,
@@ -277,7 +278,6 @@ object WebMonkeyCommandRunner {
   val RANDOM = new Random()
   val MOUSE_TYPES: Array[String] = Array[String]("mousePressed", "mouseReleased", "mouseMoved", "mouseWheel")
   val MOUSE_BUTTONS: Array[String] = Array[String]("none", "left", "middle", "right")
-  var CHARS: Array[Character] = CustomChromeDriver.CODES.keySet().toArray(Array[Character]())
 
   case class MonkeyCommandParams(
                                   var startUrl: String = null,

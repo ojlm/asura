@@ -32,6 +32,11 @@ import org.slf4j.LoggerFactory;
 import com.intuit.karate.core.Action;
 import com.intuit.karate.core.AssignType;
 import com.intuit.karate.core.ScenarioEngine;
+import com.intuit.karate.core.ScenarioEngine.NewDriver;
+import com.intuit.karate.core.Variable;
+import com.intuit.karate.driver.DevToolsDriver;
+import com.intuit.karate.driver.Driver;
+import com.intuit.karate.driver.chrome.Chrome;
 
 import cucumber.api.DataTable;
 import cucumber.api.java.en.When;
@@ -439,6 +444,50 @@ public class ScenarioActions implements Actions {
 
   @When("^use driver (.+)")
   public void useDriver(String exp) {
+    String name = extractStrExp(exp);
+    if (engine.newDrivers.containsKey(name)) {
+      NewDriver newDriver = engine.newDrivers.get(name);
+      engine.getConfig().configure("driver", new Variable(newDriver.options));
+      engine.setDriver(newDriver.driver);
+    } else {
+      throw new RuntimeException("driver(" + name + ") not exists");
+    }
+  }
+
+  @When("^open new (.+)")
+  public void openNewPage(String exp) {
+    String url = extractStrExp(exp);
+    Driver driver = engine.getDriver();
+    if (driver != null && driver instanceof DevToolsDriver) {
+      ((DevToolsDriver) driver).method("Target.createTarget")
+        .param("url", url)
+        .param("newWindow", false)
+        .param("background", true)
+        .send();
+    } else {
+      throw new RuntimeException("only DevToolsDriver support this step");
+    }
+  }
+
+  @When("^switch page (.+)")
+  public void switchPage(String exp) {
+    String urlOrTitle = extractStrExp(exp);
+    Map<String, Object> driverOptions = engine.getConfig().getDriverOptions();
+    NewDriver currentDriver = engine.getCurrentChrome();
+    if (driverOptions != null && currentDriver != null) {
+      ((Chrome) currentDriver.driver).closeClient();
+      driverOptions.put("startUrl", urlOrTitle);
+      Driver chrome = Chrome.start(driverOptions, engine, null, false);
+      engine.setDriver(chrome);
+      if (currentDriver.name != null) {
+        engine.newDrivers.put(currentDriver.name, new NewDriver(currentDriver.name, driverOptions, chrome));
+      }
+    } else {
+      throw new RuntimeException("default driver not configured");
+    }
+  }
+
+  private String extractStrExp(String exp) {
     int start = 0;
     int end = 0;
     char first = exp.charAt(0);
@@ -450,12 +499,9 @@ public class ScenarioActions implements Actions {
       end = exp.length() - 1;
     }
     if (start > 0 || end > 0) {
-      exp = exp.substring(start, end);
-    }
-    if (engine.newDrivers.containsKey(exp)) {
-      engine.setDriver(engine.newDrivers.get(exp).driver);
+      return exp.substring(start, end);
     } else {
-      throw new RuntimeException("driver(" + exp + ") not exists");
+      return exp;
     }
   }
 

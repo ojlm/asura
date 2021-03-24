@@ -23,7 +23,7 @@ object Dependencies {
   private val swaggerParser = "io.swagger.parser.v3" % "swagger-parser" % "2.0.20"
   private val elastic4s = "com.sksamuel.elastic4s" %% "elastic4s-http" % "6.7.8"
   private val joddCore = "org.jodd" % "jodd-core" % "3.9.1"
-  private val jsonPath = "com.jayway.jsonpath" % "json-path" % "2.4.0"
+  private val jsonPath = "com.jayway.jsonpath" % "json-path" % "2.5.0"
 
   val caffeineLib = "com.github.ben-manes.caffeine" % "caffeine" % "2.8.4"
   val kryo = "com.esotericsoftware" % "kryo" % "5.0.3"
@@ -50,7 +50,11 @@ object Dependencies {
   private val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
 
   // ui
-  private val karate = "com.intuit.karate" % "karate-core" % "1.0.0" excludeAll (ExclusionRule(organization = "commons-logging", name = "*"))
+  private val karate = "com.intuit.karate" % "karate-core" % "1.0.0" excludeAll(
+    ExclusionRule(organization = "commons-logging", name = "*"),
+    ExclusionRule(organization = "info.cukes", name = "*"),
+    ExclusionRule(organization = "info.picocli", name = "*"),
+  )
   private val picocli = "info.picocli" % "picocli" % "4.6.1"
 
   // Test dependencies

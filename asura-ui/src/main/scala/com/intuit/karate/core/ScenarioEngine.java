@@ -35,6 +35,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -63,6 +64,7 @@ import com.intuit.karate.XmlUtils;
 import com.intuit.karate.driver.Driver;
 import com.intuit.karate.driver.DriverOptions;
 import com.intuit.karate.driver.Key;
+import com.intuit.karate.driver.chrome.Chrome;
 import com.intuit.karate.graal.JsEngine;
 import com.intuit.karate.graal.JsFunction;
 import com.intuit.karate.graal.JsValue;
@@ -82,8 +84,6 @@ import com.intuit.karate.shell.Command;
 import com.intuit.karate.template.KarateTemplateEngine;
 import com.intuit.karate.template.TemplateUtils;
 import com.jayway.jsonpath.PathNotFoundException;
-
-import asura.ui.driver.CustomChromeDriver;
 
 /**
  * @author pthomas3
@@ -163,15 +163,17 @@ public class ScenarioEngine {
   public HashMap<String, NewDriver> newDrivers = new HashMap<>();
 
   public static class NewDriver {
+    public String name;
     public Map<String, Object> options;
     public Driver driver;
 
-    public NewDriver(Map<String, Object> options, Driver driver) {
+    public NewDriver(String name, Map<String, Object> options, Driver driver) {
+      this.name = name;
       this.options = options;
       this.driver = driver;
     }
 
-    public boolean stop() {
+    public boolean isStop() {
       return (boolean) options.getOrDefault("stop", true);
     }
 
@@ -185,6 +187,14 @@ public class ScenarioEngine {
         }
       } else {
         return false;
+      }
+    }
+
+    public void stopDriver() {
+      if (driver instanceof Chrome && isRemote()) {
+        ((Chrome) driver).closeClient();
+      } else {
+        driver.quit();
       }
     }
 
@@ -384,6 +394,23 @@ public class ScenarioEngine {
     configure(key, v);
   }
 
+  public Driver getDriver() {
+    return this.driver;
+  }
+
+  public NewDriver getCurrentChrome() {
+    if (driver != null && driver instanceof Chrome) {
+      Optional<NewDriver> newDriver = newDrivers.values().stream().filter(item -> item.driver == driver).findFirst();
+      if (newDriver.isPresent()) {
+        return newDriver.get();
+      } else {
+        return new NewDriver(null, null, driver);
+      }
+    } else {
+      return null;
+    }
+  }
+
   public void configure(String key, Variable v) {
     key = StringUtils.trimToEmpty(key);
     if (key.equals("newDriver")) {
@@ -396,13 +423,8 @@ public class ScenarioEngine {
           throw new RuntimeException("name: " + name + " already exists.");
         } else {
           Boolean isDefault = (boolean) map.getOrDefault("default", false);
-          Driver newDriver;
-          if ("chrome".equals(map.get("type"))) {
-            newDriver = CustomChromeDriver.start(map, this, null, false);
-          } else {
-            newDriver = DriverOptions.start(map, runtime);
-          }
-          newDrivers.put(name, new NewDriver(map, newDriver));
+          Driver newDriver = DriverOptions.start(map, runtime);
+          newDrivers.put(name, new NewDriver(name, map, newDriver));
           if (isDefault) {
             config.configure("driver", v);
             setDriver(newDriver);
@@ -1038,16 +1060,8 @@ public class ScenarioEngine {
       // @FIXME override start
       if (!newDrivers.isEmpty()) {
         newDrivers.values().forEach(newDriver -> {
-          if (newDriver.stop()) {
-            if (newDriver.driver instanceof CustomChromeDriver) {
-              if (newDriver.isRemote()) {
-                ((CustomChromeDriver) newDriver.driver).closeClient();
-              } else {
-                ((CustomChromeDriver) newDriver.driver).realQuit();
-              }
-            } else {
-              newDriver.driver.quit();
-            }
+          if (newDriver.isStop()) {
+            newDriver.stopDriver();
           }
         });
       }

@@ -11,9 +11,10 @@ import asura.ui.actor.ChromeDriverHolderActor._
 import asura.ui.actor.ServosTaskControllerActor.{RunnerResult, Start}
 import asura.ui.command.WebMonkeyCommandRunner.MonkeyCommandParams
 import asura.ui.command.{Commands, WebMonkeyCommandRunner}
-import asura.ui.driver.{CustomChromeDriver, DriverCommand, DriverCommandEnd, DriverCommandLog}
+import asura.ui.driver.{DriverCommand, DriverCommandEnd, DriverCommandLog}
 import asura.ui.model.DriverInitResponse
 import asura.ui.model.DriverInitResponse.ServoInitResponseItem
+import com.intuit.karate.driver.chrome.Chrome
 
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
@@ -119,7 +120,7 @@ object ServosTaskControllerActor {
             options.put("host", servo.host)
             options.put("port", Int.box(servo.port))
             val meta = command.meta.copy(hostname = servo.hostname)
-            val driver = CustomChromeDriver.start(
+            val driver = Chrome.start(
               options,
               if (saveDriverLog && logActor != null) params => logActor ! DriverDevToolsMessage(meta, params) else null,
               true,

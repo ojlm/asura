@@ -29,6 +29,7 @@ object UiConfig {
   var localChromeDriver: ActorRef = null
 
   def init(config: UiConfig): Unit = {
+    cucumber.api.cli.Main.loadOverride()
     val system = config.system
     val ec = config.ec
     if (config.enableLocal) {
