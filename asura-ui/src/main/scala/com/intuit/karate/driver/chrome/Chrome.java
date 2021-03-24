@@ -27,17 +27,26 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.intuit.karate.FileUtils;
 import com.intuit.karate.Http;
+import com.intuit.karate.Json;
+import com.intuit.karate.StringUtils;
+import com.intuit.karate.core.ScenarioEngine;
 import com.intuit.karate.core.ScenarioRuntime;
 import com.intuit.karate.driver.DevToolsDriver;
+import com.intuit.karate.driver.DevToolsMessage;
 import com.intuit.karate.driver.DriverOptions;
+import com.intuit.karate.driver.Input;
+import com.intuit.karate.driver.Keys;
 import com.intuit.karate.http.Response;
 import com.intuit.karate.shell.Command;
+
+import asura.ui.karate.KarateRunner;
 
 /**
  * @author pthomas3
@@ -49,8 +58,109 @@ public class Chrome extends DevToolsDriver {
   public static final String DEFAULT_PATH_WIN = "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe";
   public static final String DEFAULT_PATH_LINUX = "/usr/bin/google-chrome";
 
+  public ScenarioEngine engine;
+  public Boolean inject;
+  public Consumer<Map<String, Object>> filter;
+
   public Chrome(DriverOptions options, Command command, String webSocketUrl) {
     super(options, command, webSocketUrl);
+  }
+
+  // 自定义
+  public Chrome(DriverOptions options, Command command, String webSocketUrl,
+    ScenarioEngine engine, Boolean inject, Consumer<Map<String, Object>> filter
+  ) {
+    super(options, command, webSocketUrl);
+    this.engine = engine;
+    this.inject = inject;
+    this.filter = filter;
+    if (this.inject && this.engine != null) {
+      this.engine.setDriver(this);
+    }
+    client.setTextHandler(text -> {
+      Map<String, Object> map = Json.of(text).value();
+      DevToolsMessage dtm = new DevToolsMessage(this, map);
+      if (this.filter != null && !StringUtils.isBlank(dtm.getMethod())) {
+        this.filter.accept(map);
+      }
+      receive(dtm);
+      return false; // no async signalling, for normal use, e.g. chrome developer tools
+    });
+  }
+
+  public void closeClient() {
+    client.close();
+  }
+
+  public void enableLog() {
+    method("Log.enable").send();
+  }
+
+  public void enableDom() {
+    method("DOM.enable").send();
+  }
+
+  public void setDiscoverTargets() {
+    method("Target.setDiscoverTargets").param("discover", true).send();
+  }
+
+  public String screenshotAsBase64() {
+    return method("Page.captureScreenshot").send().getResult("data").getAsString();
+  }
+
+  public DevToolsMessage openNewPage(String url) {
+    return method("Target.createTarget")
+      .param("url", url)
+      .param("newWindow", false)
+      .param("background", true)
+      .send();
+  }
+
+  public void sendKey(char c, int modifiers, String type, Integer keyCode) {
+    DevToolsMessage dtm = method("Input.dispatchKeyEvent")
+      .param("modifiers", modifiers)
+      .param("type", type);
+    if (keyCode == null) {
+      dtm.param("text", c + "");
+    } else {
+      switch (keyCode) {
+        case 13:
+          dtm.param("text", "\r"); // important ! \n does NOT work for chrome
+          break;
+        case 9: // TAB
+          if ("char".equals(type)) {
+            return; // special case
+          }
+          dtm.param("text", "");
+          break;
+        case 46: // DOT
+          if ("rawKeyDown".equals(type)) {
+            dtm.param("type", "keyDown"); // special case
+          }
+          dtm.param("text", ".");
+          break;
+        default:
+          dtm.param("text", c + "");
+      }
+      dtm.param("windowsVirtualKeyCode", keyCode);
+    }
+    dtm.send();
+  }
+
+  public void input(String value) {
+    Input input = new Input(value);
+    while (input.hasNext()) {
+      char c = input.next();
+      int modifiers = input.getModifierFlags();
+      Integer keyCode = Keys.code(c);
+      if (keyCode != null) {
+        sendKey(c, modifiers, "rawKeyDown", keyCode);
+        sendKey(c, modifiers, "char", keyCode);
+        sendKey(c, modifiers, "keyUp", keyCode);
+      } else {
+        sendKey(c, modifiers, "char", -1);
+      }
+    }
   }
 
   public static void loadOverride() {
@@ -70,46 +180,83 @@ public class Chrome extends DevToolsDriver {
       options.arg("--headless");
     }
     Command command = options.startProcess();
-    Http http = options.getHttp();
-    Command.waitForHttp(http.urlBase + "/json");
-    Response res = http.path("json").get();
-    if (res.json().asList().isEmpty()) {
-      if (command != null) {
-        command.close(true);
-      }
-      throw new RuntimeException("chrome server returned empty list from " + http.urlBase);
-    }
     String webSocketUrl = null;
-    List<Map<String, Object>> targets = res.json().asList();
-    for (Map<String, Object> target : targets) {
-      String targetUrl = (String) target.get("url");
-      if (targetUrl == null || targetUrl.startsWith("chrome-")) {
-        continue;
+    if (map.containsKey("debuggerUrl")) {
+      webSocketUrl = (String) map.get("debuggerUrl");
+    } else {
+      Object startUrl = map.get("startUrl");
+      Http http = options.getHttp();
+      Command.waitForHttp(http.urlBase + "/json");
+      Response res = http.path("json").get();
+      if (res.json().asList().isEmpty()) {
+        if (command != null) {
+          command.close(true);
+        }
+        throw new RuntimeException("chrome server returned empty list from " + http.urlBase);
       }
-      String targetType = (String) target.get("type");
-      if (!"page".equals(targetType)) {
-        continue;
-      }
-      webSocketUrl = (String) target.get("webSocketDebuggerUrl");
-      if (options.attach == null) { // take the first
-        break;
-      }
-      if (targetUrl.contains(options.attach)) {
-        break;
+      List<Map<String, Object>> targets = res.json().asList();
+      for (Map<String, Object> target : targets) {
+        String targetUrl = (String) target.get("url");
+        if (targetUrl == null || targetUrl.startsWith("chrome-")) {
+          continue;
+        }
+        if (startUrl != null) {
+          String targetTitle = (String) target.get("title");
+          if (targetUrl.contains(startUrl.toString()) || targetTitle.contains(startUrl.toString())) {
+            webSocketUrl = (String) target.get("webSocketDebuggerUrl");
+          }
+        } else {
+          String targetType = (String) target.get("type");
+          if (!"page".equals(targetType)) {
+            continue;
+          }
+          webSocketUrl = (String) target.get("webSocketDebuggerUrl");
+          if (options.attach == null) { // take the first
+            break;
+          }
+          if (targetUrl.contains(options.attach)) {
+            break;
+          }
+        }
       }
     }
     if (webSocketUrl == null) {
       throw new RuntimeException("failed to attach to chrome debug server");
     }
-    Chrome chrome = new Chrome(options, command, webSocketUrl);
+    Boolean inject = (Boolean) map.getOrDefault("_inject", false);
+    Consumer<Map<String, Object>> filter = (Consumer<Map<String, Object>>) map.getOrDefault("_filter", null);
+    Chrome chrome = new Chrome(options, command, webSocketUrl, sr.engine, inject, filter);
     chrome.activate();
     chrome.enablePageEvents();
     chrome.enableRuntimeEvents();
     chrome.enableTargetEvents();
+    chrome.enableLog();
+    chrome.setDiscoverTargets();
     if (!options.headless) {
       chrome.initWindowIdAndState();
     }
     return chrome;
+  }
+
+  public static Chrome start(Boolean start, Consumer<Map<String, Object>> filter, Boolean inject) {
+    Map<String, Object> options = new HashMap();
+    options.put("start", start);
+    options.put("_inject", inject);
+    options.put("_filter", filter);
+    return Chrome.start(options, KarateRunner.buildScenarioEngine().runtime);
+  }
+
+  public static Chrome start(Map<String, Object> options, Consumer<Map<String, Object>> filter, Boolean inject) {
+    options.put("_inject", inject);
+    options.put("_filter", filter);
+    return Chrome.start(options, KarateRunner.buildScenarioEngine().runtime);
+  }
+
+  public static Chrome start(Map<String, Object> options, ScenarioEngine engine, Consumer<Map<String, Object>> filter,
+    Boolean inject) {
+    options.put("_inject", inject);
+    options.put("_filter", filter);
+    return Chrome.start(options, engine.runtime);
   }
 
   public static Chrome start(String chromeExecutablePath, boolean headless) {

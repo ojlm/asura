@@ -2,6 +2,7 @@ package asura.ui.actor
 
 import java.util
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.function.Consumer
 
 import akka.actor.{ActorRef, Props}
 import akka.pattern.{ask, pipe}
@@ -17,6 +18,7 @@ import asura.ui.driver.DriverStatusEventBus.PublishDriverStatusMessage
 import asura.ui.driver.{DevToolsProtocol, _}
 import asura.ui.model.{ChromeDriverInfo, ChromeVersion, ServoAddress}
 import asura.ui.util.ChromeDevTools
+import com.intuit.karate.driver.chrome.Chrome
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -30,7 +32,7 @@ class ChromeDriverHolderActor(
                              )(implicit ec: ExecutionContext) extends BaseActor {
 
   val servoAddr: ServoAddress = if (driverInfo != null) ServoAddress(driverInfo.host, driverInfo.port, driverInfo.hostname) else null
-  var driver: CustomChromeDriver = null
+  var driver: Chrome = null
   var version: ChromeVersion = null
   val currentStatus = DriverStatus()
 
@@ -181,15 +183,15 @@ class ChromeDriverHolderActor(
 
   private def tryRestartServer(): Unit = {
     Future {
-      val sendFunc = (params: util.Map[String, AnyRef]) => {
+      val sendFunc: Consumer[util.Map[String, AnyRef]] = params => {
         if (currentStatus.command != null && currentStatus.command.meta != null) {
           self ! DriverDevToolsMessage(currentStatus.command.meta, params)
         }
       }
       if (options == null) {
-        CustomChromeDriver.start(false, sendFunc, true)
+        Chrome.start(false, sendFunc, true)
       } else {
-        CustomChromeDriver.start(options, sendFunc, true)
+        Chrome.start(options, sendFunc, true)
       }
     }.flatMap(driver => {
       if (driverInfo != null && driver != null) {
@@ -249,7 +251,7 @@ object ChromeDriverHolderActor {
              ec: ExecutionContext = ExecutionContext.global
            ) = Props(new ChromeDriverHolderActor(driverInfo, uiDriverProvider, syncInterval, taskListener, options)(ec))
 
-  case class NewDriver(driver: CustomChromeDriver, version: ChromeVersion)
+  case class NewDriver(driver: Chrome, version: ChromeVersion)
 
   case class SubscribeDriverDevToolsEventMessage(ref: ActorRef)
 

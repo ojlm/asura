@@ -4,6 +4,7 @@ import java.io.{BufferedWriter, File, FileWriter}
 import java.nio.charset.StandardCharsets
 import java.util
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.function.Consumer
 
 import akka.actor.Props
 import akka.pattern.pipe
@@ -15,6 +16,7 @@ import asura.ui.cli.runner.MonkeyRunner.ConfigParams
 import asura.ui.command.{Commands, WebMonkeyCommandRunner}
 import asura.ui.driver._
 import asura.ui.model.BytesObject
+import com.intuit.karate.driver.chrome.Chrome
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -27,7 +29,7 @@ class ChromeRunnerActor(
   val stopNow = new AtomicBoolean(false)
   var commandLogFile: BufferedWriter = null
   var driverLogFile: BufferedWriter = null
-  var driver: CustomChromeDriver = null
+  var driver: Chrome = null
 
   override def receive: Receive = {
     case NewDriver(driver, _) =>
@@ -92,10 +94,10 @@ class ChromeRunnerActor(
           new File(params.driver.logFile).getAbsoluteFile, StandardCharsets.UTF_8, true
         ))
       }
-      val sendFunc = (params: util.Map[String, AnyRef]) => {
+      val sendFunc: Consumer[util.Map[String, AnyRef]] = params => {
         self ! DriverDevToolsMessage(null, params)
       }
-      NewDriver(CustomChromeDriver.start(options, sendFunc, true), null)
+      NewDriver(Chrome.start(options, sendFunc, true), null)
     }.recover({
       case t: Throwable =>
         log.error(LogUtils.stackTraceToString(t))
@@ -106,7 +108,7 @@ class ChromeRunnerActor(
   def quit(): Unit = {
     if (commandLogFile != null) commandLogFile.close()
     if (driverLogFile != null) driverLogFile.close()
-    if (driver != null) driver.realQuit()
+    if (driver != null) driver.quit()
     CliSystem.system.terminate()
   }
 
