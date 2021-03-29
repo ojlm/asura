@@ -14,7 +14,7 @@ import karate.io.netty.handler.codec.http._
 import karate.io.netty.handler.stream.ChunkedStream
 import karate.io.netty.util.CharsetUtil
 
-class HttpPageHandler extends SimpleChannelInboundHandler[FullHttpRequest] {
+class HttpPageHandler(enableKeepAlive: Boolean) extends SimpleChannelInboundHandler[FullHttpRequest] {
 
   override def channelRead0(ctx: ChannelHandlerContext, req: FullHttpRequest): Unit = {
     if (!req.decoderResult().isSuccess) {
@@ -122,16 +122,21 @@ class HttpPageHandler extends SimpleChannelInboundHandler[FullHttpRequest] {
   }
 
   def sendAndCleanupConnection(ctx: ChannelHandlerContext, req: FullHttpRequest, res: FullHttpResponse): Unit = {
-    val keepAlive = HttpUtil.isKeepAlive(req)
-    HttpUtil.setContentLength(res, res.content().readableBytes())
-    if (!keepAlive) {
+    if (enableKeepAlive) {
+      val keepAlive = HttpUtil.isKeepAlive(req)
+      HttpUtil.setContentLength(res, res.content().readableBytes())
+      if (!keepAlive) {
+        res.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE)
+      } else if (req.protocolVersion().equals(HttpVersion.HTTP_1_0)) {
+        res.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE)
+      }
+      val flushFuture = ctx.writeAndFlush(res)
+      if (!keepAlive) {
+        flushFuture.addListener(ChannelFutureListener.CLOSE)
+      }
+    } else {
       res.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE)
-    } else if (req.protocolVersion().equals(HttpVersion.HTTP_1_0)) {
-      res.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE)
-    }
-    val flushFuture = ctx.writeAndFlush(res)
-    if (!keepAlive) {
-      flushFuture.addListener(ChannelFutureListener.CLOSE)
+      ctx.writeAndFlush(res).addListener(ChannelFutureListener.CLOSE)
     }
   }
 
