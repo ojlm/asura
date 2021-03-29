@@ -103,14 +103,14 @@ class PortUnificationServerHandler(
     p.addLast(new ChunkedWriteHandler())
     p.addLast(new WebSocketServerCompressionHandler())
     p.addLast(new WebSocketServerProtocolHandler(wsServerConfig))
-    p.addLast(new HttpPageHandler())
+    p.addLast(new HttpPageHandler(false))
     p.addLast(new WebSocketFrameHandler())
     p.remove(this)
   }
 
   def switchToHttpProxy(ctx: ChannelHandlerContext, remoteHost: String, remotePort: Int): Unit = {
     val p = ctx.pipeline()
-    p.addLast(new ProxyServerConnectHandler(remoteHost, remotePort))
+    p.addLast(new ProxyServerConnectHandler(remoteHost, remotePort, true, false))
     p.remove(this)
   }
 
