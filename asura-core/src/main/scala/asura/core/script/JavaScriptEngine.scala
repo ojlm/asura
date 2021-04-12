@@ -2,9 +2,9 @@ package asura.core.script
 
 import asura.common.util.LogUtils
 import asura.core.script.builtin.{Functions, StringGenerator}
+import com.oracle.truffle.js.scriptengine.GraalJSScriptEngine
 import com.typesafe.scalalogging.Logger
 import javax.script.{CompiledScript, ScriptContext, ScriptEngineManager, SimpleScriptContext}
-import jdk.nashorn.api.scripting.NashornScriptEngine
 
 /**
  * hold a javascript engine.
@@ -17,8 +17,12 @@ object JavaScriptEngine {
   private val logger = Logger("JavaScriptEngine")
   // use separate execution context
   // private val engineExecutionContext = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
-  private val sem = new ScriptEngineManager(getClass.getClassLoader)
-  val engine: NashornScriptEngine = sem.getEngineByName("javascript").asInstanceOf[NashornScriptEngine]
+  val engine: GraalJSScriptEngine = {
+    val sem = new ScriptEngineManager(getClass.getClassLoader)
+    val jsEngine = sem.getEngineByName("javascript").asInstanceOf[GraalJSScriptEngine]
+    jsEngine.put("polyglot.js.allowAllAccess", true)
+    jsEngine
+  }
 
   private val baseLibs: CompiledScript = {
     logger.info("initialize base javascript libraries")
@@ -31,7 +35,9 @@ object JavaScriptEngine {
       val context = localContext.get()
       val bindings = context.getBindings(ScriptContext.ENGINE_SCOPE)
       bindings.putAll(bindingsData)
-      engine.eval(script, context)
+      val value = engine.eval(script, context)
+      bindings.clear()
+      value
     } else {
       engine.eval(script, localContext.get())
     }
