@@ -3,11 +3,10 @@ package asura.core.script
 import asura.common.ScalaTestBaseSpec
 import asura.core.script.builtin.StringGenerator
 import javax.script.SimpleBindings
-import jdk.nashorn.api.scripting.NashornScriptEngine
 
 class JavaScriptEngineSpec extends ScalaTestBaseSpec {
 
-  val engine: NashornScriptEngine = JavaScriptEngine.engine
+  val engine = JavaScriptEngine.engine
 
   test("return int") {
     val value: Int = engine.eval("1 + 3").asInstanceOf[Int]

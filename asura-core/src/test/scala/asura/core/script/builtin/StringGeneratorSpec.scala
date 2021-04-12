@@ -2,11 +2,10 @@ package asura.core.script.builtin
 
 import asura.common.ScalaTestBaseSpec
 import asura.core.script.JavaScriptEngine
-import jdk.nashorn.api.scripting.NashornScriptEngine
 
 class StringGeneratorSpec extends ScalaTestBaseSpec {
 
-  val engine: NashornScriptEngine = JavaScriptEngine.engine
+  val engine = JavaScriptEngine.engine
 
   test("random") {
     val script = StringGenerator.random
