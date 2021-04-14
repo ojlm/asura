@@ -30,7 +30,11 @@ class PortUnificationServerHandler(
           if (tuple._1 > -1 && tuple._2 > -1) {
             val uri = in.getCharSequence(tuple._1 + 1, tuple._2 - tuple._1 - 1, StandardCharsets.UTF_8).asInstanceOf[String]
             if (proxyConfig.isChrome(uri)) { // chrome
-              switchToHttpProxy(ctx, "127.0.0.1", proxyConfig.localChromePort)
+              if (uri.startsWith("/devtools/page/")) { // websocket
+                switchToTcpProxy(ctx, "127.0.0.1", proxyConfig.localChromePort)
+              } else {
+                switchToHttpProxy(ctx, "127.0.0.1", proxyConfig.localChromePort)
+              }
             } else if (proxyConfig.isWebsockify(uri)) { // vnc server
               switchToHttpProxy(ctx, "127.0.0.1", proxyConfig.localWebsockifyPort)
             } else {
@@ -111,6 +115,12 @@ class PortUnificationServerHandler(
   def switchToHttpProxy(ctx: ChannelHandlerContext, remoteHost: String, remotePort: Int): Unit = {
     val p = ctx.pipeline()
     p.addLast(new ProxyServerConnectHandler(remoteHost, remotePort, true, false))
+    p.remove(this)
+  }
+
+  def switchToTcpProxy(ctx: ChannelHandlerContext, remoteHost: String, remotePort: Int): Unit = {
+    val p = ctx.pipeline()
+    p.addLast(new ProxyServerConnectHandler(remoteHost, remotePort, false, false))
     p.remove(this)
   }
 
