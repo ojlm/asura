@@ -72,7 +72,6 @@ object Dependencies {
 
   private val javaCV = Seq(
     "org.bytedeco" % "javacv" % "1.5.4" excludeAll(
-      ExclusionRule(organization = "org.bytedeco", name = "ffmpeg"),
       ExclusionRule(organization = "org.bytedeco", name = "flandmark"),
       ExclusionRule(organization = "org.bytedeco", name = "flycapture"),
       ExclusionRule(organization = "org.bytedeco", name = "libdc1394"),
@@ -83,7 +82,6 @@ object Dependencies {
       ExclusionRule(organization = "org.bytedeco", name = "videoinput"),
       ExclusionRule(organization = "org.bytedeco", name = "artoolkitplus"),
       ExclusionRule(organization = "org.bytedeco", name = "leptonica"),
-      ExclusionRule(organization = "org.bytedeco", name = "flycapture"),
       ExclusionRule(organization = "org.bytedeco", name = "tesseract"),
     )
   )
