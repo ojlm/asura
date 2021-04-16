@@ -7,7 +7,7 @@ object KarateSpec {
 
   def main(args: Array[String]): Unit = {
     val engine = ScenarioEngine.forTempUse()
-   val actions =   new ScenarioActions(engine)
+    val actions = new ScenarioActions(engine)
     StepRuntime.execute(null, actions)
     val result = KarateRunner.runFeature(text)
     println(result)
