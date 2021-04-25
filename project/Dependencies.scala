@@ -49,8 +49,12 @@ object Dependencies {
   private val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
   private val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
 
+  // graal js
+  val graalvmJsScriptengine = "org.graalvm.js" % "js-scriptengine" % "21.1.0"
+  val graalvmJs = "org.graalvm.js" % "js" % "21.1.0"
+
   // ui
-  private val karate = "com.intuit.karate" % "karate-core" % "1.0.0" excludeAll(
+  private val karate = "com.intuit.karate" % "karate-core" % "1.0.1" excludeAll(
     ExclusionRule(organization = "commons-logging", name = "*"),
     ExclusionRule(organization = "info.cukes", name = "*"),
     ExclusionRule(organization = "info.picocli", name = "*"),
@@ -90,7 +94,7 @@ object Dependencies {
   val clusterDependencies = Seq(akkaCluster, akkaMetrics, akkaClusterTools) ++ commonDependencies
   val coreDependencies = Seq(
     commonsLang3, jackson, elastic4s, druid, kryo,
-    joddCore, jsonPath, swaggerParser, quartz, redisson
+    joddCore, jsonPath, swaggerParser, quartz, redisson, graalvmJs, graalvmJsScriptengine
   ) ++ commonDependencies ++ httpDeps ++ databaseDeps
   val appDependencies = Seq(caffeineLib)
   val namerdDependencies = Seq(akkaStream, akkaHttp) ++ commonDependencies
