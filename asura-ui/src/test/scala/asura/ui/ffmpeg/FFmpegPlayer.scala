@@ -4,14 +4,16 @@ import java.awt.image.BufferedImage
 import java.nio.{ByteBuffer, ShortBuffer}
 import java.util.concurrent.{Executors, TimeUnit}
 
+import javax.sound.sampled.{AudioFormat, AudioSystem, DataLine, SourceDataLine}
+
 import javafx.application.{Application, Platform}
 import javafx.scene.Scene
 import javafx.scene.image.{Image, ImageView, WritableImage}
 import javafx.scene.layout.StackPane
 import javafx.stage.{Stage, StageStyle}
-import javax.sound.sampled.{AudioFormat, AudioSystem, DataLine, SourceDataLine}
 import org.bytedeco.javacv.{FFmpegFrameGrabber, Java2DFrameConverter}
 
+// run with idea: https://openjfx.io/openjfx-docs/#IDE-Intellij
 object FFmpegPlayer {
 
   def main(args: Array[String]): Unit = {
