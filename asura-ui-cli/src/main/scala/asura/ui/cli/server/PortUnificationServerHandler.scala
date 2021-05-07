@@ -9,6 +9,7 @@ import karate.io.netty.handler.codec.ByteToMessageDecoder
 import karate.io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketServerCompressionHandler
 import karate.io.netty.handler.codec.http.websocketx.{WebSocketDecoderConfig, WebSocketServerProtocolConfig, WebSocketServerProtocolHandler}
 import karate.io.netty.handler.codec.http.{HttpObjectAggregator, HttpServerCodec}
+import karate.io.netty.handler.logging.{LogLevel, LoggingHandler}
 import karate.io.netty.handler.ssl.{SslContext, SslHandler}
 import karate.io.netty.handler.stream.ChunkedWriteHandler
 
@@ -16,6 +17,7 @@ class PortUnificationServerHandler(
                                     sslCtx: SslContext,
                                     proxyConfig: ServerProxyConfig,
                                     detectSsl: Boolean = true,
+                                    dumpUnknownProtocol: Boolean = true,
                                   ) extends ByteToMessageDecoder {
 
   override def decode(ctx: ChannelHandlerContext, in: ByteBuf, out: util.List[AnyRef]): Unit = {
@@ -42,8 +44,12 @@ class PortUnificationServerHandler(
             }
           }
         } else {
-          in.skipBytes(in.readableBytes)
-          ctx.close()
+          if (dumpUnknownProtocol) {
+            switchToHexDump(ctx)
+          } else {
+            in.clear()
+            ctx.close()
+          }
         }
       }
     }
@@ -121,6 +127,12 @@ class PortUnificationServerHandler(
   def switchToTcpProxy(ctx: ChannelHandlerContext, remoteHost: String, remotePort: Int): Unit = {
     val p = ctx.pipeline()
     p.addLast(new ProxyServerConnectHandler(remoteHost, remotePort, false, false))
+    p.remove(this)
+  }
+
+  def switchToHexDump(ctx: ChannelHandlerContext): Unit = {
+    val p = ctx.pipeline()
+    p.addLast(new LoggingHandler(LogLevel.INFO))
     p.remove(this)
   }
 
