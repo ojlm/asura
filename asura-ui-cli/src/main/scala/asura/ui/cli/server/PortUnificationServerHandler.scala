@@ -1,24 +1,28 @@
 package asura.ui.cli.server
 
+import java.nio.ByteOrder
 import java.nio.charset.StandardCharsets
 import java.util
 
+import asura.ui.cli.server.PortUnificationServerHandler._
+import com.typesafe.scalalogging.Logger
 import karate.io.netty.buffer.ByteBuf
 import karate.io.netty.channel.ChannelHandlerContext
-import karate.io.netty.handler.codec.ByteToMessageDecoder
 import karate.io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketServerCompressionHandler
 import karate.io.netty.handler.codec.http.websocketx.{WebSocketDecoderConfig, WebSocketServerProtocolConfig, WebSocketServerProtocolHandler}
 import karate.io.netty.handler.codec.http.{HttpObjectAggregator, HttpServerCodec}
+import karate.io.netty.handler.codec.{ByteToMessageDecoder, LengthFieldBasedFrameDecoder}
 import karate.io.netty.handler.logging.{LogLevel, LoggingHandler}
 import karate.io.netty.handler.ssl.{SslContext, SslHandler}
 import karate.io.netty.handler.stream.ChunkedWriteHandler
 
 class PortUnificationServerHandler(
                                     sslCtx: SslContext,
-                                    proxyConfig: ServerProxyConfig,
+                                    config: ServerProxyConfig,
                                     detectSsl: Boolean = true,
-                                    dumpUnknownProtocol: Boolean = true,
                                   ) extends ByteToMessageDecoder {
+
+  import PortUnificationServerHandler.logger
 
   override def decode(ctx: ChannelHandlerContext, in: ByteBuf, out: util.List[AnyRef]): Unit = {
     if (in.readableBytes() >= 5) {
@@ -31,21 +35,23 @@ class PortUnificationServerHandler(
           val tuple = findUrl(in)
           if (tuple._1 > -1 && tuple._2 > -1) {
             val uri = in.getCharSequence(tuple._1 + 1, tuple._2 - tuple._1 - 1, StandardCharsets.UTF_8).asInstanceOf[String]
-            if (proxyConfig.isChrome(uri)) { // chrome
+            if (config.isChrome(uri)) { // chrome
               if (uri.startsWith("/devtools/page/")) { // websocket
-                switchToTcpProxy(ctx, "127.0.0.1", proxyConfig.localChromePort)
+                switchToTcpProxy(ctx, "127.0.0.1", config.localChromePort)
               } else {
-                switchToHttpProxy(ctx, "127.0.0.1", proxyConfig.localChromePort)
+                switchToHttpProxy(ctx, "127.0.0.1", config.localChromePort)
               }
-            } else if (proxyConfig.isWebsockify(uri)) { // vnc server
-              switchToHttpProxy(ctx, "127.0.0.1", proxyConfig.localWebsockifyPort)
+            } else if (config.isWebsockify(uri)) { // vnc server
+              switchToHttpProxy(ctx, "127.0.0.1", config.localWebsockifyPort)
             } else {
               switchToLocalHttp(ctx)
             }
           }
         } else {
-          if (dumpUnknownProtocol) {
-            switchToHexDump(ctx)
+          if (config.enableScrcpy) {
+            if (in.readableBytes() >= SCRCPY_DEVICE_HEADER_LENGTH) {
+              switchToScrcpyProxy(ctx, in)
+            }
           } else {
             in.clear()
             ctx.close()
@@ -87,7 +93,7 @@ class PortUnificationServerHandler(
   def enableSsl(ctx: ChannelHandlerContext): Unit = {
     val pipeline = ctx.pipeline()
     pipeline.addLast(sslCtx.newHandler(ctx.alloc()))
-    pipeline.addLast(new PortUnificationServerHandler(sslCtx, proxyConfig, false))
+    pipeline.addLast(new PortUnificationServerHandler(sslCtx, config, false))
     pipeline.remove(this)
   }
 
@@ -130,10 +136,30 @@ class PortUnificationServerHandler(
     p.remove(this)
   }
 
-  def switchToHexDump(ctx: ChannelHandlerContext): Unit = {
+  def switchToScrcpyProxy(ctx: ChannelHandlerContext, msg: ByteBuf): Unit = {
     val p = ctx.pipeline()
-    p.addLast(new LoggingHandler(LogLevel.INFO))
+    val zeroIdx = msg.indexOf(msg.readerIndex(), SCRCPY_DEVICE_NAME_FIELD_LENGTH, 0)
+    val nameLength = if (zeroIdx > SCRCPY_DEVICE_NAME_FIELD_LENGTH) SCRCPY_DEVICE_NAME_FIELD_LENGTH else zeroIdx - msg.readerIndex()
+    val device = msg.toString(msg.readerIndex(), nameLength, StandardCharsets.UTF_8)
+    msg.skipBytes(SCRCPY_DEVICE_NAME_FIELD_LENGTH)
+    val width = msg.readShort()
+    val height = msg.readShort()
+    logger.info(s"scrcpy connected: $device ${width}x${height}")
+    p.addLast(new LengthFieldBasedFrameDecoder(ByteOrder.BIG_ENDIAN, Integer.MAX_VALUE, 8, 4, 0, 0, true))
+    if (config.dumpScrcpy) {
+      p.addLast(new LoggingHandler(LogLevel.INFO))
+    }
+    p.addLast(new ScrcpyStreamHandler(device))
     p.remove(this)
   }
+
+}
+
+object PortUnificationServerHandler {
+
+  val logger = Logger(getClass)
+  val SCRCPY_DEVICE_NAME_FIELD_LENGTH = 64
+  val SCRCPY_DEVICE_SCREEN_FIELD_LENGTH = 4
+  val SCRCPY_DEVICE_HEADER_LENGTH = SCRCPY_DEVICE_NAME_FIELD_LENGTH + SCRCPY_DEVICE_SCREEN_FIELD_LENGTH
 
 }

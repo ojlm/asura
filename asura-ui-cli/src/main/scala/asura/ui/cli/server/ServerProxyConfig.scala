@@ -4,6 +4,8 @@ case class ServerProxyConfig(
                               enable: Boolean = false,
                               localChromePort: Int = 0,
                               localWebsockifyPort: Int = 0,
+                              enableScrcpy: Boolean = true,
+                              dumpScrcpy: Boolean = false,
                             ) {
 
   def isChrome(uri: String): Boolean = {
