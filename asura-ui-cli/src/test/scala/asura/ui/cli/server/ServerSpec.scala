@@ -1,5 +1,8 @@
 package asura.ui.cli.server
 
+import scala.concurrent.{ExecutionContext, Future}
+
+import asura.ui.cli.codec.VideoStream
 import asura.ui.cli.hub.{FrameSink, StreamFrame, StreamHub}
 
 object ServerSpec {
@@ -12,14 +15,18 @@ object ServerSpec {
   }
 
   def logDevice(name: String): Unit = {
+    val stream = VideoStream.init(null)
     StreamHub.enter(name, new FrameSink {
       override def write(frame: StreamFrame): Boolean = {
-        println(s"$name, pts: ${frame.pts}, size: ${frame.size}, buf: ${frame.content().readableBytes()}")
+        stream.put(frame)
         true
       }
 
       override def close(): Unit = {}
     })
+    Future {
+      stream.run()
+    }(ExecutionContext.global)
   }
 
 }

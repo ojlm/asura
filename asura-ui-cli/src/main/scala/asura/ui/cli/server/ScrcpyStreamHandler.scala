@@ -4,6 +4,7 @@ import asura.ui.cli.hub.{StreamFrame, StreamHub}
 import com.typesafe.scalalogging.Logger
 import karate.io.netty.buffer.ByteBuf
 import karate.io.netty.channel._
+import karate.io.netty.util.ReferenceCountUtil
 
 class ScrcpyStreamHandler(device: String) extends SimpleChannelInboundHandler[ByteBuf] {
 
@@ -22,6 +23,7 @@ class ScrcpyStreamHandler(device: String) extends SimpleChannelInboundHandler[By
     //
     // It is followed by <packet_size> bytes containing the packet/frame.
     val frame = StreamFrame(buf.readLong(), buf.readInt(), buf)
+    ReferenceCountUtil.retain(buf)
     StreamHub.write(sinks, frame)
   }
 
@@ -36,6 +38,7 @@ class ScrcpyStreamHandler(device: String) extends SimpleChannelInboundHandler[By
 object ScrcpyStreamHandler {
 
   val logger = Logger(getClass)
+  val NO_PTS = -1
   val SCRCPY_FRAME_HEADER_PTS_LENGTH = 8
   val SCRCPY_FRAME_HEADER_PACKET_SIZE_LENGTH = 4
   val SCRCPY_FRAME_HEADER_LENGTH = SCRCPY_FRAME_HEADER_PTS_LENGTH + SCRCPY_FRAME_HEADER_PACKET_SIZE_LENGTH
