@@ -1,11 +1,11 @@
 package asura.core.script.builtin
 
 import asura.common.ScalaTestBaseSpec
-import asura.core.script.JavaScriptEngine
+import asura.core.script.JsEngine
 
 class StringGeneratorSpec extends ScalaTestBaseSpec {
 
-  val engine = JavaScriptEngine.engine
+  val engine = JsEngine.global()
 
   test("random") {
     val script = StringGenerator.random

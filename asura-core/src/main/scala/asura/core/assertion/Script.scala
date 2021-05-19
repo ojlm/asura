@@ -4,7 +4,7 @@ import java.util
 
 import asura.core.assertion.engine.{AssertResult, FailAssertResult, PassAssertResult}
 import asura.core.runtime.RuntimeContext
-import asura.core.script.JavaScriptEngine
+import asura.core.script.JsEngine
 
 import scala.concurrent.Future
 
@@ -25,7 +25,7 @@ object Script {
       try {
         val bindings = new util.HashMap[String, Any]()
         bindings.put(RuntimeContext.SELF_VARIABLE, src)
-        val scriptResult = JavaScriptEngine.eval(target.toString, bindings).asInstanceOf[Boolean]
+        val scriptResult = JsEngine.eval(target.toString, bindings).asInstanceOf[Boolean]
         if (scriptResult) {
           PassAssertResult(1)
         } else {

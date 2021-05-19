@@ -2,6 +2,9 @@ package asura.core.scenario.actor
 
 import java.util
 
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
 import akka.actor.ActorRef
 import akka.util.Timeout
 import asura.common.actor.{BaseActor, NotifyActorEvent}
@@ -10,10 +13,7 @@ import asura.core.CoreConfig
 import asura.core.assertion.engine.{AssertionContext, Statistic}
 import asura.core.es.model.ScenarioStep
 import asura.core.runtime.RuntimeContext
-import asura.core.script.{CustomWriter, JavaScriptEngine}
-
-import scala.concurrent.Future
-import scala.concurrent.duration._
+import asura.core.script.JsEngine
 
 trait ScenarioStepBasicActor extends BaseActor {
 
@@ -69,12 +69,12 @@ trait ScenarioStepBasicActor extends BaseActor {
           val bindings = new util.HashMap[String, Any]()
           bindings.put(RuntimeContext.SELF_VARIABLE, runtimeContext.rawContext)
           if (null != wsActor) {
-            JavaScriptEngine.localContext.get().getWriter.asInstanceOf[CustomWriter].log = (output) => {
+            /*JsEngine.localContext.get().getWriter.asInstanceOf[CustomWriter].log = (output) => {
               val msg = s"${consoleLogPrefix(step.`type`, idx)}${XtermUtils.blueWrap(output.toString)}"
               wsActor ! NotifyActorEvent(msg)
-            }
+            }*/
           }
-          val scriptResult = JavaScriptEngine.eval(script, bindings).asInstanceOf[Integer]
+          val scriptResult = JsEngine.eval(script, bindings).asInstanceOf[Integer]
           if (null != scriptResult) {
             jumpTo = sendJumpMsgAndGetJumpStep(scriptResult, step, idx)
           } else {

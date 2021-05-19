@@ -6,7 +6,7 @@ import asura.common.util.StringUtils
 import asura.core.concurrent.ExecutionContextManager.sysGlobal
 import asura.core.es.model.{Environment, VariablesExportItem, VariablesImportItem, VariablesItemExtraData}
 import asura.core.es.service.EnvironmentService
-import asura.core.script.JavaScriptEngine
+import asura.core.script.JsEngine
 import asura.core.script.function.{ArgWithExtraData, Functions}
 import asura.core.util.{JsonPathUtils, StringTemplate}
 
@@ -72,7 +72,7 @@ object RuntimeContext {
           } else {
             val bindings = new java.util.HashMap[String, Any]()
             bindings.put(SELF_VARIABLE, ctx)
-            JavaScriptEngine.eval(tplMacro, bindings)
+            JsEngine.eval(tplMacro, bindings)
           }
         } else {
           StringUtils.EMPTY
@@ -97,7 +97,7 @@ object RuntimeContext {
         } else {
           val bindings = new java.util.HashMap[String, Any]()
           bindings.put(SELF_VARIABLE, ctx)
-          JavaScriptEngine.eval(macroName, bindings)
+          JsEngine.eval(macroName, bindings)
         }
         if (null != bodyString) bodyString.toString else "null"
       })
