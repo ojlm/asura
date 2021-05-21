@@ -15,6 +15,7 @@ import org.bytedeco.javacpp.{BytePointer, IntPointer, Pointer}
 case class VideoStream(
                         decoder: Decoder,
                         recorder: Recorder,
+                        listener: StreamListener,
                       ) {
 
   val stop = new AtomicBoolean(false)
@@ -163,17 +164,9 @@ case class VideoStream(
       if (ret == 0) {
         // a frame was received
         val frame = decoder.videoBuffer.decodingFrame
-        val yPitch = frame.linesize(0)
-        val yPlane = new Array[Byte](yPitch)
-        frame.data(0).get(yPlane)
-        val uPitch = frame.linesize(1)
-        val uPlane = new Array[Byte](uPitch)
-        frame.data(1).get(uPlane)
-        val vPitch = frame.linesize(2)
-        val vPlane = new Array[Byte](vPitch)
-        frame.data(2).get(vPlane)
-        logger.info(s"frame width: ${frame.width()}, height: ${frame.height()}, yPitch: $yPitch, uPitch: $uPitch, vPitch: $vPitch")
-        // TODO: render to image
+        if (listener != null) {
+          listener.onDecoded(frame)
+        }
       } else {
         throw new RuntimeException(s"Could not receive video frame: $ret")
       }
@@ -221,10 +214,10 @@ object VideoStream {
 
   val logger = Logger(getClass)
 
-  def init(recorder: Recorder): VideoStream = {
+  def init(recorder: Recorder, listener: StreamListener): VideoStream = {
     val videoBuffer = VideoBuffer.init(false, FpsCounter.init())
     val decoder = Decoder.init(videoBuffer)
-    VideoStream(decoder, recorder)
+    VideoStream(decoder, recorder, listener)
   }
 
 }
