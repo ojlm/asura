@@ -87,7 +87,13 @@ object Dependencies {
       ExclusionRule(organization = "org.bytedeco", name = "artoolkitplus"),
       ExclusionRule(organization = "org.bytedeco", name = "leptonica"),
       ExclusionRule(organization = "org.bytedeco", name = "tesseract"),
-    )
+      ExclusionRule(organization = "org.openjfx", name = "javafx-graphics"),
+    ),
+    "org.openjfx" % "javafx-graphics" % "16",
+    "org.openjfx" % "javafx-base" % "16" classifier "win",
+    "org.openjfx" % "javafx-graphics" % "16" classifier "win",
+    "org.openjfx" % "javafx-base" % "16" classifier "mac",
+    "org.openjfx" % "javafx-graphics" % "16" classifier "mac"
   )
 
   val commonDependencies = Seq(akkaTestKit, config, akkaActor, jackson, akkaActorTyped, akkaSlf4j, akkaJackson) ++ scalaTestDeps ++ loggingDeps
