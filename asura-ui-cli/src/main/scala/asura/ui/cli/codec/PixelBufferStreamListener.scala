@@ -1,22 +1,24 @@
 package asura.ui.cli.codec
 
+import java.nio.ByteBuffer
+
+import javafx.scene.image.PixelBuffer
 import org.bytedeco.ffmpeg.avutil.AVFrame
 import org.bytedeco.ffmpeg.global.{avutil, swscale}
 import org.bytedeco.ffmpeg.swscale.{SwsContext, SwsFilter}
-import org.bytedeco.javacpp.{DoublePointer, IntPointer, Pointer, PointerPointer}
-import org.bytedeco.opencv.opencv_core.Mat
-import org.opencv.core.CvType
+import org.bytedeco.javacpp._
 
-abstract class ToMatStreamListener(width: Int, height: Int) extends StreamListener {
+abstract class PixelBufferStreamListener(buffer: PixelBuffer[ByteBuffer]) extends StreamListener {
 
+  val width = buffer.getWidth
+  val height = buffer.getHeight
   val context: SwsContext = swscale.sws_getContext(
     width, height, avutil.AV_PIX_FMT_YUV420P,
-    width, height, avutil.AV_PIX_FMT_BGR24,
+    width, height, avutil.AV_PIX_FMT_BGRA,
     0, new SwsFilter(), new SwsFilter(), new DoublePointer()
   )
-  val buffer = new Mat(height, width, CvType.CV_8UC3)
-  val dst = new PointerPointer[Pointer](1L).put(buffer.data())
-  val dstStride = new IntPointer(1L).put(buffer.step1().toInt)
+  val dst = new PointerPointer[Pointer](1).put(new BytePointer(buffer.getBuffer))
+  val dstStride = new IntPointer(1L).put(width * 4)
 
   override def onDecoded(frame: AVFrame): Unit = {
     swscale.sws_scale(
@@ -29,11 +31,10 @@ abstract class ToMatStreamListener(width: Int, height: Int) extends StreamListen
 
   override def close(): Unit = {
     swscale.sws_freeContext(context)
-    buffer.close()
     dst.close()
     dstStride.close()
   }
 
-  def onUpdate(frame: Mat): Unit
+  def onUpdate(frame: PixelBuffer[ByteBuffer]): Unit
 
 }
