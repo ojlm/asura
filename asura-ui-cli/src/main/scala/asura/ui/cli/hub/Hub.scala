@@ -2,29 +2,29 @@ package asura.ui.cli.hub
 
 import java.util.concurrent.ConcurrentHashMap
 
-object StreamHub {
+class Hub[T] {
 
-  private val sinks = new ConcurrentHashMap[String, ConcurrentHashMap[FrameSink, FrameSink]]()
+  private val sinks = new ConcurrentHashMap[String, ConcurrentHashMap[Sink[T], Sink[T]]]()
 
-  def getSinks(name: String): ConcurrentHashMap[FrameSink, FrameSink] = {
+  def getSinks(name: String): ConcurrentHashMap[Sink[T], Sink[T]] = {
     if (sinks.containsKey(name)) {
       sinks.get(name)
     } else {
-      val map = new ConcurrentHashMap[FrameSink, FrameSink]()
+      val map = new ConcurrentHashMap[Sink[T], Sink[T]]()
       val sink = sinks.putIfAbsent(name, map)
       if (sink == null) map else sink
     }
   }
 
-  def enter(name: String, sink: FrameSink): Unit = {
+  def enter(name: String, sink: Sink[T]): Unit = {
     getSinks(name).put(sink, sink)
   }
 
-  def leave(name: String, sink: FrameSink): Unit = {
+  def leave(name: String, sink: Sink[T]): Unit = {
     getSinks(name).remove(sink)
   }
 
-  def write(sinks: ConcurrentHashMap[FrameSink, FrameSink], frame: StreamFrame): Unit = {
+  def write(sinks: ConcurrentHashMap[Sink[T], Sink[T]], frame: T): Unit = {
     sinks.keySet().forEach(sink => sink.write(frame))
   }
 

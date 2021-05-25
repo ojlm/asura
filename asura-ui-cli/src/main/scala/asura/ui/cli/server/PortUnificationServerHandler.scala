@@ -140,16 +140,31 @@ class PortUnificationServerHandler(
     val p = ctx.pipeline()
     val zeroIdx = msg.indexOf(msg.readerIndex(), SCRCPY_DEVICE_NAME_FIELD_LENGTH, 0)
     val nameLength = if (zeroIdx > SCRCPY_DEVICE_NAME_FIELD_LENGTH) SCRCPY_DEVICE_NAME_FIELD_LENGTH else zeroIdx - msg.readerIndex()
+    // "V:${serial}" for video stream or "C:${serial}" for control message stream
     val device = msg.toString(msg.readerIndex(), nameLength, StandardCharsets.UTF_8)
     msg.skipBytes(SCRCPY_DEVICE_NAME_FIELD_LENGTH)
     val width = msg.readShort()
     val height = msg.readShort()
-    logger.info(s"scrcpy connected: $device ${width}x${height}")
-    p.addLast(new LengthFieldBasedFrameDecoder(ByteOrder.BIG_ENDIAN, Integer.MAX_VALUE, 8, 4, 0, 0, true))
-    if (config.dumpScrcpy) {
+    if (device.startsWith("V:")) {
+      val serial = device.substring(2)
+      logger.info(s"scrcpy video connected: $serial ${width}x${height}")
+      p.addLast(new LengthFieldBasedFrameDecoder(ByteOrder.BIG_ENDIAN, Integer.MAX_VALUE, 8, 4, 0, 0, true))
+      if (config.dumpScrcpy) {
+        p.addLast(new LoggingHandler(LogLevel.INFO))
+      }
+      p.addLast(new ScrcpyStreamHandler(serial))
+    } else if (device.startsWith("C:")) {
+      val serial = device.substring(2)
+      logger.info(s"scrcpy control connected: $serial ${width}x${height}")
+      if (config.dumpScrcpy) {
+        p.addLast(new LoggingHandler(LogLevel.INFO))
+      }
+      p.addLast(new LengthFieldBasedFrameDecoder(ByteOrder.BIG_ENDIAN, Integer.MAX_VALUE, 1, 4, 0, 0, true))
+      p.addLast(new ScrcpyMessageCodec())
+      p.addLast(new ScrcpyMessageHandler(serial))
+    } else {
       p.addLast(new LoggingHandler(LogLevel.INFO))
     }
-    p.addLast(new ScrcpyStreamHandler(device))
     p.remove(this)
   }
 

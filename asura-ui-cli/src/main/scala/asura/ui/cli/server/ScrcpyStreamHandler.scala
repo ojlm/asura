@@ -1,6 +1,7 @@
 package asura.ui.cli.server
 
-import asura.ui.cli.hub.{StreamFrame, StreamHub}
+import asura.ui.cli.hub.Hubs.StreamHub
+import asura.ui.cli.hub.StreamFrame
 import com.typesafe.scalalogging.Logger
 import karate.io.netty.buffer.ByteBuf
 import karate.io.netty.channel._
