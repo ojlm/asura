@@ -32,15 +32,19 @@ object ControlMessage {
   val TYPE_SET_SCREEN_POWER_MODE = 9
   val TYPE_ROTATE_DEVICE = 10
 
-  val INJECT_KEYCODE_PAYLOAD_LENGTH = 13
-  val INJECT_TOUCH_EVENT_PAYLOAD_LENGTH = 27
-  val INJECT_SCROLL_EVENT_PAYLOAD_LENGTH = 20
-  val SET_SCREEN_POWER_MODE_PAYLOAD_LENGTH = 1
-  val SET_CLIPBOARD_FIXED_PAYLOAD_LENGTH = 1
+  // 1 byte type + payload
+  val INJECT_KEYCODE_LENGTH = 1 + 13
+  val INJECT_TOUCH_EVENT_LENGTH = 1 + 27
+  val INJECT_SCROLL_EVENT_LENGTH = 1 + 20
+  val SET_SCREEN_POWER_MODE_LENGTH = 1 + 1
+  val SET_CLIPBOARD_FIXED_LENGTH = 1 + 1
   val MESSAGE_MAX_SIZE = 1 << 18 // 256k
   val CLIPBOARD_TEXT_MAX_LENGTH = MESSAGE_MAX_SIZE - 6 // type: 1 byte; paste flag: 1 byte; length: 4 bytes
   val INJECT_TEXT_MAX_LENGTH = 300
 
+  // The video screen size may be different from the real device screen size,
+  // so store to which size the absolute position apply, to scale it
+  // accordingly.
   case class Position(point: Point, screenSize: Size)
 
   def ofType(`type`: Int) = ControlMessage(`type`)
@@ -67,6 +71,14 @@ object ControlMessage {
     msg.pressure = pressure
     msg.position = position
     msg.buttons = buttons
+    msg
+  }
+
+  def ofScrollEvent(position: Position, hScroll: Int, vScroll: Int): ControlMessage = {
+    val msg = ControlMessage(TYPE_INJECT_SCROLL_EVENT)
+    msg.position = position
+    msg.hScroll = hScroll
+    msg.vScroll = vScroll
     msg
   }
 

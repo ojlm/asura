@@ -7,7 +7,6 @@ import asura.ui.cli.codec.VideoStream.logger
 import asura.ui.cli.hub.StreamFrame
 import asura.ui.cli.server.ScrcpyStreamHandler
 import com.typesafe.scalalogging.Logger
-import karate.io.netty.buffer.ByteBufUtil
 import org.bytedeco.ffmpeg.avcodec.{AVCodecContext, AVCodecParserContext, AVPacket}
 import org.bytedeco.ffmpeg.global.{avcodec, avutil}
 import org.bytedeco.javacpp.{BytePointer, IntPointer, Pointer}
@@ -91,8 +90,7 @@ case class VideoStream(
   def codecFrame(frame: StreamFrame): Unit = {
     val packet = new AVPacket()
     avcodec.av_new_packet(packet, frame.size)
-    val bytes = ByteBufUtil.getBytes(frame.content())
-    packet.data().put(bytes: _*)
+    packet.data().put(frame.buf: _*)
     packet.pts(if (frame.pts != ScrcpyStreamHandler.NO_PTS) frame.pts else avutil.AV_NOPTS_VALUE)
     pushPacket(packet)
     avcodec.av_packet_unref(packet)

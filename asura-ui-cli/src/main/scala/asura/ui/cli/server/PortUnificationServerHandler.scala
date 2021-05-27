@@ -162,6 +162,7 @@ class PortUnificationServerHandler(
       p.addLast(new LengthFieldBasedFrameDecoder(ByteOrder.BIG_ENDIAN, Integer.MAX_VALUE, 1, 4, 0, 0, true))
       p.addLast(new ScrcpyMessageCodec())
       p.addLast(new ScrcpyMessageHandler(serial))
+      p.fireChannelActive() // active the ScrcpyMessageHandler
     } else {
       p.addLast(new LoggingHandler(LogLevel.INFO))
     }

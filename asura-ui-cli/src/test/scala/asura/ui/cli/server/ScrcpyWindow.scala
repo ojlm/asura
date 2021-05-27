@@ -31,8 +31,9 @@ object ScrcpyWindow {
 class ScrcpyWindow extends Application {
 
   val device = "bb8695f8"
-  val width = 1440
-  val height = 3120
+  val windowWidth = 280
+  val frameWidth = 1440
+  val frameHeight = 3120
 
   override def start(stage: Stage): Unit = {
     stage.setTitle(device)
@@ -44,8 +45,8 @@ class ScrcpyWindow extends Application {
     imageView.fitHeightProperty().bind(root.heightProperty())
     imageView.setPreserveRatio(true)
     imageView.setFocusTraversable(true)
-    imageView.addEventHandler(EventType.ROOT, WindowEventHandler(device))
-    val scene = new Scene(root, 360, 720)
+    imageView.addEventHandler(EventType.ROOT, WindowEventHandler(device, Size(frameWidth, frameHeight)))
+    val scene = new Scene(root, windowWidth, frameHeight * windowWidth / frameWidth)
     scene.setFill(Color.BLACK)
     stage.setScene(scene)
     stage.show()
@@ -68,8 +69,8 @@ class ScrcpyWindow extends Application {
   }
 
   def pixelBufferListener(imageView: ImageView): StreamListener = {
-    val buffer = ByteBuffer.allocateDirect(width * height * 4)
-    val pixelBuffer = new PixelBuffer[ByteBuffer](width, height, buffer, PixelFormat.getByteBgraPreInstance())
+    val buffer = ByteBuffer.allocateDirect(frameWidth * frameHeight * 4)
+    val pixelBuffer = new PixelBuffer[ByteBuffer](frameWidth, frameHeight, buffer, PixelFormat.getByteBgraPreInstance())
     imageView.setImage(new WritableImage(pixelBuffer))
     val callback = new Callback[PixelBuffer[ByteBuffer], Rectangle2D] {
       override def call(param: PixelBuffer[ByteBuffer]): Rectangle2D = null
@@ -99,7 +100,7 @@ class ScrcpyWindow extends Application {
       new ImageView(wr).getImage
     }
 
-    new ToMatStreamListener(width, height) {
+    new ToMatStreamListener(frameWidth, frameHeight) {
       override def onUpdate(mat: Mat): Unit = {
         println(s"${LocalDateTime.now()}")
         val frame = toMat.convert(mat)
