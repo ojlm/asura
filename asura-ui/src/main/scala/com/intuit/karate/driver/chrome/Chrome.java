@@ -184,7 +184,9 @@ public class Chrome extends DevToolsDriver {
     if (map.containsKey("debuggerUrl")) {
       webSocketUrl = (String) map.get("debuggerUrl");
     } else {
+      Object targetId = map.get("targetId");
       Object startUrl = map.get("startUrl");
+      Object top = map.get("top");
       Http http = options.getHttp();
       Command.waitForHttp(http.urlBase + "/json");
       Response res = http.path("json").get();
@@ -200,10 +202,19 @@ public class Chrome extends DevToolsDriver {
         if (targetUrl == null || targetUrl.startsWith("chrome-")) {
           continue;
         }
-        if (startUrl != null) {
+        if (top != null && top.equals(true)) {
+          webSocketUrl = (String) target.get("webSocketDebuggerUrl");
+          break;
+        } else if (targetId != null) {
+          if (targetId.equals(target.get("id"))) {
+            webSocketUrl = (String) target.get("webSocketDebuggerUrl");
+            break;
+          }
+        } else if (startUrl != null) {
           String targetTitle = (String) target.get("title");
           if (targetUrl.contains(startUrl.toString()) || targetTitle.contains(startUrl.toString())) {
             webSocketUrl = (String) target.get("webSocketDebuggerUrl");
+            break;
           }
         } else {
           String targetType = (String) target.get("type");

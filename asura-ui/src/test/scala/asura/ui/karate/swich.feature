@@ -8,3 +8,6 @@ Feature: Feature Demo
     * print html('body')
     * switch page 'baidu'
     * print html('body')
+    * goto top
+    * print html('body')
+    * driver.close()

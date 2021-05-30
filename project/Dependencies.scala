@@ -59,6 +59,8 @@ object Dependencies {
     ExclusionRule(organization = "info.cukes", name = "*"),
     ExclusionRule(organization = "info.picocli", name = "*"),
   )
+  // for syntax highlight in ide
+  private val cucumber = "info.cukes" % "cucumber-java" % "1.2.6" % Provided
   private val picocli = "info.picocli" % "picocli" % "4.6.1"
 
   // Test dependencies
@@ -106,7 +108,7 @@ object Dependencies {
   val namerdDependencies = Seq(akkaStream, akkaHttp) ++ commonDependencies
   val dubboDependencies = Seq(dubbo, curator, dubboJavassist, dubboJbossNetty, dubboSpring, akkaStream) ++ commonDependencies
   val kafkaDependencies = Seq(akkaStream, akkaKafka, kafkaAvroSerializer) ++ commonDependencies
-  val uiDependencies = Seq(karate, picocli) ++ commonDependencies ++ javaCV
+  val uiDependencies = Seq(karate, cucumber, picocli) ++ commonDependencies ++ javaCV
 
   val commonPlayDeps = Seq(
     guice,

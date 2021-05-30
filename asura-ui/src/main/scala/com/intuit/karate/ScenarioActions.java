@@ -35,6 +35,7 @@ import com.intuit.karate.core.ScenarioEngine;
 import com.intuit.karate.core.ScenarioEngine.NewDriver;
 import com.intuit.karate.core.Variable;
 import com.intuit.karate.driver.DevToolsDriver;
+import com.intuit.karate.driver.DevToolsMessage;
 import com.intuit.karate.driver.Driver;
 import com.intuit.karate.driver.chrome.Chrome;
 
@@ -469,14 +470,43 @@ public class ScenarioActions implements Actions {
     }
   }
 
+  @When("^goto top")
+  public void gotoTop() {
+    Map<String, Object> driverOptions = engine.getConfig().getDriverOptions();
+    NewDriver currentDriver = engine.getCurrentChrome();
+    if (driverOptions != null && currentDriver != null) {
+      driverOptions.put("top", true);
+      ((Chrome) currentDriver.driver).closeClient();
+      Driver chrome = Chrome.start(driverOptions, engine, null, false);
+      engine.setDriver(chrome);
+      if (currentDriver.name != null) {
+        engine.newDrivers.put(currentDriver.name, new NewDriver(currentDriver.name, driverOptions, chrome));
+      }
+    } else {
+      throw new RuntimeException("default driver not configured");
+    }
+  }
+
   @When("^switch page (.+)")
   public void switchPage(String exp) {
     String urlOrTitle = extractStrExp(exp);
     Map<String, Object> driverOptions = engine.getConfig().getDriverOptions();
     NewDriver currentDriver = engine.getCurrentChrome();
     if (driverOptions != null && currentDriver != null) {
+      if (urlOrTitle.matches("-?(0|[1-9]\\d*)")) { // nums
+        DevToolsMessage dtm = ((Chrome) currentDriver.driver).method("Target.getTargets").send();
+        List<Map> targets = dtm.getResult("targetInfos").getValue();
+        int index = Integer.parseInt(urlOrTitle);
+        if (targets.size() > index) {
+          String targetId = (String) targets.get(index).get("targetId");
+          driverOptions.put("targetId", targetId);
+        } else {
+          throw new RuntimeException("only " + targets.size() + " pages.");
+        }
+      } else {
+        driverOptions.put("startUrl", urlOrTitle);
+      }
       ((Chrome) currentDriver.driver).closeClient();
-      driverOptions.put("startUrl", urlOrTitle);
       Driver chrome = Chrome.start(driverOptions, engine, null, false);
       engine.setDriver(chrome);
       if (currentDriver.name != null) {
