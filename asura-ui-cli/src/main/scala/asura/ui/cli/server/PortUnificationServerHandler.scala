@@ -153,7 +153,7 @@ class PortUnificationServerHandler(
       if (config.dumpScrcpy) {
         p.addLast(new LoggingHandler(LogLevel.INFO))
       }
-      p.addLast(new ScrcpyStreamHandler(serial))
+      p.addLast(new ScrcpyVideoHandler(serial))
     } else if (device.startsWith("C:")) {
       val serial = device.substring(2)
       logger.info(s"scrcpy control connected: $serial ${width}x${height}")
@@ -163,10 +163,10 @@ class PortUnificationServerHandler(
       p.addLast(new LengthFieldBasedFrameDecoder(ByteOrder.BIG_ENDIAN, Integer.MAX_VALUE, 1, 4, 0, 0, true))
       p.addLast(new ScrcpyMessageCodec())
       p.addLast(new ScrcpyMessageHandler(serial))
-      p.fireChannelActive() // active the ScrcpyMessageHandler
     } else {
       p.addLast(new LoggingHandler(LogLevel.INFO))
     }
+    p.fireChannelActive()
     p.remove(this)
   }
 

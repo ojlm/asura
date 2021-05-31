@@ -1,13 +1,15 @@
 package asura.ui.cli.codec
 
 case class FpsCounter(
+                       rendered: Int,
+                       skipped: Int,
                        nextTimestamp: Long,
                      )
 
 object FpsCounter {
 
   def init(): FpsCounter = {
-    FpsCounter(0L)
+    FpsCounter(0, 0, 0L)
   }
 
 }

@@ -16,6 +16,11 @@ class Hub[T] {
     }
   }
 
+  def closeAndRemoveSinks(name: String): Unit = {
+    getSinks(name).keySet().forEach(sink => sink.close())
+    sinks.remove(name)
+  }
+
   def enter(name: String, sink: Sink[T]): Unit = {
     getSinks(name).put(sink, sink)
   }

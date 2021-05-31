@@ -29,10 +29,10 @@ object VideoBuffer {
         VideoBuffer(decodingFrame, renderingFrame, renderExpiredFrames, false, true, fpsCounter)
       } else {
         avutil.av_frame_free(decodingFrame)
-        null
+        throw new RuntimeException("Could not allocate rendering frame")
       }
     } else {
-      null
+      throw new RuntimeException("Could not allocate decoding frame")
     }
   }
 

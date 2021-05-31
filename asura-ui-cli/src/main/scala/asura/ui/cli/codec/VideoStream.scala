@@ -4,31 +4,41 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.{BlockingQueue, LinkedBlockingDeque}
 
 import asura.ui.cli.codec.VideoStream.logger
-import asura.ui.cli.hub.StreamFrame
-import asura.ui.cli.server.ScrcpyStreamHandler
+import asura.ui.cli.hub.Hubs.RenderingFrameHub
+import asura.ui.cli.hub.RawH264Packet
+import asura.ui.cli.server.ScrcpyVideoHandler
 import com.typesafe.scalalogging.Logger
 import org.bytedeco.ffmpeg.avcodec.{AVCodecContext, AVCodecParserContext, AVPacket}
 import org.bytedeco.ffmpeg.global.{avcodec, avutil}
 import org.bytedeco.javacpp.{BytePointer, IntPointer, Pointer}
 
-case class VideoStream(
-                        decoder: Decoder,
-                        recorder: Recorder,
-                        listener: StreamListener,
-                      ) {
+case class VideoStream(device: String, decoder: Decoder) extends Runnable {
 
-  val stop = new AtomicBoolean(false)
-  val frames: BlockingQueue[StreamFrame] = new LinkedBlockingDeque()
-  var codecCtx: AVCodecContext = null
-  var parser: AVCodecParserContext = null
-  var hasPending: Boolean = false
-  var pending: AVPacket = null
+  private val sinks = RenderingFrameHub.getSinks(device)
+  private val stopFlag = new AtomicBoolean(false)
+  private val packets: BlockingQueue[RawH264Packet] = new LinkedBlockingDeque()
+  private var codecCtx: AVCodecContext = null
+  private var parser: AVCodecParserContext = null
+  private var hasPending: Boolean = false
+  private var pending: AVPacket = null
+  private var thread: Thread = null
 
-  def put(frame: StreamFrame): Unit = {
-    frames.put(frame)
+  def put(packet: RawH264Packet): Unit = {
+    packets.put(packet)
   }
 
-  def run(): Unit = {
+  def stop(): Unit = {
+    stopFlag.set(true)
+    if (this.thread != null) {
+      this.thread.interrupt()
+    }
+  }
+
+  def setThread(thread: Thread): Unit = {
+    this.thread = thread
+  }
+
+  override def run(): Unit = {
     val codec = avcodec.avcodec_find_decoder(avcodec.AV_CODEC_ID_H264)
     if (codec == null) {
       throw new RuntimeException("H.264 decoder not found")
@@ -41,23 +51,8 @@ case class VideoStream(
       freeCodecCtx()
       throw new RuntimeException("Could not open decoder")
     }
-    if (recorder != null) {
-      if (!recorder.open(codec)) {
-        closeDecoder()
-        freeCodecCtx()
-        throw new RuntimeException("Could not open recorder")
-      }
-      if (!recorder.start()) {
-        closeRecorder()
-        closeDecoder()
-        freeCodecCtx()
-        throw new RuntimeException("Could not start recorder")
-      }
-    }
     parser = avcodec.av_parser_init(avcodec.AV_CODEC_ID_H264)
     if (parser == null) {
-      stopAndJoinRecorder()
-      closeRecorder()
       closeDecoder()
       freeCodecCtx()
       throw new RuntimeException("Could not initialize parser")
@@ -66,20 +61,18 @@ case class VideoStream(
     // It's more complicated, but this allows to reduce the latency by 1 frame!
     parser.flags(parser.flags() | AVCodecParserContext.PARSER_FLAG_COMPLETE_FRAMES)
     try {
-      while (!stop.get()) {
+      while (!stopFlag.get()) {
         try {
-          codecFrame(frames.take())
+          codecPacket(packets.take())
         } catch {
-          case t: Throwable => logger.error("", t)
+          case _: InterruptedException => logger.info(s"$device: Parser is stopped")
+          case t: Throwable => logger.error(s"$device: {}", t)
         }
       }
     } catch {
-      case t: InterruptedException =>
-        logger.error("Interrupted: {}", t)
-      case t: Throwable =>
-        logger.error("{}", t)
+      case t: Throwable => logger.error(s"$device: {}", t)
     }
-    logger.info("End of frames")
+    logger.info(s"$device: End of frames")
     if (hasPending) {
       avcodec.av_packet_unref(pending)
     }
@@ -87,13 +80,13 @@ case class VideoStream(
     clear()
   }
 
-  def codecFrame(frame: StreamFrame): Unit = {
-    val packet = new AVPacket()
-    avcodec.av_new_packet(packet, frame.size)
-    packet.data().put(frame.buf: _*)
-    packet.pts(if (frame.pts != ScrcpyStreamHandler.NO_PTS) frame.pts else avutil.AV_NOPTS_VALUE)
-    pushPacket(packet)
-    avcodec.av_packet_unref(packet)
+  def codecPacket(packet: RawH264Packet): Unit = {
+    val avPacket = new AVPacket()
+    avcodec.av_new_packet(avPacket, packet.size)
+    avPacket.data().put(packet.buf: _*)
+    avPacket.pts(if (packet.pts != ScrcpyVideoHandler.NO_PTS) packet.pts else avutil.AV_NOPTS_VALUE)
+    pushPacket(avPacket)
+    avcodec.av_packet_unref(avPacket)
   }
 
   def pushPacket(packet: AVPacket): Unit = {
@@ -137,8 +130,8 @@ case class VideoStream(
   }
 
   def processConfigPacket(packet: AVPacket): Unit = {
-    logger.info("process config packet")
-    // TODO: recorder
+    logger.info(s"$device: Process config packet")
+    // TODO: recorder , save sps,pps non-vcl
   }
 
   def processDataPacket(packet: AVPacket): Unit = {
@@ -162,28 +155,16 @@ case class VideoStream(
       if (ret == 0) {
         // a frame was received
         val frame = decoder.videoBuffer.decodingFrame
-        if (listener != null) {
-          listener.onDecoded(frame)
-        }
+        //        if (listener != null) {
+        //          listener.onDecoded(frame)
+        //        }
+        // TODO: ,swap renderingFrame, pub to hubs, renderingFrame
+        RenderingFrameHub.write(sinks, frame)
       } else {
         throw new RuntimeException(s"Could not receive video frame: $ret")
       }
     } else {
       throw new RuntimeException("Parse2 error")
-    }
-  }
-
-  def stopAndJoinRecorder(): Unit = {
-    if (recorder != null) {
-      recorder.stop()
-      logger.info("Finishing recording...")
-      recorder.join()
-    }
-  }
-
-  def closeRecorder(): Unit = {
-    if (recorder != null) {
-      recorder.close()
     }
   }
 
@@ -200,8 +181,6 @@ case class VideoStream(
   }
 
   def clear(): Unit = {
-    stopAndJoinRecorder()
-    closeRecorder()
     closeDecoder()
     freeCodecCtx()
   }
@@ -212,10 +191,18 @@ object VideoStream {
 
   val logger = Logger(getClass)
 
-  def init(recorder: Recorder, listener: StreamListener): VideoStream = {
-    val videoBuffer = VideoBuffer.init(false, FpsCounter.init())
+  def init(device: String, renderExpiredFrames: Boolean = false): VideoStream = {
+    val videoBuffer = VideoBuffer.init(renderExpiredFrames, FpsCounter.init())
     val decoder = Decoder.init(videoBuffer)
-    VideoStream(decoder, recorder, listener)
+    VideoStream(device, decoder)
+  }
+
+  def startThread(device: String, renderExpiredFrames: Boolean = false): VideoStream = {
+    val stream = init(device, renderExpiredFrames)
+    val thread = new Thread(stream, s"video-decoder-$device")
+    stream.setThread(thread)
+    thread.start()
+    stream
   }
 
 }

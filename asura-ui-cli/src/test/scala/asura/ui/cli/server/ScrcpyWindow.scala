@@ -4,11 +4,8 @@ import java.awt.image.BufferedImage
 import java.nio.ByteBuffer
 import java.time.LocalDateTime
 
-import scala.concurrent.{ExecutionContext, Future}
-
 import asura.ui.cli.codec._
-import asura.ui.cli.hub.Hubs.StreamHub
-import asura.ui.cli.hub.{Sink, StreamFrame}
+import asura.ui.cli.hub.Hubs.RenderingFrameHub
 import javafx.application.{Application, Platform}
 import javafx.event.EventType
 import javafx.geometry.Rectangle2D
@@ -51,16 +48,7 @@ class ScrcpyWindow extends Application {
     stage.setScene(scene)
     stage.show()
     Server(8080, ServerProxyConfig(true, 9221, 5901, true, false)).start()
-    val stream = VideoStream.init(null, pixelBufferListener(imageView))
-    StreamHub.enter(device, new Sink[StreamFrame] {
-      override def write(frame: StreamFrame): Boolean = {
-        stream.put(frame)
-        true
-      }
-    })
-    Future {
-      stream.run()
-    }(ExecutionContext.global)
+    RenderingFrameHub.enter(device, pixelBufferListener(imageView))
   }
 
   override def stop(): Unit = {
@@ -68,7 +56,7 @@ class ScrcpyWindow extends Application {
     System.exit(0)
   }
 
-  def pixelBufferListener(imageView: ImageView): StreamListener = {
+  def pixelBufferListener(imageView: ImageView): PixelBufferStreamListener = {
     val buffer = ByteBuffer.allocateDirect(frameWidth * frameHeight * 4)
     val pixelBuffer = new PixelBuffer[ByteBuffer](frameWidth, frameHeight, buffer, PixelFormat.getByteBgraPreInstance())
     imageView.setImage(new WritableImage(pixelBuffer))
@@ -76,16 +64,17 @@ class ScrcpyWindow extends Application {
       override def call(param: PixelBuffer[ByteBuffer]): Rectangle2D = null
     }
     new PixelBufferStreamListener(pixelBuffer) {
-      override def onUpdate(frame: PixelBuffer[ByteBuffer]): Unit = {
+      override def onUpdate(frame: PixelBuffer[ByteBuffer]): Boolean = {
         // println(s"${LocalDateTime.now()}")
         Platform.runLater(() => {
           frame.updateBuffer(callback)
         })
+        true
       }
     }
   }
 
-  def matListener(imageView: ImageView): StreamListener = {
+  def matListener(imageView: ImageView): ToMatStreamListener = {
     val toMat = new ToMat()
     val toJava2DFrame = new Java2DFrameConverter()
 
@@ -101,10 +90,11 @@ class ScrcpyWindow extends Application {
     }
 
     new ToMatStreamListener(frameWidth, frameHeight) {
-      override def onUpdate(mat: Mat): Unit = {
+      override def onUpdate(mat: Mat): Boolean = {
         println(s"${LocalDateTime.now()}")
         val frame = toMat.convert(mat)
         imageView.setImage(convertToFxImage(toJava2DFrame.convert(frame)))
+        true
       }
     }
   }

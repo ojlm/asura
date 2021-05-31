@@ -1,14 +1,17 @@
 package asura.ui.cli.server
 
-import asura.ui.cli.hub.Hubs.StreamHub
-import asura.ui.cli.hub.StreamFrame
+import asura.ui.cli.codec.VideoStream
+import asura.ui.cli.hub.Hubs.RawH264StreamHub
+import asura.ui.cli.hub.RawH264Packet
+import asura.ui.cli.server.ScrcpyVideoHandler.logger
 import com.typesafe.scalalogging.Logger
 import karate.io.netty.buffer.{ByteBuf, ByteBufUtil}
 import karate.io.netty.channel._
 
-class ScrcpyStreamHandler(device: String) extends SimpleChannelInboundHandler[ByteBuf] {
+class ScrcpyVideoHandler(device: String) extends SimpleChannelInboundHandler[ByteBuf] {
 
-  private val sinks = StreamHub.getSinks(device)
+  private val stream = VideoStream.startThread(device)
+  private val sinks = RawH264StreamHub.getSinks(device)
 
   override def channelRead0(channelHandlerContext: ChannelHandlerContext, buf: ByteBuf): Unit = {
     // The video stream contains raw packets, without time information. When we
@@ -22,19 +25,28 @@ class ScrcpyStreamHandler(device: String) extends SimpleChannelInboundHandler[By
     //                    size
     //
     // It is followed by <packet_size> bytes containing the packet/frame.
-    val frame = StreamFrame(buf.readLong(), buf.readInt(), ByteBufUtil.getBytes(buf))
-    StreamHub.write(sinks, frame)
+    val packet = RawH264Packet(buf.readLong(), buf.readInt(), ByteBufUtil.getBytes(buf))
+    // TODO: reuse the ByteBuf
+    stream.put(packet)
+    RawH264StreamHub.write(sinks, packet)
+  }
+
+
+  override def channelActive(ctx: ChannelHandlerContext): Unit = {
+    super.channelActive(ctx)
+    logger.info(s"$device: Screen is online")
   }
 
   override def channelInactive(ctx: ChannelHandlerContext): Unit = {
+    stream.stop()
+    RawH264StreamHub.closeAndRemoveSinks(device)
     super.channelInactive(ctx)
     ctx.channel().close()
-    // TODO: clear sinks
   }
 
 }
 
-object ScrcpyStreamHandler {
+object ScrcpyVideoHandler {
 
   val logger = Logger(getClass)
   val NO_PTS = -1

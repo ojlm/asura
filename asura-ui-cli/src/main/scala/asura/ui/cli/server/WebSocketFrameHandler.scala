@@ -1,13 +1,13 @@
 package asura.ui.cli.server
 
 import asura.common.util.StringUtils
-import asura.ui.cli.hub.Hubs.StreamHub
-import asura.ui.cli.hub.{Sink, StreamFrame}
+import asura.ui.cli.hub.Hubs.RawH264StreamHub
+import asura.ui.cli.hub.{RawH264Packet, Sink}
 import karate.io.netty.channel.{Channel, ChannelHandlerContext, SimpleChannelInboundHandler}
 import karate.io.netty.handler.codec.http.QueryStringDecoder
 import karate.io.netty.handler.codec.http.websocketx.{BinaryWebSocketFrame, TextWebSocketFrame, WebSocketFrame, WebSocketServerProtocolHandler}
 
-class WebSocketFrameHandler extends SimpleChannelInboundHandler[WebSocketFrame] with Sink[StreamFrame] {
+class WebSocketFrameHandler extends SimpleChannelInboundHandler[WebSocketFrame] with Sink[RawH264Packet] {
 
   val DEVICE_URL_PATH_PREFIX = "/api/ws/device/"
   var device: String = null
@@ -20,7 +20,7 @@ class WebSocketFrameHandler extends SimpleChannelInboundHandler[WebSocketFrame] 
       val path = uri.path()
       if (path.startsWith(DEVICE_URL_PATH_PREFIX)) {
         device = path.substring(DEVICE_URL_PATH_PREFIX.length)
-        StreamHub.enter(device, this)
+        RawH264StreamHub.enter(device, this)
       }
     }
     super.userEventTriggered(ctx, evt)
@@ -40,7 +40,7 @@ class WebSocketFrameHandler extends SimpleChannelInboundHandler[WebSocketFrame] 
     }
   }
 
-  override def write(frame: StreamFrame): Boolean = {
+  override def write(frame: RawH264Packet): Boolean = {
     if (chn.isActive && chn.isWritable) {
       // TODO: need write SPS and PPS units first
       // TODO: reduce heap bytes gc
@@ -66,7 +66,7 @@ class WebSocketFrameHandler extends SimpleChannelInboundHandler[WebSocketFrame] 
   override def channelInactive(ctx: ChannelHandlerContext): Unit = {
     super.channelInactive(ctx)
     if (StringUtils.isNotEmpty(device)) {
-      StreamHub.leave(device, this)
+      RawH264StreamHub.leave(device, this)
     }
   }
 

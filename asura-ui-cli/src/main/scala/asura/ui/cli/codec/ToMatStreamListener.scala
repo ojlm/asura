@@ -1,5 +1,6 @@
 package asura.ui.cli.codec
 
+import asura.ui.cli.hub.Sink
 import org.bytedeco.ffmpeg.avutil.AVFrame
 import org.bytedeco.ffmpeg.global.{avutil, swscale}
 import org.bytedeco.ffmpeg.swscale.{SwsContext, SwsFilter}
@@ -7,7 +8,7 @@ import org.bytedeco.javacpp.{DoublePointer, IntPointer, Pointer, PointerPointer}
 import org.bytedeco.opencv.opencv_core.Mat
 import org.opencv.core.CvType
 
-abstract class ToMatStreamListener(width: Int, height: Int) extends StreamListener {
+abstract class ToMatStreamListener(width: Int, height: Int) extends Sink[AVFrame] {
 
   val context: SwsContext = swscale.sws_getContext(
     width, height, avutil.AV_PIX_FMT_YUV420P,
@@ -18,7 +19,7 @@ abstract class ToMatStreamListener(width: Int, height: Int) extends StreamListen
   val dst = new PointerPointer[Pointer](1L).put(buffer.data())
   val dstStride = new IntPointer(1L).put(buffer.step1().toInt)
 
-  override def onDecoded(frame: AVFrame): Unit = {
+  override def write(frame: AVFrame): Boolean = {
     swscale.sws_scale(
       context, frame.data(), frame.linesize(),
       0, height,
@@ -34,6 +35,6 @@ abstract class ToMatStreamListener(width: Int, height: Int) extends StreamListen
     dstStride.close()
   }
 
-  def onUpdate(frame: Mat): Unit
+  def onUpdate(frame: Mat): Boolean
 
 }
