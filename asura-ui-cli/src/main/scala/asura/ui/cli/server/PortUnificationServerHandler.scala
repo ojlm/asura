@@ -122,6 +122,7 @@ class PortUnificationServerHandler(
     p.addLast(new HttpPageHandler(false))
     p.addLast(new WebSocketFrameHandler())
     p.remove(this)
+    p.fireChannelActive()
   }
 
   def switchToHttpProxy(ctx: ChannelHandlerContext, remoteHost: String, remotePort: Int): Unit = {
