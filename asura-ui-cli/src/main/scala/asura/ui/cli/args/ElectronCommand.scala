@@ -10,7 +10,7 @@ import picocli.CommandLine.{Command, Mixin, Option}
   name = "electron",
   description = Array("Debug a local electron app"),
 )
-class ElectronCommand extends SubBaseCommand {
+class ElectronCommand extends ServerBaseCommand {
 
   @JsonIgnore
   val logger = Logger(classOf[ElectronCommand])

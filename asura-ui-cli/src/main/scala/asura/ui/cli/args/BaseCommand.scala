@@ -5,7 +5,7 @@ import java.util.concurrent.Callable
 import picocli.CommandLine.Command
 
 @Command(
-  version = Array("asura-ui 0.8.0"),
+  version = Array("indigo 0.8.0"),
   mixinStandardHelpOptions = true,
   sortOptions = false,
   synopsisHeading = "%n@|bold Usage|@:%n",

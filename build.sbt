@@ -53,6 +53,7 @@ lazy val ui = asuraProjects("asura-ui")
   .dependsOn(common % "compile->compile;test->test")
 
 lazy val cli = asuraProjects("asura-ui-cli")
+  .settings(libraryDependencies ++= uiCliDependencies)
   .dependsOn(ui % "compile->compile;test->test")
 
 lazy val core = asuraProjects("asura-core")

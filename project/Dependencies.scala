@@ -62,6 +62,7 @@ object Dependencies {
   // for syntax highlight in ide
   private val cucumber = "info.cukes" % "cucumber-java" % "1.2.6" % Provided
   private val picocli = "info.picocli" % "picocli" % "4.6.1"
+  private val jadb = "com.github.vidstige" % "jadb" % "1.2.1"
 
   // Test dependencies
   private val akkaTestKit = "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test
@@ -109,6 +110,7 @@ object Dependencies {
   val dubboDependencies = Seq(dubbo, curator, dubboJavassist, dubboJbossNetty, dubboSpring, akkaStream) ++ commonDependencies
   val kafkaDependencies = Seq(akkaStream, akkaKafka, kafkaAvroSerializer) ++ commonDependencies
   val uiDependencies = Seq(karate, cucumber, picocli) ++ commonDependencies ++ javaCV
+  val uiCliDependencies = Seq(jadb)
 
   val commonPlayDeps = Seq(
     guice,

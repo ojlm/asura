@@ -5,13 +5,14 @@ import java.io.File
 import picocli.CommandLine.{Command, Mixin, Option}
 
 @Command(
-  header = Array("@|bold,cyan asura-ui 0.8.0 |@"),
-  name = "asura-ui",
+  header = Array("@|bold,cyan indigo 0.8.0 |@"),
+  name = "indigo",
   description = Array("Hold local chrome, adb, electron..."),
   subcommands = Array(
     classOf[ChromeCommand],
     classOf[ElectronCommand],
     classOf[MonkeyCommand],
+    classOf[AndroidCommand],
   ),
   footer = Array(
     "",

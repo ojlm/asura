@@ -10,7 +10,7 @@ import picocli.CommandLine.{Command, Mixin, Option}
   name = "chrome",
   description = Array("Control the local chrome life cycle"),
 )
-class ChromeCommand extends SubBaseCommand {
+class ChromeCommand extends ServerBaseCommand {
 
   @JsonIgnore
   val logger = Logger(classOf[ChromeCommand])
