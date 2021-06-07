@@ -1,9 +1,9 @@
-package asura.core.util
+package asura.common.codec
 
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.{Input, Output}
 
-object KryoUtils {
+object KryoCodec {
 
   private val localInstance: ThreadLocal[Kryo] = ThreadLocal.withInitial(() => {
     val kryo: Kryo = new Kryo()

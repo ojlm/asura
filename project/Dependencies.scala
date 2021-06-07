@@ -26,7 +26,7 @@ object Dependencies {
   private val jsonPath = "com.jayway.jsonpath" % "json-path" % "2.5.0"
 
   val caffeineLib = "com.github.ben-manes.caffeine" % "caffeine" % "2.8.4"
-  val kryo = "com.esotericsoftware" % "kryo" % "5.0.3"
+  val kryo = "com.esotericsoftware" % "kryo" % "5.1.1"
 
   // kafka
   private val akkaKafka = "com.typesafe.akka" %% "akka-stream-kafka" % "2.0.5"
@@ -99,10 +99,10 @@ object Dependencies {
     "org.openjfx" % "javafx-graphics" % "16" classifier "mac"
   )
 
-  val commonDependencies = Seq(akkaTestKit, config, akkaActor, jackson, akkaActorTyped, akkaSlf4j, akkaJackson) ++ scalaTestDeps ++ loggingDeps
+  val commonDependencies = Seq(akkaTestKit, config, akkaActor, jackson, akkaActorTyped, akkaSlf4j, akkaJackson, kryo) ++ scalaTestDeps ++ loggingDeps
   val clusterDependencies = Seq(akkaCluster, akkaMetrics, akkaClusterTools) ++ commonDependencies
   val coreDependencies = Seq(
-    commonsLang3, jackson, elastic4s, druid, kryo,
+    commonsLang3, jackson, elastic4s, druid,
     joddCore, jsonPath, swaggerParser, quartz, redisson, graalvmJs, graalvmJsScriptengine
   ) ++ commonDependencies ++ httpDeps ++ databaseDeps
   val appDependencies = Seq(caffeineLib)
@@ -110,7 +110,7 @@ object Dependencies {
   val dubboDependencies = Seq(dubbo, curator, dubboJavassist, dubboJbossNetty, dubboSpring, akkaStream) ++ commonDependencies
   val kafkaDependencies = Seq(akkaStream, akkaKafka, kafkaAvroSerializer) ++ commonDependencies
   val uiDependencies = Seq(karate, cucumber, picocli) ++ commonDependencies ++ javaCV
-  val uiCliDependencies = Seq(jadb)
+  val uiCliDependencies = Seq(jadb) ++ uiDependencies
 
   val commonPlayDeps = Seq(
     guice,
