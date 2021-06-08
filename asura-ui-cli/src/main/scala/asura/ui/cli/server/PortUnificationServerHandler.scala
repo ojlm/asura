@@ -7,7 +7,7 @@ import java.util
 import asura.ui.cli.server.PortUnificationServerHandler._
 import com.typesafe.scalalogging.Logger
 import karate.io.netty.buffer.ByteBuf
-import karate.io.netty.channel.ChannelHandlerContext
+import karate.io.netty.channel.{ChannelHandlerContext, ChannelPipeline}
 import karate.io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketServerCompressionHandler
 import karate.io.netty.handler.codec.http.websocketx.{WebSocketDecoderConfig, WebSocketServerProtocolConfig, WebSocketServerProtocolHandler}
 import karate.io.netty.handler.codec.http.{HttpObjectAggregator, HttpServerCodec}
@@ -50,7 +50,7 @@ class PortUnificationServerHandler(
         } else {
           if (config.enableScrcpy) {
             if (in.readableBytes() >= SCRCPY_DEVICE_HEADER_LENGTH) {
-              switchToScrcpyProxy(ctx, in)
+              switchToAppProxy(ctx, in)
             }
           } else {
             in.clear()
@@ -137,17 +137,23 @@ class PortUnificationServerHandler(
     p.remove(this)
   }
 
-  def switchToScrcpyProxy(ctx: ChannelHandlerContext, msg: ByteBuf): Unit = {
+  def switchToAppProxy(ctx: ChannelHandlerContext, msg: ByteBuf): Unit = {
     val p = ctx.pipeline()
     val zeroIdx = msg.indexOf(msg.readerIndex(), SCRCPY_DEVICE_NAME_FIELD_LENGTH, 0)
     val nameLength = if (zeroIdx > SCRCPY_DEVICE_NAME_FIELD_LENGTH) SCRCPY_DEVICE_NAME_FIELD_LENGTH else zeroIdx - msg.readerIndex()
-    // "V:${serial}" for video stream or "C:${serial}" for control message stream
+    // "${prefix}:${serial}". prefix: 'I'(indigo), 'A'(appium), 'V'(scrcpy video), 'C'(scrcpy control)
     val device = msg.toString(msg.readerIndex(), nameLength, StandardCharsets.UTF_8)
     msg.skipBytes(SCRCPY_DEVICE_NAME_FIELD_LENGTH)
     val width = msg.readShort()
     val height = msg.readShort()
-    if (device.startsWith("V:")) {
-      val serial = device.substring(2)
+    val serial = device.substring(2)
+    if (device.startsWith("I:")) {
+      logger.info(s"indigo controller connected: $serial ${width}x${height}")
+      addIndigoHandler(p, serial, true)
+    } else if (device.startsWith("A:")) {
+      logger.info(s"indigo appium connected: $serial ${width}x${height}")
+      addIndigoHandler(p, serial, false)
+    } else if (device.startsWith("V:")) {
       logger.info(s"scrcpy video connected: $serial ${width}x${height}")
       p.addLast(new LengthFieldBasedFrameDecoder(ByteOrder.BIG_ENDIAN, Integer.MAX_VALUE, 8, 4, 0, 0, true))
       if (config.dumpScrcpy) {
@@ -155,7 +161,6 @@ class PortUnificationServerHandler(
       }
       p.addLast(new ScrcpyVideoHandler(serial))
     } else if (device.startsWith("C:")) {
-      val serial = device.substring(2)
       logger.info(s"scrcpy control connected: $serial ${width}x${height}")
       if (config.dumpScrcpy) {
         p.addLast(new LoggingHandler(LogLevel.INFO))
@@ -168,6 +173,12 @@ class PortUnificationServerHandler(
     }
     p.fireChannelActive()
     p.remove(this)
+  }
+
+  def addIndigoHandler(p: ChannelPipeline, device: String, isController: Boolean): Unit = {
+    p.addLast(new LengthFieldBasedFrameDecoder(ByteOrder.BIG_ENDIAN, Integer.MAX_VALUE, 0, 4, 0, 4, true))
+    p.addLast(new IndigoMessageCodec())
+    p.addLast(new IndigoMessageHandler(device, isController))
   }
 
 }

@@ -1,5 +1,6 @@
 package asura.ui.cli.hub
 
+import asura.ui.cli.message.IndigoMessage
 import org.bytedeco.ffmpeg.avutil.AVFrame
 
 object Hubs {
@@ -12,5 +13,7 @@ object Hubs {
   val ReceiverHub = new Hub[DeviceMessage]()
   // rendering frame, send to web,windows,recorder...
   val RenderingFrameHub = new Hub[AVFrame]
+  val IndigoControllerHub = new Hub[IndigoMessage]()
+  val IndigoAppiumHub = new Hub[IndigoMessage]()
 
 }
