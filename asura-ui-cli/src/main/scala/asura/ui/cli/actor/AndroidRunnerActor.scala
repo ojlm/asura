@@ -10,7 +10,7 @@ import akka.actor.{Props, Terminated}
 import asura.common.actor.BaseActor
 import asura.common.util.StringUtils
 import asura.ui.cli.actor.AndroidRunnerActor.ScanDevicesMessage
-import asura.ui.cli.runner.AndroidRunner.{ConfigParams, logger}
+import asura.ui.cli.runner.AndroidRunner.ConfigParams
 import se.vidstige.jadb.{JadbConnection, JadbDevice}
 
 class AndroidRunnerActor(
@@ -24,13 +24,13 @@ class AndroidRunnerActor(
       devices.forEach(device => {
         val childOpt = context.child(device.getSerial)
         if (childOpt.isEmpty) {
-          val deviceActor = context.actorOf(AndroidDeviceActor.props(device), device.getSerial)
-          logger.info(s"watch new device: ${deviceActor.path.name}")
+          val deviceActor = context.actorOf(AndroidDeviceActor.props(device, params), device.getSerial)
+          log.info(s"watch new device: ${deviceActor.path.name}")
           context.watch(deviceActor)
         }
       })
     case Terminated(actor) =>
-      logger.info(s"${actor.path.name} is offline.")
+      log.info(s"${actor.path.name} is offline.")
     case msg =>
       log.error(s"Unknown message: ${msg.getClass.getSimpleName}")
   }
@@ -52,16 +52,16 @@ class AndroidRunnerActor(
         if (StringUtils.isNotEmpty(params.serial)) {
           devices = devices.stream()
             .filter(device => device.getSerial.equals(params.serial))
-            .collect(Collectors.toList[JadbDevice]);
+            .collect(Collectors.toList[JadbDevice])
           if (devices.isEmpty) {
-            logger.error(s"Can't find device: ${params.serial}")
+            log.error(s"Can't find device: ${params.serial}")
             sys.exit(0)
           }
         }
         self ! ScanDevicesMessage(devices)
       } catch {
         case t: Throwable =>
-          logger.error(s"getDevices error, please confirm the adb server is started: ${t.getMessage}")
+          log.error(s"getDevices error, please confirm the adb server is started: ${t.getMessage}")
       }
     }
   }

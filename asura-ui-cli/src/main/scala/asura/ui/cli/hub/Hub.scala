@@ -29,6 +29,10 @@ class Hub[T] {
     getSinks(name).remove(sink)
   }
 
+  def active(name: String, params: Object): Unit = {
+    getSinks(name).keySet().forEach(sink => sink.active(params))
+  }
+
   def write(sinks: ConcurrentHashMap[Sink[T], Sink[T]], frame: T): Unit = {
     sinks.keySet().forEach(sink => sink.write(frame))
   }

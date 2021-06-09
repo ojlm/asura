@@ -159,7 +159,7 @@ class PortUnificationServerHandler(
       if (config.dumpScrcpy) {
         p.addLast(new LoggingHandler(LogLevel.INFO))
       }
-      p.addLast(new ScrcpyVideoHandler(serial))
+      p.addLast(new ScrcpyVideoHandler(serial, width, height))
     } else if (device.startsWith("C:")) {
       logger.info(s"scrcpy control connected: $serial ${width}x${height}")
       if (config.dumpScrcpy) {

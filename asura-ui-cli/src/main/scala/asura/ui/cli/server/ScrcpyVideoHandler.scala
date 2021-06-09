@@ -1,14 +1,14 @@
 package asura.ui.cli.server
 
-import asura.ui.cli.codec.VideoStream
-import asura.ui.cli.hub.Hubs.RawH264StreamHub
+import asura.ui.cli.codec.{Size, VideoStream}
+import asura.ui.cli.hub.Hubs.{RawH264StreamHub, RenderingFrameHub}
 import asura.ui.cli.hub.RawH264Packet
 import asura.ui.cli.server.ScrcpyVideoHandler.logger
 import com.typesafe.scalalogging.Logger
 import karate.io.netty.buffer.{ByteBuf, ByteBufUtil}
 import karate.io.netty.channel._
 
-class ScrcpyVideoHandler(device: String) extends SimpleChannelInboundHandler[ByteBuf] {
+class ScrcpyVideoHandler(device: String, width: Int, height: Int) extends SimpleChannelInboundHandler[ByteBuf] {
 
   private val stream = VideoStream.startThread(device)
   private val sinks = RawH264StreamHub.getSinks(device)
@@ -31,10 +31,10 @@ class ScrcpyVideoHandler(device: String) extends SimpleChannelInboundHandler[Byt
     RawH264StreamHub.write(sinks, packet)
   }
 
-
   override def channelActive(ctx: ChannelHandlerContext): Unit = {
     super.channelActive(ctx)
     logger.info(s"$device: Screen is online")
+    RenderingFrameHub.active(device, Size(width, height))
   }
 
   override def channelInactive(ctx: ChannelHandlerContext): Unit = {

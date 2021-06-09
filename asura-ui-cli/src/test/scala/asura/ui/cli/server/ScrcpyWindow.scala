@@ -6,6 +6,7 @@ import java.time.LocalDateTime
 
 import asura.ui.cli.codec._
 import asura.ui.cli.hub.Hubs.RenderingFrameHub
+import asura.ui.cli.window.BgraPixelBufferStreamListener
 import javafx.application.{Application, Platform}
 import javafx.event.EventType
 import javafx.geometry.Rectangle2D
@@ -56,14 +57,14 @@ class ScrcpyWindow extends Application {
     System.exit(0)
   }
 
-  def pixelBufferListener(imageView: ImageView): PixelBufferStreamListener = {
+  def pixelBufferListener(imageView: ImageView): BgraPixelBufferStreamListener = {
     val buffer = ByteBuffer.allocateDirect(frameWidth * frameHeight * 4)
     val pixelBuffer = new PixelBuffer[ByteBuffer](frameWidth, frameHeight, buffer, PixelFormat.getByteBgraPreInstance())
     imageView.setImage(new WritableImage(pixelBuffer))
     val callback = new Callback[PixelBuffer[ByteBuffer], Rectangle2D] {
       override def call(param: PixelBuffer[ByteBuffer]): Rectangle2D = null
     }
-    new PixelBufferStreamListener(pixelBuffer) {
+    new BgraPixelBufferStreamListener(pixelBuffer) {
       override def onUpdate(frame: PixelBuffer[ByteBuffer]): Boolean = {
         // println(s"${LocalDateTime.now()}")
         Platform.runLater(() => {
