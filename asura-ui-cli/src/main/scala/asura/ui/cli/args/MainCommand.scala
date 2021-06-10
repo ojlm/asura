@@ -9,6 +9,7 @@ import picocli.CommandLine.{Command, Mixin, Option}
   name = "indigo",
   description = Array("Hold local chrome, adb, electron..."),
   subcommands = Array(
+    classOf[KarateCommand],
     classOf[ChromeCommand],
     classOf[ElectronCommand],
     classOf[MonkeyCommand],
