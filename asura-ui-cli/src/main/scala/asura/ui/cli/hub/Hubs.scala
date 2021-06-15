@@ -15,5 +15,6 @@ object Hubs {
   val RenderingFrameHub = new Hub[AVFrame]
   val IndigoControllerHub = new Hub[IndigoMessage]()
   val IndigoAppiumHub = new Hub[IndigoMessage]()
+  val DeviceWdHub = new Hub[IndigoMessage]()
 
 }

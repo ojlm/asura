@@ -20,25 +20,30 @@ class HttpPageHandler(enableKeepAlive: Boolean) extends SimpleChannelInboundHand
     if (!req.decoderResult().isSuccess) {
       sendError(ctx, req, BAD_REQUEST)
     } else {
-      if (!HttpMethod.GET.equals(req.method())) {
-        sendError(ctx, req, METHOD_NOT_ALLOWED)
-      } else {
-        val sendIndexPage = () => {
-          if (INDEX_FILE_URL == null) {
-            sendError(ctx, req, NOT_FOUND)
-          } else {
-            sendFile(ctx, req, getSteamFromStaticResource(STATIC_INDEX_FILE_PATH), STATIC_INDEX_FILE_PATH)
-          }
-        }
-        val path = sanitizeUri(req.uri())
-        if (path == null || path.equals(STATIC_FOLDER_PATH)) {
-          sendIndexPage()
+      val uri = req.uri()
+      if (uri.startsWith("/api/")) { // todo: apis
+        sendError(ctx, req, HttpResponseStatus.NOT_FOUND)
+      } else { // static pages
+        if (!HttpMethod.GET.equals(req.method())) {
+          sendError(ctx, req, METHOD_NOT_ALLOWED)
         } else {
-          val stream = getSteamFromStaticResource(path)
-          if (stream != null) {
-            sendFile(ctx, req, stream, path)
-          } else {
+          val sendIndexPage = () => {
+            if (INDEX_FILE_URL == null) {
+              sendError(ctx, req, NOT_FOUND)
+            } else {
+              sendFile(ctx, req, getSteamFromStaticResource(STATIC_INDEX_FILE_PATH), STATIC_INDEX_FILE_PATH)
+            }
+          }
+          val path = sanitizeUri(req.uri())
+          if (path == null || path.equals(STATIC_FOLDER_PATH)) {
             sendIndexPage()
+          } else {
+            val stream = getSteamFromStaticResource(path)
+            if (stream != null) {
+              sendFile(ctx, req, stream, path)
+            } else {
+              sendIndexPage()
+            }
           }
         }
       }

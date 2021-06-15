@@ -60,6 +60,9 @@ class DeviceWindow(stage: Stage, width: Int) extends Sink[AVFrame] {
 
   override def close(): Unit = {
     if (bufferHolder != null) bufferHolder.free()
+    UiThread.run {
+      stage.close()
+    }
   }
 
 }

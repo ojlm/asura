@@ -8,11 +8,15 @@ import asura.ui.cli.args.AndroidCommand
 import asura.ui.cli.runner.AndroidRunner.logger
 import asura.ui.cli.server.{Server, ServerProxyConfig}
 import com.typesafe.scalalogging.Logger
-import javafx.application.Application
+import javafx.application.{Application, Platform}
 import javafx.stage.Stage
 
 class AndroidRunner extends Application {
   override def start(primaryStage: Stage): Unit = {
+    Platform.setImplicitExit(false)
+    primaryStage.setOnCloseRequest(event => {
+      event.consume()
+    })
   }
 
   override def stop(): Unit = {

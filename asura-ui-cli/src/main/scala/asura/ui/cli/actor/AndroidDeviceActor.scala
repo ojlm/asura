@@ -4,6 +4,7 @@ import akka.actor.Props
 import asura.common.actor.BaseActor
 import asura.common.util.LogUtils
 import asura.ui.cli.actor.AndroidDeviceActor.{Error, Over, Stdout}
+import asura.ui.cli.hub.Hubs.RenderingFrameHub
 import asura.ui.cli.runner.AndroidRunner.ConfigParams
 import asura.ui.cli.utils.{AdbDeviceUtils, AdbUtils}
 import asura.ui.cli.window.{DeviceWindow, UiThread}
@@ -23,6 +24,9 @@ class AndroidDeviceActor(
       context stop self
     case Over =>
       log.error(s"connection refused")
+      if (window != null) {
+        RenderingFrameHub.leave(device.getSerial, window)
+      }
       context stop self
     case msg =>
       log.error(s"unknown message type: ${msg.getClass.getSimpleName}")
@@ -31,10 +35,13 @@ class AndroidDeviceActor(
 
   private val connection = new Thread(s"connection-${device.getSerial}") {
     override def run(): Unit = {
-      AdbDeviceUtils.prepareDevice(device, params.apk)
-      AdbUtils.reverse(params.options.socketName, params.serverPort, params.adbPath)
-      AdbDeviceUtils.runApp(device, params.options, line => self ! Stdout(line))
-      self ! Over
+      try {
+        AdbDeviceUtils.prepareDevice(device, params.apk)
+        AdbUtils.reverse(params.options.socketName, params.serverPort, params.adbPath)
+        AdbDeviceUtils.runApp(device, params.options, line => self ! Stdout(line))
+      } finally {
+        self ! Over
+      }
     }
   }
 
@@ -42,9 +49,11 @@ class AndroidDeviceActor(
     if (params.display) {
       UiThread.run {
         window = DeviceWindow(device.getSerial, params.windowWidth, params.alwaysOnTop)
+        connection.start()
       }
+    } else {
+      connection.start()
     }
-    connection.start()
   }
 
   override def postStop(): Unit = {

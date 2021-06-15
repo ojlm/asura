@@ -1,12 +1,13 @@
 package asura.ui.cli.server
 
-import asura.ui.cli.hub.Hubs.{IndigoAppiumHub, IndigoControllerHub}
+import asura.ui.cli.hub.Hubs.{DeviceWdHub, IndigoAppiumHub, IndigoControllerHub}
 import asura.ui.cli.hub.Sink
 import asura.ui.cli.message.IndigoMessage
 import karate.io.netty.channel._
 
 class IndigoMessageHandler(device: String, isController: Boolean) extends SimpleChannelInboundHandler[IndigoMessage] with Sink[IndigoMessage] {
 
+  val wdSinks = DeviceWdHub.getSinks(device)
   var channel: Channel = null
 
   override def channelActive(ctx: ChannelHandlerContext): Unit = {
@@ -29,7 +30,7 @@ class IndigoMessageHandler(device: String, isController: Boolean) extends Simple
   }
 
   override def channelRead0(channelHandlerContext: ChannelHandlerContext, msg: IndigoMessage): Unit = {
-    //  there is no input msg now
+    DeviceWdHub.write(wdSinks, msg)
   }
 
   override def write(frame: IndigoMessage): Boolean = {
