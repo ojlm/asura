@@ -3,8 +3,8 @@ package asura.ui.cli.server
 import java.util
 
 import asura.common.codec.KryoCodec
-import asura.ui.cli.message.IndigoMessage
 import asura.ui.cli.server.IndigoMessageCodec.{IndigoMessageDecoder, IndigoMessageEncoder}
+import asura.ui.message.IndigoMessage
 import com.typesafe.scalalogging.Logger
 import karate.io.netty.buffer.{ByteBuf, ByteBufUtil}
 import karate.io.netty.channel._

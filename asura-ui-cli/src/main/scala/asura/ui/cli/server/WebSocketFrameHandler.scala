@@ -5,8 +5,8 @@ import java.util.concurrent.ConcurrentHashMap
 import asura.common.util.{JsonUtils, StringUtils}
 import asura.ui.cli.hub.Hubs.{DeviceWdHub, IndigoAppiumHub, RawH264StreamHub}
 import asura.ui.cli.hub.{RawH264Packet, Sink}
-import asura.ui.cli.message.IndigoMessage
 import asura.ui.cli.server.WebSocketFrameHandler.{DEVICE_CONNECT_SCRCPY, DEVICE_CONNECT_WD}
+import asura.ui.message.IndigoMessage
 import karate.io.netty.channel.{Channel, ChannelHandlerContext, SimpleChannelInboundHandler}
 import karate.io.netty.handler.codec.http.QueryStringDecoder
 import karate.io.netty.handler.codec.http.websocketx.{BinaryWebSocketFrame, TextWebSocketFrame, WebSocketFrame, WebSocketServerProtocolHandler}

@@ -1,4 +1,4 @@
-package asura.ui.cli.message;
+package asura.ui.message;
 
 public interface IndigoMessageType {
   int UNKNOWN = -1;

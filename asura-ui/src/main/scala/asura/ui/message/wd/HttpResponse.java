@@ -1,4 +1,4 @@
-package asura.ui.cli.message.wd;
+package asura.ui.message.wd;
 
 public class HttpResponse {
 

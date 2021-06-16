@@ -1,6 +1,6 @@
 package asura.ui.cli.hub
 
-import asura.ui.cli.message.IndigoMessage
+import asura.ui.message.IndigoMessage
 import org.bytedeco.ffmpeg.avutil.AVFrame
 
 object Hubs {

@@ -1,7 +1,7 @@
-package asura.ui.cli.message;
+package asura.ui.message;
 
-import asura.ui.cli.message.wd.HttpRequest;
-import asura.ui.cli.message.wd.HttpResponse;
+import asura.ui.message.wd.HttpRequest;
+import asura.ui.message.wd.HttpResponse;
 
 public class IndigoMessage {
 

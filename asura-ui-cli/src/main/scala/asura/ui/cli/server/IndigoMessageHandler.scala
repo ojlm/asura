@@ -2,7 +2,7 @@ package asura.ui.cli.server
 
 import asura.ui.cli.hub.Hubs.{DeviceWdHub, IndigoAppiumHub, IndigoControllerHub}
 import asura.ui.cli.hub.Sink
-import asura.ui.cli.message.IndigoMessage
+import asura.ui.message.IndigoMessage
 import karate.io.netty.channel._
 
 class IndigoMessageHandler(device: String, isController: Boolean) extends SimpleChannelInboundHandler[IndigoMessage] with Sink[IndigoMessage] {
