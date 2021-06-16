@@ -21,6 +21,7 @@ object IndigoMessageCodec {
   class IndigoMessageDecoder extends ByteToMessageDecoder {
     override def decode(ctx: ChannelHandlerContext, buf: ByteBuf, list: util.List[AnyRef]): Unit = {
       val message = KryoCodec.fromBytes(ByteBufUtil.getBytes(buf), classOf[IndigoMessage])
+      buf.skipBytes(buf.readableBytes())
       list.add(message)
     }
   }
