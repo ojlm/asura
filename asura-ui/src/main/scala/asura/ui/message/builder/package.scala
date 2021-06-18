@@ -1,11 +1,12 @@
 package asura.ui.message
 
-import asura.common.util.JsonUtils
+import asura.common.util.{JavaJsonUtils, JsonUtils}
 import asura.ui.annotation.Required
 import asura.ui.message.wd.HttpRequest
 import com.fasterxml.jackson.annotation.{JsonAlias, JsonProperty}
 import com.typesafe.scalalogging.Logger
 
+// https://www.w3.org/TR/webdriver/
 package object builder {
 
   val logger = Logger("MessageBuilder")
@@ -93,8 +94,6 @@ package object builder {
     def apply(sessionId: String, id: String): IndigoMessage =
       buildGetRequestMessage(s"session/$sessionId/element/$id/rect")
 
-    case class ElementRectModel(x: Int, y: Int, width: Int, height: Int)
-
     case class Response() extends AppiumResponse {
       override type T = ElementRectModel
       override var value: T = null
@@ -142,7 +141,7 @@ package object builder {
   }
 
   object GetDeviceSize extends AppiumFunction {
-    def apply(sessionId: String, windowHandle: String): IndigoMessage = {
+    def apply(sessionId: String, windowHandle: String = "none"): IndigoMessage = {
       buildGetRequestMessage(s"session/$sessionId/window/$windowHandle/size")
     }
 
@@ -301,12 +300,20 @@ package object builder {
       buildPostRequestMessage(s"session/$sessionId/element", body)
     }
 
+    def apply(sessionId: String, locator: String): IndigoMessage = {
+      buildPostRequestMessage(s"session/$sessionId/element", FindElementModel(locator))
+    }
+
     type Response = MapAppiumResponse
   }
 
   object FindElements extends AppiumFunction {
     def apply(sessionId: String, body: FindElementModel): IndigoMessage = {
       buildPostRequestMessage(s"session/$sessionId/elements", body)
+    }
+
+    def apply(sessionId: String, locator: String): IndigoMessage = {
+      buildPostRequestMessage(s"session/$sessionId/elements", FindElementModel(locator))
     }
 
     type Response = SeqMapAppiumResponse
@@ -326,6 +333,14 @@ package object builder {
     }
 
     case class TapModel(x: Double, y: Double) extends ElementModel
+
+    type Response = NullValueAppiumResponse
+  }
+
+  object Clear extends AppiumFunction {
+    def apply(sessionId: String, id: String): IndigoMessage = {
+      buildPostRequestMessage(s"session/$sessionId/element/$id/clear")
+    }
 
     type Response = NullValueAppiumResponse
   }
@@ -367,7 +382,7 @@ package object builder {
       buildPostRequestMessage(s"session/$sessionId/element/$id/value", body)
     }
 
-    case class SendKeysModel(replace: Boolean, @Required text: String)
+    case class SendKeysModel(@Required text: String, replace: Boolean = false)
 
     type Response = NullValueAppiumResponse
   }
@@ -485,6 +500,10 @@ package object builder {
   object W3CActions extends AppiumFunction {
     def apply(sessionId: String, body: W3CActionsModel): IndigoMessage = {
       buildPostRequestMessage(s"session/$sessionId/actions", body)
+    }
+
+    def apply(sessionId: String, actions: java.util.List[java.util.Map[String, AnyRef]]): IndigoMessage = {
+      buildPostRequestMessage(s"session/$sessionId/actions", Map("actions" -> actions))
     }
 
     case class W3CItemParametersModel(pointerType: String)
@@ -678,9 +697,14 @@ package object builder {
 
   case class PinchModel(origin: ElementModel, area: RectModel, @Required percent: Float, speed: Int)
 
-  case class RectModel(@Required top: Double, @Required left: Double, @Required width: Double, @Required height: Double)
+  case class RectModel(
+                        @Required top: Double, @Required left: Double,
+                        @Required width: Double, @Required height: Double
+                      )
 
   case class PointModel(@Required x: Double, @Required y: Double)
+
+  case class ElementRectModel(x: Int, y: Int, width: Int, height: Int)
 
   case class AlertModel(buttonLabel: String)
 
@@ -689,6 +713,15 @@ package object builder {
   case class TouchEventModel(@Required params: TouchEventParams)
 
   case class KeyCodeModel(@Required keycode: Int, metastate: Int, flags: Int)
+
+  case class ElementModelWithBasicAttributes(
+                                              name: String,
+                                              text: String,
+                                              enabled: String,
+                                              displayed: String,
+                                              selected: String,
+                                              rect: ElementRectModel,
+                                            ) extends ElementModel
 
   class ElementModel { // only need set one filed
     @JsonProperty("ELEMENT")
@@ -704,7 +737,36 @@ package object builder {
     }
   }
 
-  case class FindElementModel(@Required strategy: String, @Required selector: String, context: String)
+  case class FindElementModel(
+                               @Required strategy: String, @Required selector: String,
+                               context: String = null
+                             )
+
+  case object FindElementModel {
+    def apply(locator: String): FindElementModel = {
+      if (locator.startsWith("/")) {
+        FindElementModel("xpath", locator)
+      } else if (locator.startsWith("@")) {
+        FindElementModel("accessibility id", locator.substring(1))
+      } else if (locator.startsWith("#")) {
+        FindElementModel("id", locator.substring(1))
+      } else if (locator.startsWith("-")) {
+        FindElementModel("-android uiautomator", locator.substring(1))
+      } else {
+        FindElementModel("class name", locator)
+      }
+    }
+  }
+
+  case class ElementModelAppiumResponse() extends AppiumResponse {
+    override type T = ElementModel
+    override var value: T = null
+  }
+
+  case class ElementModelsAppiumResponse() extends AppiumResponse {
+    override type T = java.util.Collection[ElementModel]
+    override var value: T = null
+  }
 
   case class MapAppiumResponse() extends AppiumResponse {
     override type T = java.util.Map[String, Object]
@@ -745,22 +807,37 @@ package object builder {
       func(msg)
     }
 
-    def resBodyAs[T >: Null <: AnyRef](c: Class[T]): T = {
+    @throws[RuntimeException]
+    def throwResponseException[T](): T = {
+      val error = JsonUtils.parse(msg.res.content, classOf[AppiumExceptionModel])
+      throw new RuntimeException(s"${error.error}: ${error.message}")
+    }
+
+    def ok(): Unit = {
+      if (msg.res != null) {
+        if (msg.res.status != 200) {
+          throwResponseException()
+        }
+      } else {
+        throw new RuntimeException("Not a response")
+      }
+    }
+
+    def resBodyAs[T >: Null <: AnyRef](c: Class[T], parser: JsonUtils = JsonUtils): T = {
       if (msg.res != null && msg.res.content != null) {
         if (msg.res.status == 200) {
-          JsonUtils.parse(msg.res.content, c)
+          parser.parse(msg.res.content, c)
         } else { // exception
           logger.debug(msg.res.content)
-          val model = JsonUtils.parse(msg.res.content, classOf[AppiumExceptionModel])
-          throw new RuntimeException(s"${model.error}: ${model.message}")
+          throwResponseException()
         }
       } else {
         null
       }
     }
 
-    def resBodyAsMap: java.util.Map[Object, Object] = {
-      resBodyAs(classOf[java.util.Map[Object, Object]])
+    def resBodyAsMap: java.util.Map[String, Object] = {
+      resBodyAs(classOf[java.util.Map[String, Object]], JavaJsonUtils)
     }
   }
 

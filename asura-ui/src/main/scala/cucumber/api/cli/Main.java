@@ -13,6 +13,7 @@ public class Main {
 
   public static void loadOverride() {
     com.intuit.karate.driver.chrome.Chrome.loadOverride();
+    com.intuit.karate.driver.DriverOptions.loadOverride();
     com.intuit.karate.ScenarioActions.loadOverride();
     com.intuit.karate.core.ScenarioEngine.loadOverride();
   }
