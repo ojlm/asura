@@ -18,7 +18,7 @@ class ElectronCommand extends ServerBaseCommand {
   @Option(
     names = Array("--debugger-url"),
     arity = "1",
-    paramLabel = "URL",
+    paramLabel = "url",
     description = Array("Websocket debug url.")
   )
   var debuggerUrl: String = null
@@ -26,7 +26,7 @@ class ElectronCommand extends ServerBaseCommand {
   @Option(
     names = Array("--start-url"),
     arity = "1",
-    paramLabel = "URL",
+    paramLabel = "url",
     description = Array("Start url for debugging.")
   )
   var startUrl: String = null
@@ -34,7 +34,7 @@ class ElectronCommand extends ServerBaseCommand {
   @Option(
     names = Array("--remote-debugging-port"),
     arity = "1",
-    paramLabel = "PORT",
+    paramLabel = "port",
     description = Array("Chrome remote debugging port or any remote port, default: 9221.")
   )
   var chromePort: Int = 9221

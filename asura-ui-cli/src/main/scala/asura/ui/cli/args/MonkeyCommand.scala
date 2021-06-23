@@ -26,7 +26,7 @@ class MonkeyCommand extends BaseCommand {
 
   @Parameters(
     arity = "1",
-    paramLabel = "FILE",
+    paramLabel = "path",
     description = Array(
       "Config file.",
     )

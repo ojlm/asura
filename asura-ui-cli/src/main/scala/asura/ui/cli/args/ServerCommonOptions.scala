@@ -7,7 +7,7 @@ abstract class ServerCommonOptions extends BaseCommand {
   @Option(
     names = Array("-p", "--server-port"),
     arity = "1",
-    paramLabel = "PORT",
+    paramLabel = "port",
     description = Array("Local server port. Default: 8080.")
   )
   var serverPort: Int = 8080

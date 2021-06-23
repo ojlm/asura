@@ -16,7 +16,7 @@ class PushMixin {
   @Option(
     names = Array("--push-ip"),
     arity = "1",
-    paramLabel = "IP",
+    paramLabel = "ip",
     description = Array("Used to push to server.")
   )
   var pushIp: String = NetworkUtils.getLocalIpAddress()
@@ -24,7 +24,7 @@ class PushMixin {
   @Option(
     names = Array("--push-port"),
     arity = "1",
-    paramLabel = "PORT",
+    paramLabel = "port",
     description = Array("Used to push to server, default the same with server port.")
   )
   var pushPort: Int = 0
@@ -32,7 +32,7 @@ class PushMixin {
   @Option(
     names = Array("--push-url"),
     arity = "1",
-    paramLabel = "URL",
+    paramLabel = "url",
     description = Array("Remote sync post url, Default: http://localhost:9000")
   )
   var pushUrl: String = "http://localhost:9000"
@@ -40,7 +40,7 @@ class PushMixin {
   @Option(
     names = Array("--push-interval"),
     arity = "1",
-    paramLabel = "SECS",
+    paramLabel = "secs",
     description = Array("Interval of push event, default: 30 seconds.")
   )
   var pushInterval: Int = 30

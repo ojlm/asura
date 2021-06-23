@@ -26,7 +26,7 @@ class MainCommand extends BaseCommand {
   @Option(
     names = Array("-c", "--config"),
     arity = "1",
-    paramLabel = "FILE",
+    paramLabel = "file",
     description = Array(
       "Config file.",
       "If this option is provided, the command will be ignored."

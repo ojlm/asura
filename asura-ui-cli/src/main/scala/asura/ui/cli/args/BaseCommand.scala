@@ -11,7 +11,7 @@ import picocli.CommandLine.Command
   synopsisHeading = "%n@|bold Usage|@:%n",
   descriptionHeading = "%n@|bold Description|@:%n",
   optionListHeading = "@|bold %nOptions|@:%n",
-  synopsisSubcommandLabel = "[COMMAND]",
+  synopsisSubcommandLabel = "[command]",
   commandListHeading = "@|bold %nCommands|@:%n",
   footer = Array(
     "",
