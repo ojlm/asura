@@ -70,7 +70,7 @@ object TcpPushClient {
               }
             })
           case "unix" =>
-            address = new DomainSocketAddress(s"/${uri.getHost}${uri.getPath}")
+            address = new DomainSocketAddress(uri.getPath)
             bootstrap.channel(classOf[EpollDomainSocketChannel])
             bootstrap.handler(new ChannelInitializer[UnixChannel] {
               override def initChannel(ch: UnixChannel): Unit = {
