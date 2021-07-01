@@ -43,7 +43,7 @@ class PortUnificationServerHandler(
                 switchToHttpProxy(ctx, "127.0.0.1", config.portSelector.getPort(null))
               }
             } else if (config.isWebsockify(uri)) { // vnc server
-              switchToHttpProxy(ctx, "127.0.0.1", config.localWebsockifyPort)
+              switchToTcpProxy(ctx, "127.0.0.1", config.localWebsockifyPort)
             } else {
               switchToLocalHttp(ctx)
             }
