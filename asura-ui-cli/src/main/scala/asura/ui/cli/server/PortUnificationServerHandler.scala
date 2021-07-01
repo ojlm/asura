@@ -37,9 +37,10 @@ class PortUnificationServerHandler(
             val uri = in.getCharSequence(tuple._1 + 1, tuple._2 - tuple._1 - 1, StandardCharsets.UTF_8).asInstanceOf[String]
             if (config.isChrome(uri)) { // chrome
               if (uri.startsWith("/devtools/page/")) { // websocket
-                switchToTcpProxy(ctx, "127.0.0.1", config.localChromePort)
+                val pageId = uri.substring("/devtools/page/".size)
+                switchToTcpProxy(ctx, "127.0.0.1", config.portSelector.getPort(pageId))
               } else {
-                switchToHttpProxy(ctx, "127.0.0.1", config.localChromePort)
+                switchToHttpProxy(ctx, "127.0.0.1", config.portSelector.getPort(null))
               }
             } else if (config.isWebsockify(uri)) { // vnc server
               switchToHttpProxy(ctx, "127.0.0.1", config.localWebsockifyPort)

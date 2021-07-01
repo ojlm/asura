@@ -7,9 +7,9 @@ abstract class ServerBaseCommand extends ServerCommonOptions {
   @Option(
     names = Array("--enable-server"),
     description = Array(
-      "Start a local server. Default: false.",
+      "Start a local server. Default: true.",
     )
   )
-  var enableServer: Boolean = false
+  var enableServer: Boolean = true
 
 }

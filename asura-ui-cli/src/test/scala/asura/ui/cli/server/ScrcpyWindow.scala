@@ -6,6 +6,7 @@ import java.time.LocalDateTime
 
 import asura.ui.cli.codec._
 import asura.ui.cli.hub.Hubs.RenderingFrameHub
+import asura.ui.cli.server.ServerProxyConfig.FixedPortSelector
 import asura.ui.cli.window.BgraPixelBufferStreamListener
 import javafx.application.{Application, Platform}
 import javafx.event.EventType
@@ -48,7 +49,7 @@ class ScrcpyWindow extends Application {
     scene.setFill(Color.BLACK)
     stage.setScene(scene)
     stage.show()
-    Server(8080, ServerProxyConfig(true, 9221, 5901, true, false)).start()
+    Server(8080, ServerProxyConfig(true, FixedPortSelector(9221), 5901, true, false)).start()
     RenderingFrameHub.enter(device, pixelBufferListener(imageView))
   }
 

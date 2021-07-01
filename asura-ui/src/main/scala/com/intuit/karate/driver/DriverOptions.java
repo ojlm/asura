@@ -56,11 +56,22 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import asura.ui.driver.DriverProvider;
+
 /**
  *
  * @author pthomas3
  */
 public class DriverOptions {
+
+  // injected
+  private static DriverProvider driverProvider;
+  public static DriverProvider getDriverProvider() {
+    return driverProvider;
+  }
+  public static void setDriverProvider(DriverProvider driverProvider) {
+    DriverOptions.driverProvider = driverProvider;
+  }
 
   public static void loadOverride() {
   }
@@ -211,7 +222,9 @@ public class DriverOptions {
     int preferredPort = get("port", defaultPort);
     if (start) {
       int freePort = Command.getFreePort(preferredPort);
-      if (freePort != preferredPort) {
+      if (preferredPort == 0) {
+        logger.info("use a automatically allocated port number {}", freePort);
+      } else if (freePort != preferredPort) {
         logger.warn("preferred port {} not available, will use: {}", preferredPort, freePort);
       }
       return freePort;
@@ -276,6 +289,10 @@ public class DriverOptions {
   }
 
   public static Driver start(Map<String, Object> options, ScenarioRuntime sr) { // TODO unify logger
+    DriverProvider driverProvider = getDriverProvider();
+    if (driverProvider != null) {
+      return driverProvider.get((String) options.get("type"), options);
+    }
     Target target = (Target) options.get("target");
     if (target != null) {
       sr.logger.debug("custom target configured, calling start()");

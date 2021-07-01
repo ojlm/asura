@@ -2,10 +2,14 @@ package asura.ui.cli.server
 
 import java.io.{File, InputStream, UnsupportedEncodingException}
 import java.net.{URL, URLDecoder}
+import java.nio.charset.StandardCharsets
 import java.util.regex.Pattern
 
-import asura.common.util.LogUtils
+import asura.common.model.ApiRes
+import asura.common.util.{JsonUtils, LogUtils}
+import asura.ui.cli.CliSystem
 import asura.ui.cli.server.HttpPageHandler._
+import asura.ui.cli.task.TaskInfo
 import com.typesafe.scalalogging.Logger
 import karate.io.netty.buffer.Unpooled
 import karate.io.netty.channel._
@@ -21,8 +25,8 @@ class HttpPageHandler(enableKeepAlive: Boolean) extends SimpleChannelInboundHand
       sendError(ctx, req, BAD_REQUEST)
     } else {
       val uri = req.uri()
-      if (uri.startsWith("/api/")) { // todo: apis
-        sendError(ctx, req, HttpResponseStatus.NOT_FOUND)
+      if (uri.startsWith("/api/")) {
+        handleApiRequest(ctx, req)
       } else { // static pages
         if (!HttpMethod.GET.equals(req.method())) {
           sendError(ctx, req, METHOD_NOT_ALLOWED)
@@ -47,6 +51,29 @@ class HttpPageHandler(enableKeepAlive: Boolean) extends SimpleChannelInboundHand
           }
         }
       }
+    }
+  }
+
+  def handleApiRequest(ctx: ChannelHandlerContext, req: FullHttpRequest): Unit = {
+    req.method() match {
+      case HttpMethod.POST => postHandler(ctx, req)
+      case _ => sendError(ctx, req, HttpResponseStatus.NOT_FOUND)
+    }
+  }
+
+  def postHandler(ctx: ChannelHandlerContext, req: FullHttpRequest): Unit = {
+    val uri = new QueryStringDecoder(req.uri())
+    val paths = uri.path().split("/")
+    paths match { // ["", "api", ...]
+      case Array(_, _, "run") =>
+        val body = req.content().toString(StandardCharsets.UTF_8)
+        if (body != null) {
+          CliSystem.sendToPool(JsonUtils.parse(body, classOf[TaskInfo]))
+          sendApiResponse(ctx, req, null)
+        } else {
+          sendError(ctx, req, HttpResponseStatus.BAD_REQUEST)
+        }
+      case _ => sendError(ctx, req, HttpResponseStatus.NOT_FOUND)
     }
   }
 
@@ -103,6 +130,15 @@ class HttpPageHandler(enableKeepAlive: Boolean) extends SimpleChannelInboundHand
       })
       sendFileFuture.addListener(ChannelFutureListener.CLOSE)
     }
+  }
+
+  def sendApiResponse(ctx: ChannelHandlerContext, req: FullHttpRequest, body: Object): Unit = {
+    val response = new DefaultFullHttpResponse(
+      HttpVersion.HTTP_1_1, HttpResponseStatus.OK,
+      Unpooled.copiedBuffer(JsonUtils.stringify(ApiRes(data = body)), CharsetUtil.UTF_8)
+    )
+    response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json; charset=UTF-8")
+    sendAndCleanupConnection(ctx, req, response)
   }
 
   def sendRedirect(ctx: ChannelHandlerContext, req: FullHttpRequest, newUrl: String): Unit = {

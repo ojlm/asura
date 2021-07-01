@@ -46,6 +46,7 @@ import com.intuit.karate.driver.Keys;
 import com.intuit.karate.http.Response;
 import com.intuit.karate.shell.Command;
 
+import asura.ui.driver.DriverProvider;
 import asura.ui.karate.KarateRunner;
 
 /**
@@ -167,11 +168,27 @@ public class Chrome extends DevToolsDriver {
     logger.info("use override chrome");
   }
 
+  @Override
+  public void quit() {
+    DriverProvider provider = DriverOptions.getDriverProvider();
+    if (provider != null) {
+      provider.release(this);
+    } else {
+      super.quit();
+    }
+  }
+
   public static Chrome start(Map<String, Object> map, ScenarioRuntime sr) {
     DriverOptions options = new DriverOptions(map, sr, 9222,
       FileUtils.isOsWindows() ? DEFAULT_PATH_WIN : FileUtils.isOsMacOsX() ? DEFAULT_PATH_MAC : DEFAULT_PATH_LINUX);
     options.arg("--remote-debugging-port=" + options.port);
     options.arg("--no-first-run");
+    options.arg("--disable-translate");
+    options.arg("--disable-notifications");
+    options.arg("--disable-infobars");
+    options.arg("--disable-gpu");
+    options.arg("--dbus-stub");
+    options.arg("--disable-dev-shm-usage");
     if (options.userDataDir != null) {
       options.arg("--user-data-dir=" + options.userDataDir);
     }

@@ -5,6 +5,7 @@ import java.util
 import asura.common.util.HostUtils
 import asura.ui.UiConfig
 import asura.ui.cli.args.ElectronCommand
+import asura.ui.cli.server.ServerProxyConfig.FixedPortSelector
 import asura.ui.cli.server.{Server, ServerProxyConfig}
 import asura.ui.cli.{CliSystem, DriverRegister}
 import asura.ui.model.ChromeDriverInfo
@@ -24,7 +25,7 @@ object ElectronRunner {
     if (args.startUrl != null) {
       options.put("startUrl", args.startUrl)
     }
-    val localChrome = if (args.enableServer && args.push.enablePush) {
+    val localChrome = if (args.enableServer && args.push.enablePushStatus) {
       ChromeDriverInfo(
         args.push.pushIp,
         if (args.push.pushPort > 0) args.push.pushPort else args.serverPort,
@@ -44,13 +45,13 @@ object ElectronRunner {
       taskListener = null,
       enableLocal = true,
       localChrome = localChrome,
-      uiDriverProvider = if (args.push.enablePush) DriverRegister(args.push.pushUrl) else null,
+      uiDriverProvider = if (args.push.enablePushStatus) DriverRegister(args.push.pushUrl) else null,
       syncInterval = args.push.pushInterval,
       options = options
     )
     UiConfig.init(config)
     if (args.enableServer) {
-      val server = Server(args.serverPort, ServerProxyConfig(args.enableProxy, args.chromePort))
+      val server = Server(args.serverPort, ServerProxyConfig(args.enableProxy, new FixedPortSelector(args.chromePort)))
       server.start()
       sys.addShutdownHook({
         server.stop()
