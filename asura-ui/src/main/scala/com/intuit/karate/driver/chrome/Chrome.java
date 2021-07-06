@@ -38,6 +38,7 @@ import com.intuit.karate.Json;
 import com.intuit.karate.StringUtils;
 import com.intuit.karate.core.ScenarioEngine;
 import com.intuit.karate.core.ScenarioRuntime;
+import com.intuit.karate.core.Variable;
 import com.intuit.karate.driver.DevToolsDriver;
 import com.intuit.karate.driver.DevToolsMessage;
 import com.intuit.karate.driver.DriverOptions;
@@ -106,7 +107,12 @@ public class Chrome extends DevToolsDriver {
   }
 
   public String screenshotAsBase64() {
-    return method("Page.captureScreenshot").send().getResult("data").getAsString();
+    Variable result = method("Page.captureScreenshot").send().getResult("data");
+    if (result != null) {
+      return result.getAsString();
+    } else {
+      return null;
+    }
   }
 
   public DevToolsMessage openNewPage(String url) {
