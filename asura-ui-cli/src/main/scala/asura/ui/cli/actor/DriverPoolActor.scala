@@ -45,6 +45,7 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
       val drivers = idle.entrySet().iterator()
       if (drivers.hasNext) {
         val driver = drivers.next()
+        running.put(driver.getKey, driver.getValue)
         sender() ! (driver.getKey, driver.getValue)
       } else {
         if (running.size() < options.coreCount) {
@@ -108,8 +109,11 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
   private def stop(task: TaskInfo): Unit = {
     if (task.meta != null && task.meta.reportId != null) {
       val runningTask = runningTasks.get(task.meta.reportId)
-      if (runningTask != null && runningTask.hook != null) {
-        runningTask.hook.stop()
+      if (runningTask != null) {
+        if (runningTask.hook != null) runningTask.hook.stop()
+        if (runningTask.thread != null && runningTask.thread.isAlive) {
+          runningTask.thread.interrupt()
+        }
       }
     }
   }
@@ -118,7 +122,10 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
     val runnable = new Runnable {
       override def run(): Unit = {
         if (params.clean) {
-          FileUtils.deleteDirectory(new File(params.output))
+          val output = new File(params.output)
+          if (output.exists() && output.isDirectory) {
+            FileUtils.deleteDirectory(new File(params.output))
+          }
         }
         val builder = Runner.path(params.paths)
         val hook = new TaskRuntimeHook()
@@ -143,6 +150,7 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
       }
     }
     val thread = TaskThreadGroup.newKarate(runnable)
+    task.thread = thread
     thread.setUncaughtExceptionHandler((_: Thread, t: Throwable) => {
       self ! TaskOverMessage(task)
       listener.driverCommandResultEvent(DriverCommandResultEvent(task.meta, false, error = t.getMessage))
@@ -151,7 +159,7 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
   }
 
   // called by the runner thread
-  override def get(`type`: String, driverPptions: java.util.Map[String, AnyRef]): Driver = {
+  override def get(`type`: String, driverOptions: java.util.Map[String, AnyRef]): Driver = {
     import asura.common.util.FutureUtils.RichFuture
     val driver = (self ? GetDriverMessage).asInstanceOf[Future[(ActorRef, Driver)]].await(30 seconds)
     if (driver == null) {
@@ -165,6 +173,7 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
         val push = options.push
         task.drivers.drivers += TaskDriver(push.pushIp, push.pushPort, driver._2.getOptions.port)
       }
+      driver._1 ! DriverPoolItemActor.TaskInfoMessage(task)
       task.actors += driver._1
       task.driverActorMap += (driver._2 -> driver._1)
       driver._2
