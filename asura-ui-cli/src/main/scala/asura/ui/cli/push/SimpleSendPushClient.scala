@@ -1,6 +1,6 @@
 package asura.ui.cli.push
 
-import asura.ui.cli.push.PushEventListener.MessageType
+import asura.ui.cli.push.PushEventListener.{DriverTaskInfoEvent, MessageType}
 
 trait SimpleSendPushClient extends PushEventListener {
 
@@ -12,6 +12,10 @@ trait SimpleSendPushClient extends PushEventListener {
 
   override def driverStatusEvent(event: PushEventListener.DriverStatusEvent): Unit = {
     send(PushDataMessage(MessageType.DRIVER_STATUS_EVENT, event))
+  }
+
+  override def driverTaskInfoEvent(event: DriverTaskInfoEvent): Unit = {
+    send(PushDataMessage(MessageType.DRIVER_TASK_EVENT, event))
   }
 
   override def driverDevToolsEvent(event: PushEventListener.DriverDevToolsEvent): Unit = {

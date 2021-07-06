@@ -12,8 +12,8 @@ import akka.actor.{Actor, ActorRef, Cancellable, Props, Terminated}
 import akka.pattern.ask
 import asura.common.actor.BaseActor
 import asura.ui.UiConfig.DEFAULT_ACTOR_ASK_TIMEOUT
-import asura.ui.cli.actor.DriverPoolActor.{GetDriverMessage, PoolOptions, ReleaseMessage, TaskOverMessage}
-import asura.ui.cli.push.PushEventListener.{DriverCommandResultEvent, DriverPoolEvent}
+import asura.ui.cli.actor.DriverPoolActor._
+import asura.ui.cli.push.PushEventListener._
 import asura.ui.cli.push.PushOptions
 import asura.ui.cli.server.ServerProxyConfig.ConcurrentHashMapPortSelector
 import asura.ui.cli.task.TaskParams.{KarateParams, TaskType}
@@ -169,6 +169,7 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
       if (task.drivers == null) task.drivers = TaskDrivers()
       if (task.actors == null) task.actors = mutable.Set[ActorRef]()
       if (task.driverActorMap == null) task.driverActorMap = mutable.Map[Driver, ActorRef]()
+      if (task.targets == null) task.targets = mutable.Map[Driver, TaskDriver]()
       if (options.push != null) {
         val push = options.push
         task.drivers.drivers += TaskDriver(push.pushIp, push.pushPort, driver._2.getOptions.port)
@@ -186,6 +187,7 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
       val actor = task.driverActorMap(driver)
       task.actors -= actor
       task.driverActorMap -= driver
+      task.targets -= driver
       self ! ReleaseMessage(actor)
     }
   }
@@ -223,6 +225,16 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
           reports = runningTasks.keys().asScala.toSeq
         )
         listener.driverPoolEvent(event)
+        val tasks = mutable.ArrayBuffer[TaskInfoEventItem]()
+        runningTasks.forEach((_, task) => {
+          if (task.targets != null && task.meta != null && task.meta.reportId != null) {
+            tasks += TaskInfoEventItem(task.meta, task.targets.values.toSeq)
+          }
+        })
+        if (tasks.nonEmpty) {
+          val event = DriverTaskInfoEvent(pushOptions.pushIp, pushOptions.pushPort, tasks.toSeq)
+          listener.driverTaskInfoEvent(event)
+        }
       })(context.dispatcher)
     }
   }

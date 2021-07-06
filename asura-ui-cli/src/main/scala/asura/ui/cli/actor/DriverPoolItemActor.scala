@@ -16,7 +16,7 @@ import asura.ui.cli.actor.DriverPoolItemActor.{GetDriverMessage, PagesMessage, T
 import asura.ui.cli.push.PushEventListener
 import asura.ui.cli.push.PushEventListener.{DriverDevToolsEvent, DriverStatusEvent, STATUS_IDLE, STATUS_RUNNING}
 import asura.ui.cli.server.ServerProxyConfig.PortSelector
-import asura.ui.cli.task.{TaskDevToolParams, TaskInfo}
+import asura.ui.cli.task.{TaskDevToolParams, TaskDriver, TaskInfo}
 import asura.ui.model.ChromeTargetPage
 import asura.ui.util.ChromeDevTools
 import com.intuit.karate.FileUtils
@@ -112,6 +112,9 @@ class DriverPoolItemActor(
       scheduler = context.system.scheduler.scheduleWithFixedDelay(0 seconds, pushOptions.pushInterval seconds)(() => {
         ChromeDevTools.getTargetPages("127.0.0.1", status.driverPort)
           .map(targets => {
+            if (status.task != null) {
+              status.task.targets += (driver -> TaskDriver(status.host, status.port, status.driverPort, targets))
+            }
             self ! PagesMessage(targets)
             status.targets = targets
             status.screen = driver.screenshotAsBase64()

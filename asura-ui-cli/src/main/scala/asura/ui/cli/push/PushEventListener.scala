@@ -2,7 +2,7 @@ package asura.ui.cli.push
 
 import asura.common.util.HostUtils
 import asura.ui.cli.push.PushEventListener._
-import asura.ui.cli.task.{TaskDevToolParams, TaskInfo, TaskLog, TaskMeta}
+import asura.ui.cli.task._
 import asura.ui.model.{ChromeTargetPage, ChromeVersion}
 
 trait PushEventListener {
@@ -12,6 +12,8 @@ trait PushEventListener {
   def driverPoolEvent(event: DriverPoolEvent): Unit
 
   def driverStatusEvent(event: DriverStatusEvent): Unit
+
+  def driverTaskInfoEvent(event: DriverTaskInfoEvent): Unit
 
   def driverDevToolsEvent(event: DriverDevToolsEvent): Unit
 
@@ -32,9 +34,10 @@ object PushEventListener {
     val DRIVER_COMMEND_EVENT = 0
     val DRIVER_POOL_EVENT = 1
     val DRIVER_STATUS_EVENT = 2
-    val DRIVER_DEVTOOLS_EVENT = 3
-    val DRIVER_COMMAND_LOG_EVENT = 4
-    val DRIVER_COMMAND_RESULT_EVENT = 5
+    val DRIVER_TASK_EVENT = 3
+    val DRIVER_DEVTOOLS_EVENT = 4
+    val DRIVER_COMMAND_LOG_EVENT = 5
+    val DRIVER_COMMAND_RESULT_EVENT = 6
   }
 
   trait BasicEvent {
@@ -64,6 +67,14 @@ object PushEventListener {
                                 var targets: Seq[ChromeTargetPage] = Nil,
                                 var version: ChromeVersion = null,
                               ) extends BasicEvent
+
+  case class TaskInfoEventItem(meta: TaskMeta, drivers: Seq[TaskDriver])
+
+  case class DriverTaskInfoEvent(
+                                  host: String,
+                                  port: Integer,
+                                  var tasks: Seq[TaskInfoEventItem] = null,
+                                ) extends BasicEvent
 
   case class DriverDevToolsEvent(
                                   task: TaskMeta,

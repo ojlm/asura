@@ -16,6 +16,7 @@ case class TaskInfo(
   @JsonIgnore var driverActorMap = mutable.Map[Driver, ActorRef]()
   @JsonIgnore var hook: TaskRuntimeHook = null
   @JsonIgnore var thread: Thread = null
+  @JsonIgnore var targets = mutable.Map[Driver, TaskDriver]()
 }
 
 object TaskInfo {

@@ -14,6 +14,10 @@ case class LogPushEventClient(options: PushOptions) extends PushEventListener {
     logger.info(s"DriverStatusEvent{port: ${event.driverPort}, status: ${event.status}}")
   }
 
+  override def driverTaskInfoEvent(event: PushEventListener.DriverTaskInfoEvent): Unit = {
+    logger.info(s"DriverTaskInfoEvent{tasks: ${event.tasks.size}}")
+  }
+
   override def driverDevToolsEvent(event: PushEventListener.DriverDevToolsEvent): Unit = {
     logger.info(s"DriverDevToolsEvent{}")
   }
