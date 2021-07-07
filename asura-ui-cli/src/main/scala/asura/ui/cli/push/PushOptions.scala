@@ -10,6 +10,7 @@ case class PushOptions(
                         pushUrl: String,
                         pushInterval: Int,
                         pushStatus: Boolean,
+                        pushScreen: Boolean,
                         pushLogs: Boolean,
                         password: String,
                         electron: Boolean = false,

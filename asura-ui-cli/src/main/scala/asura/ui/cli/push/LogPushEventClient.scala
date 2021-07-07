@@ -11,7 +11,7 @@ case class LogPushEventClient(options: PushOptions) extends PushEventListener {
   }
 
   override def driverStatusEvent(event: PushEventListener.DriverStatusEvent): Unit = {
-    logger.info(s"DriverStatusEvent{port: ${event.driverPort}, status: ${event.status}}")
+    logger.info(s"DriverStatusEvent{port: ${event.driverPort}, status: ${event.status}, screen: ${if (event.screen != null) event.screen.size else 0}}")
   }
 
   override def driverTaskInfoEvent(event: PushEventListener.DriverTaskInfoEvent): Unit = {
@@ -23,11 +23,11 @@ case class LogPushEventClient(options: PushOptions) extends PushEventListener {
   }
 
   override def driverCommandLogEvent(event: PushEventListener.DriverCommandLogEvent): Unit = {
-    logger.info(s"DriverDevToolsEvent{}")
+    logger.info(s"DriverCommandLogEvent{}")
   }
 
   override def driverCommandResultEvent(event: PushEventListener.DriverCommandResultEvent): Unit = {
-    logger.info(s"DriverDevToolsEvent:{${event.results}}")
+    logger.info(s"DriverCommandResultEvent:{${event.results}}")
   }
 
   override def close(): Unit = {

@@ -31,6 +31,7 @@ object ChromeRunner {
         pushUrl = args.push.pushUrl,
         pushInterval = args.push.pushInterval,
         pushStatus = args.push.enablePushStatus,
+        pushScreen = args.push.enablePushScreen,
         pushLogs = args.push.enablePushLogs,
         password = args.vncPassword,
       )

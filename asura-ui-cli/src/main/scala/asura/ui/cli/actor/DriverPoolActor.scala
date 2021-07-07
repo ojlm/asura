@@ -45,13 +45,14 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
       val drivers = idle.entrySet().iterator()
       if (drivers.hasNext) {
         val driver = drivers.next()
+        idle.remove(driver.getKey)
         running.put(driver.getKey, driver.getValue)
-        sender() ! (driver.getKey, driver.getValue)
+        sender() ! ActorDriverTuple(driver.getKey, driver.getValue)
       } else {
-        if (running.size() < options.coreCount) {
+        if (running.size() < options.maxCount) {
           startDriver(0, false, sender())
         } else {
-          sender() ! null
+          sender() ! ActorDriverTuple(null, null)
         }
       }
     case Terminated(child) =>
@@ -92,7 +93,9 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
     } else {
       actor ! DriverPoolItemActor.TaskOverMessage
       val driver = running.remove(actor)
-      idle.put(actor, driver)
+      if (driver != null) {
+        idle.put(actor, driver)
+      }
     }
   }
 
@@ -161,23 +164,26 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
   // called by the runner thread
   override def get(`type`: String, driverOptions: java.util.Map[String, AnyRef]): Driver = {
     import asura.common.util.FutureUtils.RichFuture
-    val driver = (self ? GetDriverMessage).asInstanceOf[Future[(ActorRef, Driver)]].await(30 seconds)
-    if (driver == null) {
+    val tuple = (self ? GetDriverMessage).asInstanceOf[Future[ActorDriverTuple]].await(30 seconds)
+    if (tuple.driver == null) {
       throw new RuntimeException("There is not enough resource")
     } else {
       val task = TaskInfo.get()
+      if (task.meta != null && task.meta.reportId != null) {
+        log.info(s"task(${task.meta.reportId}) get driver: ${tuple.driver.getOptions.port}")
+      }
       if (task.drivers == null) task.drivers = TaskDrivers()
       if (task.actors == null) task.actors = mutable.Set[ActorRef]()
       if (task.driverActorMap == null) task.driverActorMap = mutable.Map[Driver, ActorRef]()
       if (task.targets == null) task.targets = mutable.Map[Driver, TaskDriver]()
       if (options.push != null) {
         val push = options.push
-        task.drivers.drivers += TaskDriver(push.pushIp, push.pushPort, driver._2.getOptions.port)
+        task.drivers.drivers += TaskDriver(push.pushIp, push.pushPort, tuple.driver.getOptions.port)
       }
-      driver._1 ! DriverPoolItemActor.TaskInfoMessage(task)
-      task.actors += driver._1
-      task.driverActorMap += (driver._2 -> driver._1)
-      driver._2
+      tuple.actor ! DriverPoolItemActor.TaskInfoMessage(task)
+      task.actors += tuple.actor
+      task.driverActorMap += (tuple.driver -> tuple.actor)
+      tuple.driver
     }
   }
 
@@ -193,7 +199,7 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
   }
 
   // only the 'port' is different, '0' for random.
-  private def startDriver(port: Integer, isIdle: Boolean, sender: ActorRef): Future[(ActorRef, Driver)] = {
+  private def startDriver(port: Integer, isIdle: Boolean, sender: ActorRef): Future[ActorDriverTuple] = {
     val copied = new util.HashMap[String, Object](options.driver)
     copied.put("port", port)
     if (!copied.containsKey("userDataDir")) {
@@ -204,13 +210,14 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
       .asInstanceOf[Future[Driver]]
       .map(driver => {
         context watch child
+        val tuple = ActorDriverTuple(child, driver)
         if (isIdle) {
           idle.put(child, driver)
         } else {
           running.put(child, driver)
-          sender ! (child, driver)
+          sender ! tuple
         }
-        (child, driver)
+        tuple
       })(context.dispatcher)
   }
 
@@ -257,6 +264,8 @@ object DriverPoolActor {
                           push: PushOptions,
                           selector: ConcurrentHashMapPortSelector
                         )
+
+  case class ActorDriverTuple(actor: ActorRef, driver: Driver)
 
   case object GetDriverMessage
 

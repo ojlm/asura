@@ -12,7 +12,7 @@ import asura.common.actor.BaseActor
 import asura.common.util.FutureUtils.RichFuture
 import asura.common.util.LogUtils
 import asura.ui.cli.CliSystem
-import asura.ui.cli.actor.DriverPoolItemActor.{GetDriverMessage, PagesMessage, TaskInfoMessage, TaskOverMessage}
+import asura.ui.cli.actor.DriverPoolItemActor._
 import asura.ui.cli.push.PushEventListener
 import asura.ui.cli.push.PushEventListener.{DriverDevToolsEvent, DriverStatusEvent, STATUS_IDLE, STATUS_RUNNING}
 import asura.ui.cli.server.ServerProxyConfig.PortSelector
@@ -28,7 +28,8 @@ class DriverPoolItemActor(
                            listener: PushEventListener,
                          ) extends BaseActor {
 
-  var scheduler: Cancellable = null
+  var statusScheduler: Cancellable = null
+  var screenScheduler: Cancellable = null
   val pageIds = mutable.Set[String]()
   val status: DriverStatusEvent = if (listener != null) {
     DriverStatusEvent(listener.options.pushIp, listener.options.pushPort)
@@ -64,7 +65,8 @@ class DriverPoolItemActor(
   }
 
   override def postStop(): Unit = {
-    if (scheduler != null) scheduler.cancel()
+    if (statusScheduler != null) statusScheduler.cancel()
+    if (screenScheduler != null) screenScheduler.cancel()
     if (!driverPromise.isCompleted) driverPromise.failure(new RuntimeException("stopped"))
     pageIds.foreach(id => selector.remove(id))
     if (driver != null) {
@@ -105,11 +107,20 @@ class DriverPoolItemActor(
     }
   }
 
+  private def getScreenShot(): Future[String] = {
+    implicit val ec = CliSystem.ec
+    Future {
+      driver.screenshotAsBase64()
+    }.recover {
+      case _: Throwable => null
+    }
+  }
+
   private def startPushDriverStatus(): Unit = {
     if (listener != null && listener.options.pushStatus) {
       val pushOptions = listener.options
       implicit val ec = CliSystem.ec
-      scheduler = context.system.scheduler.scheduleWithFixedDelay(0 seconds, pushOptions.pushInterval seconds)(() => {
+      statusScheduler = context.system.scheduler.scheduleWithFixedDelay(0 seconds, pushOptions.pushInterval seconds)(() => {
         ChromeDevTools.getTargetPages("127.0.0.1", status.driverPort)
           .map(targets => {
             if (status.task != null) {
@@ -117,15 +128,22 @@ class DriverPoolItemActor(
             }
             self ! PagesMessage(targets)
             status.targets = targets
-            status.screen = driver.screenshotAsBase64()
             status.timestamp = System.currentTimeMillis()
             listener.driverStatusEvent(status)
-          }).recover {
-          case t: Throwable =>
-            log.error(LogUtils.stackTraceToString(t))
-            context stop self
-        }.await
+          })
+          .recover {
+            case t: Throwable =>
+              log.error(LogUtils.stackTraceToString(t))
+              context stop self
+          }.await
       })
+      if (listener.options.pushScreen) {
+        screenScheduler = context.system.scheduler.scheduleWithFixedDelay(0 seconds, pushOptions.pushInterval * 5 seconds)(() => {
+          getScreenShot().map(screen => {
+            status.screen = screen
+          })
+        })
+      }
     }
   }
 

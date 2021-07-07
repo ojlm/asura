@@ -38,6 +38,14 @@ class PushMixin {
   var enablePushStatus: Boolean = false
 
   @Option(
+    names = Array("--enable-push-screen"),
+    description = Array(
+      "Push screenshot to remote server. Default false.",
+    )
+  )
+  var enablePushScreen: Boolean = false
+
+  @Option(
     names = Array("--push-status-interval"),
     arity = "1",
     paramLabel = "secs",
