@@ -20,7 +20,7 @@ import asura.ui.cli.task.TaskParams.{KarateParams, TaskType}
 import asura.ui.cli.task._
 import asura.ui.driver.DriverProvider
 import com.intuit.karate.driver.{Driver, DriverOptions}
-import com.intuit.karate.{FileUtils, Runner}
+import com.intuit.karate.{BuilderEx, FileUtils}
 
 class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvider {
 
@@ -127,7 +127,7 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
             FileUtils.deleteDirectory(new File(params.output))
           }
         }
-        val builder = Runner.path(params.paths)
+        val builder = BuilderEx.paths(params.paths)
         val hook = new TaskRuntimeHook()
         task.hook = hook
         builder.hook(hook)
@@ -146,7 +146,7 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
         }
         val results = builder.parallel(1)
         self ! TaskOverMessage(task)
-        listener.driverCommandResultEvent(DriverCommandResultEvent(task.meta, true, results.toKarateJson))
+        listener.driverCommandResultEvent(DriverCommandResultEvent(task.meta, true, results.toKarateModel))
       }
     }
     val thread = TaskThreadGroup.newKarate(runnable)

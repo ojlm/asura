@@ -3,6 +3,7 @@ package asura.ui.cli.push
 import asura.common.util.HostUtils
 import asura.ui.cli.push.PushEventListener._
 import asura.ui.cli.task._
+import asura.ui.karate.KarateResultModel
 import asura.ui.model.{ChromeTargetPage, ChromeVersion}
 
 trait PushEventListener {
@@ -89,7 +90,7 @@ object PushEventListener {
   case class DriverCommandResultEvent(
                                        task: TaskMeta,
                                        ok: Boolean,
-                                       results: java.util.Map[String, AnyRef] = null,
+                                       results: KarateResultModel = null,
                                        error: String = null,
                                      )
 

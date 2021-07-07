@@ -27,7 +27,7 @@ case class LogPushEventClient(options: PushOptions) extends PushEventListener {
   }
 
   override def driverCommandResultEvent(event: PushEventListener.DriverCommandResultEvent): Unit = {
-    logger.info(s"DriverDevToolsEvent{}")
+    logger.info(s"DriverDevToolsEvent:{${event.results}}")
   }
 
   override def close(): Unit = {

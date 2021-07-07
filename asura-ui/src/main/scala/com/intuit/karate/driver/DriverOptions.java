@@ -193,7 +193,7 @@ public class DriverOptions {
     } else {
       processLogFile = workingDir.getPath() + File.separator + type + ".log";
     }
-    maxPayloadSize = get("maxPayloadSize", 4194304);
+    maxPayloadSize = get("maxPayloadSize", Integer.MAX_VALUE);
     target = get("target", null);
     host = get("host", "localhost");
     webDriverUrl = get("webDriverUrl", null);
