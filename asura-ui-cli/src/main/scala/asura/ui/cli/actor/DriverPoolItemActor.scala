@@ -71,9 +71,11 @@ class DriverPoolItemActor(
     pageIds.foreach(id => selector.remove(id))
     if (driver != null) {
       if (options.getOrDefault("removeUserDataDir", Boolean.box(true)).asInstanceOf[Boolean]) {
-        FileUtils.deleteDirectory(new File(driver.getOptions.userDataDir))
+        Future {
+          FileUtils.deleteDirectory(new File(driver.getOptions.userDataDir))
+        }(CliSystem.ec)
       }
-      driver.quit()
+      driver.quit(true)
     }
   }
 

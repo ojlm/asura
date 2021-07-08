@@ -7,7 +7,7 @@ case class LogPushEventClient(options: PushOptions) extends PushEventListener {
   val logger = Logger(getClass)
 
   override def driverPoolEvent(event: PushEventListener.DriverPoolEvent): Unit = {
-    logger.info(s"DriverPoolEvent{running: ${event.running}, idle: ${event.idle}, core: ${event.core}, max: ${event.core}}")
+    logger.info(s"DriverPoolEvent{running: ${event.running}, idle: ${event.idle}, core: ${event.core}, max: ${event.max}}")
   }
 
   override def driverStatusEvent(event: PushEventListener.DriverStatusEvent): Unit = {

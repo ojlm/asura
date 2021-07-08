@@ -184,6 +184,12 @@ public class Chrome extends DevToolsDriver {
     }
   }
 
+  public void quit(Boolean force) {
+    if (force) {
+      super.quit();
+    }
+  }
+
   public static Chrome start(Map<String, Object> map, ScenarioRuntime sr) {
     DriverOptions options = new DriverOptions(map, sr, 9222,
       FileUtils.isOsWindows() ? DEFAULT_PATH_WIN : FileUtils.isOsMacOsX() ? DEFAULT_PATH_MAC : DEFAULT_PATH_LINUX);
