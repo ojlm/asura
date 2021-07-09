@@ -19,6 +19,8 @@ import asura.ui.cli.server.ServerProxyConfig.ConcurrentHashMapPortSelector
 import asura.ui.cli.task.TaskParams.{KarateParams, TaskType}
 import asura.ui.cli.task._
 import asura.ui.driver.DriverProvider
+import com.intuit.karate.core.ScenarioRuntime
+import com.intuit.karate.driver.chrome.Chrome
 import com.intuit.karate.driver.{Driver, DriverOptions}
 import com.intuit.karate.{BuilderEx, FileUtils}
 
@@ -162,7 +164,7 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
   }
 
   // called by the runner thread
-  override def get(`type`: String, driverOptions: java.util.Map[String, AnyRef]): Driver = {
+  override def get(driverOptions: java.util.Map[String, AnyRef], sr: ScenarioRuntime): Driver = {
     import asura.common.util.FutureUtils.RichFuture
     val tuple = (self ? GetDriverMessage).asInstanceOf[Future[ActorDriverTuple]].await(30 seconds)
     if (tuple.driver == null) {
@@ -183,17 +185,26 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
       tuple.actor ! DriverPoolItemActor.TaskInfoMessage(task)
       task.actors += tuple.actor
       task.driverActorMap += (tuple.driver -> tuple.actor)
-      tuple.driver
+      // fixme: reuse the `tuple.driver` is not working in linux, so recreate one
+      // tuple.driver
+      driverOptions.put("port", Int.box(tuple.driver.getOptions.port))
+      driverOptions.put("start", Boolean.box(false))
+      val child = Chrome.start(driverOptions, sr)
+      child.parent = tuple.driver
+      child
     }
   }
 
   override def release(driver: Driver): Unit = {
     val task = TaskInfo.get()
-    if (task != null) { // called by the script runner thread
-      val actor = task.driverActorMap(driver)
+    if (task != null && driver.isInstanceOf[Chrome]) { // called by the script runner thread
+      val scriptDriver = driver.asInstanceOf[Chrome]
+      scriptDriver.closeClient()
+      val parentDriver = scriptDriver.parent
+      val actor = task.driverActorMap(parentDriver)
       task.actors -= actor
-      task.driverActorMap -= driver
-      task.targets -= driver
+      task.driverActorMap -= parentDriver
+      task.targets -= parentDriver
       self ! ReleaseMessage(actor)
     }
   }

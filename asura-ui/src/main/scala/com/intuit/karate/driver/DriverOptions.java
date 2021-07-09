@@ -291,7 +291,7 @@ public class DriverOptions {
   public static Driver start(Map<String, Object> options, ScenarioRuntime sr) { // TODO unify logger
     DriverProvider driverProvider = getDriverProvider();
     if (driverProvider != null) {
-      return driverProvider.get((String) options.get("type"), options);
+      return driverProvider.get(options, sr);
     }
     Target target = (Target) options.get("target");
     if (target != null) {

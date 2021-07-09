@@ -41,6 +41,7 @@ import com.intuit.karate.core.ScenarioRuntime;
 import com.intuit.karate.core.Variable;
 import com.intuit.karate.driver.DevToolsDriver;
 import com.intuit.karate.driver.DevToolsMessage;
+import com.intuit.karate.driver.Driver;
 import com.intuit.karate.driver.DriverOptions;
 import com.intuit.karate.driver.Input;
 import com.intuit.karate.driver.Keys;
@@ -60,6 +61,7 @@ public class Chrome extends DevToolsDriver {
   public static final String DEFAULT_PATH_WIN = "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe";
   public static final String DEFAULT_PATH_LINUX = "/usr/bin/google-chrome";
 
+  public Driver parent; // used in 'DriverPoolActor'
   public ScenarioEngine engine;
   public Boolean inject;
   public Consumer<Map<String, Object>> filter;
