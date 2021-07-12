@@ -1,6 +1,7 @@
 package asura.ui.cli.task
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 import akka.actor.ActorRef
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -9,7 +10,7 @@ import com.intuit.karate.driver.Driver
 case class TaskInfo(
                      meta: TaskMeta,
                      params: TaskParams,
-                     var drivers: TaskDrivers,
+                     var drivers: ArrayBuffer[TaskDriver] = ArrayBuffer(),
                      var startAt: Long = 0L,
                    ) {
   @JsonIgnore var actors = mutable.Set[ActorRef]()
@@ -22,6 +23,7 @@ case class TaskInfo(
 object TaskInfo {
 
   private val threadLocal = new ThreadLocal[TaskInfo]()
+  val EMPTY = TaskInfo(null, null)
 
   def get(): TaskInfo = threadLocal.get()
 

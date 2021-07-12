@@ -104,10 +104,10 @@ class ChromeCommand extends ServerBaseCommand {
   @Option(
     names = Array("--enable-proxy"),
     description = Array(
-      "Create a local proxy to make the local chrome can be accessed. Default false.",
+      "Create a local proxy to make the local chrome can be accessed. Default true.",
     )
   )
-  var enableProxy: Boolean = false
+  var enableProxy: Boolean = true
 
   @Option(
     names = Array("--vnc-pass"),

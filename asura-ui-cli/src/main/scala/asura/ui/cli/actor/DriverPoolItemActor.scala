@@ -126,7 +126,11 @@ class DriverPoolItemActor(
         ChromeDevTools.getTargetPages("127.0.0.1", status.driverPort)
           .map(targets => {
             if (status.task != null) {
-              status.task.targets += (driver -> TaskDriver(status.host, status.port, status.driverPort, targets))
+              val driverModel = TaskDriver(status.host, status.port, status.driverPort, targets)
+              status.task.drivers.find(item => item == driverModel).map(item => {
+                item.targets = driverModel.targets
+                status.task.targets += (driver -> driverModel)
+              })
             }
             self ! PagesMessage(targets)
             status.targets = targets

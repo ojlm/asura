@@ -5,6 +5,7 @@ import java.util
 import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -19,6 +20,7 @@ import asura.ui.cli.server.ServerProxyConfig.ConcurrentHashMapPortSelector
 import asura.ui.cli.task.TaskParams.{KarateParams, TaskType}
 import asura.ui.cli.task._
 import asura.ui.driver.DriverProvider
+import asura.ui.util.ChromeDevTools
 import com.intuit.karate.core.ScenarioRuntime
 import com.intuit.karate.driver.chrome.Chrome
 import com.intuit.karate.driver.{Driver, DriverOptions}
@@ -35,6 +37,8 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
   override def receive: Receive = {
     case task: TaskInfo =>
       runTask(task)
+    case GetTaskMessage(id) =>
+      sender() ! runningTasks.getOrDefault(id, TaskInfo.EMPTY)
     case TaskOverMessage(task) =>
       TaskInfo.remove()
       task.actors.foreach(actor => releaseChild(actor))
@@ -145,6 +149,7 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
         builder.outputHtmlReport(if (params.formats == null) true else !params.formats.contains("~html"))
         builder.outputCucumberJson(if (params.formats == null) false else params.formats.contains("cucumber:json"))
         builder.outputJunitXml(if (params.formats == null) false else params.formats.contains("junit:xml"))
+        task.startAt = System.currentTimeMillis()
         TaskInfo.set(task)
         if (task.meta != null && task.meta.reportId != null) {
           runningTasks.put(task.meta.reportId, task)
@@ -166,6 +171,7 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
   // called by the runner thread
   override def get(driverOptions: java.util.Map[String, AnyRef], sr: ScenarioRuntime): Driver = {
     import asura.common.util.FutureUtils.RichFuture
+    import asura.ui.cli.CliSystem.ec
     val tuple = (self ? GetDriverMessage).asInstanceOf[Future[ActorDriverTuple]].await(30 seconds)
     if (tuple.driver == null) {
       throw new RuntimeException("There is not enough resource")
@@ -174,13 +180,15 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
       if (task.meta != null && task.meta.reportId != null) {
         log.info(s"task(${task.meta.reportId}) get driver: ${tuple.driver.getOptions.port}")
       }
-      if (task.drivers == null) task.drivers = TaskDrivers()
+      if (task.drivers == null) task.drivers = ArrayBuffer[TaskDriver]()
       if (task.actors == null) task.actors = mutable.Set[ActorRef]()
       if (task.driverActorMap == null) task.driverActorMap = mutable.Map[Driver, ActorRef]()
       if (task.targets == null) task.targets = mutable.Map[Driver, TaskDriver]()
       if (options.push != null) {
         val push = options.push
-        task.drivers.drivers += TaskDriver(push.pushIp, push.pushPort, tuple.driver.getOptions.port)
+        val driverPort = tuple.driver.getOptions.port
+        val targets = ChromeDevTools.getTargetPages("127.0.0.1", driverPort).await
+        task.drivers += TaskDriver(push.pushIp, push.pushPort, driverPort, targets)
       }
       tuple.actor ! DriverPoolItemActor.TaskInfoMessage(task)
       task.actors += tuple.actor
@@ -279,6 +287,8 @@ object DriverPoolActor {
   case class ActorDriverTuple(actor: ActorRef, driver: Driver)
 
   case object GetDriverMessage
+
+  case class GetTaskMessage(id: String)
 
   case class TaskOverMessage(task: TaskInfo)
 

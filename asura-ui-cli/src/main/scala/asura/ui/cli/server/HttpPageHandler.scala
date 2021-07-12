@@ -56,7 +56,19 @@ class HttpPageHandler(enableKeepAlive: Boolean) extends SimpleChannelInboundHand
 
   def handleApiRequest(ctx: ChannelHandlerContext, req: FullHttpRequest): Unit = {
     req.method() match {
+      case HttpMethod.GET => getHandler(ctx, req)
       case HttpMethod.POST => postHandler(ctx, req)
+      case _ => sendError(ctx, req, HttpResponseStatus.NOT_FOUND)
+    }
+  }
+
+  def getHandler(ctx: ChannelHandlerContext, req: FullHttpRequest): Unit = {
+    import CliSystem.ec
+    val uri = new QueryStringDecoder(req.uri())
+    val paths = uri.path().split("/")
+    paths match { // ["", "api", ...]
+      case Array(_, _, "web", id) =>
+        CliSystem.getTask(id).map(data => sendApiResponse(ctx, req, data))
       case _ => sendError(ctx, req, HttpResponseStatus.NOT_FOUND)
     }
   }
