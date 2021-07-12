@@ -85,7 +85,7 @@ class DriverPoolItemActor(
       val filter: Consumer[java.util.Map[String, AnyRef]] = {
         if (listener != null && listener.options.pushLogs) {
           params: java.util.Map[String, AnyRef] => {
-            if (status.task != null && status.task.meta != null) {
+            if (status.task != null && status.task.meta != null && params.containsKey("method")) {
               listener.driverDevToolsEvent(DriverDevToolsEvent(status.task.meta, TaskDevToolParams(params)))
             }
           }

@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.Logger
 
 case class LogPushEventClient(options: PushOptions) extends PushEventListener {
 
-  val logger = Logger(getClass)
+  val logger = Logger(getClass.getSimpleName)
 
   override def driverPoolEvent(event: PushEventListener.DriverPoolEvent): Unit = {
     logger.info(s"DriverPoolEvent{running: ${event.running}, idle: ${event.idle}, core: ${event.core}, max: ${event.max}}")
@@ -19,11 +19,13 @@ case class LogPushEventClient(options: PushOptions) extends PushEventListener {
   }
 
   override def driverDevToolsEvent(event: PushEventListener.DriverDevToolsEvent): Unit = {
-    logger.info(s"DriverDevToolsEvent{}")
+    val params = event.params
+    logger.info(s"DriverDevToolsEvent{method: ${params.method}}")
   }
 
   override def driverCommandLogEvent(event: PushEventListener.DriverCommandLogEvent): Unit = {
-    logger.info(s"DriverCommandLogEvent{}")
+    val log = event.log
+    logger.info(s"DriverCommandLogEvent{command: ${log.command}, type: ${log.`type`}}")
   }
 
   override def driverCommandResultEvent(event: PushEventListener.DriverCommandResultEvent): Unit = {

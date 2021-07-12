@@ -137,7 +137,7 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
           }
         }
         val builder = BuilderEx.paths(params.paths)
-        val hook = new TaskRuntimeHook()
+        val hook = new TaskRuntimeHook(listener, task.meta)
         task.hook = hook
         builder.hook(hook)
         builder.tags(params.tags)

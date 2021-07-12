@@ -9,3 +9,21 @@ case class TaskLog(
                     hostname: String = HostUtils.hostname,
                     timestamp: Long = System.currentTimeMillis(),
                   )
+
+object TaskLog {
+
+  val CommandKarate = "karate"
+
+  object LogType {
+    val FEATURE = "feature"
+    val BACKGROUND = "background"
+    val SCENARIO = "scenario"
+    val SUITE = "suite"
+    val STEP = "step"
+  }
+
+  def karate(`type`: String, msg: String): TaskLog = {
+    TaskLog(CommandKarate, `type`, msg)
+  }
+
+}
