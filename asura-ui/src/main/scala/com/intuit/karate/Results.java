@@ -91,9 +91,8 @@ public class Results {
         time.addAndGet(duration.intValue());
         if (model) {
           featureSummaryModel.add(fr.toResultModel());
-        } else {
-          featureSummary.add(fr.toSummaryJson());
         }
+        featureSummary.add(fr.toSummaryJson());
       }
       sp.addAndGet(fr.getPassedCount());
       sf.addAndGet(fr.getFailedCount());
