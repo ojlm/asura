@@ -5,11 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.typesafe.scalalogging.Logger
 import picocli.CommandLine.{Command, Mixin, Option}
 
-@Command(
-  header = Array("@|cyan Electron |@"),
-  name = "electron",
-  description = Array("Debug a local electron app"),
-)
+@Command(name = "electron")
 class ElectronCommand extends ServerBaseCommand {
 
   @JsonIgnore
@@ -19,7 +15,6 @@ class ElectronCommand extends ServerBaseCommand {
     names = Array("--debugger-url"),
     arity = "1",
     paramLabel = "url",
-    description = Array("Websocket debug url.")
   )
   var debuggerUrl: String = null
 
@@ -27,7 +22,6 @@ class ElectronCommand extends ServerBaseCommand {
     names = Array("--start-url"),
     arity = "1",
     paramLabel = "url",
-    description = Array("Start url for debugging.")
   )
   var startUrl: String = null
 
@@ -35,17 +29,13 @@ class ElectronCommand extends ServerBaseCommand {
     names = Array("--remote-debugging-port"),
     arity = "1",
     paramLabel = "port",
-    description = Array("Chrome remote debugging port or any remote port, default: 9221.")
   )
   var chromePort: Int = 9221
 
   @Option(
-    names = Array("--enable-proxy"),
-    description = Array(
-      "Create a local proxy to make the local chrome can be accessed. Default false.",
-    )
+    names = Array("--disable-proxy"),
   )
-  var enableProxy: Boolean = false
+  var enableProxy: Boolean = true
 
   @Mixin
   val push: PushMixin = null

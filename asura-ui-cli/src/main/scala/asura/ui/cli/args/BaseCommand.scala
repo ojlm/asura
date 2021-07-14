@@ -5,17 +5,10 @@ import java.util.concurrent.Callable
 import picocli.CommandLine.Command
 
 @Command(
-  version = Array("indigo 0.8.0"),
+  versionProvider = classOf[PropertiesVersionProvider],
+  resourceBundle = "i18n.Messages",
   mixinStandardHelpOptions = true,
   sortOptions = false,
-  synopsisHeading = "%n@|bold Usage|@:%n",
-  descriptionHeading = "%n@|bold Description|@:%n",
-  optionListHeading = "@|bold %nOptions|@:%n",
-  synopsisSubcommandLabel = "[command]",
-  commandListHeading = "@|bold %nCommands|@:%n",
-  footer = Array(
-    "",
-  )
 )
 abstract class BaseCommand extends Callable[Int] {
 

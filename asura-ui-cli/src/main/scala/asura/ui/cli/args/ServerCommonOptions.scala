@@ -8,7 +8,7 @@ abstract class ServerCommonOptions extends BaseCommand {
     names = Array("-p", "--server-port"),
     arity = "1",
     paramLabel = "port",
-    description = Array("Local server port. Default: 8080.")
+    descriptionKey = "server.port",
   )
   var serverPort: Int = 8080
 

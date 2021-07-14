@@ -8,14 +8,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.typesafe.scalalogging.Logger
 import picocli.CommandLine.{ArgGroup, Command, Mixin, Option, Parameters}
 
-@Command(
-  header = Array("@|cyan Start a monkey task |@"),
-  name = "monkey",
-  description = Array(
-    "Start a monkey task.",
-    "",
-  ),
-)
+@Command(name = "monkey")
 class MonkeyCommand extends BaseCommand {
 
   @JsonIgnore
@@ -27,9 +20,6 @@ class MonkeyCommand extends BaseCommand {
   @Parameters(
     arity = "1",
     paramLabel = "path",
-    description = Array(
-      "Config file.",
-    )
   )
   val config: File = null
 
@@ -50,17 +40,11 @@ object MonkeyCommand {
 
     @Option(
       names = Array("--chrome"),
-      description = Array(
-        "Run on chrome.",
-      )
     )
     var chrome: Boolean = false
 
     @Option(
       names = Array("--electron"),
-      description = Array(
-        "Run on electron.",
-      )
     )
     var electron: Boolean = false
 
