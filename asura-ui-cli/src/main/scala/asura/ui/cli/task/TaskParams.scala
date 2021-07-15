@@ -9,6 +9,7 @@ import asura.ui.model.RemoteHost
 case class TaskParams(
                        `type`: Int,
                        params: Object,
+                       remote: RemoteHost = null, // use remote driver
                      ) {
 
   def karate(): KarateParams = {
@@ -42,7 +43,6 @@ object TaskParams {
                            paths: java.util.List[String] = Collections.singletonList("."),
                            tags: java.util.List[String] = null,
                            formats: java.util.List[String] = null,
-                           remote: RemoteHost = null, // run on remote driver
                          )
 
 }

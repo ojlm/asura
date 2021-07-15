@@ -20,6 +20,7 @@ import asura.ui.cli.server.ServerProxyConfig.PortSelector
 import asura.ui.cli.task.TaskParams.{KarateParams, TaskType}
 import asura.ui.cli.task._
 import asura.ui.driver.DriverProvider
+import asura.ui.model.RemoteHost
 import asura.ui.util.ChromeDevTools
 import com.intuit.karate.core.ScenarioRuntime
 import com.intuit.karate.driver.chrome.Chrome
@@ -41,30 +42,34 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
       sender() ! runningTasks.getOrDefault(id, TaskInfo.EMPTY)
     case TaskOverMessage(task) =>
       TaskInfo.remove()
-      task.actors.foreach(actor => releaseChild(actor))
+      task.actors.foreach(actor => releaseChild(actor, task.params.remote))
       if (task.meta != null && task.meta.reportId != null) {
         runningTasks.remove(task.meta.reportId, task)
       }
-    case ReleaseMessage(actor) =>
-      releaseChild(actor)
-    case GetDriverMessage =>
-      val drivers = idle.entrySet().iterator()
-      if (drivers.hasNext) {
-        val driver = drivers.next()
-        idle.remove(driver.getKey)
-        running.put(driver.getKey, driver.getValue)
-        sender() ! ActorDriverTuple(driver.getKey, driver.getValue)
-      } else {
-        if (running.size() < options.maxCount) {
-          startDriver(0, false, sender())
+    case ReleaseMessage(actor, remote) =>
+      releaseChild(actor, remote)
+    case GetDriverMessage(driverOptions, sr, remote) =>
+      if (remote == null) { // use local driver with resource limitation
+        val drivers = idle.entrySet().iterator()
+        if (drivers.hasNext) {
+          val driver = drivers.next()
+          idle.remove(driver.getKey)
+          running.put(driver.getKey, driver.getValue)
+          sender() ! ActorDriverTuple(driver.getKey, driver.getValue)
         } else {
-          sender() ! ActorDriverTuple(null, null)
+          if (running.size() < options.maxCount) {
+            startLocalDriver(0, false, sender())
+          } else {
+            sender() ! ActorDriverTuple(null, null)
+          }
         }
+      } else { // remote driver
+        startRemoteDriver(driverOptions, sr, remote, sender())
       }
     case Terminated(child) =>
       running.remove(child)
       idle.remove(child)
-      log.info(s"driver(${child.path.address.toString}) is terminated.")
+      log.info(s"child driver(${child.path.toString}) is terminated.")
     case msg =>
       log.info(s"Unknown type: ${msg.getClass.getName}.")
   }
@@ -74,13 +79,13 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
     if (options.start) {
       if (options.maxCount == 1) {
         val port: Integer = if (options.ports != null && options.ports.size() == 1) options.ports.get(0) else 0
-        startDriver(port, true, null)
+        startLocalDriver(port, true, null)
       } else {
-        0.until(options.initCount).foreach(_ => startDriver(0, true, null))
+        0.until(options.initCount).foreach(_ => startLocalDriver(0, true, null))
       }
     } else {
       if (options.ports != null) {
-        options.ports.forEach(port => startDriver(port, true, null))
+        options.ports.forEach(port => startLocalDriver(port, true, null))
       }
     }
     startPushPoolStatus()
@@ -91,17 +96,21 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
     if (listener != null) listener.close()
   }
 
-  private def releaseChild(actor: ActorRef): Unit = {
-    var count = running.size() - options.coreCount
-    if (count > 0) {
-      context stop actor
-      count = count - 1
-    } else {
-      actor ! DriverPoolItemActor.TaskOverMessage
-      val driver = running.remove(actor)
-      if (driver != null) {
-        idle.put(actor, driver)
+  private def releaseChild(actor: ActorRef, remote: RemoteHost): Unit = {
+    if (remote == null) { // local driver with resource limitation
+      var count = running.size() - options.coreCount
+      if (count > 0) {
+        context stop actor
+        count = count - 1
+      } else {
+        actor ! DriverPoolItemActor.TaskOverMessage
+        val driver = running.remove(actor)
+        if (driver != null) {
+          idle.put(actor, driver)
+        }
       }
+    } else { // just stop
+      context stop actor
     }
   }
 
@@ -130,7 +139,6 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
   private def run(params: KarateParams, task: TaskInfo): Unit = {
     val runnable = new Runnable {
       override def run(): Unit = {
-        task.paramsData = params
         if (params.clean) {
           val output = new File(params.output)
           if (output.exists() && output.isDirectory) {
@@ -174,12 +182,17 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
     import asura.common.util.FutureUtils.RichFuture
     import asura.ui.cli.CliSystem.ec
     val task = TaskInfo.get()
-    val tuple = (self ? GetDriverMessage).asInstanceOf[Future[ActorDriverTuple]].await(30 seconds)
+    val remote = task.params.remote
+    val tuple = (self ? GetDriverMessage(driverOptions, sr, remote)).asInstanceOf[Future[ActorDriverTuple]].await(30 seconds)
     if (tuple.driver == null) {
       throw new RuntimeException("There is not enough resource")
     } else {
       if (task.meta != null && task.meta.reportId != null) {
-        log.info(s"task(${task.meta.reportId}) get driver: ${tuple.driver.getOptions.port}")
+        if (remote == null) {
+          log.info(s"task(${task.meta.reportId}) get local driver, ${tuple.driver.getOptions.port}")
+        } else {
+          log.info(s"task(${task.meta.reportId}) get remote driver, ${remote.host}:${remote.port}")
+        }
       }
       if (task.drivers == null) task.drivers = ArrayBuffer[TaskDriver]()
       if (task.actors == null) task.actors = mutable.Set[ActorRef]()
@@ -188,41 +201,77 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
       if (options.push != null) {
         val push = options.push
         val driverPort = tuple.driver.getOptions.port
-        val targets = ChromeDevTools.getTargetPages("127.0.0.1", driverPort).await
-        task.drivers += TaskDriver(push.pushIp, push.pushPort, driverPort, targets)
+        val targets = if (tuple.driver.isInstanceOf[Chrome]) {
+          if (remote == null) {
+            ChromeDevTools.getTargetPages("127.0.0.1", driverPort).await
+          } else {
+            ChromeDevTools.getTargetPages(remote.host, remote.port).await
+          }
+        } else {
+          Nil
+        }
+        task.drivers += TaskDriver(push.pushIp, push.pushPort, driverPort, driverOptions.getOrDefault("type", "chrome").toString, targets)
       }
       tuple.actor ! DriverPoolItemActor.TaskInfoMessage(task)
       task.actors += tuple.actor
       task.driverActorMap += (tuple.driver -> tuple.actor)
-      // fixme: reuse the `tuple.driver` is not working in linux, so recreate one
-      // tuple.driver
-      driverOptions.put("port", Int.box(tuple.driver.getOptions.port))
-      driverOptions.put("start", Boolean.box(false))
-      val child = Chrome.start(driverOptions, sr)
-      child.parent = tuple.driver
-      child
+      if (tuple.driver.isInstanceOf[Chrome] && remote == null) {
+        // local chrome driver
+        // fixme: reuse the `tuple.driver` is not working in linux, so recreate one
+        // tuple.driver
+        driverOptions.put("port", Int.box(tuple.driver.getOptions.port))
+        driverOptions.put("start", Boolean.box(false))
+        val child = Chrome.start(driverOptions, sr)
+        child.parent = tuple.driver
+        child
+      } else {
+        tuple.driver
+      }
     }
   }
 
   // called by the runner thread, when driver.quit()
   override def release(driver: Driver): Unit = {
     val task = TaskInfo.get()
-    if (task != null && driver.isInstanceOf[Chrome]) { // called by the script runner thread
-      val scriptDriver = driver.asInstanceOf[Chrome]
-      scriptDriver.closeClient()
-      val parentDriver = scriptDriver.parent
-      if (parentDriver != null) { // type=electron
-        val actor = task.driverActorMap(parentDriver)
-        task.actors -= actor
-        task.driverActorMap -= parentDriver
-        task.targets -= parentDriver
-        self ! ReleaseMessage(actor)
+    if (task != null) {
+      val managedDriver = if (driver.isInstanceOf[Chrome]) {
+        val scriptDriver = driver.asInstanceOf[Chrome]
+        if (scriptDriver.parent != null) { // local chrome only with ws client
+          scriptDriver.closeClient()
+          scriptDriver.parent
+        } else {
+          scriptDriver
+        }
+      } else {
+        driver
       }
+      val actor = task.driverActorMap(managedDriver)
+      task.actors -= actor
+      task.driverActorMap -= managedDriver
+      task.targets -= managedDriver
+      self ! ReleaseMessage(actor, task.params.remote)
     }
   }
 
+  private def startRemoteDriver(
+                                 options: java.util.Map[String, AnyRef],
+                                 sr: ScenarioRuntime,
+                                 remote: RemoteHost,
+                                 sender: ActorRef,
+                               ): Future[ActorDriverTuple] = {
+    val child = context.actorOf(RemoteDriverActor.props(options, sr, remote, listener))
+    child.ask(DriverPoolItemActor.GetDriverMessage)(timeout = 30 seconds, sender = Actor.noSender)
+      .asInstanceOf[Future[Driver]]
+      .map(driver => {
+        context watch child
+        val tuple = ActorDriverTuple(child, driver)
+        if (sender != null) sender ! tuple
+        tuple
+      })(context.dispatcher)
+  }
+
   // only the 'port' is different, '0' for random.
-  private def startDriver(port: Integer, isIdle: Boolean, sender: ActorRef): Future[ActorDriverTuple] = {
+  private def startLocalDriver(port: Integer, isIdle: Boolean, sender: ActorRef): Future[ActorDriverTuple] = {
     val copied = new util.HashMap[String, Object](options.driver)
     copied.put("port", port)
     val electron = if (options.push != null) options.push.electron else false
@@ -291,12 +340,12 @@ object DriverPoolActor {
 
   case class ActorDriverTuple(actor: ActorRef, driver: Driver)
 
-  case object GetDriverMessage
+  case class GetDriverMessage(options: java.util.Map[String, AnyRef], sr: ScenarioRuntime, remote: RemoteHost)
 
   case class GetTaskMessage(id: String)
 
   case class TaskOverMessage(task: TaskInfo)
 
-  case class ReleaseMessage(actor: ActorRef)
+  case class ReleaseMessage(actor: ActorRef, remote: RemoteHost)
 
 }

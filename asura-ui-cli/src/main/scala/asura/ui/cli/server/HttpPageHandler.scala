@@ -5,7 +5,7 @@ import java.net.{URL, URLDecoder}
 import java.nio.charset.StandardCharsets
 import java.util.regex.Pattern
 
-import asura.common.model.ApiRes
+import asura.common.model.{ApiRes, ApiResError}
 import asura.common.util.{JsonUtils, LogUtils}
 import asura.ui.cli.CliSystem
 import asura.ui.cli.server.HttpPageHandler._
@@ -55,10 +55,16 @@ class HttpPageHandler(enableKeepAlive: Boolean) extends SimpleChannelInboundHand
   }
 
   def handleApiRequest(ctx: ChannelHandlerContext, req: FullHttpRequest): Unit = {
-    req.method() match {
-      case HttpMethod.GET => getHandler(ctx, req)
-      case HttpMethod.POST => postHandler(ctx, req)
-      case _ => sendError(ctx, req, HttpResponseStatus.NOT_FOUND)
+    try {
+      req.method() match {
+        case HttpMethod.GET => getHandler(ctx, req)
+        case HttpMethod.POST => postHandler(ctx, req)
+        case _ => sendError(ctx, req, HttpResponseStatus.NOT_FOUND)
+      }
+    } catch {
+      case t: Throwable =>
+        logger.error("handle api request error: ", t)
+        sendApiResponse(ctx, req, ApiResError(t.getMessage))
     }
   }
 
