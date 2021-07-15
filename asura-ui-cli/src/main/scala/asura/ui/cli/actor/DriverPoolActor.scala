@@ -16,7 +16,7 @@ import asura.ui.UiConfig.DEFAULT_ACTOR_ASK_TIMEOUT
 import asura.ui.cli.actor.DriverPoolActor._
 import asura.ui.cli.push.PushEventListener._
 import asura.ui.cli.push.PushOptions
-import asura.ui.cli.server.ServerProxyConfig.ConcurrentHashMapPortSelector
+import asura.ui.cli.server.ServerProxyConfig.PortSelector
 import asura.ui.cli.task.TaskParams.{KarateParams, TaskType}
 import asura.ui.cli.task._
 import asura.ui.driver.DriverProvider
@@ -130,6 +130,7 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
   private def run(params: KarateParams, task: TaskInfo): Unit = {
     val runnable = new Runnable {
       override def run(): Unit = {
+        task.paramsData = params
         if (params.clean) {
           val output = new File(params.output)
           if (output.exists() && output.isDirectory) {
@@ -172,11 +173,11 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
   override def get(driverOptions: java.util.Map[String, AnyRef], sr: ScenarioRuntime): Driver = {
     import asura.common.util.FutureUtils.RichFuture
     import asura.ui.cli.CliSystem.ec
+    val task = TaskInfo.get()
     val tuple = (self ? GetDriverMessage).asInstanceOf[Future[ActorDriverTuple]].await(30 seconds)
     if (tuple.driver == null) {
       throw new RuntimeException("There is not enough resource")
     } else {
-      val task = TaskInfo.get()
       if (task.meta != null && task.meta.reportId != null) {
         log.info(s"task(${task.meta.reportId}) get driver: ${tuple.driver.getOptions.port}")
       }
@@ -203,17 +204,20 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
     }
   }
 
+  // called by the runner thread, when driver.quit()
   override def release(driver: Driver): Unit = {
     val task = TaskInfo.get()
     if (task != null && driver.isInstanceOf[Chrome]) { // called by the script runner thread
       val scriptDriver = driver.asInstanceOf[Chrome]
       scriptDriver.closeClient()
       val parentDriver = scriptDriver.parent
-      val actor = task.driverActorMap(parentDriver)
-      task.actors -= actor
-      task.driverActorMap -= parentDriver
-      task.targets -= parentDriver
-      self ! ReleaseMessage(actor)
+      if (parentDriver != null) { // type=electron
+        val actor = task.driverActorMap(parentDriver)
+        task.actors -= actor
+        task.driverActorMap -= parentDriver
+        task.targets -= parentDriver
+        self ! ReleaseMessage(actor)
+      }
     }
   }
 
@@ -221,7 +225,8 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
   private def startDriver(port: Integer, isIdle: Boolean, sender: ActorRef): Future[ActorDriverTuple] = {
     val copied = new util.HashMap[String, Object](options.driver)
     copied.put("port", port)
-    if (!copied.containsKey("userDataDir")) {
+    val electron = if (options.push != null) options.push.electron else false
+    if (!copied.containsKey("userDataDir") && !electron) {
       copied.put("userDataDir", s"${options.userDataDirPrefix}/driver-${System.nanoTime()}")
     }
     val child = context.actorOf(DriverPoolItemActor.props(copied, options.selector, listener))
@@ -248,7 +253,7 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
         val event = DriverPoolEvent(
           host = pushOptions.pushIp, port = pushOptions.pushPort,
           idle = idle.size, core = options.coreCount, running = running.size, max = options.maxCount,
-          reports = runningTasks.keys().asScala.toSeq
+          reports = runningTasks.keys().asScala.toSeq, electron = pushOptions.electron
         )
         listener.driverPoolEvent(event)
         val tasks = mutable.ArrayBuffer[TaskInfoEventItem]()
@@ -281,7 +286,7 @@ object DriverPoolActor {
                           ports: java.util.List[Integer],
                           driver: java.util.HashMap[String, Object],
                           push: PushOptions,
-                          selector: ConcurrentHashMapPortSelector
+                          selector: PortSelector
                         )
 
   case class ActorDriverTuple(actor: ActorRef, driver: Driver)

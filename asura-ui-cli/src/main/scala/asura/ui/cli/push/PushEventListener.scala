@@ -44,7 +44,7 @@ object PushEventListener {
   trait BasicEvent {
     val host: String
     val port: Integer
-    var timestamp: Long = 0L
+    var timestamp: Long = System.currentTimeMillis()
     var hostname: String = HostUtils.hostname
   }
 
@@ -56,11 +56,13 @@ object PushEventListener {
                               running: Integer,
                               max: Integer,
                               reports: Seq[String],
+                              electron: Boolean,
                             ) extends BasicEvent
 
   case class DriverStatusEvent(
                                 host: String,
                                 port: Integer,
+                                electron: Boolean,
                                 var driverPort: Integer = 0,
                                 var status: Int = STATUS_IDLE,
                                 var task: TaskInfo = null,

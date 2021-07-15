@@ -4,6 +4,7 @@ import java.util.Collections
 
 import asura.common.util.{JsonUtils, StringUtils}
 import asura.ui.cli.task.TaskParams.{KarateParams, TaskType}
+import asura.ui.model.RemoteHost
 
 case class TaskParams(
                        `type`: Int,
@@ -41,6 +42,7 @@ object TaskParams {
                            paths: java.util.List[String] = Collections.singletonList("."),
                            tags: java.util.List[String] = null,
                            formats: java.util.List[String] = null,
+                           remote: RemoteHost = null, // run on remote driver
                          )
 
 }

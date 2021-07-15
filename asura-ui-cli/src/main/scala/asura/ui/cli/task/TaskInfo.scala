@@ -13,6 +13,7 @@ case class TaskInfo(
                      var drivers: ArrayBuffer[TaskDriver] = ArrayBuffer(),
                      var startAt: Long = 0L,
                    ) {
+  @JsonIgnore var paramsData: Object = null // params.params
   @JsonIgnore var actors = mutable.Set[ActorRef]()
   @JsonIgnore var driverActorMap = mutable.Map[Driver, ActorRef]()
   @JsonIgnore var hook: TaskRuntimeHook = null

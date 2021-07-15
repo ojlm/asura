@@ -32,9 +32,10 @@ class DriverPoolItemActor(
   var screenScheduler: Cancellable = null
   val pageIds = mutable.Set[String]()
   val status: DriverStatusEvent = if (listener != null) {
-    DriverStatusEvent(listener.options.pushIp, listener.options.pushPort)
+    val pushOptions = listener.options
+    DriverStatusEvent(pushOptions.pushIp, pushOptions.pushPort, electron = pushOptions.electron)
   } else {
-    DriverStatusEvent("localhost", 0)
+    DriverStatusEvent("localhost", 0, false)
   }
   val driverPromise = Promise[Chrome]()
   var driver: Chrome = null

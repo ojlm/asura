@@ -1,14 +1,15 @@
 package asura.ui.cli.runner
 
 import java.util
+import java.util.Collections
 
-import asura.common.util.HostUtils
-import asura.ui.UiConfig
+import asura.common.util.StringUtils
+import asura.ui.cli.CliSystem
+import asura.ui.cli.actor.DriverPoolActor.PoolOptions
 import asura.ui.cli.args.ElectronCommand
+import asura.ui.cli.push.PushOptions
 import asura.ui.cli.server.ServerProxyConfig.FixedPortSelector
 import asura.ui.cli.server.{Server, ServerProxyConfig}
-import asura.ui.cli.{CliSystem, DriverRegister}
-import asura.ui.model.ChromeDriverInfo
 import com.typesafe.scalalogging.Logger
 
 object ElectronRunner {
@@ -18,40 +19,48 @@ object ElectronRunner {
   def run(args: ElectronCommand): Unit = {
     val options = new util.HashMap[String, Object]()
     options.put("start", Boolean.box(false))
-    options.put("port", Int.box(args.chromePort))
+    options.put("port", Int.box(args.port))
     if (args.debuggerUrl != null) {
       options.put("debuggerUrl", args.debuggerUrl)
     }
     if (args.startUrl != null) {
       options.put("startUrl", args.startUrl)
     }
-    val localChrome = if (args.enableServer && args.push.enablePushStatus) {
-      ChromeDriverInfo(
-        args.push.pushIp,
-        if (args.push.pushPort > 0) args.push.pushPort else args.serverPort,
-        null, true
+    val pushOptions = if (args.enableServer && (args.push.enablePushStatus || args.push.enablePushLogs)) {
+      PushOptions(
+        pushIp = args.push.pushIp,
+        pushPort = if (args.push.pushPort > 0) args.push.pushPort else args.serverPort,
+        pushUrl = args.push.pushUrl,
+        pushInterval = args.push.pushInterval,
+        pushStatus = args.push.enablePushStatus,
+        pushScreen = args.push.enablePushScreen,
+        pushLogs = args.push.enablePushLogs,
+        password = StringUtils.EMPTY,
+        electron = true
       )
     } else {
       null
     }
-    if (localChrome != null) {
-      localChrome.hostname = HostUtils.hostname
-      localChrome.startUrl = args.startUrl
-      localChrome.debuggerUrl = args.debuggerUrl
-    }
-    val config = UiConfig(
-      system = CliSystem.system,
-      ec = CliSystem.ec,
-      taskListener = null,
-      enableLocal = true,
-      localChrome = localChrome,
-      uiDriverProvider = if (args.push.enablePushStatus) DriverRegister(args.push.pushUrl) else null,
-      syncInterval = args.push.pushInterval,
-      options = options
+    val selector = FixedPortSelector(args.port)
+    val poolOptions = PoolOptions(
+      start = false,
+      initCount = 1,
+      coreCount = 1,
+      maxCount = 1,
+      userDataDirPrefix = null,
+      removeUserDataDir = false,
+      ports = Collections.singletonList(args.port),
+      driver = options,
+      push = pushOptions,
+      selector = selector,
     )
-    UiConfig.init(config)
+    CliSystem.startWebDriverPool(poolOptions)
     if (args.enableServer) {
-      val server = Server(args.serverPort, ServerProxyConfig(args.enableProxy, new FixedPortSelector(args.chromePort)))
+      val proxyConfig = ServerProxyConfig(
+        enable = args.enableProxy,
+        portSelector = selector,
+      )
+      val server = Server(args.serverPort, proxyConfig)
       server.start()
       sys.addShutdownHook({
         server.stop()

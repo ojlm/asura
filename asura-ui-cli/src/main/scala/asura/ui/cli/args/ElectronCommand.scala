@@ -30,10 +30,10 @@ class ElectronCommand extends ServerBaseCommand {
     arity = "1",
     paramLabel = "port",
   )
-  var chromePort: Int = 9221
+  var port: Int = 9221
 
   @Option(
-    names = Array("--disable-proxy"),
+    names = Array("--enable-proxy"),
   )
   var enableProxy: Boolean = true
 

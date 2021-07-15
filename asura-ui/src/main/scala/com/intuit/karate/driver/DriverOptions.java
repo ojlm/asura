@@ -288,11 +288,7 @@ public class DriverOptions {
     return command;
   }
 
-  public static Driver start(Map<String, Object> options, ScenarioRuntime sr) { // TODO unify logger
-    DriverProvider driverProvider = getDriverProvider();
-    if (driverProvider != null) {
-      return driverProvider.get(options, sr);
-    }
+  public static Driver startOrigin(Map<String, Object> options, ScenarioRuntime sr) {
     Target target = (Target) options.get("target");
     if (target != null) {
       sr.logger.debug("custom target configured, calling start()");
@@ -334,6 +330,8 @@ public class DriverOptions {
           return PlaywrightDriver.start(options, sr);
         case "indigo":
           return IndigoDriver.start(options, sr);
+        case "electron":
+          return Chrome.start(options, sr);
         default:
           sr.logger.warn("unknown driver type: {}, defaulting to 'chrome'", type);
           options.put("type", "chrome");
@@ -346,6 +344,15 @@ public class DriverOptions {
         target.stop(sr);
       }
       throw new RuntimeException(message, e);
+    }
+  }
+
+  public static Driver start(Map<String, Object> options, ScenarioRuntime sr) { // TODO unify logger
+    DriverProvider driverProvider = getDriverProvider();
+    if (driverProvider != null) {
+      return driverProvider.get(options, sr);
+    } else {
+      return startOrigin(options, sr);
     }
   }
 

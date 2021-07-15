@@ -5,7 +5,7 @@ import picocli.CommandLine.Option
 abstract class ServerBaseCommand extends ServerCommonOptions {
 
   @Option(
-    names = Array("--disable-server"),
+    names = Array("--enable-server"),
     descriptionKey = "server.enable",
   )
   var enableServer: Boolean = true
