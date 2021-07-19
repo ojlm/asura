@@ -1,5 +1,6 @@
 package asura.ui.cli.server
 
+import java.net.URI
 import java.nio.ByteOrder
 import java.nio.charset.StandardCharsets
 import java.util
@@ -10,7 +11,7 @@ import karate.io.netty.buffer.ByteBuf
 import karate.io.netty.channel.{ChannelHandlerContext, ChannelPipeline}
 import karate.io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketServerCompressionHandler
 import karate.io.netty.handler.codec.http.websocketx.{WebSocketDecoderConfig, WebSocketServerProtocolConfig, WebSocketServerProtocolHandler}
-import karate.io.netty.handler.codec.http.{HttpObjectAggregator, HttpServerCodec}
+import karate.io.netty.handler.codec.http.{HttpObjectAggregator, HttpServerCodec, QueryStringDecoder}
 import karate.io.netty.handler.codec.{ByteToMessageDecoder, LengthFieldBasedFrameDecoder}
 import karate.io.netty.handler.logging.{LogLevel, LoggingHandler}
 import karate.io.netty.handler.ssl.{SslContext, SslHandler}
@@ -37,10 +38,20 @@ class PortUnificationServerHandler(
             val uri = in.getCharSequence(tuple._1 + 1, tuple._2 - tuple._1 - 1, StandardCharsets.UTF_8).asInstanceOf[String]
             if (config.isChrome(uri)) { // chrome
               if (uri.startsWith("/devtools/page/")) { // websocket
-                val pageId = uri.substring("/devtools/page/".size)
-                switchToTcpProxy(ctx, "127.0.0.1", config.portSelector.getPort(pageId))
+                val uriDecoder = new QueryStringDecoder(uri)
+                val pageId = uriDecoder.path().substring("/devtools/page/".size)
+                val params = uriDecoder.parameters().get("proxy.to")
+                val address: (String, Int) = if (params != null && !params.isEmpty) {
+                  val proxyTo = params.get(0)
+                  val array = proxyTo.split(":")
+                  (array(0), array(1).toInt)
+                } else {
+                  ("127.0.0.1", config.portSelector.getPort(pageId))
+                }
+                val newUri = URI.create(s"ws://${address._1}:${address._2}/devtools/page/$pageId")
+                switchToHttpProxy(ctx, address._1, address._2, WebSocketProxyConfig.devtoolsPage(newUri))
               } else {
-                switchToHttpProxy(ctx, "127.0.0.1", config.portSelector.getPort(null))
+                switchToHttpProxy(ctx, "127.0.0.1", config.portSelector.getPort(null), null)
               }
             } else if (config.isWebsockify(uri)) { // vnc server
               switchToTcpProxy(ctx, "127.0.0.1", config.localWebsockifyPort)
@@ -126,15 +137,15 @@ class PortUnificationServerHandler(
     p.fireChannelActive()
   }
 
-  def switchToHttpProxy(ctx: ChannelHandlerContext, remoteHost: String, remotePort: Int): Unit = {
+  def switchToHttpProxy(ctx: ChannelHandlerContext, remoteHost: String, remotePort: Int, config: WebSocketProxyConfig): Unit = {
     val p = ctx.pipeline()
-    p.addLast(new ProxyServerConnectHandler(remoteHost, remotePort, true, false))
+    p.addLast(new ProxyServerConnectHandler(remoteHost, remotePort, true, false, config))
     p.remove(this)
   }
 
   def switchToTcpProxy(ctx: ChannelHandlerContext, remoteHost: String, remotePort: Int): Unit = {
     val p = ctx.pipeline()
-    p.addLast(new ProxyServerConnectHandler(remoteHost, remotePort, false, false))
+    p.addLast(new ProxyServerConnectHandler(remoteHost, remotePort, false, false, null))
     p.remove(this)
   }
 
