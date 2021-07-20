@@ -1,21 +1,29 @@
 package asura.app.api.ci
 
+import javax.inject.{Inject, Singleton}
+
+import scala.concurrent.{ExecutionContext, Future}
+
 import akka.actor.ActorSystem
+import akka.pattern.ask
 import akka.stream.scaladsl.Source
 import akka.stream.{Materializer, OverflowStrategy}
 import asura.common.actor.SenderMessage
+import asura.core.CoreConfig.DEFAULT_ACTOR_ASK_TIMEOUT
 import asura.core.actor.flow.WebSocketMessageHandler.completionMatcher
 import asura.core.ci.{CiManager, CiTriggerEventMessage}
+import asura.core.es.model.JobReportData.ScenarioReportItemData
+import asura.core.es.service.ScenarioService
 import asura.core.job.actor.JobCiActor
+import asura.core.runtime.RuntimeContext
+import asura.core.scenario.actor.ScenarioRunnerActor
+import asura.core.scenario.actor.ScenarioRunnerActor.ScenarioTestJobMessage
 import asura.play.api.BaseApi
-import javax.inject.{Inject, Singleton}
 import org.pac4j.play.scala.SecurityComponents
 import play.api.http.ContentTypes
 import play.api.libs.EventSource
 import play.api.libs.streams.ActorFlow
 import play.api.mvc.{Codec, WebSocket}
-
-import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class CiApi @Inject()(
@@ -53,4 +61,24 @@ class CiApi @Inject()(
       .as(ContentTypes.EVENT_STREAM)
       .withHeaders(BaseApi.responseNoCacheHeaders: _*)
   }
+
+  def runScenario(id: String) = Action(parse.byteString).async { implicit req =>
+    ScenarioService.getScenarioById(id).flatMap(scenario => {
+      val msg = ScenarioTestJobMessage(
+        summary = scenario.summary,
+        steps = scenario.steps,
+        storeHelper = null,
+        runtimeContext = RuntimeContext(),
+        imports = scenario.imports,
+        exports = scenario.exports,
+        failFast = scenario.failFast,
+      )
+      (system.actorOf(ScenarioRunnerActor.props(id)) ? msg)
+        .asInstanceOf[Future[ScenarioReportItemData]]
+        .map(item => {
+          Map("result" -> item, "context" -> msg.runtimeContext.rawContext)
+        }).toOkResult
+    })
+  }
+
 }

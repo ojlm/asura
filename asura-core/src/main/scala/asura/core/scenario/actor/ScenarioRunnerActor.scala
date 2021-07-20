@@ -1,5 +1,8 @@
 package asura.core.scenario.actor
 
+import scala.collection.mutable.ArrayBuffer
+import scala.concurrent.Future
+
 import akka.actor.{ActorRef, Props, Status}
 import akka.pattern.pipe
 import asura.common.actor._
@@ -19,9 +22,6 @@ import asura.core.runtime.{AbstractResult, ContextOptions, ControllerOptions, Ru
 import asura.core.scenario.actor.ScenarioRunnerActor.{ScenarioTestData, ScenarioTestJobMessage, ScenarioTestWebMessage}
 import asura.core.sql.RenderedSqlModel.RenderedSqlRequest
 import asura.core.sql.{SqlResult, SqlRunner}
-
-import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.Future
 
 /** alive during a scenario */
 class ScenarioRunnerActor(scenarioId: String) extends ScenarioStepBasicActor {
@@ -47,10 +47,6 @@ class ScenarioRunnerActor(scenarioId: String) extends ScenarioStepBasicActor {
     case SenderMessage(wsSender) =>
       // WebSocket actor for web console log
       wsActor = wsSender
-      context.become(doTheTest())
-  }
-
-  private def doTheTest(): Receive = {
     case msg: ScenarioTestWebMessage =>
       this.description = msg.description
       this.scenarioReportItem.title = msg.summary
