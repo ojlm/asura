@@ -72,9 +72,12 @@ class DriverPoolItemActor(
     pageIds.foreach(id => selector.remove(id))
     if (driver != null) {
       if (options.getOrDefault("removeUserDataDir", Boolean.box(true)).asInstanceOf[Boolean]) {
-        Future {
-          FileUtils.deleteDirectory(new File(driver.getOptions.userDataDir))
-        }(CliSystem.ec)
+        val file = new File(driver.getOptions.userDataDir)
+        if (file.exists()) {
+          Future {
+            FileUtils.deleteDirectory(new File(driver.getOptions.userDataDir))
+          }(CliSystem.ec)
+        }
       }
       driver.quit(true)
     }
@@ -127,8 +130,8 @@ class DriverPoolItemActor(
         ChromeDevTools.getTargetPages("127.0.0.1", status.driverPort)
           .map(targets => {
             if (status.task != null) {
-              val driverModel = TaskDriver(status.host, status.port, status.driverPort, "chrome", targets)
-              status.task.drivers.find(item => item == driverModel).map(item => {
+              val driverModel = TaskDriver(status.host, status.port, status.driverPort, options.getOrDefault("type", "chrome").toString, targets)
+              status.task.drivers.find(item => item.equals(driverModel)).map(item => {
                 item.targets = driverModel.targets
                 status.task.targets += (driver -> driverModel)
               })

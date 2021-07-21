@@ -18,6 +18,7 @@ object ElectronRunner {
 
   def run(args: ElectronCommand): Unit = {
     val options = new util.HashMap[String, Object]()
+    options.put("type", "electron")
     options.put("start", Boolean.box(false))
     options.put("port", Int.box(args.port))
     if (args.debuggerUrl != null) {

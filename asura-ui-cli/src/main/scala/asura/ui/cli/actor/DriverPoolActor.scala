@@ -119,7 +119,7 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
       task.params.`type` match {
         case TaskType.KARATE => run(task.params.karate(), task)
         case TaskType.STOP => stop(task)
-        case _ => throw new RuntimeException(s"Unknown task type: ${task.params.`type`}")
+        case _ => log.error(s"Unknown task type: ${task.params.`type`}")
       }
     }
   }
@@ -210,7 +210,9 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
         } else {
           Nil
         }
-        task.drivers += TaskDriver(push.pushIp, push.pushPort, driverPort, driverOptions.getOrDefault("type", "chrome").toString, targets)
+        val taskDriver = TaskDriver(push.pushIp, push.pushPort, driverPort, driverOptions.getOrDefault("type", "chrome").toString, targets)
+        task.drivers += taskDriver
+        task.targets += (tuple.driver -> taskDriver)
       }
       tuple.actor ! DriverPoolItemActor.TaskInfoMessage(task)
       task.actors += tuple.actor
