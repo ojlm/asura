@@ -8,11 +8,13 @@ import akka.actor.ActorSystem
 import akka.pattern.ask
 import akka.stream.scaladsl.Source
 import akka.stream.{Materializer, OverflowStrategy}
+import asura.app.api.ci.CiApi.OverrideImports
 import asura.common.actor.SenderMessage
 import asura.core.CoreConfig.DEFAULT_ACTOR_ASK_TIMEOUT
 import asura.core.actor.flow.WebSocketMessageHandler.completionMatcher
 import asura.core.ci.{CiManager, CiTriggerEventMessage}
 import asura.core.es.model.JobReportData.ScenarioReportItemData
+import asura.core.es.model.{Scenario, VariablesImportItem}
 import asura.core.es.service.ScenarioService
 import asura.core.job.actor.JobCiActor
 import asura.core.runtime.RuntimeContext
@@ -62,23 +64,49 @@ class CiApi @Inject()(
       .withHeaders(BaseApi.responseNoCacheHeaders: _*)
   }
 
-  def runScenario(id: String) = Action(parse.byteString).async { implicit req =>
+  def runGetScenario(id: String) = Action(parse.byteString).async { implicit req =>
     ScenarioService.getScenarioById(id).flatMap(scenario => {
-      val msg = ScenarioTestJobMessage(
-        summary = scenario.summary,
-        steps = scenario.steps,
-        storeHelper = null,
-        runtimeContext = RuntimeContext(),
-        imports = scenario.imports,
-        exports = scenario.exports,
-        failFast = scenario.failFast,
-      )
-      (system.actorOf(ScenarioRunnerActor.props(id)) ? msg)
-        .asInstanceOf[Future[ScenarioReportItemData]]
-        .map(item => {
-          Map("result" -> item, "context" -> msg.runtimeContext.rawContext)
-        }).toOkResult
+      runScenario(id, scenario, scenario.imports)
     })
   }
+
+  def runPostScenario(id: String) = Action(parse.byteString).async { implicit req =>
+    ScenarioService.getScenarioById(id).flatMap(scenario => {
+      val body = req.bodyAs(classOf[OverrideImports])
+      val imports = if (body != null && body.imports != null) {
+        if (scenario.imports != null) {
+          scenario.imports ++ body.imports
+        } else {
+          body.imports
+        }
+      } else {
+        scenario.imports
+      }
+      runScenario(id, scenario, imports)
+    })
+  }
+
+  private def runScenario(id: String, scenario: Scenario, imports: Seq[VariablesImportItem]) = {
+    val msg = ScenarioTestJobMessage(
+      summary = scenario.summary,
+      steps = scenario.steps,
+      storeHelper = null,
+      runtimeContext = RuntimeContext(),
+      imports = imports,
+      exports = scenario.exports,
+      failFast = scenario.failFast,
+    )
+    (system.actorOf(ScenarioRunnerActor.props(id)) ? msg)
+      .asInstanceOf[Future[ScenarioReportItemData]]
+      .map(item => {
+        Map("result" -> item, "context" -> msg.runtimeContext.rawContext)
+      }).toOkResult
+  }
+
+}
+
+object CiApi {
+
+  case class OverrideImports(imports: Seq[VariablesImportItem])
 
 }

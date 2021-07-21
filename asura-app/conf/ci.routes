@@ -1,5 +1,6 @@
 GET         /                    asura.app.api.ci.CiApi.home()
 POST        /trigger             asura.app.api.ci.CiApi.trigger()
-GET         /scenario/:id        asura.app.api.ci.CiApi.runScenario(id)
+GET         /scenario/:id        asura.app.api.ci.CiApi.runGetScenario(id)
+POST        /scenario/:id        asura.app.api.ci.CiApi.runPostScenario(id)
 GET         /job/:id             asura.app.api.ci.CiApi.jobSSE(id)
 GET         /ws/job/:id          asura.app.api.ci.CiApi.jobWS(id)
