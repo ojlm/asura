@@ -88,8 +88,6 @@ object Dependencies {
       ExclusionRule(organization = "org.bytedeco", name = "librealsense2"),
       ExclusionRule(organization = "org.bytedeco", name = "videoinput"),
       ExclusionRule(organization = "org.bytedeco", name = "artoolkitplus"),
-      ExclusionRule(organization = "org.bytedeco", name = "leptonica"),
-      ExclusionRule(organization = "org.bytedeco", name = "tesseract"),
       ExclusionRule(organization = "org.openjfx", name = "javafx-graphics"),
     ),
     "org.openjfx" % "javafx-graphics" % "16",

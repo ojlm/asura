@@ -20,6 +20,14 @@ object FileUtils {
     }
   }
 
+  def toBytes(is: InputStream): Array[Byte] = {
+    try {
+      toByteStream(is).toByteArray
+    } catch {
+      case e: Exception => throw new RuntimeException(e)
+    }
+  }
+
   def toString(is: InputStream): String = {
     try {
       toByteStream(is).toString(StandardCharsets.UTF_8)

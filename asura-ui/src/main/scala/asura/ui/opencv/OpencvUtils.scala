@@ -5,8 +5,12 @@ import java.awt.image.BufferedImage
 import java.io.File
 import java.nio.IntBuffer
 
-import asura.ui.model.IntPoint
 import javax.swing.WindowConstants
+
+import scala.collection.mutable.ArrayBuffer
+import scala.math.round
+
+import asura.ui.model.IntPoint
 import org.bytedeco.javacpp.indexer.FloatIndexer
 import org.bytedeco.javacpp.{DoublePointer, IntPointer}
 import org.bytedeco.javacv.OpenCVFrameConverter.ToMat
@@ -15,9 +19,6 @@ import org.bytedeco.opencv.global.opencv_core._
 import org.bytedeco.opencv.global.opencv_imgcodecs._
 import org.bytedeco.opencv.global.opencv_imgproc._
 import org.bytedeco.opencv.opencv_core.{KeyPointVector, _}
-
-import scala.collection.mutable.ArrayBuffer
-import scala.math.round
 
 object OpencvUtils {
 
@@ -204,6 +205,12 @@ object OpencvUtils {
 
   def wrapInIntPointer(v: Int): IntPointer = {
     new IntPointer(1L).put(v)
+  }
+
+  def negative(src: Mat): Mat = {
+    val dest = new Mat()
+    bitwise_not(src, dest)
+    dest
   }
 
   def printInfo(mat: Mat, caption: String = ""): Unit = {

@@ -1,15 +1,13 @@
 package asura.ui.opencv
 
-import java.util
-
+import asura.ui.BaseSpec
 import asura.ui.opencv.OpencvUtils._
 import asura.ui.opencv.comparator.ImageComparator
 import asura.ui.opencv.comparator.ImageComparator.ComputeType
 import asura.ui.opencv.detector.MSERDetector
-import com.intuit.karate.driver.chrome.Chrome
 import org.bytedeco.opencv.global.opencv_imgcodecs._
 
-object OpenCvSpec {
+object OpenCvSpec extends BaseSpec {
 
   val driver = openDriver()
 
@@ -40,15 +38,6 @@ object OpenCvSpec {
       println(s"x: ${p.x}, y: ${p.y}")
     })
     show(load(res.image), "rendered image")
-  }
-
-  def openDriver(): Chrome = {
-    val options = new util.HashMap[String, Object]()
-    options.put("userDataDir", "logs/chrome")
-    options.put("port", Int.box(9222))
-    options.put("start", Boolean.box(false))
-    val chrome = Chrome.start(options, null, true)
-    chrome
   }
 
 }
