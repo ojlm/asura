@@ -2,7 +2,7 @@ package asura.ui.ocr
 
 import asura.ui.BaseSpec
 import asura.ui.ocr.Tesseract.Level
-import asura.ui.opencv.OpencvUtils._
+import asura.ui.opencv.OpenCvUtils._
 import org.bytedeco.opencv.global.opencv_imgcodecs._
 
 object TesseractSpec extends BaseSpec {

@@ -7,7 +7,7 @@ import scala.collection.mutable.ArrayBuffer
 
 import asura.common.util.ResourceUtils
 import asura.ui.ocr.Tesseract.{Level, logger}
-import asura.ui.opencv.OpencvUtils
+import asura.ui.opencv.OpenCvUtils
 import com.typesafe.scalalogging.Logger
 import org.bytedeco.javacpp.{BytePointer, IntPointer, Pointer, PointerPointer}
 import org.bytedeco.opencv.opencv_core.Mat
@@ -25,7 +25,7 @@ class Tesseract(val api: TessBaseAPI, confidenceThreshold: Int = 50) {
       case Level.SYMBOL => tesseract.RIL_SYMBOL
       case _ => tesseract.RIL_WORD
     }
-    val mat = if (negative) OpencvUtils.negative(src) else src
+    val mat = if (negative) OpenCvUtils.negative(src) else src
     val size = mat.size()
     val width = size.width()
     val height = size.height()

@@ -1,7 +1,8 @@
 package asura.ui.opencv
 
+import asura.common.util.JsonUtils
 import asura.ui.BaseSpec
-import asura.ui.opencv.OpencvUtils._
+import asura.ui.opencv.OpenCvUtils._
 import asura.ui.opencv.comparator.ImageComparator
 import asura.ui.opencv.comparator.ImageComparator.ComputeType
 import asura.ui.opencv.detector.MSERDetector
@@ -12,7 +13,27 @@ object OpenCvSpec extends BaseSpec {
   val driver = openDriver()
 
   def main(args: Array[String]): Unit = {
-    testComparator()
+    testTemplateMatch()
+  }
+
+  def testTemplateMatch(): Unit = {
+    val template = TemplateMatch()
+    val colored = loadFilePath("asura-ui/src/test/scala/asura/ui/opencv/full.png")
+    val source = loadFilePath("asura-ui/src/test/scala/asura/ui/opencv/full.png", IMREAD_GRAYSCALE)
+    printInfo(source, "source")
+    show(source, "source")
+    val target = loadFilePath("asura-ui/src/test/scala/asura/ui/opencv/target.png", IMREAD_GRAYSCALE)
+    printInfo(target, "target")
+    show(target, "target")
+    val result = template.find(source, target, false)
+    println(s"point: ${JsonUtils.stringifyPretty(result.point)}")
+    println(s"matched: ${JsonUtils.stringifyPretty(result.regions)}")
+    if (result.regions.nonEmpty) {
+      result.regions.foreach(region => {
+        drawOnImage(colored, region.toRect(), Colors.BGR_RED)
+      })
+      show(colored, "colored")
+    }
   }
 
   def testComparator(): Unit = {

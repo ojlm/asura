@@ -18,9 +18,15 @@ import org.bytedeco.javacv.{CanvasFrame, Java2DFrameConverter}
 import org.bytedeco.opencv.global.opencv_core._
 import org.bytedeco.opencv.global.opencv_imgcodecs._
 import org.bytedeco.opencv.global.opencv_imgproc._
-import org.bytedeco.opencv.opencv_core.{KeyPointVector, _}
+import org.bytedeco.opencv.opencv_core._
 
-object OpencvUtils {
+object OpenCvUtils {
+
+  object Colors {
+    val BGR_BLUE = new Scalar(255, 0, 0, 0)
+    val BGR_GREEN = new Scalar(0, 255, 0, 0)
+    val BGR_RED = new Scalar(0, 0, 255, 0)
+  }
 
   def toBytes(mat: Mat): Array[Byte] = {
     val size = mat.total() * mat.channels()
@@ -47,6 +53,14 @@ object OpencvUtils {
 
   def load(bytes: Array[Byte], flags: Int = IMREAD_COLOR): Mat = {
     imdecode(new Mat(bytes: _*), flags)
+  }
+
+  def loadFilePath(file: String, flags: Int = IMREAD_COLOR): Mat = {
+    imread(file, flags)
+  }
+
+  def loadFile(file: File, flags: Int = IMREAD_COLOR): Mat = {
+    imread(file.getAbsolutePath, flags)
   }
 
   def loadFileAndShowOrExit(file: String, flags: Int = IMREAD_COLOR): Mat = {
@@ -81,21 +95,16 @@ object OpencvUtils {
     canvas.showImage(image)
   }
 
-  def drawOnImage(image: Mat, points: Point2fVector): Mat = {
-    val dest = image.clone()
+  def drawOnImage(image: Mat, points: Point2fVector, color: Scalar): Unit = {
     val radius = 5
-    val red = new Scalar(0, 0, 255, 0)
     for (i <- 0 until points.size.toInt) {
       val p = points.get(i)
-      circle(dest, new Point(round(p.x), round(p.y)), radius, red)
+      circle(image, new Point(round(p.x), round(p.y)), radius, color)
     }
-    dest
   }
 
-  def drawOnImage(image: Mat, overlay: Rect, color: Scalar): Mat = {
-    val dest = image.clone()
-    rectangle(dest, overlay, color)
-    dest
+  def drawOnImage(image: Mat, overlay: Rect, color: Scalar): Unit = {
+    rectangle(image, overlay, color)
   }
 
   def save(file: File, image: Mat): Unit = {
@@ -210,6 +219,12 @@ object OpencvUtils {
   def negative(src: Mat): Mat = {
     val dest = new Mat()
     bitwise_not(src, dest)
+    dest
+  }
+
+  def rescale(src: Mat, scale: Double): Mat = {
+    val dest = new Mat()
+    resize(src, dest, new Size(), scale, scale, CV_INTER_AREA)
     dest
   }
 

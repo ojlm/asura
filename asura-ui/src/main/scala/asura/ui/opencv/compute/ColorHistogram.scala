@@ -2,7 +2,7 @@ package asura.ui.opencv.compute
 
 import java.nio.{FloatBuffer, IntBuffer}
 
-import asura.ui.opencv.OpencvUtils
+import asura.ui.opencv.OpenCvUtils
 import org.bytedeco.javacpp.{FloatPointer, IntPointer, PointerPointer}
 import org.bytedeco.opencv.global.opencv_core.split
 import org.bytedeco.opencv.global.opencv_imgproc._
@@ -89,7 +89,7 @@ class ColorHistogram(
       saturationMask, // binary mask
       hist, // the resulting histogram
       1, // it is a 1D histogram
-      OpencvUtils.wrapInIntBuffer(numberOfBins), // number of bins
+      OpenCvUtils.wrapInIntBuffer(numberOfBins), // number of bins
       histRanges // pixel value range
     )
     hist
