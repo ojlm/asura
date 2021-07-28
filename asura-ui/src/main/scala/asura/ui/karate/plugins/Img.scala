@@ -3,7 +3,6 @@ package asura.ui.karate.plugins
 import java.text.NumberFormat
 import java.util
 
-import asura.ui.karate.plugins.Img.PathAndStrict
 import asura.ui.model.Position
 import asura.ui.opencv.comparator.ImageComparator
 import asura.ui.opencv.comparator.ImageComparator.ComputeType
@@ -11,6 +10,7 @@ import asura.ui.opencv.{OpenCvUtils, TemplateMatch}
 import com.intuit.karate.core.{AutoDef, Plugin}
 import com.intuit.karate.driver.Driver
 import com.typesafe.scalalogging.Logger
+import org.bytedeco.opencv.global.opencv_imgproc
 import org.bytedeco.opencv.opencv_core.Point
 
 class Img(val driver: Driver) extends CvPlugin {
@@ -24,10 +24,9 @@ class Img(val driver: Driver) extends CvPlugin {
 
   @AutoDef
   def click(locator: String, file: String): Unit = {
-    val path = PathAndStrict(file)
-    templateMatch.strictness = path.strictness
+    val path = parsePath(file)
     val fileReader = driver.getRuntime.engine.fileReader
-    val target = fileReader.readFileAsBytes(path.path)
+    val target = fileReader.readFileAsBytes(path)
     if (locator == null) {
       val source = driver.screenshot(false)
       click(source, target, null)
@@ -110,6 +109,29 @@ class Img(val driver: Driver) extends CvPlugin {
     1 - compare(reference, target)
   }
 
+  private def parsePath(file: String): String = {
+    val parts = file.split(":")
+    parts.length match {
+      case 3 =>
+        templateMatch.method = parts(0).toUpperCase match {
+          case "SQDIFF" => opencv_imgproc.CV_TM_SQDIFF
+          case "SQDIFF_NORMED" => opencv_imgproc.CV_TM_SQDIFF_NORMED
+          case "CCORR" => opencv_imgproc.CV_TM_CCORR
+          case "CCORR_NORMED" => opencv_imgproc.CV_TM_CCORR_NORMED
+          case "CCOEFF" => opencv_imgproc.CV_TM_CCOEFF
+          case "CCOEFF_NORMED" => opencv_imgproc.CV_TM_CCOEFF_NORMED
+          case _ => throw new RuntimeException(s"Unknown method: ${parts(0)}. Available: ")
+        }
+        templateMatch.threshold = java.lang.Double.parseDouble(parts(1))
+        parts(2)
+      case 2 =>
+        templateMatch.threshold = java.lang.Double.parseDouble(parts(0))
+        parts(1)
+      case 1 =>
+        file
+    }
+  }
+
   override def methodNames: util.List[String] = Img.METHOD_NAMES
 
 }
@@ -119,18 +141,5 @@ object Img {
   val logger = Logger("IMG")
   val ENGINE_KEY = "img"
   val METHOD_NAMES: util.List[String] = Plugin.methodNames(classOf[Img])
-
-  case class PathAndStrict(path: String, strictness: Int)
-
-  object PathAndStrict {
-    def apply(path: String): PathAndStrict = {
-      val pos = path.indexOf(':')
-      if (pos > 0 && pos < 3) {
-        PathAndStrict(path.substring(pos + 1), Integer.valueOf(path.substring(0, pos)))
-      } else {
-        PathAndStrict(path, 10)
-      }
-    }
-  }
 
 }

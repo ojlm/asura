@@ -10,17 +10,26 @@ import org.bytedeco.opencv.global.opencv_imgproc
 import org.bytedeco.opencv.global.opencv_imgproc._
 import org.bytedeco.opencv.opencv_core._
 
-case class TemplateMatch(var strictness: Int = 10, var resize: Boolean = true) {
+/**
+ * https://docs.opencv.org/2.4/modules/imgproc/doc/object_detection.html
+ * https://stackoverflow.com/questions/48799711/explain-difference-between-opencvs-template-matching-methods-in-non-mathematica
+ * https://stackoverflow.com/questions/32041063/multiple-template-matching-only-detects-one-match
+ */
+case class TemplateMatch(
+                          var resize: Boolean = true,
+                          var threshold: Double = 0.8,
+                          var method: Int = CV_TM_CCOEFF_NORMED
+                        ) {
 
   def find(source: Array[Byte], target: Array[Byte], findAll: Boolean): MatchResult = {
     TemplateMatch.find(
       OpenCvUtils.load(source, IMREAD_GRAYSCALE), OpenCvUtils.load(target, IMREAD_GRAYSCALE),
-      findAll, strictness, resize,
+      findAll, threshold, resize, method,
     )
   }
 
   def find(source: Mat, target: Mat, findAll: Boolean): MatchResult = {
-    TemplateMatch.find(source, target, findAll, strictness, resize)
+    TemplateMatch.find(source, target, findAll, threshold, resize, method)
   }
 
 }
@@ -28,26 +37,24 @@ case class TemplateMatch(var strictness: Int = 10, var resize: Boolean = true) {
 object TemplateMatch {
 
   val logger = Logger("TemplateMatch")
-  val TARGET_MIN_VAL_FACTOR = 150
-  val BLOCK_SIZE = 5
 
-  def find(source: Mat, target: Mat, findAll: Boolean, strictness: Int, resize: Boolean): MatchResult = {
+  def find(source: Mat, target: Mat, findAll: Boolean, threshold: Double, resize: Boolean, method: Int): MatchResult = {
     val regions = ArrayBuffer[Region]()
-    var point = find(regions, source, target, findAll, strictness, 1)
+    var point = find(regions, source, target, findAll, threshold, 1, method)
     if (regions.isEmpty && resize) {
-      val stepUp = find(regions, source, target, findAll, strictness, 1.1)
+      val stepUp = find(regions, source, target, findAll, threshold, 1.1, method)
       if (regions.isEmpty) {
-        val stepDown = find(regions, source, target, findAll, strictness, 0.9)
+        val stepDown = find(regions, source, target, findAll, threshold, 0.9, method)
         if (regions.isEmpty) {
           val goUpFirst = stepUp.minVal < stepDown.minVal
           for (step <- 2 until 6) {
             val scale = 1 + 0.1 * step * (if (goUpFirst) 1 else -1)
-            find(regions, source, target, findAll, strictness, scale)
+            find(regions, source, target, findAll, threshold, scale, method)
           }
           if (regions.isEmpty) {
             for (step <- 2 until 6) {
               val scale = 1 + 0.1 * step * (if (goUpFirst) -1 else 1)
-              find(regions, source, target, findAll, strictness, scale)
+              find(regions, source, target, findAll, threshold, scale, method)
             }
           }
         } else {
@@ -60,86 +67,79 @@ object TemplateMatch {
     MatchResult(regions.toSeq, point)
   }
 
-  def find(regions: ArrayBuffer[Region], source: Mat, target: Mat, findAll: Boolean, strictness: Int, scale: Double): MatchPoint = {
+  def find(
+            regions: ArrayBuffer[Region], source: Mat, target: Mat,
+            findAll: Boolean, threshold: Double, scale: Double, method: Int
+          ): MatchPoint = {
     val targetWidth = target.cols()
     val targetHeight = target.rows()
-    val targetMinVal = targetWidth * targetHeight * TARGET_MIN_VAL_FACTOR * strictness
     val result = new Mat()
-    val point = doMatch(source, target, result, scale)
-    if (point.minVal > targetMinVal) {
-      logger.debug(s"no match at scale $scale, minVal: ${point.minVal} / $targetMinVal at ${point.minX}:${point.minY}")
-    } else {
-      logger.debug(s"found match at scale $scale, minVal: ${point.minVal} / $targetMinVal at ${point.minX}:${point.minY}")
-      if (findAll) {
-        addRegionsBelowThreshold(regions, result, targetMinVal, scale, targetWidth, targetHeight)
-      } else {
+    val point = getBestMatch(source, target, result, scale, method)
+    if (point.hasMatch(threshold)) {
+      logger.debug(s"found match at scale $scale, minVal: ${point.minVal} / $threshold at ${point.minX}:${point.minY}")
+      if (!findAll) {
         regions += point.toRegion(targetWidth, targetHeight)
+      } else {
+        addRegionsInThreshold(regions, result, threshold, scale, targetWidth, targetHeight, method)
       }
+    } else {
+      logger.debug(s"no match at scale $scale, minVal: ${point.minVal} / $threshold at ${point.minX}:${point.minY}")
     }
     point
   }
 
-  def addRegionsBelowThreshold(
-                                regions: ArrayBuffer[Region], src: Mat, threshold: Double,
-                                scale: Double, width: Int, height: Int,
-                              ): Unit = {
+  def addRegionsInThreshold(
+                             regions: ArrayBuffer[Region], result: Mat, threshold: Double,
+                             scale: Double, width: Int, height: Int, method: Int, span: Int = 2,
+                           ): Unit = {
     val dst = new Mat()
-    opencv_imgproc.threshold(src, dst, threshold, 1, CV_THRESH_BINARY_INV)
+    val useMin = if (method == CV_TM_SQDIFF || method == CV_TM_SQDIFF_NORMED) {
+      opencv_imgproc.threshold(result, dst, threshold, 1, CV_THRESH_TOZERO_INV)
+      true
+    } else {
+      opencv_imgproc.threshold(result, dst, threshold, 1, CV_THRESH_TOZERO)
+      false
+    }
     val regionWidth = Math.round(width / scale).toInt
     val regionHeight = Math.round(height / scale).toInt
-    val non = new Mat()
-    findNonZero(dst, non)
-    val len = non.total().toInt
-    var xPrev = -BLOCK_SIZE
-    var yPrev = -BLOCK_SIZE
-    var countPrev = 0
-    var xSum = 0
-    var ySum = 0
-    val checkNeedAdd: () => Unit = () => {
-      if (countPrev > 0) {
-        val xFinal = Math.floorDiv(xSum, countPrev)
-        val yFinal = Math.floorDiv(ySum, countPrev)
-        regions += Region(
-          Math.round(xFinal / scale).toInt,
-          Math.round(yFinal / scale).toInt,
-          regionWidth, regionHeight,
-        )
-      }
+    val minValPtr = new DoublePointer(1)
+    val maxValPtr = new DoublePointer(1)
+    val minPt = new Point()
+    val maxPt = new Point()
+    var hasMore = true
+    val zero = new Scalar(0)
+    val add = (x: Int, y: Int) => {
+      regions += Region(
+        x = Math.round(x / scale).toInt,
+        y = Math.round(y / scale).toInt,
+        width = regionWidth, height = regionHeight,
+      )
+      rectangle(dst, new Rect(x - span, y - span, regionWidth + span, regionHeight + span), zero, -1, LINE_8, 0)
     }
-    for (i <- 0 until len) {
-      val point = new Point(non.ptr(i))
-      val x = point.x()
-      val y = point.y()
-      val xDelta = Math.abs(x - xPrev)
-      val yDelta = Math.abs(y - yPrev)
-      if (xDelta < BLOCK_SIZE && yDelta < BLOCK_SIZE) {
-        countPrev = countPrev + 1
-        xSum = xSum + x
-        ySum = ySum + y
+    do {
+      minMaxLoc(dst, minValPtr, maxValPtr, minPt, maxPt, null)
+      if (useMin && minValPtr.get() > 0) {
+        add(minPt.x(), minPt.y())
+      } else if (!useMin && maxValPtr.get() >= threshold) {
+        add(maxPt.x(), maxPt.y())
       } else {
-        checkNeedAdd()
-        xSum = xSum + x
-        ySum = ySum + y
-        countPrev = 1
+        hasMore = false
       }
-      xPrev = x
-      yPrev = y
-    }
-    checkNeedAdd()
+    } while (hasMore)
   }
 
-  def doMatch(source: Mat, target: Mat, result: Mat, scale: Double = 1): MatchPoint = {
+  def getBestMatch(source: Mat, target: Mat, result: Mat, scale: Double = 1, method: Int): MatchPoint = {
     val resized = if (scale == 1) source else OpenCvUtils.rescale(source, scale)
-    matchTemplate(resized, target, result, CV_TM_SQDIFF)
+    matchTemplate(resized, target, result, method)
     val minValPtr = new DoublePointer(1)
     val maxValPtr = new DoublePointer(1)
     val minPt = new Point()
     val maxPt = new Point()
     minMaxLoc(result, minValPtr, maxValPtr, minPt, maxPt, null)
     MatchPoint(
-      scale = scale,
-      minVal = minValPtr.get().toInt, minX = minPt.x(), minY = minPt.y(),
-      maxVal = maxValPtr.get().toInt, maxX = maxPt.x(), maxY = maxPt.y(),
+      method = method, scale = scale,
+      minVal = minValPtr.get(), minX = minPt.x(), minY = minPt.y(),
+      maxVal = maxValPtr.get(), maxX = maxPt.x(), maxY = maxPt.y(),
     )
   }
 

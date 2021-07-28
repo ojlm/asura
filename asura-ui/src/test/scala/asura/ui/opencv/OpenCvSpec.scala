@@ -25,7 +25,7 @@ object OpenCvSpec extends BaseSpec {
     val target = loadFilePath("asura-ui/src/test/scala/asura/ui/opencv/target.png", IMREAD_GRAYSCALE)
     printInfo(target, "target")
     show(target, "target")
-    val result = template.find(source, target, false)
+    val result = template.find(source, target, true)
     println(s"point: ${JsonUtils.stringifyPretty(result.point)}")
     println(s"matched: ${JsonUtils.stringifyPretty(result.regions)}")
     if (result.regions.nonEmpty) {
