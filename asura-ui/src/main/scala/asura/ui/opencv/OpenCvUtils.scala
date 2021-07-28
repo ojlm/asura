@@ -12,7 +12,7 @@ import scala.math.round
 
 import asura.ui.model.IntPoint
 import org.bytedeco.javacpp.indexer.FloatIndexer
-import org.bytedeco.javacpp.{DoublePointer, IntPointer}
+import org.bytedeco.javacpp.{BytePointer, DoublePointer, IntPointer}
 import org.bytedeco.javacv.OpenCVFrameConverter.ToMat
 import org.bytedeco.javacv.{CanvasFrame, Java2DFrameConverter}
 import org.bytedeco.opencv.global.opencv_core._
@@ -49,6 +49,37 @@ object OpenCvUtils {
       }
     })
     res.toSeq
+  }
+
+  def resizeToSmaller(one: Mat, two: Mat): (Mat, Mat) = {
+    if (one.cols() == two.cols() && one.rows() == two.rows()) {
+      (one, two)
+    } else {
+      val cols = Math.min(one.cols(), two.cols())
+      val rows = Math.min(one.rows(), two.rows())
+      val size = new Size(cols, rows)
+      val resizeTo = (src: Mat) => {
+        if (cols == src.cols() && rows == src.rows()) {
+          src
+        } else {
+          val tmp = new Mat()
+          resize(src, tmp, size)
+          tmp
+        }
+      }
+      (resizeTo(one), resizeTo(two))
+    }
+  }
+
+  def concat(one: Mat, two: Mat): Mat = {
+    val width = one.cols()
+    val height = one.rows()
+    val dst = new Mat(height, width * 2, one.`type`())
+    var tmp = dst.apply(new Rect(0, 0, width, height))
+    one.copyTo(tmp)
+    tmp = dst.apply(new Rect(width, 0, width, height))
+    two.copyTo(tmp)
+    dst
   }
 
   def load(bytes: Array[Byte], flags: Int = IMREAD_COLOR): Mat = {
@@ -103,12 +134,36 @@ object OpenCvUtils {
     }
   }
 
-  def drawOnImage(image: Mat, overlay: Rect, color: Scalar): Unit = {
+  def drawTextOnImage(
+                       image: Mat, text: String, color: Scalar, point: Point = new Point(16, 16),
+                       fontFace: Int = FONT_HERSHEY_PLAIN, fontSale: Double = 1,
+                       thickness: Int = 1, lineType: Int = LINE_AA, bottomLeftOrigin: Boolean = false,
+                     ): Unit = {
+    putText(image, text, point, fontFace, fontSale, color, thickness, lineType, bottomLeftOrigin)
+  }
+
+  def drawPointOnImage(image: Mat, overlay: Point, radius: Int, color: Scalar, thickness: Int = 1): Unit = {
+    circle(image, overlay, radius, color, thickness, FILLED, 0)
+  }
+
+  def drawRectOnImage(image: Mat, overlay: Rect, color: Scalar): Unit = {
     rectangle(image, overlay, color)
   }
 
+
   def save(file: File, image: Mat): Unit = {
     imwrite(file.getAbsolutePath, image)
+  }
+
+  def saveToBytes(image: Mat): Array[Byte] = {
+    val pointer = new BytePointer()
+    if (imencode(".png", image, pointer)) {
+      val bytes = new Array[Byte](pointer.capacity().toInt)
+      pointer.get(bytes)
+      bytes
+    } else {
+      throw new RuntimeException("imencode error")
+    }
   }
 
   def toArray(keyPoints: KeyPoint): Array[KeyPoint] = {

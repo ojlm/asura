@@ -85,6 +85,9 @@ import com.intuit.karate.template.KarateTemplateEngine;
 import com.intuit.karate.template.TemplateUtils;
 import com.jayway.jsonpath.PathNotFoundException;
 
+import asura.ui.karate.plugins.Img;
+import asura.ui.karate.plugins.Ocr;
+
 /**
  * @author pthomas3
  */
@@ -1010,6 +1013,12 @@ public class ScenarioEngine {
     }
     autoDef(driver, DRIVER);
     setHiddenVariable(KEY, Key.INSTANCE);
+    Ocr ocr = new Ocr(driver);
+    setHiddenVariable(Ocr.ENGINE_KEY(), ocr);
+    autoDef(ocr, Ocr.ENGINE_KEY());
+    Img img = new Img(driver);
+    setHiddenVariable(Img.ENGINE_KEY(), img);
+    autoDef(img, Img.ENGINE_KEY());
   }
 
   public void setRobot(Plugin robot) { // TODO unify

@@ -16,7 +16,11 @@ import org.bytedeco.tesseract.{FileReader, StringGenericVector, TessBaseAPI}
 
 class Tesseract(val api: TessBaseAPI, confidenceThreshold: Int = 50) {
 
-  def process(src: Mat, negative: Boolean = false, level: String = Level.WORD): Words = {
+  def find(image: Mat, text: String, negative: Boolean = false, level: String = Level.WORD): FindResult = {
+    process(image, negative, level).find(text)
+  }
+
+  def process(image: Mat, negative: Boolean = false, level: String = Level.WORD): Words = {
     val levelValue = level match {
       case Level.BLOCK => tesseract.RIL_BLOCK
       case Level.PARA => tesseract.RIL_PARA
@@ -25,7 +29,7 @@ class Tesseract(val api: TessBaseAPI, confidenceThreshold: Int = 50) {
       case Level.SYMBOL => tesseract.RIL_SYMBOL
       case _ => tesseract.RIL_WORD
     }
-    val mat = if (negative) OpenCvUtils.negative(src) else src
+    val mat = if (negative) OpenCvUtils.negative(image) else image
     val size = mat.size()
     val width = size.width()
     val height = size.height()
@@ -55,7 +59,10 @@ class Tesseract(val api: TessBaseAPI, confidenceThreshold: Int = 50) {
         val height = bottom.get() - y
         if (found) {
           val word = Word(text, x, y, width, height, confidence)
-          word.prev = prev
+          if (prev != null) {
+            prev.next = word
+            word.prev = prev
+          }
           words += word
           prev = word
         } else {

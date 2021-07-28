@@ -1,0 +1,39 @@
+package asura.ui.karate.plugins
+
+import java.util
+
+import asura.ui.opencv.OpenCvUtils._
+import com.intuit.karate.core.{Plugin, StepResult}
+import com.intuit.karate.driver.Driver
+import com.intuit.karate.http.ResourceType
+import org.bytedeco.opencv.global.opencv_imgcodecs.IMREAD_COLOR
+import org.bytedeco.opencv.opencv_core.{Mat, Point, Rect}
+
+trait CvPlugin extends Plugin {
+
+  val driver: Driver
+
+  def drawAndEmbed(image: Mat, text: String): Unit = {
+    drawTextOnImage(image, text, Colors.BGR_RED)
+    getRuntime.embed(saveToBytes(image), ResourceType.PNG)
+  }
+
+  def drawAndEmbed(bytes: Array[Byte], rects: Seq[Rect], points: Seq[Point] = Nil): Unit = {
+    if (rects.nonEmpty || points.nonEmpty) {
+      val image = load(bytes, IMREAD_COLOR)
+      rects.foreach(rect => drawRectOnImage(image, rect, Colors.BGR_RED))
+      points.foreach(point => drawPointOnImage(image, point, 4, Colors.BGR_RED, -1))
+      getRuntime.embed(saveToBytes(image), ResourceType.PNG)
+    }
+  }
+
+  override def onFailure(stepResult: StepResult): Unit = {
+    if (driver.getOptions.screenshotOnFailure && !stepResult.isWithCallResults) {
+      val bytes = driver.screenshot(false)
+      getRuntime.embed(bytes, ResourceType.PNG)
+    }
+  }
+
+  override def afterScenario(): util.Map[String, AnyRef] = java.util.Collections.emptyMap()
+
+}

@@ -30,7 +30,7 @@ object OpenCvSpec extends BaseSpec {
     println(s"matched: ${JsonUtils.stringifyPretty(result.regions)}")
     if (result.regions.nonEmpty) {
       result.regions.foreach(region => {
-        drawOnImage(colored, region.toRect(), Colors.BGR_RED)
+        drawRectOnImage(colored, region.toRect(), Colors.BGR_RED)
       })
       show(colored, "colored")
     }

@@ -11,11 +11,18 @@ object TesseractSpec extends BaseSpec {
   val dataPath = "asura-ui/src/main/resources/tessdata"
 
   def main(args: Array[String]): Unit = {
-    val src = load(driver.screenshot(false), IMREAD_GRAYSCALE)
+    val bytes = driver.screenshot(false)
+    val origin = load(bytes)
+    val src = load(bytes, IMREAD_GRAYSCALE)
+    show(src, "src")
     // val engine = Tesseract(dataPath, "chi_sim")
     val engine = Tesseract()
     val words = engine.process(src, level = Level.WORD)
     println(words)
+    words.words.foreach(word => {
+      drawRectOnImage(origin, word.toRect(), Colors.BGR_RED)
+    })
+    show(origin, "target")
   }
 
 }
