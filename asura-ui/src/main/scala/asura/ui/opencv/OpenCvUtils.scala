@@ -71,14 +71,17 @@ object OpenCvUtils {
     }
   }
 
-  def concat(one: Mat, two: Mat): Mat = {
+  def concat(one: Mat, more: Mat*): Mat = {
     val width = one.cols()
     val height = one.rows()
-    val dst = new Mat(height, width * 2, one.`type`())
+    val count = more.size + 1
+    val dst = new Mat(height, width * count, one.`type`())
     var tmp = dst.apply(new Rect(0, 0, width, height))
     one.copyTo(tmp)
-    tmp = dst.apply(new Rect(width, 0, width, height))
-    two.copyTo(tmp)
+    for (i <- 0 until more.size) {
+      tmp = dst.apply(new Rect(width * (i + 1), 0, width, height))
+      more.apply(i).copyTo(tmp)
+    }
     dst
   }
 
@@ -140,6 +143,10 @@ object OpenCvUtils {
                        thickness: Int = 1, lineType: Int = LINE_AA, bottomLeftOrigin: Boolean = false,
                      ): Unit = {
     putText(image, text, point, fontFace, fontSale, color, thickness, lineType, bottomLeftOrigin)
+  }
+
+  def drawLineOnImage(image: Mat, start: Point, end: Point, color: Scalar, thickness: Int = 1): Unit = {
+    line(image, start, end, color, thickness, LINE_8, 0)
   }
 
   def drawPointOnImage(image: Mat, overlay: Point, radius: Int, color: Scalar, thickness: Int = 1): Unit = {

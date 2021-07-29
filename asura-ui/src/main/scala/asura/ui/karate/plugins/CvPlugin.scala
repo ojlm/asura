@@ -13,6 +13,10 @@ trait CvPlugin extends Plugin {
 
   val driver: Driver
 
+  def drawAndEmbed(image: Mat): Unit = {
+    getRuntime.embed(saveToBytes(image), ResourceType.PNG)
+  }
+
   def drawAndEmbed(image: Mat, text: String): Unit = {
     drawTextOnImage(image, text, Colors.BGR_RED)
     getRuntime.embed(saveToBytes(image), ResourceType.PNG)

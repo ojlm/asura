@@ -1,6 +1,5 @@
 package asura.ui.karate.plugins
 
-import java.text.NumberFormat
 import java.util
 
 import asura.ui.model.Position
@@ -11,7 +10,7 @@ import com.intuit.karate.core.{AutoDef, Plugin}
 import com.intuit.karate.driver.Driver
 import com.typesafe.scalalogging.Logger
 import org.bytedeco.opencv.global.opencv_imgproc
-import org.bytedeco.opencv.opencv_core.Point
+import org.bytedeco.opencv.opencv_core.{Mat, Point}
 
 class Img(val driver: Driver) extends CvPlugin {
 
@@ -83,14 +82,13 @@ class Img(val driver: Driver) extends CvPlugin {
     val refMat = OpenCvUtils.load(reference)
     val targetMat = OpenCvUtils.load(target)
     val tuple = OpenCvUtils.resizeToSmaller(refMat, targetMat)
-    val comparator = ImageComparator(tuple._1, ComputeType.ssim)
-    val result = comparator.compare(tuple._2)
-    val text = {
-      val format = NumberFormat.getPercentInstance()
-      format.setMaximumFractionDigits(2)
-      s"similarity: ${format.format(result.score)}"
-    }
-    drawAndEmbed(OpenCvUtils.concat(tuple._1, tuple._2), text)
+    val refMatGray = new Mat()
+    opencv_imgproc.cvtColor(tuple._1, refMatGray, opencv_imgproc.COLOR_BGR2GRAY)
+    val comparator = ImageComparator(refMatGray, ComputeType.ssim)
+    val targetMatGray = new Mat()
+    opencv_imgproc.cvtColor(tuple._2, targetMatGray, opencv_imgproc.COLOR_BGR2GRAY)
+    val result = comparator.compare(targetMatGray)
+    drawAndEmbed(result.resultMat(tuple._1, tuple._2))
     result.score
   }
 
