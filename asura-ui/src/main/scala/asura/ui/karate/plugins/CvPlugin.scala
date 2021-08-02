@@ -2,9 +2,12 @@ package asura.ui.karate.plugins
 
 import java.util
 
+import asura.ui.model.Position
 import asura.ui.opencv.OpenCvUtils._
 import com.intuit.karate.core.{Plugin, StepResult}
 import com.intuit.karate.driver.Driver
+import com.intuit.karate.driver.appium.AppiumDriver
+import com.intuit.karate.driver.indigo.IndigoDriver
 import com.intuit.karate.http.ResourceType
 import org.bytedeco.opencv.global.opencv_imgcodecs.IMREAD_COLOR
 import org.bytedeco.opencv.opencv_core.{Mat, Point, Rect}
@@ -12,6 +15,14 @@ import org.bytedeco.opencv.opencv_core.{Mat, Point, Rect}
 trait CvPlugin extends Plugin {
 
   val driver: Driver
+
+  def getRootPosition(): Position = {
+    if (driver.isInstanceOf[IndigoDriver] || driver.isInstanceOf[AppiumDriver]) {
+      Position(driver.getDimensions)
+    } else {
+      Position(driver.locate("body").getPosition)
+    }
+  }
 
   def drawAndEmbed(image: Mat): Unit = {
     getRuntime.embed(saveToBytes(image), ResourceType.PNG)

@@ -93,6 +93,11 @@ class Ocr(val driver: Driver) extends CvPlugin {
     words.full
   }
 
+  def tesseract(): Tesseract = {
+    init()
+    tess
+  }
+
   private def parseOcr(raw: String): Pair = {
     val pos = raw.indexOf('}')
     if (pos > -1) {

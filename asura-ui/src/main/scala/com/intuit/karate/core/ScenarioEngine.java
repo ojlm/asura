@@ -951,7 +951,12 @@ public class ScenarioEngine {
       sb.append("(function(){ if (arguments.length == 0) return ").append(invoke).append("();")
         .append(" if (arguments.length == 1) return ").append(invoke).append("(arguments[0]);")
         .append(" if (arguments.length == 2) return ").append(invoke).append("(arguments[0], arguments[1]);")
-        .append(" return ").append(invoke).append("(arguments[0], arguments[1], arguments[2]) })");
+        .append(" if (arguments.length == 3) return ")
+        .append(invoke).append("(arguments[0], arguments[1], arguments[2]);")
+        .append(" if (arguments.length == 4) return ")
+        .append(invoke).append("(arguments[0], arguments[1], arguments[2], arguments[3]);")
+        .append(" return ")
+        .append(invoke).append("(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4]) })");
       setHiddenVariable(methodName, evalJs(sb.toString()));
     }
   }
@@ -1016,8 +1021,11 @@ public class ScenarioEngine {
     Ocr ocr = new Ocr(driver);
     setHiddenVariable(Ocr.ENGINE_KEY(), ocr);
     autoDef(ocr, Ocr.ENGINE_KEY());
-    Img img = new Img(driver);
+    Img img = new Img(driver, ocr);
     setHiddenVariable(Img.ENGINE_KEY(), img);
+    autoDef(img, Img.ENGINE_KEY());
+    asura.ui.karate.plugins.System sys = new asura.ui.karate.plugins.System(driver, ocr, img, true);
+    setHiddenVariable(sys.ENGINE_KEY(), sys);
     autoDef(img, Img.ENGINE_KEY());
   }
 

@@ -12,9 +12,40 @@ import com.typesafe.scalalogging.Logger
 import org.bytedeco.opencv.global.opencv_imgproc
 import org.bytedeco.opencv.opencv_core.{Mat, Point}
 
-class Img(val driver: Driver) extends CvPlugin {
+class Img(val driver: Driver, val ocr: Ocr) extends CvPlugin {
 
   val templateMatch = TemplateMatch()
+
+  @AutoDef
+  def crop(): ImageElement = {
+    ImageElement(null, getRootPosition(), driver, ocr, this)
+  }
+
+  @AutoDef
+  def crop(locator: Object): ImageElement = {
+    val parent = crop()
+    val position = if (locator.isInstanceOf[String]) {
+      val str = locator.asInstanceOf[String]
+      if (str.charAt(0).isDigit) {
+        Position(locator, parent.position)
+      } else {
+        Position(driver.locate(str).getPosition)
+      }
+    } else {
+      Position(locator, parent.position)
+    }
+    ImageElement(parent, position, driver, ocr, this)
+  }
+
+  @AutoDef
+  def crop(x: Object, y: Object): ImageElement = {
+    ImageElement(crop(), Position(x, y, getRootPosition), driver, ocr, this)
+  }
+
+  @AutoDef
+  def crop(x: Object, y: Object, width: Object, height: Object): Element = {
+    ImageElement(crop(), Position(x, y, width, height, getRootPosition), driver, ocr, this)
+  }
 
   @AutoDef
   def click(file: String): Unit = {
@@ -23,9 +54,7 @@ class Img(val driver: Driver) extends CvPlugin {
 
   @AutoDef
   def click(locator: String, file: String): Unit = {
-    val path = parsePath(file)
-    val fileReader = driver.getRuntime.engine.fileReader
-    val target = fileReader.readFileAsBytes(path)
+    val target = loadBytesFromFile(file)
     if (locator == null) {
       val source = driver.screenshot(false)
       click(source, target, null)
@@ -105,6 +134,12 @@ class Img(val driver: Driver) extends CvPlugin {
   @AutoDef
   def diff(reference: Array[Byte], target: Array[Byte]): Double = {
     1 - compare(reference, target)
+  }
+
+  def loadBytesFromFile(file: String): Array[Byte] = {
+    val path = parsePath(file)
+    val fileReader = driver.getRuntime.engine.fileReader
+    fileReader.readFileAsBytes(path)
   }
 
   private def parsePath(file: String): String = {

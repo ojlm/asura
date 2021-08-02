@@ -2,9 +2,10 @@ package asura.ui.opencv
 
 import java.awt.Image
 import java.awt.image.BufferedImage
-import java.io.File
+import java.io.{ByteArrayOutputStream, File}
 import java.nio.IntBuffer
 
+import javax.imageio.ImageIO
 import javax.swing.WindowConstants
 
 import scala.collection.mutable.ArrayBuffer
@@ -31,8 +32,18 @@ object OpenCvUtils {
   def toBytes(mat: Mat): Array[Byte] = {
     val size = mat.total() * mat.channels()
     val bytes = Array.ofDim[Byte](size.toInt)
-    imencode(".jpg", mat, bytes)
+    imencode(".png", mat, bytes)
     bytes
+  }
+
+  def toBytes(img: BufferedImage): Array[Byte] = {
+    val os = new ByteArrayOutputStream()
+    try {
+      ImageIO.write(img, "png", os)
+      os.toByteArray()
+    } catch {
+      case t: Throwable => throw new RuntimeException(t)
+    }
   }
 
   def toPoints(vector: KeyPointVector): Seq[IntPoint] = {
