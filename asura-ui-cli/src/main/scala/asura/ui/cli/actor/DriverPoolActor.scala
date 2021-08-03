@@ -228,6 +228,7 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
         // tuple.driver
         driverOptions.put("port", Int.box(tuple.driver.getOptions.port))
         driverOptions.put("start", Boolean.box(false))
+        driverOptions.put("stop", Boolean.box(true))
         val child = Chrome.start(driverOptions, sr)
         child.parent = tuple.driver
         child
@@ -252,11 +253,14 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
       } else {
         driver
       }
-      val actor = task.driverActorMap(managedDriver)
-      task.actors -= actor
-      task.driverActorMap -= managedDriver
-      task.targets -= managedDriver
-      self ! ReleaseMessage(actor, task.params.remote)
+      if (task.driverActorMap.contains(managedDriver)) {
+        // maybe release many times(e.g. ScenarioEngine.NewDriver.stopDriver which when is default)
+        val actor = task.driverActorMap(managedDriver)
+        task.actors -= actor
+        task.driverActorMap -= managedDriver
+        task.targets -= managedDriver
+        self ! ReleaseMessage(actor, task.params.remote)
+      }
     }
   }
 

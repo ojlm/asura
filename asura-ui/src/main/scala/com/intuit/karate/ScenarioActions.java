@@ -37,6 +37,7 @@ import com.intuit.karate.core.Variable;
 import com.intuit.karate.driver.DevToolsDriver;
 import com.intuit.karate.driver.DevToolsMessage;
 import com.intuit.karate.driver.Driver;
+import com.intuit.karate.driver.DriverOptions;
 import com.intuit.karate.driver.chrome.Chrome;
 
 import cucumber.api.DataTable;
@@ -476,8 +477,13 @@ public class ScenarioActions implements Actions {
     NewDriver currentDriver = engine.getCurrentChrome();
     if (driverOptions != null && currentDriver != null) {
       driverOptions.put("top", true);
-      ((Chrome) currentDriver.driver).closeClient();
-      Driver chrome = Chrome.start(driverOptions, engine, null, false);
+      Chrome oldChrome = ((Chrome) currentDriver.driver);
+      if (oldChrome.parent == null) {
+        oldChrome.closeClient();
+      } else {
+        oldChrome.quit();
+      }
+      Driver chrome = DriverOptions.start(driverOptions, engine.runtime);
       engine.setDriver(chrome);
       if (currentDriver.name != null) {
         engine.newDrivers.put(currentDriver.name, new NewDriver(currentDriver.name, driverOptions, chrome));
@@ -506,8 +512,13 @@ public class ScenarioActions implements Actions {
       } else {
         driverOptions.put("startUrl", urlOrTitle);
       }
-      ((Chrome) currentDriver.driver).closeClient();
-      Driver chrome = Chrome.start(driverOptions, engine, null, false);
+      Chrome oldChrome = ((Chrome) currentDriver.driver);
+      if (oldChrome.parent == null) {
+        oldChrome.closeClient();
+      } else {
+        oldChrome.quit();
+      }
+      Driver chrome = DriverOptions.start(driverOptions, engine.runtime);
       engine.setDriver(chrome);
       if (currentDriver.name != null) {
         engine.newDrivers.put(currentDriver.name, new NewDriver(currentDriver.name, driverOptions, chrome));
