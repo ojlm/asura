@@ -124,7 +124,7 @@ public class ResourceUtils {
       File file = new File(removePrefix(path));
       if (!file.exists()) { // todo: modified
         if (workingDir != null) {
-          file = new File(workingDir, path);
+          file = new File(workingDir, removePrefix(path));
         }
         if (!file.exists()) {
           throw new RuntimeException("not found: " + path);
