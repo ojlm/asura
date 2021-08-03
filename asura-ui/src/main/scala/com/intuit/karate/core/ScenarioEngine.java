@@ -1020,13 +1020,10 @@ public class ScenarioEngine {
     setHiddenVariable(KEY, Key.INSTANCE);
     Ocr ocr = new Ocr(driver);
     setHiddenVariable(Ocr.ENGINE_KEY(), ocr);
-    autoDef(ocr, Ocr.ENGINE_KEY());
     Img img = new Img(driver, ocr);
     setHiddenVariable(Img.ENGINE_KEY(), img);
-    autoDef(img, Img.ENGINE_KEY());
     asura.ui.karate.plugins.System sys = new asura.ui.karate.plugins.System(driver, ocr, img, true);
     setHiddenVariable(sys.ENGINE_KEY(), sys);
-    autoDef(img, Img.ENGINE_KEY());
   }
 
   public void setRobot(Plugin robot) { // TODO unify
