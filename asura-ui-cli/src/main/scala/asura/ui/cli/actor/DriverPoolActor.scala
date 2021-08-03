@@ -165,14 +165,19 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
         }
         val results = builder.parallel(1)
         self ! TaskOverMessage(task)
-        listener.driverCommandResultEvent(DriverCommandResultEvent(task.meta, true, results.toKarateModel))
+        if (listener != null) {
+          listener.driverCommandResultEvent(DriverCommandResultEvent(task.meta, true, results.toKarateModel))
+        }
       }
     }
     val thread = TaskThreadGroup.newKarate(runnable)
     task.thread = thread
-    thread.setUncaughtExceptionHandler((_: Thread, t: Throwable) => {
+    thread.setUncaughtExceptionHandler((thread: Thread, t: Throwable) => {
+      log.error(t, s"thread error: ${thread.getName}")
       self ! TaskOverMessage(task)
-      listener.driverCommandResultEvent(DriverCommandResultEvent(task.meta, false, error = t.getMessage))
+      if (listener != null) {
+        listener.driverCommandResultEvent(DriverCommandResultEvent(task.meta, false, error = t.getMessage))
+      }
     })
     thread.start()
   }
