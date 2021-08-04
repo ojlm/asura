@@ -9,6 +9,9 @@ case class TaskDriver(
                        `type`: String,
                        var targets: Seq[ChromeTargetPage] = null,
                      ) {
+
+  private val _hash = s"$host$port$driver${`type`}".hashCode
+
   override def equals(obj: Any): Boolean = {
     if (obj.isInstanceOf[TaskDriver]) {
       val target = obj.asInstanceOf[TaskDriver]
@@ -17,4 +20,6 @@ case class TaskDriver(
       false
     }
   }
+
+  override def hashCode(): Int = _hash
 }

@@ -5,7 +5,6 @@ import java.util
 import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -199,7 +198,7 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
           log.info(s"task(${task.meta.reportId}) get remote driver, ${remote.host}:${remote.port}")
         }
       }
-      if (task.drivers == null) task.drivers = ArrayBuffer[TaskDriver]()
+      if (task.drivers == null) task.drivers = mutable.Set[TaskDriver]()
       if (task.actors == null) task.actors = mutable.Set[ActorRef]()
       if (task.driverActorMap == null) task.driverActorMap = mutable.Map[Driver, ActorRef]()
       if (task.targets == null) task.targets = mutable.Map[Driver, TaskDriver]()
