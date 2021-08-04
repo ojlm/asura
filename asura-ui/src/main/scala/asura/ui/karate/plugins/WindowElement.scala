@@ -4,10 +4,10 @@ import java.awt.Rectangle
 
 import asura.ui.jna.WindowUtils
 
-case class WindowElement(title: String, pid: Long) {
+case class WindowElement(id: Long, title: String, pid: Long) {
 
   def getWindowRect(): Rectangle = {
-    val window = WindowUtils.getDesktopWindowByTitleOrProcessId(title, pid)
+    val window = WindowUtils.getDesktopWindowById(id)
     if (window.nonEmpty) {
       window.get.getLocAndSize
     } else {

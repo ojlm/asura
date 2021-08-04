@@ -5,7 +5,7 @@ import java.awt.{GraphicsEnvironment, Rectangle}
 object JnaSpec {
 
   def main(args: Array[String]): Unit = {
-    WindowUtils.getDesktopWindow("Chrome").map(window => {
+    WindowUtils.getDesktopWindows("Chrome").forEach(window => {
       println(s"window: $window")
     })
     val env = GraphicsEnvironment.getLocalGraphicsEnvironment

@@ -27,7 +27,7 @@ Feature: Plugins
     * print sys.screenInfo()
     * sys.screenshot()
     * print sys.windowInfo('idea')
-    * sys.activate('idea')
+    * sys.activate('idea', 0)
     * sys.screenshot()
     * sys.move(400, 500).rightClick()
     * sys.move(500, 500).click()

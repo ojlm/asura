@@ -1,8 +1,7 @@
 package asura.ui.jna
 
 import java.awt.{GraphicsEnvironment, Rectangle}
-
-import scala.jdk.CollectionConverters._
+import java.util.stream.Collectors
 
 import asura.ui.model.Position
 import oshi.SystemInfo
@@ -12,27 +11,42 @@ object WindowUtils {
 
   val os = new SystemInfo().getOperatingSystem()
 
-  def getDesktopWindows(visibleOnly: Boolean = true): Seq[OSDesktopWindow] = {
-    os.getDesktopWindows(visibleOnly).asScala.toSeq
+  def getDesktopWindows(visibleOnly: Boolean = true): java.util.List[OSDesktopWindow] = {
+    os.getDesktopWindows(visibleOnly)
   }
 
-  def getDesktopWindow(title: String): Option[OSDesktopWindow] = {
+  def getDesktopWindows(title: String): java.util.List[OSDesktopWindow] = {
     getDesktopWindowByTitleOrProcessId(title, -1)
   }
 
-  def getDesktopWindow(processId: Long): Option[OSDesktopWindow] = {
+  def getDesktopWindow(processId: Long): java.util.List[OSDesktopWindow] = {
     getDesktopWindowByTitleOrProcessId(null, processId)
   }
 
-  def getDesktopWindowByTitleOrProcessId(title: String, pid: Long): Option[OSDesktopWindow] = {
+  def getDesktopWindowById(id: Long): Option[OSDesktopWindow] = {
     val value = os.getDesktopWindows(true).stream().filter(window => {
-      if (pid != null && pid >= 0) {
-        window.getOwningProcessId.equals(pid)
-      } else {
-        window.getTitle.toLowerCase.contains(title.toLowerCase)
-      }
+      window.getWindowId == id
     }).findFirst()
     if (value.isPresent) Some(value.get()) else None
+  }
+
+  def getDesktopWindowByTitleOrProcessId(title: String, pid: Long): java.util.List[OSDesktopWindow] = {
+    os.getDesktopWindows(true).stream()
+      .filter(window => {
+        if (pid != null && pid >= 0) {
+          window.getOwningProcessId.equals(pid)
+        } else {
+          window.getTitle.toLowerCase.contains(title.toLowerCase)
+        }
+      })
+      .sorted((o1, o2) => {
+        if (o1.getOrder != o2.getOrder) {
+          o1.getOrder - o2.getOrder
+        } else {
+          (o1.getWindowId - o2.getWindowId).toInt
+        }
+      })
+      .collect(Collectors.toList[OSDesktopWindow])
   }
 
   /** union multiple displays */

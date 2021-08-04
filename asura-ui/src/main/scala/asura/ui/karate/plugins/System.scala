@@ -43,16 +43,6 @@ class System(val driver: Driver, val ocr: Ocr, val img: Img, autoDelay: Boolean 
     }
   }
 
-  def activeWindow(option: Option[OSDesktopWindow], title: String, pid: Long): System = {
-    if (option.nonEmpty) {
-      val w = option.get
-      window = WindowElement(title, w.getOwningProcessId)
-      this
-    } else {
-      throw new RuntimeException(s"Can not find the window: ${if (title != null) title else pid}")
-    }
-  }
-
   @AutoDef
   def screenInfo(): util.List[util.Map[String, Object]] = {
     val list = new util.ArrayList[util.Map[String, Object]]()
@@ -68,33 +58,53 @@ class System(val driver: Driver, val ocr: Ocr, val img: Img, autoDelay: Boolean 
   }
 
   @AutoDef
-  def windowInfo(title: String): java.util.Map[String, Object] = {
-    val map = new util.HashMap[String, Object]()
-    val option = WindowUtils.getDesktopWindow(title)
-    if (option.nonEmpty) {
-      val win = option.get
-      map.put("title", win.getTitle)
-      map.put("command", win.getCommand)
-      map.put("windowId", Long.box(win.getWindowId))
-      map.put("pid", Long.box(win.getOwningProcessId))
-      val rect = win.getLocAndSize
+  def windowInfo(title: String): util.List[util.Map[String, Object]] = {
+    val list = new util.ArrayList[util.Map[String, Object]]()
+    WindowUtils.getDesktopWindows(title).forEach(window => {
+      val map = new util.HashMap[String, Object]()
+      map.put("title", window.getTitle)
+      map.put("command", window.getCommand)
+      map.put("windowId", Long.box(window.getWindowId))
+      map.put("pid", Long.box(window.getOwningProcessId))
+      val rect = window.getLocAndSize
       map.put("x", Int.box(rect.x))
       map.put("y", Int.box(rect.y))
       map.put("width", Int.box(rect.width))
       map.put("height", Int.box(rect.height))
-      map.put("visible", Boolean.box(win.isVisible))
-    }
-    map
+      map.put("visible", Boolean.box(window.isVisible))
+      list.add(map)
+    })
+    list
   }
 
   @AutoDef
   def activate(pid: Long): System = {
-    activeWindow(WindowUtils.getDesktopWindow(pid), null, pid)
+    activate(pid, 0)
+  }
+
+  @AutoDef
+  def activate(pid: Long, idx: Int): System = {
+    activate(WindowUtils.getDesktopWindow(pid), idx, null, pid)
   }
 
   @AutoDef
   def activate(title: String): System = {
-    activeWindow(WindowUtils.getDesktopWindow(title), title, -1)
+    activate(title, 0)
+  }
+
+  @AutoDef
+  def activate(title: String, idx: Int): System = {
+    activate(WindowUtils.getDesktopWindows(title), idx, title, -1)
+  }
+
+  def activate(windows: java.util.List[OSDesktopWindow], idx: Int, title: String, pid: Long): System = {
+    if (windows != null && windows.size() > idx) {
+      val w = windows.get(idx)
+      window = WindowElement(w.getWindowId, title, w.getOwningProcessId)
+      this
+    } else {
+      throw new RuntimeException(s"can not find window ${if (title != null) title else pid}")
+    }
   }
 
   @AutoDef
@@ -278,7 +288,7 @@ class System(val driver: Driver, val ocr: Ocr, val img: Img, autoDelay: Boolean 
 
   @AutoDef
   def clearFocused(): System = {
-    input(Keys.CONTROL + "a" + Keys.DELETE)
+    input(s"${Keys.CONTROL}a${Keys.DELETE}")
   }
 
   @AutoDef
