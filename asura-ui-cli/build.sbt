@@ -2,6 +2,7 @@ mainClass in assembly := Some("asura.ui.cli.Main")
 assemblyJarName in assembly := "indigo.jar"
 assemblyMergeStrategy in assembly := {
   case PathList("com", "intuit", xs@_*) => MergeStrategy.first
+  case PathList("com", "sun", "jna", xs@_*) => MergeStrategy.first
   case PathList("cucumber", "api", xs@_*) => MergeStrategy.first
   case x@PathList(ps@_*) =>
     ps.last match {
