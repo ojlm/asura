@@ -59,8 +59,9 @@ class System(val driver: Driver, val ocr: Ocr, val img: Img, autoDelay: Boolean 
     GraphicsEnvironment.getLocalGraphicsEnvironment.getScreenDevices.foreach(device => {
       val map = new util.HashMap[String, Object]()
       val mode = device.getDisplayMode
-      map.put("mode", device.getDisplayMode)
-      map.put("bounds", device.getDefaultConfiguration.getBounds)
+      map.put("mode", mode)
+      val bounds = device.getDefaultConfiguration.getBounds
+      map.put("bounds", s"[x=${bounds.x},y=${bounds.y},width=${bounds.width},height=${bounds.height}]")
       list.add(map)
     })
     list
