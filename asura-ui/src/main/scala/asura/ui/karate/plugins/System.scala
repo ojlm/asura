@@ -6,23 +6,100 @@ import java.util
 
 import javax.swing.{BorderFactory, JComponent, JFrame, WindowConstants}
 
+import asura.ui.jna.WindowUtils
 import asura.ui.karate.plugins.System.{KEY_CODES, logger}
-import asura.ui.model.Position
+import asura.ui.model.{IntPoint, Position}
 import asura.ui.opencv.OpenCvUtils
 import com.intuit.karate.core.{AutoDef, Plugin}
 import com.intuit.karate.driver.{Driver, Keys}
 import com.intuit.karate.http.ResourceType
 import com.typesafe.scalalogging.Logger
+import oshi.software.os.OSDesktopWindow
 
 class System(val driver: Driver, val ocr: Ocr, val img: Img, autoDelay: Boolean = true) extends CvPlugin {
 
   private var bot: Robot = null
   private var kit: Toolkit = null
+  var window: WindowElement = null
 
   override def getRootPosition(): Position = {
     init()
-    val size = kit.getScreenSize
-    Position(0, 0, size.width, size.height)
+    if (window != null) {
+      // if a window is activated, the position coordinate is in the window
+      val rect = window.getWindowRect()
+      Position(0, 0, rect.width, rect.height)
+    } else {
+      val size = kit.getScreenSize
+      Position(0, 0, size.width, size.height)
+    }
+  }
+
+  def getAbsolutePoint(x: Int, y: Int): IntPoint = {
+    if (window != null) {
+      val rect = window.getWindowRect()
+      IntPoint(rect.x + x, rect.y + y)
+    } else {
+      IntPoint(x, y)
+    }
+  }
+
+  def activeWindow(option: Option[OSDesktopWindow], title: String, pid: Long): System = {
+    if (option.nonEmpty) {
+      val w = option.get
+      window = WindowElement(title, w.getOwningProcessId)
+      this
+    } else {
+      throw new RuntimeException(s"Can not find the window: ${if (title != null) title else pid}")
+    }
+  }
+
+  @AutoDef
+  def screenInfo(): util.List[util.Map[String, Object]] = {
+    val list = new util.ArrayList[util.Map[String, Object]]()
+    GraphicsEnvironment.getLocalGraphicsEnvironment.getScreenDevices.foreach(device => {
+      val map = new util.HashMap[String, Object]()
+      val mode = device.getDisplayMode
+      map.put("mode", device.getDisplayMode)
+      map.put("bounds", device.getDefaultConfiguration.getBounds)
+      list.add(map)
+    })
+    list
+  }
+
+  @AutoDef
+  def windowInfo(title: String): java.util.Map[String, Object] = {
+    val map = new util.HashMap[String, Object]()
+    val option = WindowUtils.getDesktopWindow(title)
+    if (option.nonEmpty) {
+      val win = option.get
+      map.put("title", win.getTitle)
+      map.put("command", win.getCommand)
+      map.put("windowId", Long.box(win.getWindowId))
+      map.put("pid", Long.box(win.getOwningProcessId))
+      val rect = win.getLocAndSize
+      map.put("x", Int.box(rect.x))
+      map.put("y", Int.box(rect.y))
+      map.put("width", Int.box(rect.width))
+      map.put("height", Int.box(rect.height))
+      map.put("visible", Boolean.box(win.isVisible))
+    }
+    map
+  }
+
+  @AutoDef
+  def activate(pid: Long): System = {
+    activeWindow(WindowUtils.getDesktopWindow(pid), null, pid)
+  }
+
+  @AutoDef
+  def activate(title: String): System = {
+    activeWindow(WindowUtils.getDesktopWindow(title), title, -1)
+  }
+
+  @AutoDef
+  def inactivate(): System = {
+    window = null
+    this
   }
 
   @AutoDef
@@ -32,8 +109,8 @@ class System(val driver: Driver, val ocr: Ocr, val img: Img, autoDelay: Boolean 
 
   @AutoDef
   def screenshot(embed: Boolean): Array[Byte] = {
-    val size = kit.getScreenSize
-    screenshot(0, 0, size.width, size.height, embed)
+    val pos = getRootPosition()
+    screenshot(pos.x, pos.y, pos.width, pos.height, embed)
   }
 
   @AutoDef
@@ -44,7 +121,8 @@ class System(val driver: Driver, val ocr: Ocr, val img: Img, autoDelay: Boolean 
   @AutoDef
   def screenshot(x: Int, y: Int, width: Int, height: Int, embed: Boolean): Array[Byte] = {
     init()
-    val image = bot.createScreenCapture(new Rectangle(x, y, width, height))
+    val point = getAbsolutePoint(x, y)
+    val image = bot.createScreenCapture(new Rectangle(point.x, point.y, width, height))
     val bytes = OpenCvUtils.toBytes(image)
     if (embed) {
       driver.getRuntime.embed(bytes, ResourceType.PNG)
@@ -59,23 +137,24 @@ class System(val driver: Driver, val ocr: Ocr, val img: Img, autoDelay: Boolean 
 
   @AutoDef
   def crop(locator: Object): ImageElement = {
-    ImageElement(crop(), Position(locator, getRootPosition), driver, ocr, img, this)
+    ImageElement(crop(), Position(locator, getRootPosition()), driver, ocr, img, this)
   }
 
   @AutoDef
   def crop(x: Object, y: Object): ImageElement = {
-    ImageElement(crop(), Position(x, y, getRootPosition), driver, ocr, img, this)
+    ImageElement(crop(), Position(x, y, getRootPosition()), driver, ocr, img, this)
   }
 
   @AutoDef
   def crop(x: Object, y: Object, width: Object, height: Object): Element = {
-    ImageElement(crop(), Position(x, y, width, height, getRootPosition), driver, ocr, img, this)
+    ImageElement(crop(), Position(x, y, width, height, getRootPosition()), driver, ocr, img, this)
   }
 
   @AutoDef
   def move(x: Int, y: Int): System = {
     init()
-    bot.mouseMove(x, y)
+    val point = getAbsolutePoint(x, y)
+    bot.mouseMove(point.x, point.y)
     this
   }
 
@@ -208,6 +287,37 @@ class System(val driver: Driver, val ocr: Ocr, val img: Img, autoDelay: Boolean 
   }
 
   @AutoDef
+  def highlight(pos: Position): System = {
+    highlight(pos.x, pos.y, pos.width, pos.height, 1000)
+  }
+
+  @AutoDef
+  def highlight(pos: Position, time: Int): System = {
+    highlight(pos.x, pos.y, pos.width, pos.height, time)
+  }
+
+  @AutoDef
+  def highlight(x: Int, y: Int, width: Int, height: Int): System = {
+    highlight(x, y, width, height, 1000)
+  }
+
+  @AutoDef
+  def highlight(x: Int, y: Int, width: Int, height: Int, time: Int): System = {
+    val point = getAbsolutePoint(x, y)
+    System.highlight(Position(point.x, point.y, width, height), time)
+    this
+  }
+
+  @AutoDef
+  def highlightAll(container: Position, elements: Seq[Position], time: Int, showValue: Boolean): System = {
+    val point = getAbsolutePoint(container.x, container.y)
+    container.x = point.x
+    container.y = point.y
+    System.highlightAll(container, elements, time, showValue)
+    this
+  }
+
+  @AutoDef
   def robot: Robot = {
     init()
     bot
@@ -249,24 +359,24 @@ object System {
   val METHOD_NAMES: util.List[String] = Plugin.methodNames(classOf[System])
   val KEY_CODES = new util.HashMap[Character, Seq[Int]]()
 
-  def highlight(region: Position, time: Int): Unit = {
+  def highlight(pos: Position, time: Int): Unit = {
     val frame = createFrame()
-    frame.setLocation(region.x, region.y)
-    frame.setSize(region.width, region.height)
+    frame.setLocation(pos.x, pos.y)
+    frame.setSize(pos.width, pos.height)
     frame.getRootPane.setBorder(BorderFactory.createLineBorder(Color.RED, 3))
     frame.setVisible(true)
     delay(time)
     frame.dispose()
   }
 
-  def highlightAll(parent: Position, elements: Seq[Position], time: Int, showValue: Boolean = false): Unit = {
+  def highlightAll(container: Position, elements: Seq[Position], time: Int, showValue: Boolean = false): Unit = {
     val frame = createFrame()
-    frame.setLocation(parent.x, parent.y)
-    frame.setSize(parent.width, parent.height)
+    frame.setLocation(container.x, container.y)
+    frame.setSize(container.width, container.height)
     frame.getRootPane.setBorder(BorderFactory.createLineBorder(Color.YELLOW, 3))
     val boxes = elements.filter(pos => {
-      val x = pos.x - parent.x
-      val y = pos.y - parent.y
+      val x = pos.x - container.x
+      val y = pos.y - container.y
       if (x > 0 && y > 0 && pos.width > 0 && pos.height > 0) {
         pos.x = x
         pos.y = y

@@ -88,6 +88,15 @@ class ImageElement(
     ImageElement(this, pos, driver, ocr, img, sys)
   }
 
+  override def highlight(time: Int): Element = {
+    if (sys != null) {
+      sys.highlight(position, time)
+    } else {
+      // todo
+    }
+    this
+  }
+
   override def getRegion(): Position = position
 
 }

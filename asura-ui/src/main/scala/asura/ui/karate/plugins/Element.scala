@@ -33,6 +33,13 @@ trait Element {
 
   def crop(x: Object, y: Object, width: Object, height: Object): Element
 
+  def highlight(): Element = highlight(2000)
+
+  def highlight(time: Int): Element
+
+  /**
+   * @return current absolute position
+   */
   def getRegion(): Position
 
   def getPosition(): java.util.Map[String, Integer] = {

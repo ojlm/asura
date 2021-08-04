@@ -24,6 +24,7 @@ object Dependencies {
   private val elastic4s = "com.sksamuel.elastic4s" %% "elastic4s-http" % "6.7.8"
   private val joddCore = "org.jodd" % "jodd-core" % "3.9.1"
   private val jsonPath = "com.jayway.jsonpath" % "json-path" % "2.5.0"
+  private val oshi = "com.github.oshi" % "oshi-core" % "5.8.0"
 
   val caffeineLib = "com.github.ben-manes.caffeine" % "caffeine" % "2.8.4"
   val kryo = "com.esotericsoftware" % "kryo" % "5.1.1"
@@ -107,7 +108,7 @@ object Dependencies {
   val namerdDependencies = Seq(akkaStream, akkaHttp) ++ commonDependencies
   val dubboDependencies = Seq(dubbo, curator, dubboJavassist, dubboJbossNetty, dubboSpring, akkaStream) ++ commonDependencies
   val kafkaDependencies = Seq(akkaStream, akkaKafka, kafkaAvroSerializer) ++ commonDependencies
-  val uiDependencies = Seq(karate, cucumber, picocli) ++ commonDependencies ++ javaCV
+  val uiDependencies = Seq(karate, cucumber, picocli, oshi) ++ commonDependencies ++ javaCV
   val uiCliDependencies = Seq(jadb) ++ uiDependencies
 
   val commonPlayDeps = Seq(
