@@ -1,5 +1,7 @@
 package asura.ui.karate.plugins
 
+import java.util
+
 import asura.ui.model.Position
 import asura.ui.opencv.OpenCvUtils
 import asura.ui.opencv.OpenCvUtils.load
@@ -45,7 +47,6 @@ class ImageElement(
     bytes
   }
 
-
   override def ocrExtract(level: String, negative: Boolean): String = {
     val bytes = screenshot(false)
     ocr.extract(bytes, level, negative)
@@ -70,6 +71,19 @@ class ImageElement(
 
   override def imgClick(image: Array[Byte]): Element = {
     img.click(screenshot(false), image, position)
+    this
+  }
+
+  override def compare(file: String): Double = {
+    img.compare(screenshot(false), file)
+  }
+
+  override def compare(image: Array[Byte]): Double = {
+    img.compare(screenshot(false), image)
+  }
+
+  override def detect(method: String, options: util.Map[String, Any]): Element = {
+    img.detect(screenshot(false), method, options)
     this
   }
 

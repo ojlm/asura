@@ -24,20 +24,24 @@ trait CvPlugin extends Plugin {
     }
   }
 
-  def drawAndEmbed(image: Mat): Unit = {
+  def embedImage(bytes: Array[Byte]): Unit = {
+    getRuntime.embed(bytes, ResourceType.PNG)
+  }
+
+  def embedImage(image: Mat): Unit = {
     getRuntime.embed(saveToBytes(image), ResourceType.PNG)
   }
 
   def drawAndEmbed(image: Mat, text: String): Unit = {
-    drawTextOnImage(image, text, Colors.BGR_RED)
+    drawTextOnImage(image, text, Colors.Red)
     getRuntime.embed(saveToBytes(image), ResourceType.PNG)
   }
 
   def drawAndEmbed(bytes: Array[Byte], rects: Seq[Rect], points: Seq[Point] = Nil): Unit = {
     if (rects.nonEmpty || points.nonEmpty) {
       val image = load(bytes, IMREAD_COLOR)
-      rects.foreach(rect => drawRectOnImage(image, rect, Colors.BGR_RED))
-      points.foreach(point => drawPointOnImage(image, point, 4, Colors.BGR_RED, -1))
+      rects.foreach(rect => drawRectOnImage(image, rect, Colors.Red))
+      points.foreach(point => drawPointOnImage(image, point, 4, Colors.Red, -1))
       getRuntime.embed(saveToBytes(image), ResourceType.PNG)
     }
   }

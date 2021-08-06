@@ -19,10 +19,10 @@ class ColorHistogram(
 
   override def compute(image: Mat): Mat = getHistogram(image)
 
-  override def compare(reference: Mat, second: Mat): Result = {
+  override def compare(reference: Mat, second: Mat): ScoreResult = {
     val secondValue = compute(second)
     val imageSize = second.cols() * second.rows()
-    Result(compareHist(reference, secondValue, HISTCMP_INTERSECT) / imageSize, null)
+    ScoreResult(compareHist(reference, secondValue, HISTCMP_INTERSECT) / imageSize, null)
   }
 
   /**

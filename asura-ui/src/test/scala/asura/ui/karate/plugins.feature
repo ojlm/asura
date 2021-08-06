@@ -34,3 +34,13 @@ Feature: Plugins
     * sys.crop(200, 200).highlight().screenshot()
     * sys.crop(0.5).highlight().screenshot()
     * print sys.crop(0.5).ocrExtract()
+
+  Scenario: DETECT
+    * sys.crop().detect()
+    * sys.crop().detect('gftt', {minDistance:3, useHarris:false})
+    * sys.crop().detect('mser', {'minArea':100,'maxArea':800})
+    * sys.crop().detect('harris')
+    * sys.crop().detect('fast', {threshold:10})
+    * sys.crop().detect('surf', {hessianThreshold:250,extended:true})
+    * sys.crop().detect('sift', {nFeatures:0,nOctaveLayers:3})
+    * sys.crop().detect('morph', {shape:'ellipse',width:16,height:4})

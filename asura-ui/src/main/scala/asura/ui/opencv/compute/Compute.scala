@@ -5,5 +5,5 @@ import org.bytedeco.opencv.opencv_core.Mat
 trait Compute {
   def compute(image: Mat): Mat
 
-  def compare(reference: Mat, second: Mat): Result
+  def compare(reference: Mat, second: Mat): ScoreResult
 }

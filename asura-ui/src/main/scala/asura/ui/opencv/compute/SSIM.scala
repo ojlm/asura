@@ -14,7 +14,7 @@ class SSIM(c1: Double = 6.5025, c2: Double = 58.5225, d: Int = CV_32F) extends C
     throw new RuntimeException("Not supported")
   }
 
-  override def compare(reference: Mat, second: Mat): Result = {
+  override def compare(reference: Mat, second: Mat): ScoreResult = {
     // INITS
     val i1 = new Mat()
     val i2 = new Mat()
@@ -51,9 +51,9 @@ class SSIM(c1: Double = 6.5025, c2: Double = 58.5225, d: Int = CV_32F) extends C
     divide(t3.asMat(), t1.asMat(), ssimMap) // ssim_map =  t3./t1
     val scalar = mean(ssimMap) // scalar = average of ssim map, (R, G & B SSIM index)
     if (ssimMap.channels() == 1) {
-      Result(scalar.get(0), ssimMap)
+      ScoreResult(scalar.get(0), ssimMap)
     } else {
-      Result((scalar.get(0) + scalar.get(1) + scalar.get(2)) / 3, ssimMap)
+      ScoreResult((scalar.get(0) + scalar.get(1) + scalar.get(2)) / 3, ssimMap)
     }
   }
 

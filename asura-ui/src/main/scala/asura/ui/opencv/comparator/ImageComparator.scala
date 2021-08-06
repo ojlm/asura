@@ -2,7 +2,7 @@ package asura.ui.opencv.comparator
 
 import asura.ui.opencv.OpenCvUtils
 import asura.ui.opencv.comparator.ImageComparator.ComputeType
-import asura.ui.opencv.compute.{ColorHistogram, Compute, Result, SSIM}
+import asura.ui.opencv.compute.{ColorHistogram, Compute, ScoreResult, SSIM}
 import org.bytedeco.opencv.opencv_core.Mat
 
 class ImageComparator(reference: Mat, computeType: String = ComputeType.ssim) {
@@ -18,9 +18,9 @@ class ImageComparator(reference: Mat, computeType: String = ComputeType.ssim) {
     case _ => reference
   }
 
-  def compare(image: Mat): Result = computeFunc.compare(referenceValue, image)
+  def compare(image: Mat): ScoreResult = computeFunc.compare(referenceValue, image)
 
-  def compare(image: Array[Byte]): Result = {
+  def compare(image: Array[Byte]): ScoreResult = {
     compare(OpenCvUtils.load(image))
   }
 

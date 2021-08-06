@@ -1,14 +1,18 @@
 package asura.ui.karate.plugins
 
 import java.util
+import java.util.Collections
 
+import asura.common.util.StringUtils
 import asura.ui.model.Position
 import asura.ui.opencv.comparator.ImageComparator
 import asura.ui.opencv.comparator.ImageComparator.ComputeType
+import asura.ui.opencv.detector.Detector
 import asura.ui.opencv.{OpenCvUtils, TemplateMatch}
 import com.intuit.karate.core.{AutoDef, Plugin}
 import com.intuit.karate.driver.Driver
 import com.typesafe.scalalogging.Logger
+import org.bytedeco.opencv.global.opencv_imgcodecs.IMREAD_GRAYSCALE
 import org.bytedeco.opencv.global.opencv_imgproc
 import org.bytedeco.opencv.opencv_core.{Mat, Point}
 
@@ -43,7 +47,7 @@ class Img(val driver: Driver, val ocr: Ocr) extends CvPlugin {
   }
 
   @AutoDef
-  def crop(x: Object, y: Object, width: Object, height: Object): Element = {
+  def crop(x: Object, y: Object, width: Object, height: Object): ImageElement = {
     ImageElement(crop(), Position(x, y, width, height, getRootPosition), driver, ocr, this)
   }
 
@@ -91,18 +95,25 @@ class Img(val driver: Driver, val ocr: Ocr) extends CvPlugin {
 
   @AutoDef
   def compare(file: String): Double = {
-    compare(null, file)
+    compare(StringUtils.EMPTY, file)
   }
 
   @AutoDef
   def compare(locator: String, file: String): Double = {
     val fileReader = driver.getRuntime.engine.fileReader
     val target = fileReader.readFileAsBytes(file)
-    val reference = if (locator == null) {
+    val reference = if (StringUtils.isEmpty(locator)) {
       driver.screenshot(false)
     } else {
       driver.screenshot(locator, false)
     }
+    compare(reference, target)
+  }
+
+  @AutoDef
+  def compare(reference: Array[Byte], file: String): Double = {
+    val fileReader = driver.getRuntime.engine.fileReader
+    val target = fileReader.readFileAsBytes(file)
     compare(reference, target)
   }
 
@@ -117,8 +128,29 @@ class Img(val driver: Driver, val ocr: Ocr) extends CvPlugin {
     val targetMatGray = new Mat()
     opencv_imgproc.cvtColor(tuple._2, targetMatGray, opencv_imgproc.COLOR_BGR2GRAY)
     val result = comparator.compare(targetMatGray)
-    drawAndEmbed(result.resultMat(tuple._1, tuple._2))
+    embedImage(result.draw(tuple._1, tuple._2))
     result.score
+  }
+
+  @AutoDef
+  def detect(): Unit = {
+    detect(Detector.DEFAULT)
+  }
+
+  @AutoDef
+  def detect(method: String): Unit = {
+    detect(driver.screenshot(false), method, Collections.emptyMap[String, Any]())
+  }
+
+  @AutoDef
+  def detect(locator: String, method: String, options: util.Map[String, Any]): Unit = {
+    detect(driver.screenshot(locator, false), method, options)
+  }
+
+  @AutoDef
+  def detect(bytes: Array[Byte], method: String, options: util.Map[String, Any]): Unit = {
+    val result = Detector(method, options).detect(bytes, IMREAD_GRAYSCALE)
+    embedImage(result.draw(bytes))
   }
 
   @AutoDef

@@ -33,7 +33,7 @@ object OpenCvSpec extends BaseSpec {
     println(s"matched: ${JsonUtils.stringifyPretty(result.regions)}")
     if (result.regions.nonEmpty) {
       result.regions.foreach(region => {
-        drawRectOnImage(colored, region.toRect(), Colors.BGR_RED)
+        drawRectOnImage(colored, region.toRect(), Colors.Red)
       })
       show(colored, "colored")
     }
@@ -66,7 +66,7 @@ object OpenCvSpec extends BaseSpec {
     println(s"counters: ${counters.size()}")
     counters.get().foreach(cnt => {
       val rect = boundingRect(cnt)
-      drawRectOnImage(secondColor, rect, Colors.BGR_RED)
+      drawRectOnImage(secondColor, rect, Colors.Red)
       println(s"x: ${rect.x()}, y: ${rect.y()}, w: ${rect.width()}, h: ${rect.height()}")
     })
     show(secondColor, "score: %6.4f".format(result.score))

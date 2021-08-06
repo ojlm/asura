@@ -1,23 +1,41 @@
 package asura.ui.opencv.detector
 
+import java.util
+
 import org.bytedeco.javacpp.DoublePointer
 import org.bytedeco.javacpp.indexer.UByteIndexer
 import org.bytedeco.opencv.global.opencv_core._
 import org.bytedeco.opencv.global.opencv_imgproc._
 import org.bytedeco.opencv.opencv_core._
 
-class HarrisDetector(
-                      var neighborhood: Int = 3,
-                      var aperture: Int = 3,
-                      var k: Double = 0.01,
-                      var maxStrength: Double = 0.0,
-                      var nonMaxSize: Int = 3,
-                    ) {
+class HarrisDetector(val options: util.Map[String, Any]) extends Detector {
 
+  var neighborhood: Int = 3 // Neighborhood size for Harris edge detector
+  var aperture: Int = 3 // Aperture size for Harris edge detector
+  var k: Double = 0.01 // Harris detector free parameter
+  var qualityLevel: Double = 0.01
+
+  if (options != null) {
+    neighborhood = getInteger("neighborhood", 3)
+    aperture = getInteger("aperture", 3)
+    k = getDouble("k", 0.01)
+    qualityLevel = getDouble("qualityLevel", 0.01)
+  }
+
+  // Image of corner strength, computed by Harris edge detector
   private var cornerStrength: Option[Mat] = None
+  // Image of local corner maxima
   private var localMax: Option[Mat] = None
 
-  def detect(image: Mat): Unit = {
+  // Maximum strength for threshold computations
+  var maxStrength: Double = 0.0
+
+  override def detect(image: Mat): DetectorResult = {
+    doDetect(image)
+    DetectorResult(points = getCorners())
+  }
+
+  def doDetect(image: Mat): Unit = {
     cornerStrength = Some(new Mat())
     cornerHarris(image, cornerStrength.get, neighborhood, aperture, k)
 
@@ -27,13 +45,13 @@ class HarrisDetector(
     // Call to cvMinMaxLoc finds min and max values in the image and assigns them to output parameters.
     // Passing back values through function parameter pointers works in C bout not on JVM.
     // We need to pass them as 1 element array, as a work around for pointers in C API.
-    val maxStrengthA = new DoublePointer(maxStrength)
+    val maxStrengthPointer = new DoublePointer(maxStrength)
     minMaxLoc(
       cornerStrength.get,
       new DoublePointer(0.0) /* not used here, but required by API */ ,
-      maxStrengthA, null, null, new Mat())
+      maxStrengthPointer, null, null, new Mat())
     // Read back the computed maxStrength
-    maxStrength = maxStrengthA.get(0)
+    maxStrength = maxStrengthPointer.get(0)
 
     // Local maxima detection.
     //
@@ -47,13 +65,10 @@ class HarrisDetector(
   }
 
 
-  /** Get the corner map from the computed Harris values. Require call to `detect`.
-   *
-   * @throws IllegalStateException if `cornerStrength` and `localMax` are not yet computed.
-   */
+  /** Get the corner map from the computed Harris values. Require call to `doDetect`. */
   def getCornerMap(qualityLevel: Double): Mat = {
     if (cornerStrength.isEmpty || localMax.isEmpty) {
-      throw new IllegalStateException("Need to call `detect()` before it is possible to compute corner map.")
+      throw new IllegalStateException("Need to call `doDetect()` before it is possible to compute corner map.")
     }
     // Threshold the corner strength
     val t = qualityLevel * maxStrength
@@ -67,7 +82,7 @@ class HarrisDetector(
   }
 
   /** Get the feature points from the computed Harris values. Require call to `detect`. */
-  def getCorners(qualityLevel: Double = 0.01): List[Point] = {
+  def getCorners(qualityLevel: Double = qualityLevel): List[Point] = {
     // Get the corner map
     val cornerMap = getCornerMap(qualityLevel)
     // Get the corners
@@ -84,14 +99,8 @@ class HarrisDetector(
     points.toList
   }
 
-  /**
-   * Draw circles at feature point locations on an image
-   */
-  def drawOnImage(image: Mat, points: List[Point]): Unit = {
-    val radius = 4
-    val thickness = 1
-    val color = new Scalar(255, 255, 255, 0)
-    points.foreach { p => circle(image, new Point(p.x, p.y), radius, color, thickness, 8, 0) }
-  }
+}
 
+object HarrisDetector {
+  def apply(options: util.Map[String, Any]): HarrisDetector = new HarrisDetector(options)
 }

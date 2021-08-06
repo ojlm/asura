@@ -7,18 +7,18 @@ import org.bytedeco.opencv.global.opencv_core._
 import org.bytedeco.opencv.global.opencv_imgproc._
 import org.bytedeco.opencv.opencv_core._
 
-case class Result(score: Double, result: Mat = null) {
+case class ScoreResult(score: Double, result: Mat = null) {
 
-  def resultMat(reference: Mat, target: Mat): Mat = {
+  def draw(reference: Mat, target: Mat): Mat = {
     val text = {
       val format = NumberFormat.getPercentInstance()
       format.setMaximumFractionDigits(2)
       s"similarity: ${format.format(score)}"
     }
     if (result == null) {
-      drawLineOnImage(target, new Point(0, 0), new Point(0, target.rows()), Colors.BGR_GREEN)
+      drawLineOnImage(target, new Point(0, 0), new Point(0, target.rows()), Colors.Green)
       val dst = concat(reference, target)
-      drawTextOnImage(dst, text, Colors.BGR_RED)
+      drawTextOnImage(dst, text, Colors.Red)
       dst
     } else { // ssim
       result.mul(result, 255)
@@ -34,11 +34,11 @@ case class Result(score: Double, result: Mat = null) {
       val contours = new MatVector()
       findContours(result, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE)
       contours.get().foreach(contour => {
-        drawRectOnImage(target, boundingRect(contour), Colors.BGR_RED)
+        drawRectOnImage(target, boundingRect(contour), Colors.Red)
       })
-      drawLineOnImage(mid, new Point(0, 0), new Point(0, mid.rows()), Colors.BGR_GREEN)
-      drawLineOnImage(mid, new Point(mid.cols() - 1, 0), new Point(mid.cols() - 1, mid.rows()), Colors.BGR_GREEN)
-      drawTextOnImage(mid, text, Colors.BGR_RED)
+      drawLineOnImage(mid, new Point(0, 0), new Point(0, mid.rows()), Colors.Green)
+      drawLineOnImage(mid, new Point(mid.cols() - 1, 0), new Point(mid.cols() - 1, mid.rows()), Colors.Green)
+      drawTextOnImage(mid, text, Colors.Red)
       concat(reference, mid, target)
     }
   }

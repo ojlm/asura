@@ -24,9 +24,13 @@ import org.bytedeco.opencv.opencv_core._
 object OpenCvUtils {
 
   object Colors {
-    val BGR_BLUE = new Scalar(255, 0, 0, 0)
-    val BGR_GREEN = new Scalar(0, 255, 0, 0)
-    val BGR_RED = new Scalar(0, 0, 255, 0)
+    // BGR colors
+    val Red = new Scalar(0, 0, 255, 0)
+    val Magenta = new Scalar(255, 0, 255, 0)
+    val Yellow = new Scalar(0, 255, 255, 0)
+    val Blue = new Scalar(255, 0, 0, 0)
+    val Cyan = new Scalar(255, 255, 0, 0)
+    val Green = new Scalar(0, 255, 0, 0)
   }
 
   def toBytes(mat: Mat): Array[Byte] = {

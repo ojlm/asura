@@ -20,7 +20,7 @@ object TesseractSpec extends BaseSpec {
     val words = engine.process(src, level = Level.WORD)
     println(words)
     words.words.foreach(word => {
-      drawRectOnImage(origin, word.toRect(), Colors.BGR_RED)
+      drawRectOnImage(origin, word.toRect(), Colors.Red)
     })
     show(origin, "target")
   }

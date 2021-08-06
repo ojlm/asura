@@ -1,7 +1,11 @@
 package asura.ui.karate.plugins
 
+import java.util
+import java.util.Collections
+
 import asura.ui.model.Position
 import asura.ui.ocr.Tesseract.Level
+import asura.ui.opencv.detector.Detector
 
 trait Element {
 
@@ -26,6 +30,16 @@ trait Element {
   def imgClick(file: String): Element
 
   def imgClick(image: Array[Byte]): Element
+
+  def compare(file: String): Double
+
+  def compare(image: Array[Byte]): Double
+
+  def detect(): Element = detect(Detector.DEFAULT, Collections.emptyMap[String, Any]())
+
+  def detect(method: String): Element = detect(method, Collections.emptyMap[String, Any]())
+
+  def detect(method: String, options: util.Map[String, Any]): Element
 
   def crop(x: Object): Element
 
