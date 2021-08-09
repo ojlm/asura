@@ -15,13 +15,13 @@ trait Element {
 
   def screenshot(embed: Boolean): Array[Byte]
 
-  def ocrExtract(): String = ocrExtract(Level.WORD, false)
+  def ocrExtract(): String = ocrExtract(Level.SYMBOL, false)
 
   def ocrExtract(level: String): String = ocrExtract(level, false)
 
   def ocrExtract(level: String, negative: Boolean): String
 
-  def ocrClick(word: String): Element = ocrClick(word, Level.WORD, false)
+  def ocrClick(word: String): Element = ocrClick(word, Level.SYMBOL, false)
 
   def ocrClick(word: String, level: String): Element = ocrClick(word, level, false)
 

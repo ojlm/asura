@@ -59,7 +59,7 @@ class Ocr(val driver: Driver) extends CvPlugin {
 
   @AutoDef
   def extract(locator: String): String = {
-    extract(locator, Level.WORD, false)
+    extract(locator, Level.SYMBOL, false)
   }
 
   @AutoDef
@@ -75,7 +75,7 @@ class Ocr(val driver: Driver) extends CvPlugin {
 
   @AutoDef
   def extract(bytes: Array[Byte]): String = {
-    extract(bytes, Level.WORD, false)
+    extract(bytes, Level.SYMBOL, false)
   }
 
   @AutoDef
