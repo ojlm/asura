@@ -11,7 +11,7 @@ case class Position(
                      var height: Int
                    ) extends Region {
 
-  var value: Any = null
+  var value: String = null
 
   def center(): IntPoint = {
     IntPoint(x + width / 2, y + height / 2)
@@ -29,7 +29,7 @@ case class Position(
 
 object Position {
 
-  def apply(exp: Object, parent: Position): Position = {
+  def apply(exp: Any, parent: Position): Position = {
     Objects.requireNonNull(parent, "parent is null")
     val func = (tuple: (Int, Double)) => {
       val (num, percent) = tuple
@@ -64,7 +64,7 @@ object Position {
     }
   }
 
-  def apply(x: Object, y: Object, parent: Position): Position = {
+  def apply(x: Any, y: Any, parent: Position): Position = {
     Objects.requireNonNull(parent, "parent is null")
     val tupleX = getParseResult(x)
     var posX, posWidth, posY, posHeight = 0
@@ -92,7 +92,7 @@ object Position {
     Position(posX, posY, posWidth, posHeight)
   }
 
-  def apply(x: Object, y: Object, width: Object, height: Object, parent: Position): Position = {
+  def apply(x: Any, y: Any, width: Any, height: Any, parent: Position): Position = {
     Objects.requireNonNull(parent, "parent is null")
     val tupleX = getParseResult(x)
     val posX = if (tupleX._1 != -1) {
@@ -100,7 +100,7 @@ object Position {
     } else {
       parent.x + (parent.width * tupleX._2).toInt
     }
-    if (posX > (parent.x + parent.width)) {
+    if (posX < parent.x || posX > (parent.x + parent.width)) {
       throw new RuntimeException(s"x:$posX exceeds the parent's region")
     }
     val tupleWidth = getParseResult(width)
@@ -110,13 +110,16 @@ object Position {
     } else {
       (parent.width * tupleWidth._2).toInt
     }
+    if (posWidth > parent.width) {
+      throw new RuntimeException(s"width:$posWidth exceeds the parent's region")
+    }
     val tupleY = getParseResult(y)
     val posY = if (tupleY._1 != -1) {
       parent.y + tupleY._1
     } else {
       parent.y + (parent.height * tupleY._2).toInt
     }
-    if (posY > (parent.y + parent.height)) {
+    if (posY < parent.y || posY > (parent.y + parent.height)) {
       throw new RuntimeException(s"y:$posY exceeds the parent's region")
     }
     val tupleHeight = getParseResult(height)
@@ -126,10 +129,13 @@ object Position {
     } else {
       (parent.width * tupleHeight._2).toInt
     }
+    if (posHeight > parent.height) {
+      throw new RuntimeException(s"height:$posHeight exceeds the parent's region")
+    }
     Position(posX, posY, posWidth, posHeight)
   }
 
-  def apply(x: Int, y: Int, width: Int, height: Int, value: Any): Position = {
+  def apply(x: Int, y: Int, width: Int, height: Int, value: String): Position = {
     val position = Position(x, y, width, height)
     position.value = value
     position
@@ -154,7 +160,7 @@ object Position {
     }
   }
 
-  def getParseResult(exp: Object): (Int, Double) = {
+  def getParseResult(exp: Any): (Int, Double) = {
     if (exp.isInstanceOf[String]) {
       val value = exp.asInstanceOf[String]
       try {

@@ -7,8 +7,8 @@ import asura.common.util.StringUtils
 import asura.ui.model.Position
 import asura.ui.opencv.comparator.ImageComparator
 import asura.ui.opencv.comparator.ImageComparator.ComputeType
-import asura.ui.opencv.detector.Detector
-import asura.ui.opencv.{OpenCvUtils, TemplateMatch}
+import asura.ui.opencv.detector.{Detector, DetectorResult}
+import asura.ui.opencv.{MatchResult, OpenCvUtils, TemplateMatch}
 import com.intuit.karate.core.{AutoDef, Plugin}
 import com.intuit.karate.driver.Driver
 import com.typesafe.scalalogging.Logger
@@ -26,7 +26,7 @@ class Img(val driver: Driver, val ocr: Ocr) extends CvPlugin {
   }
 
   @AutoDef
-  def crop(locator: Object): ImageElement = {
+  def crop(locator: Any): ImageElement = {
     val parent = crop()
     val position = if (locator.isInstanceOf[String]) {
       val str = locator.asInstanceOf[String]
@@ -42,12 +42,12 @@ class Img(val driver: Driver, val ocr: Ocr) extends CvPlugin {
   }
 
   @AutoDef
-  def crop(x: Object, y: Object): ImageElement = {
+  def crop(x: Any, y: Any): ImageElement = {
     ImageElement(crop(), Position(x, y, getRootPosition), driver, ocr, this)
   }
 
   @AutoDef
-  def crop(x: Object, y: Object, width: Object, height: Object): ImageElement = {
+  def crop(x: Any, y: Any, width: Any, height: Any): ImageElement = {
     ImageElement(crop(), Position(x, y, width, height, getRootPosition), driver, ocr, this)
   }
 
@@ -75,7 +75,7 @@ class Img(val driver: Driver, val ocr: Ocr) extends CvPlugin {
   }
 
   def click(source: Array[Byte], target: Array[Byte], position: Position): Unit = {
-    val result = templateMatch.find(source, target, false)
+    val result = `match`(source, target)
     if (result.regions.nonEmpty) {
       var offsetX = 0
       var offsetY = 0
@@ -91,6 +91,41 @@ class Img(val driver: Driver, val ocr: Ocr) extends CvPlugin {
     } else {
       throw new RuntimeException("image can not found")
     }
+  }
+
+  @AutoDef
+  def `match`(file: String): Unit = {
+    click(null, file)
+  }
+
+  @AutoDef
+  def `match`(locator: String, file: String): util.List[Element] = {
+    val list = new util.ArrayList[Element]()
+    val target = loadBytesFromFile(file)
+    if (locator == null) {
+      val source = driver.screenshot(false)
+      `match`(source, target).regions.foreach(region => {
+        list.add(crop(region.x, region.y, region.width, region.height))
+      })
+    } else {
+      val position = Position(driver.locate(locator).getPosition())
+      val source = driver.screenshot(locator, false)
+      `match`(source, target).regions.foreach(region => {
+        val regionPos = Position(region.x, region.y, region.width, region.height, position)
+        list.add(ImageElement(crop(), regionPos, driver, ocr, this))
+      })
+    }
+    list
+  }
+
+  @AutoDef
+  def `match`(source: Array[Byte], file: String): MatchResult = {
+    `match`(source, loadBytesFromFile(file))
+  }
+
+  @AutoDef
+  def `match`(source: Array[Byte], target: Array[Byte]): MatchResult = {
+    templateMatch.find(source, target, true)
   }
 
   @AutoDef
@@ -133,24 +168,25 @@ class Img(val driver: Driver, val ocr: Ocr) extends CvPlugin {
   }
 
   @AutoDef
-  def detect(): Unit = {
+  def detect(): DetectorResult = {
     detect(Detector.DEFAULT)
   }
 
   @AutoDef
-  def detect(method: String): Unit = {
+  def detect(method: String): DetectorResult = {
     detect(driver.screenshot(false), method, Collections.emptyMap[String, Any]())
   }
 
   @AutoDef
-  def detect(locator: String, method: String, options: util.Map[String, Any]): Unit = {
+  def detect(locator: String, method: String, options: util.Map[String, Any]): DetectorResult = {
     detect(driver.screenshot(locator, false), method, options)
   }
 
   @AutoDef
-  def detect(bytes: Array[Byte], method: String, options: util.Map[String, Any]): Unit = {
+  def detect(bytes: Array[Byte], method: String, options: util.Map[String, Any]): DetectorResult = {
     val result = Detector(method, options).detect(bytes, IMREAD_GRAYSCALE)
     embedImage(result.draw(bytes))
+    result
   }
 
   @AutoDef

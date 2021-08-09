@@ -75,19 +75,24 @@ class Ocr(val driver: Driver) extends CvPlugin {
 
   @AutoDef
   def extract(bytes: Array[Byte]): String = {
-    extract(bytes, Level.SYMBOL, false)
+    extract(bytes, Level.SYMBOL, false, true)
   }
 
   @AutoDef
   def extract(bytes: Array[Byte], level: String): String = {
-    extract(bytes, level, false)
+    extract(bytes, level, false, true)
   }
 
   @AutoDef
   def extract(bytes: Array[Byte], level: String, negative: Boolean): String = {
+    extract(bytes, level, negative, true)
+  }
+
+  @AutoDef
+  def extract(bytes: Array[Byte], level: String, negative: Boolean, embed: Boolean): String = {
     init()
     val words = tess.process(load(bytes, IMREAD_GRAYSCALE), negative, level)
-    if (words.words.nonEmpty) {
+    if (words.words.nonEmpty && embed) {
       drawAndEmbed(bytes, words.words.map(_.toRect()))
     }
     words.full
