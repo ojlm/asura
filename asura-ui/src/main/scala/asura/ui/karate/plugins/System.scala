@@ -157,7 +157,7 @@ class System(val driver: Driver, val ocr: Ocr, val img: Img, autoDelay: Boolean 
   }
 
   @AutoDef
-  def crop(x: Object, y: Object, width: Object, height: Object): Element = {
+  def crop(x: Object, y: Object, width: Object, height: Object): ImageElement = {
     ImageElement(crop(), Position(x, y, width, height, getRootPosition()), driver, ocr, img, this)
   }
 

@@ -94,13 +94,13 @@ class Img(val driver: Driver, val ocr: Ocr) extends CvPlugin {
   }
 
   @AutoDef
-  def `match`(file: String): Unit = {
-    click(null, file)
+  def `match`(file: String): util.List[ImageElement] = {
+    `match`(null, file)
   }
 
   @AutoDef
-  def `match`(locator: String, file: String): util.List[Element] = {
-    val list = new util.ArrayList[Element]()
+  def `match`(locator: String, file: String): util.List[ImageElement] = {
+    val list = new util.ArrayList[ImageElement]()
     val target = loadBytesFromFile(file)
     if (locator == null) {
       val source = driver.screenshot(false)
