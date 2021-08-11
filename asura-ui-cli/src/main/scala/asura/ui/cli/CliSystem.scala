@@ -7,10 +7,11 @@ import akka.actor.{ActorRef, ActorSystem}
 import akka.pattern.ask
 import akka.util.Timeout
 import asura.common.util.JsonUtils
-import asura.ui.cli.actor.DriverPoolActor
 import asura.ui.cli.actor.DriverPoolActor.PoolOptions
+import asura.ui.cli.actor.{AndroidRunnerActor, DriverPoolActor}
 import asura.ui.cli.push.PushDataMessage
 import asura.ui.cli.push.PushEventListener.MessageType
+import asura.ui.cli.runner.AndroidRunner.ConfigParams
 import asura.ui.cli.task.TaskInfo
 import com.typesafe.scalalogging.Logger
 
@@ -26,15 +27,33 @@ object CliSystem {
     ActorSystem("ui-cli")
   }
 
-  var driverPoolActor: ActorRef = null
+  var webDriverPoolActor: ActorRef = null
+  var androidRunnerActor: ActorRef = null
+
+  def startAndroidRunner(params: ConfigParams): Unit = {
+    androidRunnerActor = CliSystem.system.actorOf(AndroidRunnerActor.props(params, ec), "android")
+  }
 
   def startWebDriverPool(options: PoolOptions): Unit = {
-    driverPoolActor = CliSystem.system.actorOf(DriverPoolActor.props(options), "chrome-pool")
+    webDriverPoolActor = CliSystem.system.actorOf(DriverPoolActor.props(options), "chrome-pool")
+  }
+
+  def getDevices(): Future[Seq[String]] = {
+    if (androidRunnerActor != null) {
+      (androidRunnerActor ? AndroidRunnerActor.GetDevices).asInstanceOf[Future[Seq[String]]]
+        .recover {
+          case t: Throwable =>
+            logger.error("{}", t)
+            Nil
+        }
+    } else {
+      Future.successful(Nil)
+    }
   }
 
   def getTask(id: String): Future[TaskInfo] = {
-    if (driverPoolActor != null) {
-      (driverPoolActor ? DriverPoolActor.GetTaskMessage(id)).asInstanceOf[Future[TaskInfo]]
+    if (webDriverPoolActor != null) {
+      (webDriverPoolActor ? DriverPoolActor.GetTaskMessage(id)).asInstanceOf[Future[TaskInfo]]
         .recover {
           case t: Throwable =>
             logger.error("{}", t)
@@ -46,18 +65,18 @@ object CliSystem {
   }
 
   def sendToPool(message: TaskInfo): Unit = {
-    if (driverPoolActor != null) {
-      driverPoolActor ! message
+    if (webDriverPoolActor != null) {
+      webDriverPoolActor ! message
     }
   }
 
   def sendToPool(message: PushDataMessage): Unit = {
-    if (driverPoolActor != null) {
+    if (webDriverPoolActor != null) {
       message.`type` match {
         case MessageType.DRIVER_COMMEND_EVENT =>
           if (message.data != null) {
             val task = JsonUtils.mapper.convertValue(message.data, classOf[TaskInfo])
-            driverPoolActor ! task
+            webDriverPoolActor ! task
           }
         case _ => // ignored
       }

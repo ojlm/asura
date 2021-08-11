@@ -73,6 +73,8 @@ class HttpPageHandler(enableKeepAlive: Boolean) extends SimpleChannelInboundHand
     val uri = new QueryStringDecoder(req.uri())
     val paths = uri.path().split("/")
     paths match { // ["", "api", ...]
+      case Array(_, _, "devices") =>
+        CliSystem.getDevices().map(data => sendApiResponse(ctx, req, data))
       case Array(_, _, "web", id) =>
         CliSystem.getTask(id).map(data => sendApiResponse(ctx, req, data))
       case _ => sendError(ctx, req, HttpResponseStatus.NOT_FOUND)

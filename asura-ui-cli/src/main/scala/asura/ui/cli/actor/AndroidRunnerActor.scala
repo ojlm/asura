@@ -9,13 +9,17 @@ import scala.concurrent.{ExecutionContext, Future}
 import akka.actor.{Props, Terminated}
 import asura.common.actor.BaseActor
 import asura.common.util.StringUtils
-import asura.ui.cli.actor.AndroidRunnerActor.ScanDevicesMessage
+import asura.ui.cli.actor.AndroidRunnerActor.{GetDevices, ScanDevicesMessage}
 import asura.ui.cli.runner.AndroidRunner.ConfigParams
+import asura.ui.driver.DriverProvider
+import com.intuit.karate.core.ScenarioRuntime
+import com.intuit.karate.driver.indigo.IndigoDriver
+import com.intuit.karate.driver.{Driver, DriverOptions}
 import se.vidstige.jadb.{JadbConnection, JadbDevice}
 
 class AndroidRunnerActor(
                           params: ConfigParams,
-                        )(implicit ec: ExecutionContext) extends BaseActor {
+                        )(implicit ec: ExecutionContext) extends BaseActor with DriverProvider {
 
   val connection = new JadbConnection(params.adbHost, params.adbPort)
 
@@ -29,6 +33,8 @@ class AndroidRunnerActor(
           context.watch(deviceActor)
         }
       })
+    case GetDevices =>
+      sender() ! context.children.map(_.path.name).toSeq
     case Terminated(actor) =>
       log.info(s"${actor.path.name} is offline.")
     case msg =>
@@ -36,6 +42,7 @@ class AndroidRunnerActor(
   }
 
   override def preStart(): Unit = {
+    DriverOptions.setDriverProvider(this)
     if (StringUtils.isNotEmpty(params.serial)) {
       checkDevicesAsync()
     } else {
@@ -43,6 +50,23 @@ class AndroidRunnerActor(
         checkDevicesAsync()
       })
     }
+  }
+
+  override def get(options: util.Map[String, AnyRef], sr: ScenarioRuntime): Driver = {
+    if (!options.containsKey("serial")) {
+      val devices = context.children.iterator
+      if (devices.hasNext) {
+        val serial = devices.next().path.name
+        log.info(s"Will use device $serial")
+        options.put("serial", serial)
+      } else {
+        throw new RuntimeException("There is no device available")
+      }
+    }
+    IndigoDriver.start(options, sr)
+  }
+
+  override def release(driver: Driver): Unit = {
   }
 
   private def checkDevicesAsync(): Unit = {
@@ -74,6 +98,8 @@ object AndroidRunnerActor {
              params: ConfigParams,
              ec: ExecutionContext,
            ) = Props(new AndroidRunnerActor(params)(ec))
+
+  case object GetDevices
 
   case class ScanDevicesMessage(devices: util.List[JadbDevice])
 

@@ -3,7 +3,6 @@ package asura.ui.cli.runner
 import java.io.File
 
 import asura.ui.cli.CliSystem
-import asura.ui.cli.actor.AndroidRunnerActor
 import asura.ui.cli.args.AndroidCommand
 import asura.ui.cli.runner.AndroidRunner.logger
 import asura.ui.cli.server.{Server, ServerProxyConfig}
@@ -12,6 +11,7 @@ import javafx.application.{Application, Platform}
 import javafx.stage.Stage
 
 class AndroidRunner extends Application {
+
   override def start(primaryStage: Stage): Unit = {
     Platform.setImplicitExit(false)
     primaryStage.setOnCloseRequest(event => {
@@ -22,6 +22,7 @@ class AndroidRunner extends Application {
   override def stop(): Unit = {
     logger.info("window is closed.")
   }
+
 }
 
 object AndroidRunner {
@@ -47,7 +48,7 @@ object AndroidRunner {
       alwaysOnTop = args.alwaysOnTop,
       options = AppOptions(args),
     )
-    CliSystem.system.actorOf(AndroidRunnerActor.props(params, CliSystem.ec), "android")
+    CliSystem.startAndroidRunner(params)
     if (args.display) {
       Application.launch(classOf[AndroidRunner], new Array[String](0): _*)
     }

@@ -1,7 +1,7 @@
 Feature: indigo
 
-  Scenario: Android
-    * configure driver = { type: 'indigo', serial: 'bb8695f8', start: false}
+  Scenario: Basic
+    * configure driver = { type: 'indigo', start: false}
     * driver ''
     * print status()
     * print source()
@@ -9,3 +9,4 @@ Feature: indigo
     * print attribute('android.widget.FrameLayout', 'checked')
     * print driver.elementIds('android.widget.FrameLayout')
     * print driver.getDimensions()
+    * img.crop().detect()

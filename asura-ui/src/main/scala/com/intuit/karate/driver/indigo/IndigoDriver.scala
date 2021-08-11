@@ -4,7 +4,9 @@ import java.util
 import java.util.Base64
 import java.util.stream.Collectors
 
-import asura.common.util.JsonUtils
+import scala.concurrent.duration._
+
+import asura.common.util.{FutureUtils, HttpUtils, JsonUtils}
 import asura.ui.message.IndigoMessage
 import asura.ui.message.builder.SendKeysToElement.SendKeysModel
 import asura.ui.message.builder._
@@ -270,9 +272,21 @@ object IndigoDriver {
   }
 
   def start(map: util.Map[String, AnyRef], sr: ScenarioRuntime): IndigoDriver = {
-    val serial = map.get("serial").asInstanceOf[String]
-    if (StringUtils.isBlank(serial)) throw new RuntimeException("Serial is not set")
     val options = new DriverOptions(map, sr, 8080, "java")
+    var serial = map.get("serial").asInstanceOf[String]
+    if (StringUtils.isBlank(serial)) {
+      import FutureUtils.RichFuture
+      val body = HttpUtils.getAsync(
+        s"http://${options.host}:${options.port}/api/devices",
+        classOf[Map[String, Any]]
+      ).await(10 seconds)
+      val devices = body.getOrElse("data", Nil).asInstanceOf[Seq[String]].iterator
+      if (devices.hasNext) {
+        serial = devices.next()
+      } else {
+        throw new RuntimeException("There is no device available")
+      }
+    }
     options.arg("-jar")
     options.arg("indigo.jar")
     options.arg("android")
