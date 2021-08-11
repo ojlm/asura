@@ -100,6 +100,7 @@ class System(val driver: Driver, val ocr: Ocr, val img: Img, autoDelay: Boolean 
   def activate(windows: java.util.List[OSDesktopWindow], idx: Int, title: String, pid: Long): System = {
     if (windows != null && windows.size() > idx) {
       val w = windows.get(idx)
+      WindowUtils.active(w)
       window = WindowElement(w.getWindowId, title, w.getOwningProcessId)
       this
     } else {

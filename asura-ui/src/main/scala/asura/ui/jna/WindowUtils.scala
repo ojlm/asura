@@ -3,7 +3,11 @@ package asura.ui.jna
 import java.awt.{GraphicsEnvironment, Rectangle}
 import java.util.stream.Collectors
 
+import asura.ui.jna.platform.mac.NSRunningApplication
 import asura.ui.model.Position
+import com.sun.jna.platform.win32.User32
+import com.sun.jna.platform.win32.WinDef.HWND
+import com.sun.jna.{Platform, Pointer}
 import oshi.SystemInfo
 import oshi.software.os.OSDesktopWindow
 
@@ -58,6 +62,16 @@ object WindowUtils {
       rect = rect.union(bounds)
     })
     Position(rect.x, rect.y, rect.width, rect.height)
+  }
+
+  def active(window: OSDesktopWindow): Unit = {
+    if (Platform.isWindows()) {
+      User32.INSTANCE.SetForegroundWindow(new HWND(new Pointer(window.getWindowId)))
+    } else if (Platform.isMac()) {
+      NSRunningApplication.active(window.getOwningProcessId)
+    } else {
+      throw new RuntimeException(s"Not available on this platform: ${Platform.getOSType}")
+    }
   }
 
 }
