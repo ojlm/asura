@@ -328,6 +328,10 @@ package object builder {
   }
 
   object Tap extends AppiumFunction {
+    def apply(sessionId: String, x: Double, y: Double): IndigoMessage = {
+      apply(sessionId, TapModel(x, y))
+    }
+
     def apply(sessionId: String, body: TapModel): IndigoMessage = {
       buildPostRequestMessage(s"session/$sessionId/appium/tap", body)
     }
@@ -442,9 +446,9 @@ package object builder {
     }
 
     case class DragModel(
-                          elementId: String, destElId: String,
-                          startX: Double, startY: Double,
-                          endX: Double, endY: Double,
+                          elementId: String = null, destElId: String = null,
+                          startX: java.lang.Double = null, startY: java.lang.Double = null,
+                          endX: java.lang.Double = null, endY: java.lang.Double = null,
                           @Required steps: Int
                         )
 
@@ -476,7 +480,7 @@ package object builder {
       buildPostRequestMessage(s"session/$sessionId/touch/scroll", body)
     }
 
-    case class ScrollParams(@Required strategy: String, @Required selector: String, maxSwipes: Int)
+    case class ScrollParams(@Required strategy: String, @Required selector: String, maxSwipes: java.lang.Integer = null)
 
     case class ScrollToModel(origin: ElementModel, @Required params: ScrollParams)
 
@@ -563,7 +567,8 @@ package object builder {
       buildPostRequestMessage(s"session/$sessionId/network_connection", body)
     }
 
-    case class NetworkConnectionModel(`type`: Int)
+    // Only 2: WIFI
+    case class NetworkConnectionModel(`type`: Int = 2)
 
     type Response = IntAppiumResponse
   }
@@ -577,21 +582,25 @@ package object builder {
   }
 
   object GetClipboard extends AppiumFunction {
-    def apply(sessionId: String, body: GetClipboardModel): IndigoMessage = {
+    def apply(sessionId: String, body: GetClipboardModel = GetClipboardModel()): IndigoMessage = {
       buildPostRequestMessage(s"session/$sessionId/appium/device/get_clipboard", body)
     }
 
-    case class GetClipboardModel(contentType: String)
+    case class GetClipboardModel(contentType: String = "PLAINTEXT")
 
     type Response = StringAppiumResponse
   }
 
   object SetClipboard extends AppiumFunction {
+    def apply(sessionId: String, content: String): IndigoMessage = {
+      buildPostRequestMessage(s"session/$sessionId/appium/device/set_clipboard", SetClipboardModel(content))
+    }
+
     def apply(sessionId: String, body: SetClipboardModel): IndigoMessage = {
       buildPostRequestMessage(s"session/$sessionId/appium/device/set_clipboard", body)
     }
 
-    case class SetClipboardModel(@Required content: String, contentType: String, label: String)
+    case class SetClipboardModel(@Required content: String, contentType: String = null, label: String = null)
 
     type Response = NullValueAppiumResponse
   }
@@ -617,7 +626,7 @@ package object builder {
       buildPostRequestMessage(s"session/$sessionId/appium/gestures/drag", body)
     }
 
-    case class DragModel(origin: ElementModel, start: PointModel, @Required end: PointModel, speed: Int)
+    case class DragModel(origin: ElementModel, start: PointModel, @Required end: PointModel, speed: java.lang.Integer = null)
 
     type Response = NullValueAppiumResponse
   }
@@ -627,7 +636,13 @@ package object builder {
       buildPostRequestMessage(s"session/$sessionId/appium/gestures/fling", body)
     }
 
-    case class FlingModel(origin: ElementModel, area: RectModel, @Required direction: String, speed: Int)
+    // the primary direction of certain gestures, upper or lower case
+    val LEFT = "LEFT"
+    val RIGHT = "RIGHT"
+    val UP = "UP"
+    val DOWN = "DOWN"
+
+    case class FlingModel(origin: ElementModel, area: RectModel, @Required direction: String, speed: java.lang.Integer = null)
 
     type Response = NullValueAppiumResponse
   }
@@ -637,7 +652,7 @@ package object builder {
       buildPostRequestMessage(s"session/$sessionId/appium/gestures/long_click", body)
     }
 
-    case class LongClickModel(origin: ElementModel, offset: PointModel, direction: Double)
+    case class LongClickModel(origin: ElementModel, offset: PointModel, duration: Double = 400)
 
     type Response = NullValueAppiumResponse
   }
@@ -675,7 +690,7 @@ package object builder {
 
     case class ScrollModel(
                             origin: ElementModel, area: RectModel,
-                            @Required direction: String, @Required percent: Float, speed: Int
+                            @Required direction: String, @Required percent: Float, speed: java.lang.Integer = null
                           )
 
     type Response = BooleanAppiumResponse
@@ -688,14 +703,14 @@ package object builder {
 
     case class SwipeModel(
                            origin: ElementModel, area: RectModel,
-                           @Required direction: String, @Required percent: Float, speed: Int
+                           @Required direction: String, @Required percent: Float, speed: java.lang.Integer = null
                          )
 
     type Response = NullValueAppiumResponse
   }
   /* post end */
 
-  case class PinchModel(origin: ElementModel, area: RectModel, @Required percent: Float, speed: Int)
+  case class PinchModel(origin: ElementModel, area: RectModel, @Required percent: Float, speed: java.lang.Integer = null)
 
   case class RectModel(
                         @Required top: Double, @Required left: Double,
@@ -708,7 +723,7 @@ package object builder {
 
   case class AlertModel(buttonLabel: String)
 
-  case class TouchEventParams(x: Double, y: Double, duration: Double) extends ElementModel
+  case class TouchEventParams(x: Double, y: Double, duration: Double = 2000) extends ElementModel
 
   case class TouchEventModel(@Required params: TouchEventParams)
 
@@ -809,7 +824,7 @@ package object builder {
 
     @throws[RuntimeException]
     def throwResponseException[T](): T = {
-      val error = JsonUtils.parse(msg.res.content, classOf[AppiumExceptionModel])
+      val error = JsonUtils.parse(msg.res.content, classOf[AppiumExceptionModelResponse]).value
       throw new RuntimeException(s"${error.error}: ${error.message}")
     }
 
@@ -839,9 +854,22 @@ package object builder {
     def resBodyAsMap: java.util.Map[String, Object] = {
       resBodyAs(classOf[java.util.Map[String, Object]], JavaJsonUtils)
     }
+
+    def resBodyValue: Object = {
+      resBodyAsMap.get("value")
+    }
+
+    def resBodyValueAsMap: java.util.Map[String, Object] = {
+      resBodyAsMap.get("value").asInstanceOf[java.util.Map[String, Object]]
+    }
   }
 
   case class AppiumExceptionModel(error: String, message: String, stacktrace: String)
+
+  case class AppiumExceptionModelResponse() extends AppiumResponse {
+    override type T = AppiumExceptionModel
+    override var value: T = null
+  }
 
   trait AppiumFunction {
     type Response <: AppiumResponse

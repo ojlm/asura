@@ -955,8 +955,16 @@ public class ScenarioEngine {
         .append(invoke).append("(arguments[0], arguments[1], arguments[2]);")
         .append(" if (arguments.length == 4) return ")
         .append(invoke).append("(arguments[0], arguments[1], arguments[2], arguments[3]);")
-        .append(" return ")
-        .append(invoke).append("(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4]) })");
+        .append(" if (arguments.length == 5) return ")
+        .append(invoke).append("(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4]);")
+        .append(" if (arguments.length == 6) return ")
+        .append(invoke).append("(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4], arguments[5]);")
+        .append(" if (arguments.length == 7) return ")
+        .append(invoke)
+        .append("(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4], arguments[5], arguments[6]);")
+        .append(" return ").append(invoke).append(
+        "(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4], arguments[5], arguments[6], "
+          + "arguments[7]) })");
       setHiddenVariable(methodName, evalJs(sb.toString()));
     }
   }
