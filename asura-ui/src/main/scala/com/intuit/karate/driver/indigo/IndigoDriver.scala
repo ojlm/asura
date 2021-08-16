@@ -3,11 +3,14 @@ package com.intuit.karate.driver.indigo
 import java.nio.charset.StandardCharsets
 import java.util
 import java.util.Base64
+import java.util.concurrent.ConcurrentHashMap
 import java.util.stream.Collectors
 
 import scala.concurrent.duration._
 
 import asura.common.util.{FutureUtils, HttpUtils, JsonUtils}
+import asura.ui.hub.Hubs.{DeviceWdHub, IndigoAppiumHub}
+import asura.ui.hub.Sink
 import asura.ui.message.IndigoMessage
 import asura.ui.message.builder.{GetClipboard, _}
 import asura.ui.model.Position
@@ -17,28 +20,49 @@ import com.intuit.karate.driver.indigo.IndigoDriver.logger
 import com.intuit.karate.http.{ResourceType, WebSocketClient, WebSocketOptions}
 import com.intuit.karate.{Logger, StringUtils}
 
-class IndigoDriver(options: DriverOptions, url: String) extends Driver {
+class IndigoDriver(options: DriverOptions, url: String, useHub: Boolean) extends Driver {
 
+  private val serial = options.options.get("serial").asInstanceOf[String]
   private var id = 0
   private var terminated = false
   private val reqWait = IndigoWait(options, this)
-  private val wsClient: WebSocketClient = {
-    val wsOptions = new WebSocketOptions(url)
-    wsOptions.setMaxPayloadSize(options.maxPayloadSize)
-    wsOptions.setTextConsumer(text => {
-      if (logger.isTraceEnabled) {
-        logger.trace(s"<< $text")
-      } else {
-        logger.debug(s"<< ${StringUtils.truncate(text, 1024, true)}")
+
+  private var deviceAppiumSinks: ConcurrentHashMap[Sink[IndigoMessage], Sink[IndigoMessage]] = null
+  private var deviceWdSink: Sink[IndigoMessage] = null
+  private var wsClient: WebSocketClient = null
+  if (useHub) {
+    deviceAppiumSinks = IndigoAppiumHub.getSinks(serial)
+    deviceWdSink = new Sink[IndigoMessage]() {
+      override def write(frame: IndigoMessage): Boolean = {
+        receive(frame)
+        true
       }
-      receive(JsonUtils.parse(text, classOf[IndigoMessage]))
-    })
-    new WebSocketClient(wsOptions, logger)
+    }
+    DeviceWdHub.enter(serial, deviceWdSink)
+  } else {
+    wsClient = {
+      val wsOptions = new WebSocketOptions(url)
+      wsOptions.setMaxPayloadSize(options.maxPayloadSize)
+      wsOptions.setTextConsumer(text => {
+        if (logger.isTraceEnabled) {
+          logger.trace(s"<< $text")
+        } else {
+          logger.debug(s"<< ${StringUtils.truncate(text, 1024, true)}")
+        }
+        receive(JsonUtils.parse(text, classOf[IndigoMessage]))
+      })
+      new WebSocketClient(wsOptions, logger)
+    }
   }
+
   implicit val SendFunction: IndigoMessage => IndigoMessage = sendAndWait
   val sessionId: String = {
-    val map = options.getWebDriverSessionPayload()
-    NewSession(map).withId(nextId()).send().resBodyAs(classOf[NewSession.Response]).sessionId
+    if (useHub) {
+      SESSION_NO_ID
+    } else {
+      val map = options.getWebDriverSessionPayload()
+      NewSession(map).withId(nextId()).send().resBodyAs(classOf[NewSession.Response]).sessionId
+    }
   }
   var dimensions: util.Map[String, AnyRef] = null
   val gestures = new IndigoGestures(this)
@@ -64,10 +88,12 @@ class IndigoDriver(options: DriverOptions, url: String) extends Driver {
 
   override def close(): Unit = {
     terminated = true
+    if (wsClient != null) wsClient.close()
+    if (deviceWdSink != null) DeviceWdHub.leave(serial, deviceWdSink)
   }
 
   override def quit(): Unit = {
-    terminated = true
+    close()
   }
 
   override def switchPage(titleOrUrl: String): Unit = doNotSupport()
@@ -512,9 +538,13 @@ class IndigoDriver(options: DriverOptions, url: String) extends Driver {
   }
 
   def send(req: IndigoMessage): Unit = {
-    val json = JsonUtils.stringify(req)
-    logger.debug(s">> $json")
-    wsClient.send(json)
+    if (useHub) {
+      IndigoAppiumHub.write(deviceAppiumSinks, req)
+    } else {
+      val json = JsonUtils.stringify(req)
+      logger.debug(s">> $json")
+      wsClient.send(json)
+    }
   }
 
   def sendAndWait(req: IndigoMessage): IndigoMessage = {
@@ -530,8 +560,12 @@ class IndigoDriver(options: DriverOptions, url: String) extends Driver {
   }
 
   def nextId(): Int = {
-    id = id + 1
-    id
+    if (useHub) {
+      -1
+    } else {
+      id = id + 1
+      id
+    }
   }
 
   @throws[RuntimeException]
@@ -549,6 +583,13 @@ object IndigoDriver {
     names.addAll(Plugin.methodNames(classOf[Driver]))
     names.addAll(Plugin.methodNames(classOf[IndigoDriver]))
     new util.ArrayList[String](names)
+  }
+
+  def start(serial: String, sr: ScenarioRuntime): IndigoDriver = {
+    val map = new util.HashMap[String, AnyRef]()
+    map.put("serial", serial)
+    val options = new DriverOptions(map, sr, 8080, "java")
+    new IndigoDriver(options, null, true)
   }
 
   def start(map: util.Map[String, AnyRef], sr: ScenarioRuntime): IndigoDriver = {
@@ -581,7 +622,7 @@ object IndigoDriver {
     } else {
       url = s"ws://${options.host}:${options.port}/api/ws/device/$serial/wd"
     }
-    new IndigoDriver(options, url)
+    new IndigoDriver(options, url, false)
   }
 
 }

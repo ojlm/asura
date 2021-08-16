@@ -375,26 +375,26 @@ public class ScenarioActions implements Actions {
 
   @Override
   @When("^eval (.+)")
-  public void eval(String exp) {
-    engine.evalJs(exp);
+  public Object eval(String exp) {
+    return engine.evalJs(exp).getValue();
   }
 
   @Override
   @When("^eval$")
-  public void evalDocstring(String exp) {
-    engine.evalJs(exp);
+  public Object evalDocstring(String exp) {
+    return engine.evalJs(exp).getValue();
   }
 
   @Override
   @When("^([\\w]+)([^\\s^\\w])(.+)")
-  public void eval(String name, String dotOrParen, String exp) {
-    engine.evalJs(name + dotOrParen + exp);
+  public Object eval(String name, String dotOrParen, String exp) {
+    return engine.evalJs(name + dotOrParen + exp).getValue();
   }
 
   @Override
   @When("^if (.+)")
-  public void evalIf(String exp) {
-    engine.evalJs("if " + exp);
+  public Object evalIf(String exp) {
+    return engine.evalJs("if " + exp).getValue();
   }
 
   @Override

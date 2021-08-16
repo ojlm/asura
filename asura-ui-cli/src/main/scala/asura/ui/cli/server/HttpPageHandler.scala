@@ -6,8 +6,9 @@ import java.nio.charset.StandardCharsets
 import java.util.regex.Pattern
 
 import asura.common.model.{ApiRes, ApiResError}
-import asura.common.util.{JsonUtils, LogUtils}
+import asura.common.util.{JsonUtils, LogUtils, StringUtils}
 import asura.ui.cli.CliSystem
+import asura.ui.cli.actor.AndroidDeviceActor.ExecuteStepMessage
 import asura.ui.cli.server.HttpPageHandler._
 import asura.ui.cli.task.TaskInfo
 import com.typesafe.scalalogging.Logger
@@ -19,6 +20,8 @@ import karate.io.netty.handler.stream.ChunkedStream
 import karate.io.netty.util.CharsetUtil
 
 class HttpPageHandler(enableKeepAlive: Boolean) extends SimpleChannelInboundHandler[FullHttpRequest] {
+
+  private implicit val ec = CliSystem.ec
 
   override def channelRead0(ctx: ChannelHandlerContext, req: FullHttpRequest): Unit = {
     if (!req.decoderResult().isSuccess) {
@@ -69,7 +72,6 @@ class HttpPageHandler(enableKeepAlive: Boolean) extends SimpleChannelInboundHand
   }
 
   def getHandler(ctx: ChannelHandlerContext, req: FullHttpRequest): Unit = {
-    import CliSystem.ec
     val uri = new QueryStringDecoder(req.uri())
     val paths = uri.path().split("/")
     paths match { // ["", "api", ...]
@@ -86,15 +88,25 @@ class HttpPageHandler(enableKeepAlive: Boolean) extends SimpleChannelInboundHand
     val paths = uri.path().split("/")
     paths match { // ["", "api", ...]
       case Array(_, _, "run") =>
-        val body = req.content().toString(StandardCharsets.UTF_8)
-        if (body != null) {
-          CliSystem.sendToPool(JsonUtils.parse(body, classOf[TaskInfo]))
-          sendApiResponse(ctx, req, null)
-        } else {
-          sendError(ctx, req, HttpResponseStatus.BAD_REQUEST)
-        }
+        CliSystem.sendToPool(extractTo(req, classOf[TaskInfo]))
+        sendApiResponse(ctx, req, null)
+      case Array(_, _, "device", serial, "step") =>
+        CliSystem.executeStep(ExecuteStepMessage(serial, extractToString(req)))
+          .map(data => sendApiResponse(ctx, req, data))
       case _ => sendError(ctx, req, HttpResponseStatus.NOT_FOUND)
     }
+  }
+
+  def extractToString(req: FullHttpRequest): String = {
+    val body = req.content().toString(StandardCharsets.UTF_8)
+    if (StringUtils.isEmpty(body)) {
+      throw new RuntimeException("Request body is empty")
+    }
+    body
+  }
+
+  def extractTo[T <: AnyRef](req: FullHttpRequest, c: Class[T]): T = {
+    JsonUtils.parse(extractToString(req), c)
   }
 
   def sanitizeUri(uri: String): String = {

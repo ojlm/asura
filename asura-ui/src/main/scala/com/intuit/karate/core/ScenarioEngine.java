@@ -224,7 +224,7 @@ public class ScenarioEngine {
     THREAD_LOCAL.set(se);
   }
 
-  protected static void remove() {
+  public static void remove() {
     THREAD_LOCAL.remove();
   }
 

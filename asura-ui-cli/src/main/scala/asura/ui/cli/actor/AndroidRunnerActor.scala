@@ -7,8 +7,10 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 import akka.actor.{Props, Terminated}
+import akka.pattern.{ask, pipe}
 import asura.common.actor.BaseActor
 import asura.common.util.StringUtils
+import asura.ui.cli.CliSystem.ACTOR_ASK_TIMEOUT
 import asura.ui.cli.actor.AndroidRunnerActor.{GetDevices, ScanDevicesMessage}
 import asura.ui.cli.runner.AndroidRunner.ConfigParams
 import asura.ui.driver.DriverProvider
@@ -28,13 +30,20 @@ class AndroidRunnerActor(
       devices.forEach(device => {
         val childOpt = context.child(device.getSerial)
         if (childOpt.isEmpty) {
-          val deviceActor = context.actorOf(AndroidDeviceActor.props(device, params), device.getSerial)
+          val deviceActor = context.actorOf(AndroidDeviceActor.props(device, params, ec), device.getSerial)
           log.info(s"watch new device: ${deviceActor.path.name}")
           context.watch(deviceActor)
         }
       })
     case GetDevices =>
       sender() ! context.children.map(_.path.name).toSeq
+    case msg: AndroidDeviceActor.ExecuteStepMessage =>
+      val childOpt = context.child(msg.serial)
+      if (childOpt.nonEmpty) {
+        (childOpt.get ? msg) pipeTo sender()
+      } else {
+        sender() ! AndroidDeviceActor.ExecuteResult(false, s"${msg.serial} is not available")
+      }
     case Terminated(actor) =>
       log.info(s"${actor.path.name} is offline.")
     case msg =>

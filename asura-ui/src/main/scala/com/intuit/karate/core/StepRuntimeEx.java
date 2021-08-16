@@ -47,7 +47,6 @@ public class StepRuntimeEx {
     }
     for (MethodPattern mp : overwrite) {
       temp.put(mp.regex, mp);
-
       Collection<Method> keywordMethods = KEYWORDS_METHODS.computeIfAbsent(mp.keyword, k -> new HashSet<>());
       keywordMethods.add(mp.method);
     }
@@ -58,31 +57,31 @@ public class StepRuntimeEx {
   public static KarateResult execute(String text, Actions actions) {
     List<MethodMatch> matches = findMethodsMatching(text);
     if (matches.isEmpty()) {
-      return KarateResult.failed("no step-definition method match found for: " + text, 0);
+      return KarateResult.fail("no step-definition method match found for: " + text);
     } else if (matches.size() > 1) {
-      return KarateResult.failed("more than one step-definition method matched: " + text + " - " + matches, 0);
+      return KarateResult.fail("more than one step-definition method matched: " + text + " - " + matches);
     }
     MethodMatch match = matches.get(0);
     Object[] args;
     try {
       args = match.convertArgs(null);
     } catch (Exception ignored) {
-      return KarateResult.failed("no step-definition method match found for: " + text, 0);
+      return KarateResult.fail("no step-definition method match found for: " + text);
     }
     long startTime = System.nanoTime();
     try {
-      match.method.invoke(actions, args);
+      Object result = match.method.invoke(actions, args);
       if (actions.isAborted()) {
-        return new KarateResult("passed", getElapsedTimeNanos(startTime), true, false, null);
+        return KarateResult.abort(getElapsedTimeNanos(startTime));
       } else if (actions.isFailed()) {
-        return KarateResult.failed(actions.getFailedReason().getMessage(), getElapsedTimeNanos(startTime));
+        return KarateResult.fail(actions.getFailedReason().getMessage(), getElapsedTimeNanos(startTime));
       } else {
-        return KarateResult.passed(getElapsedTimeNanos(startTime));
+        return KarateResult.pass(getElapsedTimeNanos(startTime), result);
       }
     } catch (InvocationTargetException e) {
-      return KarateResult.failed(e.getMessage(), getElapsedTimeNanos(startTime));
+      return KarateResult.fail(e, getElapsedTimeNanos(startTime));
     } catch (Exception e) {
-      return KarateResult.failed(e.getMessage(), getElapsedTimeNanos(startTime));
+      return KarateResult.fail(e, getElapsedTimeNanos(startTime));
     }
   }
 

@@ -4,6 +4,8 @@ import java.util
 import java.util.Random
 import java.util.concurrent.atomic.AtomicBoolean
 
+import scala.collection.mutable.ArrayBuffer
+
 import akka.actor.ActorRef
 import asura.common.util.StringUtils
 import asura.ui.command.WebMonkeyCommandRunner.MonkeyCommandParams
@@ -14,8 +16,6 @@ import asura.ui.opencv.detector.MSERDetector
 import asura.ui.util.RandomStringUtils
 import com.intuit.karate.driver.chrome.Chrome
 import com.typesafe.scalalogging.Logger
-
-import scala.collection.mutable.ArrayBuffer
 
 case class WebMonkeyCommandRunner(
                                    driver: Chrome,
@@ -184,7 +184,7 @@ case class WebMonkeyCommandRunner(
   private def runStep(step: String): Unit = {
     val stepResult = KarateRunner.executeStep(step)
     if (logActor != null) {
-      logActor ! DriverCommandLog(Commands.WEB_MONKEY, DriverCommandLog.TYPE_LOG, s"before step: $step, result: ${stepResult.status}", meta)
+      logActor ! DriverCommandLog(Commands.WEB_MONKEY, DriverCommandLog.TYPE_LOG, s"before step: $step, result: ${stepResult.passed}", meta)
     }
   }
 

@@ -1,25 +1,34 @@
 package asura.ui.karate
 
+import asura.common.util.LogUtils
+import com.fasterxml.jackson.annotation.JsonIgnore
+
 case class KarateResult(
-                         status: String,
-                         duration: Long,
-                         aborted: Boolean,
-                         skipped: Boolean,
+                         duration: Long = 0,
+                         passed: Boolean = false,
+                         failed: Boolean = false,
+                         aborted: Boolean = false,
+                         skipped: Boolean = false,
                          error: String = null,
+                         @JsonIgnore var result: Any = null
                        )
 
 object KarateResult {
 
-  val PASSED = "passed"
-  val FAILED = "failed"
-  val SKIPPED = "skipped"
+  def pass(nanos: Long) = KarateResult(duration = nanos, passed = true)
 
-  def passed(nanos: Long) = KarateResult(PASSED, nanos, false, false)
+  def pass(nanos: Long, result: Any) = KarateResult(duration = nanos, passed = true, result = result)
 
-  def failed(error: String, nanos: Long = 0) = KarateResult(FAILED, nanos, false, false, error)
+  def fail(error: String) = KarateResult(failed = true, error = error)
 
-  def skipped() = KarateResult(SKIPPED, 0, false, false)
+  def fail(error: String, nanos: Long) = KarateResult(duration = nanos, failed = true, error = error)
 
-  def aborted(nanos: Long) = KarateResult(PASSED, nanos, true, false)
+  def fail(error: Throwable, nanos: Long) = {
+    KarateResult(duration = nanos, failed = true, error = LogUtils.stackTraceToString(error))
+  }
+
+  def skip() = KarateResult(skipped = true)
+
+  def abort(nanos: Long) = KarateResult(duration = nanos, aborted = true)
 
 }

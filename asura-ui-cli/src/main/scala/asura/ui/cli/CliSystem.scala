@@ -7,6 +7,7 @@ import akka.actor.{ActorRef, ActorSystem}
 import akka.pattern.ask
 import akka.util.Timeout
 import asura.common.util.JsonUtils
+import asura.ui.cli.actor.AndroidDeviceActor.{ExecuteResult, ExecuteStepMessage}
 import asura.ui.cli.actor.DriverPoolActor.PoolOptions
 import asura.ui.cli.actor.{AndroidRunnerActor, DriverPoolActor}
 import asura.ui.cli.push.PushDataMessage
@@ -36,6 +37,14 @@ object CliSystem {
 
   def startWebDriverPool(options: PoolOptions): Unit = {
     webDriverPoolActor = CliSystem.system.actorOf(DriverPoolActor.props(options), "chrome-pool")
+  }
+
+  def executeStep(msg: ExecuteStepMessage): Future[ExecuteResult] = {
+    if (androidRunnerActor != null) {
+      (androidRunnerActor ? msg).asInstanceOf[Future[ExecuteResult]]
+    } else {
+      throw new RuntimeException("Android runner is not initialized")
+    }
   }
 
   def getDevices(): Future[Seq[String]] = {
