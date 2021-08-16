@@ -1,6 +1,6 @@
-package asura.ui.cli.codec
+package asura.ui.codec
 
-import asura.ui.cli.codec.Decoder.logger
+import asura.ui.codec.Decoder.logger
 import com.typesafe.scalalogging.Logger
 import org.bytedeco.ffmpeg.avcodec.{AVCodec, AVCodecContext}
 import org.bytedeco.ffmpeg.avutil.AVDictionary

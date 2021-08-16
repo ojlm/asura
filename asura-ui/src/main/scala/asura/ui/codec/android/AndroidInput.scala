@@ -1,4 +1,4 @@
-package asura.ui.cli.codec.android
+package asura.ui.codec.android
 
 // copied and modified from <https://android.googlesource.com/platform/frameworks/native/+/master/include/android/input.h>
 // blob: dbfd61eb0565e1fa180f6b6c5d2d2263b02bef84

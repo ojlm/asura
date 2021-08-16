@@ -1,4 +1,4 @@
-package asura.ui.cli.codec.android
+package asura.ui.codec.android
 
 // copied from <https://android.googlesource.com/platform/frameworks/base/+/master/core/java/android/view/KeyEvent.java>
 // blob: 99d6c3463ef5369c153cc9c441fd47929e6b0915

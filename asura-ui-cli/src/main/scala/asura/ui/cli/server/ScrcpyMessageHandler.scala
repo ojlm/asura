@@ -1,7 +1,7 @@
 package asura.ui.cli.server
 
-import asura.ui.cli.hub.Hubs.{ControllerHub, ReceiverHub}
-import asura.ui.cli.hub.{ControlMessage, DeviceMessage, Sink}
+import asura.ui.hub.Hubs.{ControllerHub, ReceiverHub}
+import asura.ui.hub.{ControlMessage, DeviceMessage, Sink}
 import karate.io.netty.channel._
 
 class ScrcpyMessageHandler(device: String) extends SimpleChannelInboundHandler[DeviceMessage] with Sink[ControlMessage] {

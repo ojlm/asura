@@ -1,6 +1,6 @@
-package asura.ui.cli.hub
+package asura.ui.hub
 
-import asura.ui.cli.codec.VideoStream
+import asura.ui.codec.VideoStream
 import org.bytedeco.ffmpeg.avutil.AVFrame
 
 case class RenderingFrameMessage(

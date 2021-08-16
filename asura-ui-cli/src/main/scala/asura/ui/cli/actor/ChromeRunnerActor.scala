@@ -6,6 +6,8 @@ import java.util
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
 
+import scala.concurrent.{ExecutionContext, Future}
+
 import akka.actor.Props
 import akka.pattern.pipe
 import asura.common.actor.BaseActor
@@ -17,8 +19,6 @@ import asura.ui.command.{Commands, WebMonkeyCommandRunner}
 import asura.ui.driver._
 import asura.ui.model.BytesObject
 import com.intuit.karate.driver.chrome.Chrome
-
-import scala.concurrent.{ExecutionContext, Future}
 
 class ChromeRunnerActor(
                          params: ConfigParams,

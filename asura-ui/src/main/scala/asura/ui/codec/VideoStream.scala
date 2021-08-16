@@ -1,12 +1,11 @@
-package asura.ui.cli.codec
+package asura.ui.codec
 
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.{BlockingQueue, LinkedBlockingDeque}
 
-import asura.ui.cli.codec.VideoStream.logger
-import asura.ui.cli.hub.Hubs.RenderingFrameHub
-import asura.ui.cli.hub.RawH264Packet
-import asura.ui.cli.server.ScrcpyVideoHandler
+import asura.ui.codec.VideoStream.logger
+import asura.ui.hub.Hubs.RenderingFrameHub
+import asura.ui.hub.RawH264Packet
 import com.typesafe.scalalogging.Logger
 import org.bytedeco.ffmpeg.avcodec.{AVCodecContext, AVCodecParserContext, AVPacket}
 import org.bytedeco.ffmpeg.global.{avcodec, avutil}
@@ -84,7 +83,8 @@ case class VideoStream(device: String, decoder: Decoder) extends Runnable {
     val avPacket = new AVPacket()
     avcodec.av_new_packet(avPacket, packet.size)
     avPacket.data().put(packet.buf: _*)
-    avPacket.pts(if (packet.pts != ScrcpyVideoHandler.NO_PTS) packet.pts else avutil.AV_NOPTS_VALUE)
+    // ScrcpyVideoHandler.NO_PTS
+    avPacket.pts(if (packet.pts != -1) packet.pts else avutil.AV_NOPTS_VALUE)
     pushPacket(avPacket)
     avcodec.av_packet_unref(avPacket)
   }

@@ -2,10 +2,10 @@ package asura.ui.cli.window
 
 import java.nio.ByteBuffer
 
-import asura.ui.cli.codec.{Size, WindowEventHandler}
-import asura.ui.cli.hub.Hubs.RenderingFrameHub
-import asura.ui.cli.hub.Sink
 import asura.ui.cli.window.DeviceWindow.EMPTY_CALLBACK
+import asura.ui.codec.{Size, WindowEventHandler}
+import asura.ui.hub.Hubs.RenderingFrameHub
+import asura.ui.hub.Sink
 import javafx.application.Platform
 import javafx.event.EventType
 import javafx.geometry.Rectangle2D

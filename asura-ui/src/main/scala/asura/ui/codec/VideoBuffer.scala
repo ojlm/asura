@@ -1,4 +1,4 @@
-package asura.ui.cli.codec
+package asura.ui.codec
 
 import org.bytedeco.ffmpeg.avutil.AVFrame
 import org.bytedeco.ffmpeg.global.avutil

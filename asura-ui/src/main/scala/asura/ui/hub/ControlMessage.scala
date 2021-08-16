@@ -1,7 +1,7 @@
-package asura.ui.cli.hub
+package asura.ui.hub
 
-import asura.ui.cli.codec.{Point, Size}
-import asura.ui.cli.hub.ControlMessage.Position
+import asura.ui.codec.{Point, Size}
+import asura.ui.hub.ControlMessage.Position
 
 case class ControlMessage(`type`: Int) {
   var text: String = null

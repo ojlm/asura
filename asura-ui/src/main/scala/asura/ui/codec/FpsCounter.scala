@@ -1,4 +1,4 @@
-package asura.ui.cli.codec
+package asura.ui.codec
 
 case class FpsCounter(
                        rendered: Int,

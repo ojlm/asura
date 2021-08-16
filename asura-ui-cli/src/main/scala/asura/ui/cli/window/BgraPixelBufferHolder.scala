@@ -2,7 +2,7 @@ package asura.ui.cli.window
 
 import java.nio.ByteBuffer
 
-import asura.ui.cli.codec.Size
+import asura.ui.codec.Size
 import javafx.scene.image.{PixelBuffer, PixelFormat}
 import org.bytedeco.ffmpeg.avutil.AVFrame
 import org.bytedeco.ffmpeg.global.{avutil, swscale}

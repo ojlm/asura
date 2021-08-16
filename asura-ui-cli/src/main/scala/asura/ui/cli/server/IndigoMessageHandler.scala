@@ -1,7 +1,7 @@
 package asura.ui.cli.server
 
-import asura.ui.cli.hub.Hubs.{DeviceWdHub, IndigoAppiumHub, IndigoControllerHub}
-import asura.ui.cli.hub.Sink
+import asura.ui.hub.Hubs.{DeviceWdHub, IndigoAppiumHub, IndigoControllerHub}
+import asura.ui.hub.Sink
 import asura.ui.message.IndigoMessage
 import karate.io.netty.channel._
 

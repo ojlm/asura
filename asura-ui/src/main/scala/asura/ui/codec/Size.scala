@@ -1,3 +1,3 @@
-package asura.ui.cli.codec
+package asura.ui.codec
 
 case class Size(width: Int, height: Int)

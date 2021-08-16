@@ -1,6 +1,6 @@
-package asura.ui.cli.codec
+package asura.ui.codec
 
-import asura.ui.cli.hub.Sink
+import asura.ui.hub.Sink
 import org.bytedeco.ffmpeg.avutil.AVFrame
 import org.bytedeco.ffmpeg.global.{avutil, swscale}
 import org.bytedeco.ffmpeg.swscale.{SwsContext, SwsFilter}

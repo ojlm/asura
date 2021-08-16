@@ -4,8 +4,8 @@ import java.awt.image.BufferedImage
 import java.nio.ByteBuffer
 import java.time.LocalDateTime
 
-import asura.ui.cli.codec._
-import asura.ui.cli.hub.Hubs.RenderingFrameHub
+import asura.ui.codec._
+import asura.ui.hub.Hubs.RenderingFrameHub
 import asura.ui.cli.server.ServerProxyConfig.FixedPortSelector
 import asura.ui.cli.window.BgraPixelBufferStreamListener
 import javafx.application.{Application, Platform}

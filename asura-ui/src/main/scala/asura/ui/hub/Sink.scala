@@ -1,4 +1,4 @@
-package asura.ui.cli.hub
+package asura.ui.hub
 
 trait Sink[T] {
 

@@ -1,11 +1,11 @@
-package asura.ui.cli.codec
+package asura.ui.codec
 
-import asura.ui.cli.codec.WindowEventHandler._
-import asura.ui.cli.codec.android.AndroidInput.{AndroidKeyEventAction, AndroidMetaState, AndroidMotionEventAction, AndroidMotionEventButtons}
-import asura.ui.cli.codec.android.AndroidKeyCodes
-import asura.ui.cli.hub.ControlMessage
-import asura.ui.cli.hub.ControlMessage.Position
-import asura.ui.cli.hub.Hubs.ControllerHub
+import asura.ui.codec.WindowEventHandler._
+import asura.ui.codec.android.AndroidInput.{AndroidKeyEventAction, AndroidMetaState, AndroidMotionEventAction, AndroidMotionEventButtons}
+import asura.ui.codec.android.AndroidKeyCodes
+import asura.ui.hub.ControlMessage
+import asura.ui.hub.ControlMessage.Position
+import asura.ui.hub.Hubs.ControllerHub
 import com.typesafe.scalalogging.Logger
 import javafx.event.{Event, EventHandler}
 import javafx.scene.Node

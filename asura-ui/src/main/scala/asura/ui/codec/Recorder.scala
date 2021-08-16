@@ -1,7 +1,7 @@
-package asura.ui.cli.codec
+package asura.ui.codec
 
-import asura.ui.cli.codec.Recorder.RecordFormat.RecordFormat
-import asura.ui.cli.codec.Recorder.{Queue, RecordPacket}
+import asura.ui.codec.Recorder.RecordFormat.RecordFormat
+import asura.ui.codec.Recorder.{Queue, RecordPacket}
 import org.bytedeco.ffmpeg.avcodec.{AVCodec, AVPacket}
 import org.bytedeco.ffmpeg.avformat.AVFormatContext
 

@@ -1,4 +1,4 @@
-package asura.ui.cli.hub
+package asura.ui.hub
 
 import asura.ui.message.IndigoMessage
 import org.bytedeco.ffmpeg.avutil.AVFrame

@@ -4,10 +4,10 @@ import akka.actor.Props
 import asura.common.actor.BaseActor
 import asura.common.util.LogUtils
 import asura.ui.cli.actor.AndroidDeviceActor.{Error, Over, Stdout}
-import asura.ui.cli.hub.Hubs.RenderingFrameHub
 import asura.ui.cli.runner.AndroidRunner.ConfigParams
 import asura.ui.cli.utils.{AdbDeviceUtils, AdbUtils}
 import asura.ui.cli.window.{DeviceWindow, UiThread}
+import asura.ui.hub.Hubs.RenderingFrameHub
 import se.vidstige.jadb.JadbDevice
 
 class AndroidDeviceActor(
