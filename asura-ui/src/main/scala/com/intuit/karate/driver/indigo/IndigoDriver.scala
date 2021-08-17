@@ -587,6 +587,7 @@ object IndigoDriver {
 
   def start(serial: String, sr: ScenarioRuntime): IndigoDriver = {
     val map = new util.HashMap[String, AnyRef]()
+    map.put("start", Boolean.box(false)) // do not 'resolvePort' in 'DriverOptions'
     map.put("serial", serial)
     val options = new DriverOptions(map, sr, 8080, "java")
     new IndigoDriver(options, null, true)
