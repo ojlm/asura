@@ -1,5 +1,7 @@
 package asura.ui.cli.actor
 
+import java.util.concurrent.Executors
+
 import scala.concurrent.{ExecutionContext, Future}
 
 import akka.actor.Props
@@ -17,10 +19,10 @@ import com.intuit.karate.core.ScenarioEngine
 import com.intuit.karate.driver.indigo.IndigoDriver
 import se.vidstige.jadb.JadbDevice
 
-class AndroidDeviceActor(
-                          device: JadbDevice, params: ConfigParams, ec: ExecutionContext,
-                        ) extends BaseActor {
+class AndroidDeviceActor(device: JadbDevice, params: ConfigParams) extends BaseActor {
 
+  // always use the same thread, multi threaded access is not allowed for language(s) js (graalvm)
+  private val stepRunner = ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor())
   private implicit val dispatcher = context.dispatcher
   private var window: DeviceWindow = null
 
@@ -63,12 +65,12 @@ class AndroidDeviceActor(
       val result = ExecuteResult(stepResult.passed, if (stepResult.passed) stepResult.result else stepResult.error)
       ScenarioEngine.remove()
       result
-    }(ec).recover {
+    }(stepRunner).recover {
       case t: Throwable => {
         log.error(t, "run step error")
         ExecuteResult(false, s"${t.getClass.getSimpleName}:${t.getMessage}")
       }
-    }(ec)
+    }(stepRunner)
   }
 
   private val connection = new Thread(s"connection-${device.getSerial}") {
@@ -104,8 +106,8 @@ class AndroidDeviceActor(
 
 object AndroidDeviceActor {
 
-  def props(device: JadbDevice, params: ConfigParams, ec: ExecutionContext) = {
-    Props(new AndroidDeviceActor(device, params, ec))
+  def props(device: JadbDevice, params: ConfigParams) = {
+    Props(new AndroidDeviceActor(device, params))
   }
 
   case class Stdout(line: String)

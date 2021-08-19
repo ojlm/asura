@@ -30,7 +30,7 @@ class AndroidRunnerActor(
       devices.forEach(device => {
         val childOpt = context.child(device.getSerial)
         if (childOpt.isEmpty) {
-          val deviceActor = context.actorOf(AndroidDeviceActor.props(device, params, ec), device.getSerial)
+          val deviceActor = context.actorOf(AndroidDeviceActor.props(device, params), device.getSerial)
           log.info(s"watch new device: ${deviceActor.path.name}")
           context.watch(deviceActor)
         }
