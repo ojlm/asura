@@ -98,6 +98,15 @@ object Dependencies {
     "org.openjfx" % "javafx-graphics" % "16" classifier "mac"
   )
 
+  val luceneVersion = "8.9.0"
+  private val lucene = Seq(
+    "org.apache.lucene" % "lucene-core" % luceneVersion,
+    "org.apache.lucene" % "lucene-analyzers-smartcn" % luceneVersion,
+    "org.apache.lucene" % "lucene-queryparser" % luceneVersion,
+    "org.apache.lucene" % "lucene-facet" % luceneVersion,
+    "org.apache.lucene" % "lucene-highlighter" % luceneVersion
+  )
+
   val commonDependencies = Seq(akkaTestKit, config, akkaActor, jackson, akkaActorTyped, akkaSlf4j, akkaJackson, kryo) ++ scalaTestDeps ++ loggingDeps
   val clusterDependencies = Seq(akkaCluster, akkaMetrics, akkaClusterTools) ++ commonDependencies
   val coreDependencies = Seq(
@@ -109,7 +118,7 @@ object Dependencies {
   val dubboDependencies = Seq(dubbo, curator, dubboJavassist, dubboJbossNetty, dubboSpring, akkaStream) ++ commonDependencies
   val kafkaDependencies = Seq(akkaStream, akkaKafka, kafkaAvroSerializer) ++ commonDependencies
   val uiDependencies = Seq(karate, cucumber, picocli, oshi) ++ commonDependencies ++ javaCV
-  val uiCliDependencies = Seq(jadb) ++ uiDependencies
+  val uiCliDependencies = Seq(jadb) ++ uiDependencies ++ lucene
 
   val commonPlayDeps = Seq(
     guice,
