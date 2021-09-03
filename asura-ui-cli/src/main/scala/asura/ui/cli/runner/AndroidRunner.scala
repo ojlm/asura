@@ -48,8 +48,12 @@ object AndroidRunner {
       alwaysOnTop = args.alwaysOnTop,
       options = AppOptions(args),
     )
+    run(params, args.display)
+  }
+
+  def run(params: ConfigParams, display: Boolean): Unit = {
     CliSystem.startAndroidRunner(params)
-    if (args.display) {
+    if (display) {
       Application.launch(classOf[AndroidRunner], new Array[String](0): _*)
     }
   }
@@ -78,7 +82,7 @@ object AndroidRunner {
                          var disableScrcpy: Boolean = false,
                          var disableScrcpyControl: Boolean = false,
                          var bitRate: Int = 8000000,
-                         var maxFpx: Int = 0,
+                         var maxFps: Int = 0,
                          var displayId: Int = 0,
                        ) {
 
@@ -104,8 +108,8 @@ object AndroidRunner {
           sb.append("--disable-scrcpy-control ")
         }
         sb.append("--bit-rate ").append(bitRate).append(" ")
-        if (maxFpx > 0) {
-          sb.append("--max-fps ").append(maxFpx).append(" ")
+        if (maxFps > 0) {
+          sb.append("--max-fps ").append(maxFps).append(" ")
         }
         sb.append("--display ").append(displayId)
       }
@@ -125,7 +129,7 @@ object AndroidRunner {
       options.disableScrcpy = args.disableScrcpy
       options.disableScrcpyControl = args.disableScrcpyControl
       options.bitRate = args.bitRate
-      options.maxFpx = args.maxFpx
+      options.maxFps = args.maxFpx
       options.displayId = args.displayId
       options
     }

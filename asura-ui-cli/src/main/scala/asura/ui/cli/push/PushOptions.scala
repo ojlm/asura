@@ -13,7 +13,7 @@ case class PushOptions(
                         pushScreen: Boolean,
                         pushLogs: Boolean,
                         password: String,
-                        electron: Boolean = false,
+                        var electron: Boolean = false,
                       ) {
 
   def buildClient(): PushEventListener = {

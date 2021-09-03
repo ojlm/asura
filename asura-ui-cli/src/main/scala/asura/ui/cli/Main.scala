@@ -2,8 +2,10 @@ package asura.ui.cli
 
 import java.io.File
 
-import asura.ui.cli.args.{BaseCommand, ConfigCommand, MainCommand}
+import asura.ui.cli.args.{BaseCommand, MainCommand}
+import asura.ui.cli.runner.IndigoRunner
 import ch.qos.logback.classic.Level
+import com.intuit.karate.driver.DriverOptions
 import org.slf4j.LoggerFactory
 import picocli.CommandLine
 import picocli.CommandLine.{ParameterException, ParseResult, UnmatchedArgumentException}
@@ -14,12 +16,14 @@ object Main {
     val command = new MainCommand()
     val cmd = new CommandLine(command)
     try {
+      DriverOptions.setDriverProvider(DriverProviders.INSTANCE)
       val parsed = cmd.parseArgs(args: _*)
       parseVerbosity(parsed)
       if (CommandLine.executeHelpRequest(parsed) == null) {
         if (parsed.hasMatchedOption("c")) {
-          val configFile = parsed.matchedOption("c").getValue[File]
-          new ConfigCommand(configFile).call()
+          printLogo(cmd)
+          val config = parsed.matchedOption("c").getValue[File]
+          IndigoRunner.run(config)
         } else if (parsed.hasSubcommand) {
           val subParsed = parsed.subcommand()
           parseVerbosity(subParsed)
@@ -27,7 +31,8 @@ object Main {
           cmd.setExecutionResult(result)
           cmd.getCommandSpec.exitCodeOnSuccess()
         } else {
-          cmd.usage(cmd.getOut)
+          printLogo(cmd)
+          IndigoRunner.run(null)
         }
       }
     } catch {
@@ -37,6 +42,16 @@ object Main {
       case t: Exception =>
         t.printStackTrace(cmd.getErr)
     }
+  }
+
+  def printLogo(cmd: CommandLine): Unit = {
+    val writer = cmd.getOut
+    val renderer = cmd.getHelpSectionMap.get("header")
+    if (writer != null && renderer != null) {
+      val logo = renderer.render(cmd.getHelp)
+      writer.print(logo)
+    }
+    writer.flush()
   }
 
   def parseVerbosity(parsed: ParseResult): Unit = {

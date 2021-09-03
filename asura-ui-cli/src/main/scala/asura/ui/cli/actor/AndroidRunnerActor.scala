@@ -11,12 +11,13 @@ import akka.pattern.{ask, pipe}
 import asura.common.actor.BaseActor
 import asura.common.util.StringUtils
 import asura.ui.cli.CliSystem.ACTOR_ASK_TIMEOUT
+import asura.ui.cli.DriverProviders
 import asura.ui.cli.actor.AndroidRunnerActor.{GetDevices, ScanDevicesMessage}
 import asura.ui.cli.runner.AndroidRunner.ConfigParams
 import asura.ui.driver.DriverProvider
 import com.intuit.karate.core.ScenarioRuntime
+import com.intuit.karate.driver.Driver
 import com.intuit.karate.driver.indigo.IndigoDriver
-import com.intuit.karate.driver.{Driver, DriverOptions}
 import se.vidstige.jadb.{JadbConnection, JadbDevice}
 
 class AndroidRunnerActor(
@@ -51,7 +52,7 @@ class AndroidRunnerActor(
   }
 
   override def preStart(): Unit = {
-    DriverOptions.setDriverProvider(this)
+    DriverProviders.register("indigo", this)
     if (StringUtils.isNotEmpty(params.serial)) {
       checkDevicesAsync()
     } else {

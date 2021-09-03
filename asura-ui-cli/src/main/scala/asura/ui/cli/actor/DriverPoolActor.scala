@@ -12,6 +12,7 @@ import akka.actor.{Actor, ActorRef, Cancellable, Props, Terminated}
 import akka.pattern.ask
 import asura.common.actor.BaseActor
 import asura.ui.UiConfig.DEFAULT_ACTOR_ASK_TIMEOUT
+import asura.ui.cli.DriverProviders
 import asura.ui.cli.actor.DriverPoolActor._
 import asura.ui.cli.push.PushEventListener._
 import asura.ui.cli.push.PushOptions
@@ -22,8 +23,8 @@ import asura.ui.driver.DriverProvider
 import asura.ui.model.RemoteHost
 import asura.ui.util.ChromeDevTools
 import com.intuit.karate.core.ScenarioRuntime
+import com.intuit.karate.driver.Driver
 import com.intuit.karate.driver.chrome.Chrome
-import com.intuit.karate.driver.{Driver, DriverOptions}
 import com.intuit.karate.{BuilderEx, FileUtils}
 
 class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvider {
@@ -74,7 +75,7 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
   }
 
   override def preStart(): Unit = {
-    DriverOptions.setDriverProvider(this)
+    DriverProviders.setDefault(this)
     if (options.start) {
       if (options.maxCount == 1) {
         val port: Integer = if (options.ports != null && options.ports.size() == 1) options.ports.get(0) else 0
