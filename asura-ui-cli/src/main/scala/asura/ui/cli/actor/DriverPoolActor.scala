@@ -103,7 +103,7 @@ class DriverPoolActor(options: PoolOptions) extends BaseActor with DriverProvide
         context stop actor
         count = count - 1
       } else {
-        actor ! DriverPoolItemActor.TaskOverMessage
+        actor ! DriverPoolItemActor.TaskOverMessage()
         val driver = running.remove(actor)
         if (driver != null) {
           idle.put(actor, driver)

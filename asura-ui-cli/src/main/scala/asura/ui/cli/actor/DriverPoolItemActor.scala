@@ -47,9 +47,10 @@ class DriverPoolItemActor(
     case TaskInfoMessage(task) =>
       status.status = STATUS_RUNNING
       status.task = task
-    case TaskOverMessage =>
+    case TaskOverMessage(page) =>
       status.status = STATUS_IDLE
       status.task = null
+      resetDriverPage(page)
     case PagesMessage(pages) =>
       pages.foreach(page => {
         if (!pageIds.contains(page.id)) {
@@ -80,6 +81,16 @@ class DriverPoolItemActor(
         }
       }
       driver.quit(true)
+    }
+  }
+
+  private def resetDriverPage(page: String): Unit = {
+    implicit val ec = CliSystem.ec
+    Future {
+      driver.setUrl(page)
+      driver.closeOthers()
+    }.recover {
+      case t: Throwable => log.warning(t.getMessage)
     }
   }
 
@@ -173,7 +184,7 @@ object DriverPoolItemActor {
 
   case class TaskInfoMessage(task: TaskInfo)
 
-  case object TaskOverMessage
+  case class TaskOverMessage(page: String = "about:blank")
 
   case class PagesMessage(pages: Seq[ChromeTargetPage])
 

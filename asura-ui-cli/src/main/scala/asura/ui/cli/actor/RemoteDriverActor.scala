@@ -35,7 +35,7 @@ class RemoteDriverActor(
       driverPromise.future.foreach(driver => actor ! driver)(context.dispatcher)
     case TaskInfoMessage(task) =>
       this.task = task
-    case TaskOverMessage =>
+    case TaskOverMessage(_) =>
       this.task = null
     case msg =>
       log.info(s"Unknown type: ${msg.getClass.getName}.")

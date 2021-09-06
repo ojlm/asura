@@ -125,6 +125,21 @@ public class Chrome extends DevToolsDriver {
       .send();
   }
 
+  public void closeOthers() {
+    DevToolsMessage dtm = method("Target.getTargets").send();
+    List<Map> targets = dtm.getResult("targetInfos").getValue();
+    if (targets != null) {
+      targets.forEach(target -> {
+        if ("page".equals(target.get("type"))) {
+          String targetId = target.getOrDefault("targetId", "").toString();
+          if (!rootFrameId.equals(targetId)) {
+            method("Target.closeTarget").param("targetId", targetId).sendWithoutWaiting();
+          }
+        }
+      });
+    }
+  }
+
   public void sendKey(char c, int modifiers, String type, Integer keyCode) {
     DevToolsMessage dtm = method("Input.dispatchKeyEvent")
       .param("modifiers", modifiers)
