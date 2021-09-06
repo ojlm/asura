@@ -76,7 +76,7 @@ object IndigoRunner {
             initCount = if (isElectron) 1 else getIntOr("initCount", webConfig, 0),
             coreCount = if (isElectron) 1 else getIntOr("coreCount", webConfig, 0),
             maxCount = if (isElectron) 1 else getIntOr("maxCount", webConfig, 0),
-            userDataDirPrefix = if (isElectron) null else getStringOr("userDataDirPrefix", webConfig, null),
+            userDataDirPrefix = if (isElectron) null else getStringOr("userDataDirPrefix", webConfig, "target"),
             removeUserDataDir = if (isElectron) false else getBoolOr("removeUserDataDir", webConfig, true),
             ports = if (isElectron) Collections.singletonList(electronPort) else Collections.singletonList(9200),
             driver = options,

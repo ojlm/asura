@@ -29,7 +29,6 @@ case class Server(port: Int, proxyConfig: ServerProxyConfig) {
           .option(ChannelOption.SO_BACKLOG, Int.box(1024))
           .option(ChannelOption.SO_REUSEADDR, Boolean.box(true))
           .childHandler(new ServerInitializer(sslCtx, proxyConfig))
-        logger.info(s"server listen on $port")
         bootstrap.bind(port).sync().channel().closeFuture().sync()
       } catch {
         case _: InterruptedException =>

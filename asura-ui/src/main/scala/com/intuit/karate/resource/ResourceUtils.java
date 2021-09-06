@@ -23,11 +23,6 @@
  */
 package com.intuit.karate.resource;
 
-import com.intuit.karate.FileUtils;
-import com.intuit.karate.core.Feature;
-import karate.io.github.classgraph.ClassGraph;
-import karate.io.github.classgraph.ResourceList;
-import karate.io.github.classgraph.ScanResult;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,11 +41,18 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.intuit.karate.FileUtils;
+import com.intuit.karate.core.Feature;
+
+import karate.io.github.classgraph.ClassGraph;
+import karate.io.github.classgraph.ResourceList;
+import karate.io.github.classgraph.ScanResult;
+
 /**
- *
  * @author pthomas3
  */
 public class ResourceUtils {
@@ -175,11 +177,16 @@ public class ResourceUtils {
   private static List<Resource> findFilesByExtension(File workingDir, String extension, List<File> files) {
     List<File> results = new ArrayList();
     for (File base : files) {
-      Path searchPath = base.toPath();
+      Path searchPath;
+      if (base.exists()) {
+        searchPath = base.toPath();
+      } else {
+        searchPath = Paths.get(workingDir.getAbsolutePath(), base.getPath());
+      }
       Stream<Path> stream;
       try {
         stream = Files.walk(searchPath);
-        for (Iterator<Path> paths = stream.iterator(); paths.hasNext();) {
+        for (Iterator<Path> paths = stream.iterator(); paths.hasNext(); ) {
           Path path = paths.next();
           String fileName = path.getFileName().toString();
           if (fileName.endsWith("." + extension)) {
