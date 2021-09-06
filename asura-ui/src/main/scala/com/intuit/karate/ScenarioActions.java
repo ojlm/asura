@@ -34,10 +34,7 @@ import com.intuit.karate.core.AssignType;
 import com.intuit.karate.core.ScenarioEngine;
 import com.intuit.karate.core.ScenarioEngine.NewDriver;
 import com.intuit.karate.core.Variable;
-import com.intuit.karate.driver.DevToolsDriver;
-import com.intuit.karate.driver.DevToolsMessage;
 import com.intuit.karate.driver.Driver;
-import com.intuit.karate.driver.DriverOptions;
 import com.intuit.karate.driver.chrome.Chrome;
 
 import cucumber.api.DataTable;
@@ -460,14 +457,10 @@ public class ScenarioActions implements Actions {
   public void openNewPage(String exp) {
     String url = extractStrExp(exp);
     Driver driver = engine.getDriver();
-    if (driver != null && driver instanceof DevToolsDriver) {
-      ((DevToolsDriver) driver).method("Target.createTarget")
-        .param("url", url)
-        .param("newWindow", false)
-        .param("background", true)
-        .send();
+    if (driver != null && driver instanceof Chrome) {
+      ((Chrome) driver).openNewPage(url);
     } else {
-      throw new RuntimeException("only DevToolsDriver support this step");
+      throw new RuntimeException("only Chrome support this step");
     }
   }
 
@@ -476,18 +469,7 @@ public class ScenarioActions implements Actions {
     Map<String, Object> driverOptions = engine.getConfig().getDriverOptions();
     NewDriver currentDriver = engine.getCurrentChrome();
     if (driverOptions != null && currentDriver != null) {
-      driverOptions.put("top", true);
-      Chrome oldChrome = ((Chrome) currentDriver.driver);
-      if (oldChrome.parent == null) {
-        oldChrome.closeClient();
-      } else {
-        oldChrome.quit();
-      }
-      Driver chrome = DriverOptions.start(driverOptions, engine.runtime);
-      engine.setDriver(chrome);
-      if (currentDriver.name != null) {
-        engine.newDrivers.put(currentDriver.name, new NewDriver(currentDriver.name, driverOptions, chrome));
-      }
+      ((Chrome) currentDriver.driver).goToTop(0);
     } else {
       throw new RuntimeException("default driver not configured");
     }
@@ -496,33 +478,9 @@ public class ScenarioActions implements Actions {
   @When("^switch page (.+)")
   public void switchPage(String exp) {
     String urlOrTitle = extractStrExp(exp);
-    Map<String, Object> driverOptions = engine.getConfig().getDriverOptions();
     NewDriver currentDriver = engine.getCurrentChrome();
-    if (driverOptions != null && currentDriver != null) {
-      if (urlOrTitle.matches("-?(0|[1-9]\\d*)")) { // nums
-        DevToolsMessage dtm = ((Chrome) currentDriver.driver).method("Target.getTargets").send();
-        List<Map> targets = dtm.getResult("targetInfos").getValue();
-        int index = Integer.parseInt(urlOrTitle);
-        if (targets.size() > index) {
-          String targetId = (String) targets.get(index).get("targetId");
-          driverOptions.put("targetId", targetId);
-        } else {
-          throw new RuntimeException("only " + targets.size() + " pages.");
-        }
-      } else {
-        driverOptions.put("startUrl", urlOrTitle);
-      }
-      Chrome oldChrome = ((Chrome) currentDriver.driver);
-      if (oldChrome.parent == null) {
-        oldChrome.closeClient();
-      } else {
-        oldChrome.quit();
-      }
-      Driver chrome = DriverOptions.start(driverOptions, engine.runtime);
-      engine.setDriver(chrome);
-      if (currentDriver.name != null) {
-        engine.newDrivers.put(currentDriver.name, new NewDriver(currentDriver.name, driverOptions, chrome));
-      }
+    if (currentDriver != null) {
+      ((Chrome) currentDriver.driver).switchPage2(urlOrTitle);
     } else {
       throw new RuntimeException("default driver not configured");
     }

@@ -125,6 +125,40 @@ public class Chrome extends DevToolsDriver {
       .send();
   }
 
+  public List<Map<String, Object>> getJsonPageTargets() {
+    Http http = options.getHttp();
+    Command.waitForHttp(http.urlBase + "/json");
+    Response res = http.path("json").get();
+    List<Map<String, Object>> targets = res.json().asList();
+    return targets;
+  }
+
+  public void goToTop(Integer idx) {
+    List<Map<String, Object>> targets = getJsonPageTargets();
+    if (targets.size() > idx) {
+      Map<String, Object> target = targets.get(idx);
+      reconnect((String) target.get("webSocketDebuggerUrl"));
+    } else {
+      throw new RuntimeException("only " + targets.size() + " pages.");
+    }
+  }
+
+  public void switchPage2(String urlOrTitle) {
+    if (urlOrTitle.matches("-?(0|[1-9]\\d*)")) { // nums
+      goToTop(Integer.parseInt(urlOrTitle));
+    } else {
+      List<Map<String, Object>> targets = getJsonPageTargets();
+      for (Map target : targets) {
+        String targetUrl = (String) target.get("url");
+        String targetTitle = (String) target.get("title");
+        if (targetUrl.contains(urlOrTitle) || targetTitle.contains(urlOrTitle)) {
+          reconnect((String) target.get("webSocketDebuggerUrl"));
+          break;
+        }
+      }
+    }
+  }
+
   public void closeOthers() {
     DevToolsMessage dtm = method("Target.getTargets").send();
     List<Map> targets = dtm.getResult("targetInfos").getValue();
