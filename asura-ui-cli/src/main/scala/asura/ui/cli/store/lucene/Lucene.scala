@@ -31,7 +31,9 @@ trait Lucene {
 
   def doc(): DocumentBuilder = DocumentBuilder(this)
 
-  def query(): QueryBuilder[SearchResult] = QueryBuilder(this, converter = sr => sr)
+  def query[T](converter: SearchResult => T): QueryBuilder[T] = QueryBuilder(this, converter = converter)
+
+  def query(): QueryBuilder[SearchResult] = QueryBuilder[SearchResult](this, converter = sr => sr)
 
   def fields: Set[Field[_]] = _fields
 
@@ -45,7 +47,7 @@ trait Lucene {
     facets.find(_.name == name).getOrElse(throw new RuntimeException(s"Facet $name not found"))
   }
 
-  def id: Field[Long]
+  def id: Field[String]
 
   def fullText: Field[String]
 
@@ -59,14 +61,14 @@ trait Lucene {
 
   def withSearcherAndTaxonomy[R](f: SearcherAndTaxonomy => R): R
 
-  def index(builders: DocumentBuilder*): Unit = {
+  def index(builders: DocumentBuilder*): Long = {
     builders.foreach(_.prepareForWriting())
     // build docs to insert
     val docs = builders.map(builder => {
       if (builder.fullText.nonEmpty) {
         builder.fields(fullText(builder.fullText.mkString("\n")))
       }
-      builder.fields(id(idWorker.nextId()))
+      builder.fields(id(idWorker.nextId().toString))
       facetsConfig.build(taxonomyWriter, builder.document)
     })
     // delete existing docs
@@ -74,8 +76,9 @@ trait Lucene {
     if (deleteTerms.nonEmpty) {
       delete(GroupedSearchTerm(1, deleteTerms.map(term => (term, Condition.SHOULD))))
     }
-    indexWriter.addDocuments(docs.asJava)
+    val sequence = indexWriter.addDocuments(docs.asJava)
     indexed(builders)
+    sequence
   }
 
   def indexed(builders: Seq[DocumentBuilder]): Unit

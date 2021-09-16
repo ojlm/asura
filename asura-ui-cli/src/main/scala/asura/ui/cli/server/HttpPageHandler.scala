@@ -2,15 +2,13 @@ package asura.ui.cli.server
 
 import java.io.{File, InputStream, UnsupportedEncodingException}
 import java.net.{URL, URLDecoder}
-import java.nio.charset.StandardCharsets
 import java.util.regex.Pattern
 
-import asura.common.model.{ApiRes, ApiResError}
-import asura.common.util.{JsonUtils, LogUtils, StringUtils}
+import asura.common.model.ApiRes
+import asura.common.util.{JsonUtils, LogUtils}
 import asura.ui.cli.CliSystem
-import asura.ui.cli.actor.AndroidDeviceActor.ExecuteStepMessage
 import asura.ui.cli.server.HttpPageHandler._
-import asura.ui.cli.task.TaskInfo
+import asura.ui.cli.server.api.ApiHandler
 import com.typesafe.scalalogging.Logger
 import karate.io.netty.buffer.Unpooled
 import karate.io.netty.channel._
@@ -21,15 +19,13 @@ import karate.io.netty.util.CharsetUtil
 
 class HttpPageHandler(enableKeepAlive: Boolean) extends SimpleChannelInboundHandler[FullHttpRequest] {
 
-  private implicit val ec = CliSystem.ec
-
   override def channelRead0(ctx: ChannelHandlerContext, req: FullHttpRequest): Unit = {
     if (!req.decoderResult().isSuccess) {
       sendError(ctx, req, BAD_REQUEST)
     } else {
       val uri = req.uri()
       if (uri.startsWith("/api/")) {
-        handleApiRequest(ctx, req)
+        ApiHandler.handle(req).map(body => sendApiResponse(ctx, req, body))(CliSystem.ec)
       } else { // static pages
         if (!HttpMethod.GET.equals(req.method())) {
           sendError(ctx, req, METHOD_NOT_ALLOWED)
@@ -55,58 +51,6 @@ class HttpPageHandler(enableKeepAlive: Boolean) extends SimpleChannelInboundHand
         }
       }
     }
-  }
-
-  def handleApiRequest(ctx: ChannelHandlerContext, req: FullHttpRequest): Unit = {
-    try {
-      req.method() match {
-        case HttpMethod.GET => getHandler(ctx, req)
-        case HttpMethod.POST => postHandler(ctx, req)
-        case _ => sendError(ctx, req, HttpResponseStatus.NOT_FOUND)
-      }
-    } catch {
-      case t: Throwable =>
-        logger.error("handle api request error: ", t)
-        sendApiResponse(ctx, req, ApiResError(t.getMessage))
-    }
-  }
-
-  def getHandler(ctx: ChannelHandlerContext, req: FullHttpRequest): Unit = {
-    val uri = new QueryStringDecoder(req.uri())
-    val paths = uri.path().split("/")
-    paths match { // ["", "api", ...]
-      case Array(_, _, "devices") =>
-        CliSystem.getDevices().map(data => sendApiResponse(ctx, req, data))
-      case Array(_, _, "web", id) =>
-        CliSystem.getTask(id).map(data => sendApiResponse(ctx, req, data))
-      case _ => sendError(ctx, req, HttpResponseStatus.NOT_FOUND)
-    }
-  }
-
-  def postHandler(ctx: ChannelHandlerContext, req: FullHttpRequest): Unit = {
-    val uri = new QueryStringDecoder(req.uri())
-    val paths = uri.path().split("/")
-    paths match { // ["", "api", ...]
-      case Array(_, _, "run") =>
-        CliSystem.sendToPool(extractTo(req, classOf[TaskInfo]))
-        sendApiResponse(ctx, req, null)
-      case Array(_, _, "device", serial, "step") =>
-        CliSystem.executeStep(ExecuteStepMessage(serial, extractToString(req)))
-          .map(data => sendApiResponse(ctx, req, data))
-      case _ => sendError(ctx, req, HttpResponseStatus.NOT_FOUND)
-    }
-  }
-
-  def extractToString(req: FullHttpRequest): String = {
-    val body = req.content().toString(StandardCharsets.UTF_8)
-    if (StringUtils.isEmpty(body)) {
-      throw new RuntimeException("Request body is empty")
-    }
-    body
-  }
-
-  def extractTo[T <: AnyRef](req: FullHttpRequest, c: Class[T]): T = {
-    JsonUtils.parse(extractToString(req), c)
   }
 
   def sanitizeUri(uri: String): String = {
@@ -164,10 +108,10 @@ class HttpPageHandler(enableKeepAlive: Boolean) extends SimpleChannelInboundHand
     }
   }
 
-  def sendApiResponse(ctx: ChannelHandlerContext, req: FullHttpRequest, body: Object): Unit = {
+  def sendApiResponse(ctx: ChannelHandlerContext, req: FullHttpRequest, body: ApiRes): Unit = {
     val response = new DefaultFullHttpResponse(
       HttpVersion.HTTP_1_1, HttpResponseStatus.OK,
-      Unpooled.copiedBuffer(JsonUtils.stringify(ApiRes(data = body)), CharsetUtil.UTF_8)
+      Unpooled.copiedBuffer(JsonUtils.stringify(body), CharsetUtil.UTF_8)
     )
     response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json; charset=UTF-8")
     sendAndCleanupConnection(ctx, req, response)

@@ -66,7 +66,7 @@ case class DocumentBuilder(
     val updated = values.collect {
       case v if !excludePaths.contains(v) => {
         val path = if (field.hierarchical) v.split("/").toList else List(v)
-        new FacetValue(field, path: _*)
+        FacetValue(field, path: _*)
       }
     }
     clear(field.name)

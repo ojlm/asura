@@ -2,7 +2,7 @@ package asura.ui.cli.store.lucene
 
 import java.nio.file.{Files, Path, Paths}
 
-import asura.ui.cli.store.lucene.field.Field
+import asura.ui.cli.store.lucene.field.{Field, FieldType}
 import asura.ui.cli.store.lucene.query.SearchTerm
 import org.apache.lucene.analysis.Analyzer
 import org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer
@@ -18,7 +18,7 @@ import org.apache.lucene.store.{MMapDirectory, NIOFSDirectory}
 
 class LuceneStore(
                    val directory: Option[Path] = None,
-                   val fullTextSearchable: Boolean = true,
+                   val fullTextSearchable: Boolean = false,
                    val autoCommit: Boolean = false,
                  ) extends Lucene {
 
@@ -43,7 +43,7 @@ class LuceneStore(
     taxonomyWriter
   )
 
-  override def id: Field[Long] = define.field[Long]("_id")
+  override def id: Field[String] = define.field[String]("_id", fieldType = FieldType.UN_TOKENIZED)
 
   override def fullText: Field[String] = define.field[String]("_text", sortable = false)
 

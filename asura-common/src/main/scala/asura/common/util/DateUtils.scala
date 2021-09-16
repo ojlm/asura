@@ -12,10 +12,13 @@ object DateUtils {
 
   def nowTimestamp(): Timestamp = Timestamp.valueOf(LocalDateTime.now())
 
+  def now(): Long = new Date().getTime
+
   def nowDateTime: String = LocalDateTime.now().format(DateTimeFormatter.ofPattern(DEFAULT_DATE_TIME_PATTERN))
 
   def parse(time: Long, pattern: String = DEFAULT_DATE_TIME_PATTERN): String = {
     val sdf = new SimpleDateFormat(pattern)
     sdf.format(new Date(time))
   }
+
 }

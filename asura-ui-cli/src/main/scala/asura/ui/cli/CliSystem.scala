@@ -13,6 +13,8 @@ import asura.ui.cli.actor.{AndroidRunnerActor, DriverPoolActor}
 import asura.ui.cli.push.PushDataMessage
 import asura.ui.cli.push.PushEventListener.MessageType
 import asura.ui.cli.runner.AndroidRunner.ConfigParams
+import asura.ui.cli.server.ide.local.{LocalIde, LocalConfig}
+import asura.ui.cli.server.ide.remote.{RemoteIde, RemoteConfig}
 import asura.ui.cli.task.TaskInfo
 import com.typesafe.scalalogging.Logger
 
@@ -28,8 +30,19 @@ object CliSystem {
     ActorSystem("ui-cli")
   }
 
+  var localIde: LocalIde = null
+  var remoteIde: RemoteIde = null
   var webDriverPoolActor: ActorRef = null
   var androidRunnerActor: ActorRef = null
+
+  def initIde(local: LocalConfig, remote: RemoteConfig): Unit = {
+    if (local != null && local.validate()) {
+      localIde = new LocalIde(local)
+    }
+    if (remote != null && remote.validate()) {
+      remoteIde = new RemoteIde(remote)
+    }
+  }
 
   def startAndroidRunner(params: ConfigParams): Unit = {
     androidRunnerActor = CliSystem.system.actorOf(AndroidRunnerActor.props(params, ec), "android")

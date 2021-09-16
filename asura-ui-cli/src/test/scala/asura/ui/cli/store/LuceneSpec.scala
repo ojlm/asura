@@ -10,13 +10,13 @@ object LuceneSpec {
   val lucene = LuceneStore("target/lucene")
   IOUtils.rm(lucene.directory.get)
 
-  val name = lucene.define.field[String]("name", fieldType = FieldType.UN_TOKENIZED)
-  val age = lucene.define.field[Int]("age")
+  val name = lucene.define.field[String]("name", FieldType.UN_TOKENIZED)
+  val age = lucene.define.field[Int]("age", FieldType.NUMERIC)
   val intro = lucene.define.field[String]("intro")
-  val progress = lucene.define.field[Double]("progress")
-  val bytes = lucene.define.field[Long]("bytes")
+  val progress = lucene.define.field[Double]("progress", FieldType.NUMERIC)
+  val bytes = lucene.define.field[Long]("bytes", FieldType.NUMERIC)
   val enabled = lucene.define.field[Boolean]("enabled")
-  val email = lucene.define.field[String]("email", fieldType = FieldType.UN_TOKENIZED)
+  val email = lucene.define.field[String]("email", FieldType.UN_TOKENIZED)
 
   def main(args: Array[String]): Unit = {
     add()
@@ -38,7 +38,7 @@ object LuceneSpec {
 
   def query(): Unit = {
     val results = lucene.query().filter(
-      age >= 20, exact(enabled(true)), parse("中国")
+      age >= 20, exact(enabled(true)), parse(intro, "中国")
     ).sort(Sort(progress)).search()
     println(s"total: ${results.total}")
     results.entries.foreach(doc => {

@@ -11,6 +11,9 @@ import asura.ui.cli.actor.DriverPoolActor.PoolOptions
 import asura.ui.cli.push.PushOptions
 import asura.ui.cli.runner.AndroidRunner.{AppOptions, ConfigParams}
 import asura.ui.cli.server.ServerProxyConfig.{ConcurrentHashMapPortSelector, FixedPortSelector}
+import asura.ui.cli.server.ide.local
+import asura.ui.cli.server.ide.local.LocalConfig
+import asura.ui.cli.server.ide.remote.RemoteConfig
 import asura.ui.cli.server.{Server, ServerProxyConfig}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.Logger
@@ -25,6 +28,7 @@ object IndigoRunner {
       logger.info(s"config.file: ${configFile.getAbsolutePath}")
       val config = ConfigFactory.parseFile(configFile)
       val serverConfig = config.getConfig("server")
+      setServerIde(serverConfig)
       val serverPort = getIntOr("port", serverConfig, 8080)
       val pushOptions = if (config.hasPath("push")) {
         val pushConfig = config.getConfig("push")
@@ -89,7 +93,7 @@ object IndigoRunner {
       }
       val server = Server(serverPort, ServerProxyConfig(true, portSelector))
       logger.info(s"server: listen on port $serverPort")
-      logger.info(s"open: http://localhost:${serverPort}")
+      logger.info(s"open: http://localhost:$serverPort")
       server.start()
       sys.addShutdownHook({
         logger.info("shutdown")
@@ -146,6 +150,26 @@ object IndigoRunner {
 
   def getStringListOr(path: String, config: Config, default: util.List[String]): util.List[String] = {
     if (config.hasPath(path)) config.getStringList(path) else default
+  }
+
+  def setServerIde(server: Config): Unit = {
+    val localConfig: LocalConfig = if (getBoolOr("local.enabled", server, true)) {
+      val dataDir = getStringOr("local.data", server, null)
+      val dataPath = if (dataDir != null) {
+        Paths.get(dataDir)
+      } else {
+        Paths.get(System.getProperty("user.home"), ".indigo", "data")
+      }
+      local.LocalConfig(data = dataPath)
+    } else {
+      null
+    }
+    val remoteConfig: RemoteConfig = if (getBoolOr("remote.enabled", server, true)) {
+      RemoteConfig()
+    } else {
+      null
+    }
+    CliSystem.initIde(localConfig, remoteConfig)
   }
 
   def getConfig(preferred: File): File = {
