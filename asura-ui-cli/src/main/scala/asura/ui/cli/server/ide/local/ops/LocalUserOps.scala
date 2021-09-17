@@ -52,8 +52,10 @@ class LocalUserOps(val ide: LocalIde)(implicit ec: ExecutionContext)
         user
       } else { // init
         val userItem = UserPreference(username = username)
+        userItem.creator = username
         insert(userItem)
         val workspaceItem = Workspace(name = username)
+        workspaceItem.creator = username
         ide.workspace.insert(workspaceItem)
         ide.activity.insert(Activity(workspace = username, op = Activity.OP_INSERT_WORKSPACE))
         UserPreference(username, latest = LatestPreference(username))

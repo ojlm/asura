@@ -39,6 +39,11 @@ class LocalWorkspaceOps(val ide: LocalIde)(implicit ec: ExecutionContext)
     fillCommonField(builder, item)
   }
 
+  override def members(username: String, params: QueryWorkspace): Future[PagedResults[Workspace]] = {
+    params.creator = username
+    search(params)
+  }
+
   override def insert(item: Workspace): Future[Long] = {
     Future {
       index(modelToDoc(item))
@@ -53,7 +58,10 @@ class LocalWorkspaceOps(val ide: LocalIde)(implicit ec: ExecutionContext)
 
   override def search(params: QueryWorkspace): Future[PagedResults[Workspace]] = {
     Future {
-      val results = query(docToModel).filter(term(this.creator(params.username))).limit(1).search()
+      val results = query(docToModel)
+        .filter(term(this.creator(params.creator)))
+        .offset(params.offset).limit(params.limit)
+        .search()
       PagedResults(results.total, results.entries)
     }
   }

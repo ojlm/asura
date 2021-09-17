@@ -8,6 +8,8 @@ import asura.ui.ide.query.{Paged, PagedResults}
 
 trait WorkspaceOps {
 
+  def members(username: String, params: QueryWorkspace): Future[PagedResults[Workspace]]
+
   def insert(item: Workspace): Future[Long]
 
   def get(name: String): Future[Workspace]
@@ -18,6 +20,6 @@ trait WorkspaceOps {
 
 object WorkspaceOps {
 
-  case class QueryWorkspace(username: String) extends Paged
+  case class QueryWorkspace(var creator: String) extends Paged
 
 }
