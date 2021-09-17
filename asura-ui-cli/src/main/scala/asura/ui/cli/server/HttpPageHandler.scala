@@ -89,6 +89,9 @@ class HttpPageHandler(enableKeepAlive: Boolean) extends SimpleChannelInboundHand
       val res = new DefaultHttpResponse(HttpVersion.HTTP_1_1, OK)
       NettyUtils.setDateAndCacheHeaders(res, LAST_MODIFIED_TIME)
       res.headers().set(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED)
+      getContentType(path).map(value => {
+        res.headers().set(HttpHeaderNames.CONTENT_TYPE, value)
+      })
       // write the initial line and header
       ctx.write(res)
       // write the content
@@ -175,6 +178,19 @@ object HttpPageHandler {
 
   def getSteamFromStaticResource(path: String): InputStream = {
     getClass.getClassLoader.getResourceAsStream(path)
+  }
+
+  def getContentType(path: String): Option[String] = {
+    val pos = path.lastIndexOf('.')
+    if (pos > -1) {
+      path.substring(pos + 1) match {
+        case "json" => Some("application/json; charset=UTF-8")
+        case "svg" => Some("image/svg+xml; charset=UTF-8")
+        case _ => None
+      }
+    } else {
+      None
+    }
   }
 
 }
