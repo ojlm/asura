@@ -20,6 +20,15 @@ object ChromeRunner {
     options.put("start", Boolean.box(args.start))
     options.put("headless", Boolean.box(args.headless))
     options.put("removeUserDataDir", Boolean.box(args.removeUserDataDir))
+    if (StringUtils.isNotEmpty(args.windowPosition) || StringUtils.isNotEmpty(args.windowSize)) {
+      if (args.addOptions == null) args.addOptions = new util.ArrayList[String]()
+      if (StringUtils.isNotEmpty(args.windowPosition)) {
+        args.addOptions.add(s"--window-position=${args.windowPosition}")
+      }
+      if (StringUtils.isNotEmpty(args.windowSize)) {
+        args.addOptions.add(s"--window-size=${args.windowSize}")
+      }
+    }
     options.put("addOptions", args.addOptions)
     if (StringUtils.isNotEmpty(args.userDataDir)) {
       options.put("userDataDir", args.userDataDir)

@@ -64,6 +64,20 @@ class ChromeCommand extends ServerBaseCommand {
   var userDataDirPrefix: String = "target"
 
   @Option(
+    names = Array("--window-position"),
+    arity = "1",
+    paramLabel = "pos",
+  )
+  var windowPosition: String = null
+
+  @Option(
+    names = Array("--window-size"),
+    arity = "1",
+    paramLabel = "size",
+  )
+  var windowSize: String = null
+
+  @Option(
     names = Array("--headless"),
   )
   var headless: Boolean = false
