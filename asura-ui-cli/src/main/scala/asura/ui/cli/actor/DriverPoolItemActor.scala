@@ -87,6 +87,7 @@ class DriverPoolItemActor(
   private def resetDriverPage(page: String): Unit = {
     implicit val ec = CliSystem.ec
     Future {
+      driver.script("window.onbeforeunload=null")
       driver.setUrl(page)
       driver.closeOthers()
     }.recover {
