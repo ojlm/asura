@@ -1,9 +1,11 @@
 package asura.ui.ide.model
 
+import asura.common.util.StringUtils
+
 case class Project(
-                    var name: String,
-                    var alias: String,
                     var workspace: String,
-                    var avatar: String,
-                    var description: String,
+                    var name: String,
+                    var alias: String = StringUtils.EMPTY,
+                    var avatar: String = StringUtils.EMPTY,
+                    var description: String = StringUtils.EMPTY,
                   ) extends AbsDoc

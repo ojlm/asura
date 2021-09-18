@@ -8,13 +8,11 @@ import asura.ui.ide.query.{Paged, PagedResults}
 
 trait ProjectOps {
 
-  def insert(project: Project): Future[String]
+  def insert(item: Project): Future[String]
 
-  def delete(id: String): Future[Boolean]
+  def get(workspace: String, project: String): Future[Project]
 
-  def get(id: String): Future[Project]
-
-  def update(  target: Project): Future[Project]
+  def update(target: Project): Future[Project]
 
   def search(query: QueryProject): Future[PagedResults[Project]]
 

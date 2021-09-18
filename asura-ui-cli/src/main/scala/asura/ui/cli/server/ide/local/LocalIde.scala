@@ -20,4 +20,17 @@ object LocalIde {
 
   val DEFAULT_USERNAME = StringUtils.notEmptyElse(System.getProperty("user.name"), "indigo")
 
+  def isNameLegal(name: String): Boolean = {
+    if (StringUtils.isEmpty(name) || RESERVED_NAMES.contains(name)) {
+      false
+    } else {
+      name.forall(c => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c.equals('_') || c.equals('-') || c.equals('.'))
+    }
+  }
+
+  lazy val RESERVED_NAMES = Set(
+    "home", "dashboard", "discover", "team", "workspace", "projects", "project", "stars", "tasks",
+    "job", "running", "chrome", "android", "ios",
+  )
+
 }

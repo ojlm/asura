@@ -2,25 +2,76 @@ package asura.ui.cli.server.ide.local.ops
 
 import scala.concurrent.{ExecutionContext, Future}
 
+import asura.common.util.StringUtils
 import asura.ui.cli.server.ide.local.{LocalIde, LocalStore}
-import asura.ui.cli.store.lucene.DocumentBuilder
+import asura.ui.cli.store.lucene.field.FieldType
 import asura.ui.cli.store.lucene.query.SearchResult
+import asura.ui.cli.store.lucene.{DocumentBuilder, exact}
+import asura.ui.ide.IdeErrors
 import asura.ui.ide.model.Project
 import asura.ui.ide.ops.ProjectOps
 import asura.ui.ide.ops.ProjectOps.QueryProject
 import asura.ui.ide.query.PagedResults
 
 class LocalProjectOps(val ide: LocalIde)(implicit ec: ExecutionContext)
-  extends LocalStore(ide.config.PATH_PROJECT) with ProjectOps {
+  extends LocalStore[Project](ide.config.PATH_PROJECT) with ProjectOps {
 
-  override val docToModel: SearchResult => Nothing = null
-  override val modelToDoc: Nothing => DocumentBuilder = null
+  val workspace = define.field[String]("workspace", FieldType.UN_TOKENIZED)
+  val name = define.field[String]("name", FieldType.UN_TOKENIZED, fullTextSearchable = true)
+  val alias = define.field[String]("alias")
+  val avatar = define.field[String]("avatar", FieldType.UN_TOKENIZED, sortable = false)
+  val description = define.field[String]("description", fullTextSearchable = true, sortable = false)
 
-  override def insert(project: Project): Future[String] = ???
+  override val docToModel: SearchResult => Project = doc => {
+    val item = Project(
+      workspace = doc(workspace),
+      name = doc(name),
+      alias = doc(alias),
+      avatar = doc(avatar),
+      description = doc(description),
+    )
+    fillCommonField(item, doc)
+  }
 
-  override def delete(id: String): Future[Boolean] = ???
+  override val modelToDoc: Project => DocumentBuilder = item => {
+    val builder = doc().fields(
+      workspace(item.workspace),
+      name(item.name),
+      alias(item.alias),
+      description(item.description),
+      avatar(item.avatar),
+    )
+    fillCommonField(builder, item)
+  }
 
-  override def get(id: String): Future[Project] = ???
+  override def insert(item: Project): Future[String] = {
+    Future {
+      if (StringUtils.isEmpty(item.workspace)) {
+        throw IdeErrors.WORKSPACE_NAME_EMPTY
+      } else if (!LocalIde.isNameLegal(item.name)) {
+        throw IdeErrors.PROJECT_NAME_ILLEGAL
+      } else {
+        val results = query().filter(
+          exact(this.workspace(item.workspace)),
+          exact(this.name(item.name)),
+        ).search()
+        if (results.total == 0) {
+          index(modelToDoc(item))
+        } else {
+          throw IdeErrors.PROJECT_NAME_EXISTS
+        }
+      }
+    }
+  }
+
+  override def get(workspace: String, project: String): Future[Project] = {
+    Future {
+      query(docToModel).filter(
+        exact(this.workspace(workspace)),
+        exact(this.name(project)),
+      ).limit(1).search().entries.headOption.orNull
+    }
+  }
 
   override def update(target: Project): Future[Project] = ???
 

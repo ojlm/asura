@@ -5,7 +5,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import asura.ui.cli.server.ide.local.{LocalIde, LocalStore}
 import asura.ui.cli.store.lucene.field.FieldType
 import asura.ui.cli.store.lucene.query.SearchResult
-import asura.ui.cli.store.lucene.{DocumentBuilder, term}
+import asura.ui.cli.store.lucene.{DocumentBuilder, exact, term}
+import asura.ui.ide.IdeErrors
 import asura.ui.ide.model.Workspace
 import asura.ui.ide.ops.WorkspaceOps
 import asura.ui.ide.ops.WorkspaceOps.QueryWorkspace
@@ -46,7 +47,16 @@ class LocalWorkspaceOps(val ide: LocalIde)(implicit ec: ExecutionContext)
 
   override def insert(item: Workspace): Future[String] = {
     Future {
-      insertSync(item)
+      if (LocalIde.isNameLegal(item.name)) {
+        val results = query().filter(exact(this.name(item.name))).search()
+        if (results.total == 0) {
+          insertSync(item)
+        } else {
+          throw IdeErrors.WORKSPACE_NAME_EXISTS
+        }
+      } else {
+        throw IdeErrors.WORKSPACE_NAME_ILLEGAL
+      }
     }
   }
 

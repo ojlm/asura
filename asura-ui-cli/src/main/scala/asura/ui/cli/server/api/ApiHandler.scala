@@ -95,6 +95,7 @@ object ApiHandler {
     val handlers = new ConcurrentHashMap[String, ApiHandler]()
     handlers.put("user", new UserApi())
     handlers.put("workspace", new WorkspaceApi())
+    handlers.put("project", new ProjectApi())
     handlers.put("devices", new DevicesApi())
     handlers.put("web", new WebApi())
     handlers.put("run", new RunApi())
