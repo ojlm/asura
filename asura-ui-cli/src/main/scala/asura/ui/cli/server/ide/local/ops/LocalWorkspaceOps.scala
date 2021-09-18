@@ -44,10 +44,14 @@ class LocalWorkspaceOps(val ide: LocalIde)(implicit ec: ExecutionContext)
     search(params)
   }
 
-  override def insert(item: Workspace): Future[Long] = {
+  override def insert(item: Workspace): Future[String] = {
     Future {
-      index(modelToDoc(item))
+      insertSync(item)
     }
+  }
+
+  def insertSync(item: Workspace): String = {
+    index(modelToDoc(item))
   }
 
   override def get(name: String): Future[Workspace] = {

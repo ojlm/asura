@@ -10,7 +10,7 @@ trait WorkspaceOps {
 
   def members(username: String, params: QueryWorkspace): Future[PagedResults[Workspace]]
 
-  def insert(item: Workspace): Future[Long]
+  def insert(item: Workspace): Future[String]
 
   def get(name: String): Future[Workspace]
 

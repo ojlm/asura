@@ -40,10 +40,14 @@ class LocalActivityOps(val ide: LocalIde)(implicit ec: ExecutionContext)
     fillCommonField(builder, item)
   }
 
-  override def insert(list: Seq[Activity]): Future[Long] = {
+  override def insert(list: Seq[Activity]): Future[String] = {
     Future {
       index(list.map(modelToDoc): _*)
     }
+  }
+
+  def insertSync(item: Activity): String = {
+    index(modelToDoc(item))
   }
 
   override def search(params: QueryActivity): Future[PagedResults[Activity]] = {

@@ -16,7 +16,7 @@ class LocalProjectOps(val ide: LocalIde)(implicit ec: ExecutionContext)
   override val docToModel: SearchResult => Nothing = null
   override val modelToDoc: Nothing => DocumentBuilder = null
 
-  override def insert(project: Project): Future[Long] = ???
+  override def insert(project: Project): Future[String] = ???
 
   override def delete(id: String): Future[Boolean] = ???
 

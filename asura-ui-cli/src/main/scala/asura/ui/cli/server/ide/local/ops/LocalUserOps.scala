@@ -45,29 +45,33 @@ class LocalUserOps(val ide: LocalIde)(implicit ec: ExecutionContext)
   override def getPreference(username: String): Future[UserPreference] = {
     Future.successful {
       val results = query(docToModel).filter(term(this.username(username))).limit(1).search()
-      val preference = if (results.total > 0) {
-        val user = results.entries.head
+      if (results.total > 0) {
+        val preference = results.entries.head
         val activity = ide.activity.searchSync(QueryActivity(creator = username)).list.head
-        user.latest = LatestPreference(activity.workspace)
-        user
+        preference.latest = LatestPreference(activity.workspace)
+        preference
       } else { // init
-        val userItem = UserPreference(username = username)
-        userItem.creator = username
-        insert(userItem)
+        val preference = UserPreference(username = username)
+        preference.creator = username
+        preference.id = insertSync(preference)
         val workspaceItem = Workspace(name = username)
         workspaceItem.creator = username
-        ide.workspace.insert(workspaceItem)
-        ide.activity.insert(Activity(workspace = username, op = Activity.OP_INSERT_WORKSPACE))
-        UserPreference(username, latest = LatestPreference(username))
+        workspaceItem.id = ide.workspace.insertSync(workspaceItem)
+        ide.activity.insertSync(Activity(workspace = username, op = Activity.OP_INSERT_WORKSPACE))
+        preference.latest = LatestPreference(username)
+        preference
       }
-      preference
     }
   }
 
-  override def insert(item: UserPreference): Future[Long] = {
+  override def insert(item: UserPreference): Future[String] = {
     Future {
-      index(modelToDoc(item))
+      insertSync(item)
     }
+  }
+
+  def insertSync(item: UserPreference): String = {
+    index(modelToDoc(item))
   }
 
 }

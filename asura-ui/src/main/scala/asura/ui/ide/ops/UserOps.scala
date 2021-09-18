@@ -8,7 +8,7 @@ trait UserOps {
 
   def getPreference(username: String): Future[UserPreference]
 
-  def insert(item: UserPreference): Future[Long]
+  def insert(item: UserPreference): Future[String]
 
 }
 

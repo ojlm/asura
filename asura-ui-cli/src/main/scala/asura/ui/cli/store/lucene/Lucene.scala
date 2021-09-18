@@ -61,14 +61,17 @@ trait Lucene {
 
   def withSearcherAndTaxonomy[R](f: SearcherAndTaxonomy => R): R
 
-  def index(builders: DocumentBuilder*): Long = {
+  // return the last id
+  def index(builders: DocumentBuilder*): String = {
+    var lastDocId: String = null
     builders.foreach(_.prepareForWriting())
     // build docs to insert
     val docs = builders.map(builder => {
       if (builder.fullText.nonEmpty) {
         builder.fields(fullText(builder.fullText.mkString("\n")))
       }
-      builder.fields(id(idWorker.nextId().toString))
+      lastDocId = idWorker.nextId().toHexString
+      builder.fields(id(lastDocId))
       facetsConfig.build(taxonomyWriter, builder.document)
     })
     // delete existing docs
@@ -76,9 +79,9 @@ trait Lucene {
     if (deleteTerms.nonEmpty) {
       delete(GroupedSearchTerm(1, deleteTerms.map(term => (term, Condition.SHOULD))))
     }
-    val sequence = indexWriter.addDocuments(docs.asJava)
+    indexWriter.addDocuments(docs.asJava)
     indexed(builders)
-    sequence
+    lastDocId
   }
 
   def indexed(builders: Seq[DocumentBuilder]): Unit

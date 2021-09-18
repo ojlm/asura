@@ -8,9 +8,9 @@ import asura.ui.ide.query.{Paged, PagedResults}
 
 trait ActivityOps {
 
-  def insert(item: Activity): Future[Long] = insert(Seq(item))
+  def insert(item: Activity): Future[String] = insert(Seq(item))
 
-  def insert(list: Seq[Activity]): Future[Long]
+  def insert(list: Seq[Activity]): Future[String]
 
   def search(params: QueryActivity): Future[PagedResults[Activity]]
 
