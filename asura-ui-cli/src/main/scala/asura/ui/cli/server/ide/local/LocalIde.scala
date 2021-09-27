@@ -30,7 +30,7 @@ object LocalIde {
 
   lazy val RESERVED_NAMES = Set(
     "home", "dashboard", "discover", "team", "workspace", "projects", "project", "stars", "tasks",
-    "job", "running", "chrome", "android", "ios",
+    "job", "running", "chrome", "android", "ios", "search"
   )
 
 }

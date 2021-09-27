@@ -6,7 +6,7 @@ import asura.common.util.StringUtils
 import asura.ui.cli.server.ide.local.{LocalIde, LocalStore}
 import asura.ui.cli.store.lucene.field.FieldType
 import asura.ui.cli.store.lucene.query.SearchResult
-import asura.ui.cli.store.lucene.{DocumentBuilder, exact}
+import asura.ui.cli.store.lucene.{DocumentBuilder, exact, term}
 import asura.ui.ide.IdeErrors
 import asura.ui.ide.model.Project
 import asura.ui.ide.ops.ProjectOps
@@ -75,6 +75,15 @@ class LocalProjectOps(val ide: LocalIde)(implicit ec: ExecutionContext)
 
   override def update(target: Project): Future[Project] = ???
 
-  override def search(query: QueryProject): Future[PagedResults[Project]] = ???
+  override def search(params: QueryProject): Future[PagedResults[Project]] = {
+    Future {
+      var q = query(docToModel).offset(params.offset).limit(params.limit)
+      if (StringUtils.isNotEmpty(params.workspace)) {
+        q = q.filter(term(this.workspace(params.workspace)))
+      }
+      val results = q.search()
+      PagedResults(results.total, results.entries)
+    }
+  }
 
 }

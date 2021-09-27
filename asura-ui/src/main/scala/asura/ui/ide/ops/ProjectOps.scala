@@ -14,12 +14,12 @@ trait ProjectOps {
 
   def update(target: Project): Future[Project]
 
-  def search(query: QueryProject): Future[PagedResults[Project]]
+  def search(params: QueryProject): Future[PagedResults[Project]]
 
 }
 
 object ProjectOps {
 
-  case class QueryProject(workspace: String) extends Paged
+  case class QueryProject(var workspace: String) extends Paged
 
 }
