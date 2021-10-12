@@ -7,7 +7,7 @@ case class FacetField(
                        requireDimCount: Boolean,
                      ) {
 
-  def apply(path: String*): FacetValue = new FacetValue(this, path: _*)
+  def apply(path: String*): FacetValue = FacetValue(this, path: _*)
 
   override def toString: String = name
 

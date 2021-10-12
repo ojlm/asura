@@ -7,9 +7,10 @@ class LuceneField(val lucene: Lucene) {
   def field[T](name: String,
                fieldType: FieldType = FieldType.STORED,
                fullTextSearchable: Boolean = lucene.fullTextSearchable,
+               filterable: Boolean = true,
                sortable: Boolean = true,
               )(implicit support: FieldSupport[T]): Field[T] = {
-    val field = Field[T](name, fieldType, support, fullTextSearchable, sortable)
+    val field = Field[T](name, fieldType, support, fullTextSearchable, filterable, sortable)
     this.synchronized {
       lucene._fields += field
     }

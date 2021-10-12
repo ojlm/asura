@@ -163,6 +163,8 @@ package object lucene extends ImplicitField {
 
   def none(terms: SearchTerm*): GroupedSearchTerm = grouped(terms.map(t => t -> Condition.MUST_NOT): _*)
 
+  def exists(f: Field[String]): DocValuesExistsSearchTerm = DocValuesExistsSearchTerm(f)
+
   def boost(term: SearchTerm, boost: Float): BoostedSearchTerm = BoostedSearchTerm(term, boost)
 
   def drillDown(value: FacetValue, onlyThisLevel: Boolean = false): DrillDownSearchTerm = {

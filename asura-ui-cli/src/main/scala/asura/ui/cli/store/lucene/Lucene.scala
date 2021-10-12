@@ -1,6 +1,7 @@
 package asura.ui.cli.store.lucene
 
 import java.nio.file.Path
+import java.util.Collections
 
 import scala.jdk.CollectionConverters._
 
@@ -22,6 +23,8 @@ trait Lucene {
 
   lazy val define: LuceneField = new LuceneField(this)
   lazy val idWorker: IdWorker = new IdWorker(0)
+
+  def nextId(): String = idWorker.nextId().toHexString
 
   def directory: Option[Path]
 
@@ -61,6 +64,21 @@ trait Lucene {
 
   def withSearcherAndTaxonomy[R](f: SearcherAndTaxonomy => R): R
 
+  def index(id: String, builder: DocumentBuilder): String = {
+    builder.prepareForWriting()
+    if (builder.fullText.nonEmpty) {
+      builder.fields(fullText(builder.fullText.mkString("\n")))
+    }
+    builder.fields(this.id(id))
+    val doc = facetsConfig.build(taxonomyWriter, builder.document)
+    if (builder.update.nonEmpty) {
+      delete(builder.update.get)
+    }
+    indexWriter.addDocuments(Collections.singleton(doc))
+    indexed(Seq(builder))
+    id
+  }
+
   // return the last id
   def index(builders: DocumentBuilder*): String = {
     var lastDocId: String = null
@@ -70,8 +88,8 @@ trait Lucene {
       if (builder.fullText.nonEmpty) {
         builder.fields(fullText(builder.fullText.mkString("\n")))
       }
-      lastDocId = idWorker.nextId().toHexString
-      builder.fields(id(lastDocId))
+      lastDocId = nextId()
+      builder.fields(this.id(lastDocId))
       facetsConfig.build(taxonomyWriter, builder.document)
     })
     // delete existing docs

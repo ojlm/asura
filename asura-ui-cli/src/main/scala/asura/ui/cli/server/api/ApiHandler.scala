@@ -96,6 +96,8 @@ object ApiHandler {
     handlers.put("user", new UserApi())
     handlers.put("workspace", new WorkspaceApi())
     handlers.put("project", new ProjectApi())
+    handlers.put("tree", new TreeApi())
+    handlers.put("blob", new BlobApi())
     handlers.put("devices", new DevicesApi())
     handlers.put("web", new WebApi())
     handlers.put("run", new RunApi())
@@ -112,7 +114,9 @@ object ApiHandler {
           val handler = HANDLERS.get(name)
           if (handler != null) {
             handler.handle(tail, uri, req).recover {
-              case t: Throwable => ApiResError(t.getMessage)
+              case t: Throwable =>
+                logger.warn(s"${req.method().name()} ${uri.uri()}", t)
+                ApiResError(t.getMessage)
             }
           } else {
             FUTURE_API_NOT_FOUND

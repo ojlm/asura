@@ -8,6 +8,8 @@ case class LocalConfig(data: Path) {
   val PATH_USER: Path = data.resolve("user")
   val PATH_WORKSPACE: Path = data.resolve("workspace")
   val PATH_PROJECT: Path = data.resolve("project")
+  val PATH_TREE: Path = data.resolve("tree")
+  val PATH_BLOB: Path = data.resolve("blob")
 
   def validate(): Boolean = {
     val file = data.toFile

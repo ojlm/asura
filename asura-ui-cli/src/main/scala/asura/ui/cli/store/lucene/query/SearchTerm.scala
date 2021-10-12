@@ -4,12 +4,13 @@ import java.io.StringReader
 
 import asura.ui.cli.store.lucene.Lucene
 import asura.ui.cli.store.lucene.field.{FacetField, Field, SpatialPoint}
-import org.apache.lucene.document.{DoublePoint, IntPoint, LatLonPoint, LongPoint}
+import org.apache.lucene.document._
 import org.apache.lucene.facet.DrillDownQuery
 import org.apache.lucene.geo.Polygon
 import org.apache.lucene.index.Term
 import org.apache.lucene.queryparser.classic.QueryParser
 import org.apache.lucene.search._
+import org.apache.lucene.util.BytesRef
 import org.apache.lucene.util.automaton.RegExp
 
 trait SearchTerm {
@@ -106,6 +107,12 @@ object SearchTerm {
     }
   }
 
+  case class ExactBytesSearchTerm(field: Field[BytesRef], value: Array[Byte]) extends SearchTerm {
+    override def toLucene(lucene: Lucene): Query = {
+      BinaryPoint.newExactQuery(field.filterName, value)
+    }
+  }
+
   case class RangeIntSearchTerm(field: Field[Int], start: Int, end: Int) extends SearchTerm {
     override def toLucene(lucene: Lucene): Query = {
       IntPoint.newRangeQuery(field.filterName, start, end)
@@ -124,6 +131,12 @@ object SearchTerm {
     }
   }
 
+  case class RangeBytesSearchTerm(field: Field[BytesRef], start: Array[Byte], end: Array[Byte]) extends SearchTerm {
+    override def toLucene(lucene: Lucene): Query = {
+      BinaryPoint.newRangeQuery(field.filterName, start, end)
+    }
+  }
+
   case class SetIntSearchTerm(field: Field[Int], set: Seq[Int]) extends SearchTerm {
     override def toLucene(lucene: Lucene): Query = {
       IntPoint.newSetQuery(field.filterName, set: _*)
@@ -131,11 +144,21 @@ object SearchTerm {
   }
 
   case class SetLongSearchTerm(field: Field[Long], set: Seq[Long]) extends SearchTerm {
-    override def toLucene(lucene: Lucene): Query = LongPoint.newSetQuery(field.filterName, set: _*)
+    override def toLucene(lucene: Lucene): Query = {
+      LongPoint.newSetQuery(field.filterName, set: _*)
+    }
   }
 
   case class SetDoubleSearchTerm(field: Field[Double], set: Seq[Double]) extends SearchTerm {
-    override def toLucene(lucene: Lucene): Query = DoublePoint.newSetQuery(field.filterName, set: _*)
+    override def toLucene(lucene: Lucene): Query = {
+      DoublePoint.newSetQuery(field.filterName, set: _*)
+    }
+  }
+
+  case class SetBytesSearchTerm(field: Field[BytesRef], set: Seq[Array[Byte]]) extends SearchTerm {
+    override def toLucene(lucene: Lucene): Query = {
+      BinaryPoint.newSetQuery(field.filterName, set: _*)
+    }
   }
 
   case class RegexpSearchTerm(field: Option[Field[String]], value: String, flags: Int = RegExp.ALL) extends SearchTerm {
@@ -196,6 +219,12 @@ object SearchTerm {
   case class BoostedSearchTerm(term: SearchTerm, boost: Float) extends SearchTerm {
     override def toLucene(lucene: Lucene): Query = {
       new BoostQuery(term.toLucene(lucene), boost)
+    }
+  }
+
+  case class DocValuesExistsSearchTerm(field: Field[String]) extends SearchTerm {
+    override def toLucene(lucene: Lucene): Query = {
+      new DocValuesFieldExistsQuery(field.name)
     }
   }
 

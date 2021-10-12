@@ -2,6 +2,7 @@ package asura.ui.cli.store.lucene
 
 import asura.ui.cli.store.lucene.field.support._
 import asura.ui.cli.store.lucene.field.{FieldSupport, SpatialPoint}
+import org.apache.lucene.util.BytesRef
 
 trait ImplicitField {
 
@@ -16,6 +17,8 @@ trait ImplicitField {
   implicit def doubleSupport: FieldSupport[Double] = DoubleField
 
   implicit def spatialPointSupport: FieldSupport[SpatialPoint] = SpatialPointField
+
+  implicit def bytesSupport: FieldSupport[BytesRef] = BytesField
 
   implicit val listStringSupport: FieldSupport[List[String]] = new ListField[String](stringSupport)
   implicit val listBooleanSupport: FieldSupport[List[Boolean]] = new ListField[Boolean](booleanSupport)

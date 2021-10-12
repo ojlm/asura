@@ -9,9 +9,9 @@ import asura.ui.ide.model.AbsDoc
 
 abstract class LocalStore[T <: AbsDoc](path: Path) extends LuceneStore(directory = Some(path), autoCommit = true) {
 
-  val creator = define.field[String]("creator", FieldType.UN_TOKENIZED)
-  val createdAt = define.field[Long]("createdAt", FieldType.NUMERIC)
-  val updatedAt = define.field[Long]("updatedAt", FieldType.NUMERIC)
+  lazy val creator = define.field[String]("creator", FieldType.UN_TOKENIZED)
+  lazy val createdAt = define.field[Long]("createdAt", FieldType.NUMERIC)
+  lazy val updatedAt = define.field[Long]("updatedAt", FieldType.NUMERIC)
 
   val docToModel: SearchResult => T
   val modelToDoc: T => DocumentBuilder
@@ -30,6 +30,22 @@ abstract class LocalStore[T <: AbsDoc](path: Path) extends LuceneStore(directory
       createdAt(model.createdAt),
       updatedAt(model.updatedAt),
     )
+  }
+
+  def getByIdSync(id: String): Option[T] = {
+    query(docToModel).filter(this.id(id)).limit(1).search().entries.headOption
+  }
+
+  def saveSync(id: String, item: T): String = {
+    index(id, modelToDoc(item))
+  }
+
+  def saveSync(item: T): String = {
+    index(modelToDoc(item))
+  }
+
+  def deleteSync(id: String): Unit = {
+    delete(this.id(id))
   }
 
 }

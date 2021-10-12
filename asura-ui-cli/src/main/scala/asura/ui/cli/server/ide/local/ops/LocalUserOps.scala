@@ -57,7 +57,7 @@ class LocalUserOps(val ide: LocalIde)(implicit ec: ExecutionContext)
         val workspaceItem = Workspace(name = username)
         workspaceItem.creator = username
         workspaceItem.id = ide.workspace.insertSync(workspaceItem)
-        ide.activity.insertSync(Activity(workspace = username, op = Activity.OP_INSERT_WORKSPACE))
+        ide.activity.saveSync(Activity(workspace = username, op = Activity.OP_INSERT_WORKSPACE))
         preference.latest = LatestPreference(username)
         preference
       }

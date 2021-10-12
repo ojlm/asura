@@ -4,9 +4,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import asura.common.util.StringUtils
 import asura.ui.cli.server.ide.local.{LocalIde, LocalStore}
+import asura.ui.cli.store.lucene._
 import asura.ui.cli.store.lucene.field.FieldType
 import asura.ui.cli.store.lucene.query.SearchResult
-import asura.ui.cli.store.lucene.{DocumentBuilder, exact, term}
 import asura.ui.ide.IdeErrors
 import asura.ui.ide.model.Project
 import asura.ui.ide.ops.ProjectOps
@@ -52,9 +52,9 @@ class LocalProjectOps(val ide: LocalIde)(implicit ec: ExecutionContext)
         throw IdeErrors.PROJECT_NAME_ILLEGAL
       } else {
         val results = query().filter(
-          exact(this.workspace(item.workspace)),
           exact(this.name(item.name)),
-        ).search()
+          exact(this.workspace(item.workspace)),
+        ).limit(1).search()
         if (results.total == 0) {
           index(modelToDoc(item))
         } else {
@@ -64,11 +64,11 @@ class LocalProjectOps(val ide: LocalIde)(implicit ec: ExecutionContext)
     }
   }
 
-  override def get(workspace: String, project: String): Future[Project] = {
+  override def get(workspace: String, name: String): Future[Project] = {
     Future {
       query(docToModel).filter(
+        exact(this.name(name)),
         exact(this.workspace(workspace)),
-        exact(this.name(project)),
       ).limit(1).search().entries.headOption.orNull
     }
   }
@@ -79,7 +79,7 @@ class LocalProjectOps(val ide: LocalIde)(implicit ec: ExecutionContext)
     Future {
       var q = query(docToModel).offset(params.offset).limit(params.limit)
       if (StringUtils.isNotEmpty(params.workspace)) {
-        q = q.filter(term(this.workspace(params.workspace)))
+        q = q.filter(exact(this.workspace(params.workspace)))
       }
       val results = q.search()
       PagedResults(results.total, results.entries)

@@ -46,10 +46,6 @@ class LocalActivityOps(val ide: LocalIde)(implicit ec: ExecutionContext)
     }
   }
 
-  def insertSync(item: Activity): String = {
-    index(modelToDoc(item))
-  }
-
   override def search(params: QueryActivity): Future[PagedResults[Activity]] = {
     Future(searchSync(params))
   }

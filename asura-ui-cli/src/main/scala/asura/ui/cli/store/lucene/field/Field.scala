@@ -5,6 +5,7 @@ case class Field[T](
                      fieldType: FieldType,
                      support: FieldSupport[T],
                      fullTextSearchable: Boolean,
+                     filterable: Boolean = true,
                      sortable: Boolean = true,
                    ) {
 

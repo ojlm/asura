@@ -2,7 +2,7 @@ package asura.ui.cli.server.ide.local
 
 import asura.common.util.StringUtils
 import asura.ui.cli.CliSystem
-import asura.ui.cli.server.ide.local.ops.{LocalActivityOps, LocalProjectOps, LocalUserOps, LocalWorkspaceOps}
+import asura.ui.cli.server.ide.local.ops._
 import asura.ui.ide.Ide
 
 class LocalIde(val config: LocalConfig) extends Ide {
@@ -13,6 +13,8 @@ class LocalIde(val config: LocalConfig) extends Ide {
   override lazy val user: LocalUserOps = new LocalUserOps(this)
   override lazy val workspace: LocalWorkspaceOps = new LocalWorkspaceOps(this)
   override lazy val project: LocalProjectOps = new LocalProjectOps(this)
+  override lazy val tree: LocalTreeStoreOps = new LocalTreeStoreOps(this)
+  override lazy val blob: LocalBlobStoreOps = new LocalBlobStoreOps(this)
 
 }
 

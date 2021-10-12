@@ -10,7 +10,7 @@ trait ProjectOps {
 
   def insert(item: Project): Future[String]
 
-  def get(workspace: String, project: String): Future[Project]
+  def get(workspace: String, name: String): Future[Project]
 
   def update(target: Project): Future[Project]
 
