@@ -2,6 +2,7 @@ package asura.ui.cli.server.api
 
 import scala.concurrent.Future
 
+import asura.common.util.StringUtils
 import asura.ui.ide.model.TreeObject
 import asura.ui.ide.ops.BlobStoreOps.QueryBlob
 import asura.ui.ide.ops.TreeStoreOps.QueryTree
@@ -11,7 +12,7 @@ class TreeApi() extends ApiHandler {
 
   override def get(path: Seq[String])(implicit uri: QueryStringDecoder, req: FullHttpRequest): Future[_] = {
     path match {
-      case Seq(workspace, project, id) => ide.tree.getById(workspace, project, id)
+      case Seq(workspace, project, id) => ide.tree.get(workspace, project, id)
       case _ => super.get(path)
     }
   }
@@ -20,7 +21,7 @@ class TreeApi() extends ApiHandler {
     path match {
       case Seq(workspace, project, "search") =>
         val params = extractTo(classOf[QueryTree])
-        ide.tree.getChildren(workspace, project, null, params)
+        ide.tree.getChildren(workspace, project, StringUtils.EMPTY, params)
       case Seq(workspace, project, parent, "search") =>
         val params = extractTo(classOf[QueryTree])
         ide.tree.getChildren(workspace, project, parent, params)

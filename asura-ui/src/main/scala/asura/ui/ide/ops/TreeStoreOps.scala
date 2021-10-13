@@ -17,11 +17,17 @@ trait TreeStoreOps {
 
   def exists(workspace: String, project: String, parent: String, name: String): Future[Boolean]
 
-  def getByName(workspace: String, project: String, name: String): Future[TreeObject]
-
-  def getById(workspace: String, project: String, id: String): Future[TreeObject]
+  def get(workspace: String, project: String, id: String): Future[TreeObject]
 
   def updateBlob(id: String, blob: String, size: Long): Future[String]
+
+  def get(workspace: String, project: String, path: Seq[String]): Future[TreeObject]
+
+  def getChildren(workspace: String, project: String, path: Seq[String], paged: Paged): Future[PagedResults[TreeObject]]
+
+  def createDirectory(path: Seq[String], item: TreeObject): Future[String]
+
+  def writeFile(path: Seq[String], item: TreeObject, data: Array[Byte]): Future[String]
 
 }
 

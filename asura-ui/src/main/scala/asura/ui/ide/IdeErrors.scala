@@ -13,6 +13,7 @@ object IdeErrors {
   val TREE_NAME_EXISTS = IdeException("TREE", "NAME", "EXISTS")
   val TREE_NAME_EMPTY = IdeException("TREE", "NAME", "EMPTY")
   val TREE_DOC_MISS = IdeException("TREE", "DOC", "MISS")
+  val TREE_PATH_EMPTY = IdeException("TREE", "PATH", "EMPTY")
 
   val BLOB_TREE_EMPTY = IdeException("BLOB", "TREE", "EMPTY")
   val BLOB_DATA_EMPTY = IdeException("BLOB", "DATA", "EMPTY")

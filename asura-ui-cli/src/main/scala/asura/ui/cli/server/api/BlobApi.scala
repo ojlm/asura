@@ -9,7 +9,7 @@ class BlobApi() extends ApiHandler {
 
   override def get(path: Seq[String])(implicit uri: QueryStringDecoder, req: FullHttpRequest): Future[_] = {
     path match {
-      case Seq(workspace, project, id) => ide.blob.getById(workspace, project, id)
+      case Seq(workspace, project, id) => ide.blob.get(workspace, project, id)
       case _ => super.get(path)
     }
   }

@@ -11,9 +11,11 @@ trait BlobStoreOps {
 
   def update(id: String, blob: BlobObject): Future[String]
 
-  def getById(workspace: String, project: String, id: String): Future[BlobObject]
+  def get(workspace: String, project: String, id: String): Future[BlobObject]
 
   def getTreeBlobs(tree: String, paged: Paged): Future[PagedResults[BlobObject]]
+
+  def get(workspace: String, project: String, path: Seq[String]): Future[BlobObject]
 
 }
 

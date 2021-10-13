@@ -96,6 +96,7 @@ object ApiHandler {
     handlers.put("user", new UserApi())
     handlers.put("workspace", new WorkspaceApi())
     handlers.put("project", new ProjectApi())
+    handlers.put("file", new FileApi())
     handlers.put("tree", new TreeApi())
     handlers.put("blob", new BlobApi())
     handlers.put("devices", new DevicesApi())
