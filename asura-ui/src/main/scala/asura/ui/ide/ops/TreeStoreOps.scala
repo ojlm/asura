@@ -19,6 +19,12 @@ trait TreeStoreOps {
 
   def get(workspace: String, project: String, id: String): Future[TreeObject]
 
+  def rename(id: String, item: TreeObject): Future[String]
+
+  def delete(id: String, recursive: Boolean): Future[String]
+
+  def delete(item: TreeObject, recursive: Boolean): Future[String]
+
   def updateBlob(id: String, blob: String, size: Long): Future[String]
 
   def get(workspace: String, project: String, path: Seq[String]): Future[TreeObject]
@@ -28,6 +34,12 @@ trait TreeStoreOps {
   def createDirectory(path: Seq[String], item: TreeObject): Future[String]
 
   def writeFile(path: Seq[String], item: TreeObject, data: Array[Byte]): Future[String]
+
+  def rename(workspace: String, project: String, oldPath: Seq[String], newPath: Seq[String]): Future[String]
+
+  def delete(workspace: String, project: String, path: Seq[String], recursive: Boolean): Future[String]
+
+  def copy(workspace: String, project: String, source: Seq[String], destination: Seq[String]): Future[String]
 
 }
 

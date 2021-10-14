@@ -15,10 +15,10 @@ case class TreeObject(
                        var `type`: Int = TreeObject.TYPE_FILE,
                      ) extends AbsDoc {
 
-  def parse(): Unit = {
-    if (StringUtils.isEmpty(workspace)) {
+  def parse(isUpdate: Boolean): Unit = {
+    if (!isUpdate && StringUtils.isEmpty(workspace)) {
       throw IdeErrors.WORKSPACE_NAME_EMPTY
-    } else if (StringUtils.isEmpty(project)) {
+    } else if (!isUpdate && StringUtils.isEmpty(project)) {
       throw IdeErrors.PROJECT_NAME_EMPTY
     } else if (StringUtils.isEmpty(name)) {
       throw IdeErrors.TREE_NAME_EMPTY

@@ -44,8 +44,9 @@ abstract class LocalStore[T <: AbsDoc](path: Path) extends LuceneStore(directory
     index(modelToDoc(item))
   }
 
-  def deleteSync(id: String): Unit = {
+  def deleteSync(id: String): String = {
     delete(this.id(id))
+    id
   }
 
 }

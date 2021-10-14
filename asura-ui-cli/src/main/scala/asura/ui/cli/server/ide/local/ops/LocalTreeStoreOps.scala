@@ -76,6 +76,34 @@ class LocalTreeStoreOps(val ide: LocalIde)(implicit ec: ExecutionContext)
     Future(getByIdSync(workspace, project, id))
   }
 
+  override def rename(id: String, item: TreeObject): Future[String] = {
+    Future {
+      val tree = getByIdSync(id).orNull
+      if (tree == null) throw IdeErrors.TREE_DOC_MISS
+      item.parse(true)
+      val toUp = tree.copy(name = item.name, extension = item.extension)
+      toUp.updatedAt = DateUtils.now()
+      toUp.creator = item.creator
+      deleteSync(id)
+      saveSync(id, toUp)
+    }
+  }
+
+  override def delete(id: String, recursive: Boolean): Future[String] = {
+    Future {
+      val item = getByIdSync(id)
+      if (item.nonEmpty) {
+        deleteItemSync(item.get, recursive)
+      } else {
+        throw IdeErrors.TREE_DOC_MISS
+      }
+    }
+  }
+
+  override def delete(item: TreeObject, recursive: Boolean): Future[String] = {
+    Future(deleteItemSync(item, recursive))
+  }
+
   override def updateBlob(id: String, blob: String, size: Long): Future[String] = {
     Future(updateBlobSync(id, blob, size))
   }
@@ -130,7 +158,7 @@ class LocalTreeStoreOps(val ide: LocalIde)(implicit ec: ExecutionContext)
         val blobId = ide.blob.nextId()
         item.blob = blobId
         item.parent = parentId
-        item.parse()
+        item.parse(false)
         saveSync(treeId, item)
         val blob = BlobObject(workspace = item.workspace, project = item.project, tree = treeId, data = data, size = item.size)
         blob.creator = item.creator
@@ -141,6 +169,68 @@ class LocalTreeStoreOps(val ide: LocalIde)(implicit ec: ExecutionContext)
         blob.creator = item.creator
         ide.blob.update(treeItem.blob, blob)
         treeItem.id
+      }
+    }
+  }
+
+  override def rename(workspace: String, project: String, oldPath: Seq[String], newPath: Seq[String]): Future[String] = {
+    Future {
+      val oldTree = getByPathSync(workspace, project, oldPath)
+      if (oldTree != null) {
+        oldTree.name = newPath.last
+        oldTree.parse(true)
+        oldTree.updatedAt = DateUtils.now()
+        if (oldPath.slice(0, oldPath.length - 1) == newPath.slice(0, newPath.length - 1)) { // same path
+          deleteSync(oldTree.id)
+          saveSync(oldTree.id, oldTree)
+        } else {
+          val newTree = getByPathSync(workspace, project, newPath)
+          if (newTree == null) { // newPath do not have a file
+            val newParentPath = newPath.slice(0, newPath.length - 1)
+            val newParent = getByPathSync(workspace, project, newParentPath)
+            if (newParent != null) {
+              oldTree.parent = newParent.id
+              deleteSync(oldTree.id)
+              saveSync(oldTree.id, oldTree)
+            } else {
+              throw IdeErrors.TREE_DOC_MISS_MSG(newParentPath.mkString("/"))
+            }
+          } else {
+            throw IdeErrors.TREE_NAME_EXISTS_MSG(newPath.mkString("/"))
+          }
+        }
+      } else {
+        throw IdeErrors.TREE_DOC_MISS_MSG(oldPath.mkString("/"))
+      }
+    }
+  }
+
+  override def delete(workspace: String, project: String, path: Seq[String], recursive: Boolean): Future[String] = {
+    Future {
+      val item = getByPathSync(workspace, project, path)
+      if (item != null) {
+        deleteItemSync(item, recursive)
+      } else {
+        throw IdeErrors.TREE_DOC_MISS_MSG(path.mkString("/"))
+      }
+    }
+  }
+
+  override def copy(workspace: String, project: String, source: Seq[String], destination: Seq[String]): Future[String] = {
+    Future { // todo
+      throw IdeErrors.TREE_DOC_MISS
+    }
+  }
+
+  def deleteItemSync(item: TreeObject, recursive: Boolean): String = {
+    if (item.`type` != TreeObject.TYPE_DIRECTORY) {
+      deleteSync(item.id)
+      // todo blob?
+    } else {
+      if (recursive) { // todo all child
+        throw IdeErrors.TREE_DIRECTORY_DELETE
+      } else {
+        throw IdeErrors.TREE_DIRECTORY_DELETE
       }
     }
   }
@@ -186,13 +276,16 @@ class LocalTreeStoreOps(val ide: LocalIde)(implicit ec: ExecutionContext)
     if (path == null || path.isEmpty) {
       throw IdeErrors.TREE_PATH_EMPTY
     } else {
+      var cur = 0
+      val len = path.length
       path.foldLeft[TreeObject](null)((last, name) => {
         val item = if (last == null) {
           getByNameSync(workspace, project, null, name)
         } else {
           getByNameSync(workspace, project, last.id, name)
         }
-        if (item == null) {
+        cur = cur + 1
+        if (item == null && cur != len) {
           throw IdeErrors.TREE_DOC_MISS
         } else {
           item
@@ -211,7 +304,7 @@ class LocalTreeStoreOps(val ide: LocalIde)(implicit ec: ExecutionContext)
   }
 
   def insertSync(item: TreeObject): String = {
-    item.parse()
+    item.parse(false)
     if (!existsSync(item.workspace, item.project, item.parent, item.name)) {
       index(modelToDoc(item))
     } else {
