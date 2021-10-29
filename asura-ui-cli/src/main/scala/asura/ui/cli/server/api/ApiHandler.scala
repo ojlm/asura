@@ -99,6 +99,8 @@ object ApiHandler {
     handlers.put("file", new FileApi())
     handlers.put("tree", new TreeApi())
     handlers.put("blob", new BlobApi())
+    handlers.put("task", new TaskApi())
+    handlers.put("record", new RecordApi())
     handlers.put("devices", new DevicesApi())
     handlers.put("web", new WebApi())
     handlers.put("run", new RunApi())

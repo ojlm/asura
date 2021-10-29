@@ -21,8 +21,15 @@ object IdeErrors {
   val BLOB_CREATOR_EMPTY = IdeException("BLOB", "CREATOR", "EMPTY")
   val BLOB_DOC_MISS = IdeException("BLOB", "DOC", "MISS")
 
+  val TASK_TYPE_ILLEGAL = IdeException("TASK", "TYPE", "ILLEGAL")
+  val TASK_DRIVER_ILLEGAL = IdeException("TASK", "DRIVER", "ILLEGAL")
+
   def TREE_DOC_MISS_MSG(msg: String) = IdeException("TREE", "DOC", "MISS", msg)
 
   def TREE_NAME_EXISTS_MSG(msg: String) = IdeException("TREE", "NAME", "EXISTS", msg)
+
+  def TASK_DRIVER_ILLEGAL_MSG(msg: String) = IdeException("TASK", "DRIVER", "ILLEGAL", msg)
+
+  def RECORD_SOURCE_ILLEGAL_MSG(msg: String) = IdeException("RECORD", "SOURCE", "ILLEGAL", msg)
 
 }

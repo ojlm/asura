@@ -11,5 +11,7 @@ class RemoteIde(val config: RemoteConfig) extends Ide {
   override val project: ProjectOps = null
   override val tree: TreeStoreOps = null
   override val blob: BlobStoreOps = null
+  override val task: TaskOps = null
+  override val record: TaskRecordOps = null
 
 }

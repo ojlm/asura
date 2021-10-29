@@ -1,14 +1,8 @@
 package asura.ui.karate
 
-import com.intuit.karate.ScenarioActions
-import com.intuit.karate.core.{ScenarioEngine, StepRuntime}
-
-object KarateSpec {
+object KarateRunnerSpec {
 
   def main(args: Array[String]): Unit = {
-    val engine = ScenarioEngine.forTempUse()
-    val actions = new ScenarioActions(engine)
-    StepRuntime.execute(null, actions)
     val result = KarateRunner.runFeature(text)
     println(result)
   }

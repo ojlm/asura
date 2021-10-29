@@ -10,5 +10,7 @@ trait Ide {
   val project: ProjectOps
   val tree: TreeStoreOps
   val blob: BlobStoreOps
+  val task: TaskOps
+  val record: TaskRecordOps
 
 }

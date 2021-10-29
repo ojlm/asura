@@ -15,6 +15,8 @@ class LocalIde(val config: LocalConfig) extends Ide {
   override lazy val project: LocalProjectOps = new LocalProjectOps(this)
   override lazy val tree: LocalTreeStoreOps = new LocalTreeStoreOps(this)
   override lazy val blob: LocalBlobStoreOps = new LocalBlobStoreOps(this)
+  override lazy val task: LocalTaskOps = new LocalTaskOps(this)
+  override lazy val record: LocalTaskRecordOps = new LocalTaskRecordOps(this)
 
 }
 
